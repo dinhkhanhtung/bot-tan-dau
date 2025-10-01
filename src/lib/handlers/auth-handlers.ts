@@ -37,6 +37,7 @@ export async function handleRegistration(user: any) {
     await sendMessagesWithTyping(user.facebook_id, [
         '📝 ĐĂNG KÝ THÀNH VIÊN',
         'Chào bạn! Tôi sẽ hướng dẫn bạn đăng ký từng bước.',
+        '📋 Thông tin cần thiết:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Ngày sinh (năm 1981)',
         'Bước 1/4: Họ tên\n👤 Vui lòng nhập họ tên đầy đủ của bạn:'
     ])
 
@@ -268,7 +269,7 @@ export async function handleInfo(user: any) {
         '🤖 Bot này được thiết kế đặc biệt cho cộng đồng Tân Dậu 1981',
         '🎯 Chức năng chính:\n• Niêm yết sản phẩm/dịch vụ\n• Tìm kiếm & kết nối mua bán\n• Cộng đồng Tân Dậu - hỗ trợ chéo\n• Tử vi hàng ngày\n• Điểm thưởng & quà tặng',
         '💰 Phí sử dụng:\n• Trial 3 ngày miễn phí\n• Phí duy trì: 1,000đ/ngày\n• Gói tối thiểu: 7 ngày = 7,000đ',
-        '🔒 Bảo mật:\n• Chỉ dành cho Tân Dậu 1981\n• Xác thực dựa trên tin tưởng\n• Không lưu trữ thông tin cá nhân'
+        '🔒 Bảo mật:\n• Chỉ dành cho Tân Dậu 1981\n• Thông tin được mã hóa bảo mật\n• Lưu trữ để tìm kiếm & kết nối hiệu quả'
     ])
 
     await sendButtonTemplate(

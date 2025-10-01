@@ -18,7 +18,8 @@ export async function handleCommunity(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '👥 CỘNG ĐỒNG TÂN DẬU - HỖ TRỢ CHÉO',
-        'Chào mừng bạn đến với cộng đồng Tân Dậu 1981!'
+        'Chào mừng bạn đến với cộng đồng Tân Dậu 1981!',
+        '🤝 Cùng nhau hỗ trợ, chia sẻ và kết nối trong cộng đồng!'
     ])
 
     await sendButtonTemplate(

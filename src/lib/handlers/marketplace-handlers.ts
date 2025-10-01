@@ -19,7 +19,8 @@ export async function handleListing(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🛒 NIÊM YẾT SẢN PHẨM/DỊCH VỤ',
-        'Chọn loại tin đăng bạn muốn đăng:'
+        'Chọn loại tin đăng bạn muốn đăng:',
+        '📋 Thông tin cần cung cấp:\n• Tên sản phẩm/dịch vụ\n• Mô tả chi tiết\n• Giá bán\n• Vị trí cụ thể\n• Hình ảnh minh họa'
     ])
 
     // Send first set of categories
@@ -342,7 +343,8 @@ export async function handleSearch(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🔍 TÌM KIẾM SẢN PHẨM/DỊCH VỤ',
-        'Bạn muốn tìm gì?'
+        'Tìm kiếm trong cộng đồng Tân Dậu 1981:',
+        '💡 Bạn có thể tìm theo:\n• Danh mục sản phẩm\n• Từ khóa\n• Vị trí\n• Giá cả\n• Hashtag'
     ])
 
     await sendButtonTemplate(

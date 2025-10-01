@@ -563,12 +563,12 @@ export async function handleListingImages(user: any, imageUrl?: string) {
 // Handle contact admin
 export async function handleContactAdmin(user: any) {
     await sendTypingIndicator(user.facebook_id)
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         '💬 LIÊN HỆ ADMIN',
         'Bạn cần hỗ trợ gì? Admin sẽ phản hồi sớm nhất có thể!'
     ])
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Chọn loại hỗ trợ:',
@@ -583,13 +583,13 @@ export async function handleContactAdmin(user: any) {
 // Handle exit bot
 export async function handleExitBot(user: any) {
     await sendTypingIndicator(user.facebook_id)
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         '👋 TẠM BIỆT!',
         'Cảm ơn bạn đã sử dụng Bot Tân Dậu 1981!',
         'Hẹn gặp lại bạn sau! 😊'
     ])
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Bạn có muốn:',
