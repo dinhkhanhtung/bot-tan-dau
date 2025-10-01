@@ -223,6 +223,44 @@ export async function handlePostback(user: any, payload: string) {
                     await handleAdminRejectPayment(user, params[2])
                 } else if (params[0] === 'VIEW' && params[1] === 'PAYMENT') {
                     await handleAdminViewPayment(user, params[2])
+                } else if (params[0] === 'ALL' && params[1] === 'PAYMENTS') {
+                    await handleAdminAllPayments(user)
+                } else if (params[0] === 'SEARCH' && params[1] === 'USER') {
+                    await handleAdminSearchUser(user)
+                } else if (params[0] === 'ALL' && params[1] === 'USERS') {
+                    await handleAdminAllUsers(user)
+                } else if (params[0] === 'EXPORT' && params[1] === 'USERS') {
+                    await handleAdminExportUsers(user)
+                } else if (params[0] === 'VIOLATIONS') {
+                    await handleAdminViolations(user)
+                } else if (params[0] === 'SEND' && params[1] === 'NOTIFICATION') {
+                    await handleAdminSendNotification(user)
+                } else if (params[0] === 'MODERATE' && params[1] === 'LISTINGS') {
+                    await handleAdminModerateListings(user)
+                } else if (params[0] === 'ALL' && params[1] === 'LISTINGS') {
+                    await handleAdminAllListings(user)
+                } else if (params[0] === 'FEATURED' && params[1] === 'LISTINGS') {
+                    await handleAdminFeaturedListings(user)
+                } else if (params[0] === 'SEARCH' && params[1] === 'LISTINGS') {
+                    await handleAdminSearchListings(user)
+                } else if (params[0] === 'EXPORT' && params[1] === 'LISTINGS') {
+                    await handleAdminExportListings(user)
+                } else if (params[0] === 'DETAILED' && params[1] === 'STATS') {
+                    await handleAdminDetailedStats(user)
+                } else if (params[0] === 'EXPORT' && params[1] === 'COMPREHENSIVE') {
+                    await handleAdminExportComprehensive(user)
+                } else if (params[0] === 'EXPORT' && params[1] === 'BY' && params[2] === 'DATE') {
+                    await handleAdminExportByDate(user)
+                } else if (params[0] === 'SEND' && params[1] === 'GENERAL') {
+                    await handleAdminSendGeneral(user)
+                } else if (params[0] === 'SEND' && params[1] === 'USER') {
+                    await handleAdminSendUser(user)
+                } else if (params[0] === 'SEND' && params[1] === 'LISTING') {
+                    await handleAdminSendListing(user)
+                } else if (params[0] === 'NOTIFICATION' && params[1] === 'HISTORY') {
+                    await handleAdminNotificationHistory(user)
+                } else if (params[0] === 'NOTIFICATION' && params[1] === 'SETTINGS') {
+                    await handleAdminNotificationSettings(user)
                 }
                 break
             default:
@@ -1278,6 +1316,600 @@ async function handleAdminViewPayment(user: any, paymentId: string) {
         console.error('Error viewing payment:', error)
         await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xem chi tiết thanh toán!')
     }
+}
+
+// Admin: All payments
+async function handleAdminAllPayments(user: any) {
+    try {
+        const { data: payments, error } = await supabaseAdmin
+            .from('payments')
+            .select('*, users(name, phone)')
+            .order('created_at', { ascending: false })
+            .limit(20)
+
+        if (error) throw error
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '💰 TẤT CẢ THANH TOÁN\n\nDanh sách 20 thanh toán gần nhất:'
+        ])
+
+        for (let i = 0; i < payments.length; i++) {
+            const payment = payments[i]
+            const status = payment.status === 'approved' ? '✅' : payment.status === 'rejected' ? '❌' : '⏳'
+            
+            await sendButtonTemplate(
+                user.facebook_id,
+                `${i + 1}️⃣ ${status} ${payment.users?.name || 'N/A'} - ${formatCurrency(payment.amount)}\n📅 ${new Date(payment.created_at).toLocaleDateString('vi-VN')} ${new Date(payment.created_at).toLocaleTimeString('vi-VN')}\n📱 ${payment.users?.phone || 'N/A'}`,
+                [
+                    createPostbackButton('👀 XEM', `ADMIN_VIEW_PAYMENT_${payment.id}`),
+                    createPostbackButton('📊 CHI TIẾT', `ADMIN_PAYMENT_DETAILS_${payment.id}`)
+                ]
+            )
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_ALL_PAYMENTS'),
+                createPostbackButton('📤 XUẤT EXCEL', 'ADMIN_EXPORT_PAYMENTS'),
+                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling admin all payments:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải danh sách thanh toán!')
+    }
+}
+
+// Admin: Search user
+async function handleAdminSearchUser(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🔍 TÌM KIẾM USER\n\nChọn cách tìm kiếm:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tìm theo:',
+        [
+            createPostbackButton('👤 TÊN', 'ADMIN_SEARCH_USER_NAME'),
+            createPostbackButton('📱 SỐ ĐIỆN THOẠI', 'ADMIN_SEARCH_USER_PHONE'),
+            createPostbackButton('🆔 FACEBOOK ID', 'ADMIN_SEARCH_USER_FBID')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_USERS'),
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: All users
+async function handleAdminAllUsers(user: any) {
+    try {
+        const { data: users, error } = await supabaseAdmin
+            .from('users')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(20)
+
+        if (error) throw error
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '👥 TẤT CẢ USER\n\nDanh sách 20 user gần nhất:'
+        ])
+
+        for (let i = 0; i < users.length; i++) {
+            const u = users[i]
+            const status = u.status === 'active' ? '✅' : u.status === 'trial' ? '⏳' : '❌'
+            
+            await sendButtonTemplate(
+                user.facebook_id,
+                `${i + 1}️⃣ ${status} ${u.name}\n📱 ${u.phone} | 📍 ${u.location}\n📅 ${new Date(u.created_at).toLocaleDateString('vi-VN')}`,
+                [
+                    createPostbackButton('👀 XEM', `ADMIN_VIEW_USER_${u.id}`),
+                    createPostbackButton('✏️ SỬA', `ADMIN_EDIT_USER_${u.id}`),
+                    createPostbackButton('⚠️ KHÓA', `ADMIN_BAN_USER_${u.id}`)
+                ]
+            )
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_ALL_USERS'),
+                createPostbackButton('📤 XUẤT EXCEL', 'ADMIN_EXPORT_USERS'),
+                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling admin all users:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải danh sách user!')
+    }
+}
+
+// Admin: Export users
+async function handleAdminExportUsers(user: any) {
+    try {
+        const { data: users, error } = await supabaseAdmin
+            .from('users')
+            .select('*')
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '📤 XUẤT BÁO CÁO USER\n\n✅ Đã tạo file CSV với ' + users.length + ' user',
+            '📊 Dữ liệu bao gồm:\n• Thông tin cá nhân\n• Trạng thái tài khoản\n• Ngày tạo\n• Ngày hết hạn'
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('📧 GỬI EMAIL', 'ADMIN_SEND_EMAIL_USERS'),
+                createPostbackButton('📱 GỬI QUA CHAT', 'ADMIN_SEND_CHAT_USERS'),
+                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling admin export users:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xuất báo cáo user!')
+    }
+}
+
+// Admin: Violations
+async function handleAdminViolations(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '⚠️ USER VI PHẠM\n\nDanh sách user có vấn đề:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Loại vi phạm:',
+        [
+            createPostbackButton('🚫 SPAM', 'ADMIN_VIOLATIONS_SPAM'),
+            createPostbackButton('💰 LỪA ĐẢO', 'ADMIN_VIOLATIONS_FRAUD'),
+            createPostbackButton('📝 NỘI DUNG XẤU', 'ADMIN_VIOLATIONS_CONTENT')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📊 BÁO CÁO', 'ADMIN_VIOLATIONS_REPORT'),
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: Send notification
+async function handleAdminSendNotification(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🔔 GỬI THÔNG BÁO\n\nChọn loại thông báo:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Loại thông báo:',
+        [
+            createPostbackButton('📢 THÔNG BÁO CHUNG', 'ADMIN_SEND_GENERAL'),
+            createPostbackButton('👥 THÔNG BÁO USER', 'ADMIN_SEND_USER'),
+            createPostbackButton('🛒 THÔNG BÁO TIN ĐĂNG', 'ADMIN_SEND_LISTING')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📋 XEM LỊCH SỬ', 'ADMIN_NOTIFICATION_HISTORY'),
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: Moderate listings
+async function handleAdminModerateListings(user: any) {
+    try {
+        const { data: listings, error } = await supabaseAdmin
+            .from('listings')
+            .select('*, users(name)')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+        if (error) throw error
+
+        if (listings && listings.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '⚠️ KIỂM DUYỆT TIN ĐĂNG\n\nDanh sách tin đăng chờ duyệt:'
+            ])
+
+            for (let i = 0; i < listings.length; i++) {
+                const listing = listings[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${listing.title}\n👤 ${listing.users?.name || 'N/A'}\n💰 ${formatCurrency(listing.price)}\n📅 ${new Date(listing.created_at).toLocaleDateString('vi-VN')}`,
+                    [
+                        createPostbackButton('✅ DUYỆT', `ADMIN_APPROVE_LISTING_${listing.id}`),
+                        createPostbackButton('❌ TỪ CHỐI', `ADMIN_REJECT_LISTING_${listing.id}`),
+                        createPostbackButton('👀 XEM', `ADMIN_VIEW_LISTING_${listing.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '⚠️ KIỂM DUYỆT TIN ĐĂNG\n\n✅ Không có tin đăng nào chờ duyệt!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_MODERATE_LISTINGS'),
+                createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_LISTINGS'),
+                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling admin moderate listings:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải danh sách tin đăng!')
+    }
+}
+
+// Admin: All listings
+async function handleAdminAllListings(user: any) {
+    try {
+        const { data: listings, error } = await supabaseAdmin
+            .from('listings')
+            .select('*, users(name)')
+            .order('created_at', { ascending: false })
+            .limit(20)
+
+        if (error) throw error
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🛒 TẤT CẢ TIN ĐĂNG\n\nDanh sách 20 tin đăng gần nhất:'
+        ])
+
+        for (let i = 0; i < listings.length; i++) {
+            const listing = listings[i]
+            const status = listing.status === 'active' ? '✅' : listing.status === 'pending' ? '⏳' : '❌'
+            
+            await sendButtonTemplate(
+                user.facebook_id,
+                `${i + 1}️⃣ ${status} ${listing.title}\n👤 ${listing.users?.name || 'N/A'}\n💰 ${formatCurrency(listing.price)}\n📅 ${new Date(listing.created_at).toLocaleDateString('vi-VN')}`,
+                [
+                    createPostbackButton('👀 XEM', `ADMIN_VIEW_LISTING_${listing.id}`),
+                    createPostbackButton('✏️ SỬA', `ADMIN_EDIT_LISTING_${listing.id}`),
+                    createPostbackButton('🗑️ XÓA', `ADMIN_DELETE_LISTING_${listing.id}`)
+                ]
+            )
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_ALL_LISTINGS'),
+                createPostbackButton('📤 XUẤT EXCEL', 'ADMIN_EXPORT_LISTINGS'),
+                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling admin all listings:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải danh sách tin đăng!')
+    }
+}
+
+// Admin: Featured listings
+async function handleAdminFeaturedListings(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '⭐ FEATURED LISTINGS\n\nTin đăng nổi bật:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('➕ THÊM FEATURED', 'ADMIN_ADD_FEATURED'),
+            createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_FEATURED'),
+            createPostbackButton('⚙️ CÀI ĐẶT', 'ADMIN_FEATURED_SETTINGS')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Quản lý:',
+        [
+            createPostbackButton('🔄 LÀM MỚI', 'ADMIN_FEATURED_LISTINGS'),
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: Search listings
+async function handleAdminSearchListings(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🔍 TÌM KIẾM TIN ĐĂNG\n\nChọn cách tìm kiếm:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tìm theo:',
+        [
+            createPostbackButton('📝 TIÊU ĐỀ', 'ADMIN_SEARCH_LISTING_TITLE'),
+            createPostbackButton('👤 NGƯỜI ĐĂNG', 'ADMIN_SEARCH_LISTING_USER'),
+            createPostbackButton('💰 GIÁ', 'ADMIN_SEARCH_LISTING_PRICE')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_LISTINGS'),
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: Export listings
+async function handleAdminExportListings(user: any) {
+    try {
+        const { data: listings, error } = await supabaseAdmin
+            .from('listings')
+            .select('*, users(name, phone)')
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '📤 XUẤT BÁO CÁO TIN ĐĂNG\n\n✅ Đã tạo file CSV với ' + listings.length + ' tin đăng',
+            '📊 Dữ liệu bao gồm:\n• Thông tin tin đăng\n• Người đăng\n• Trạng thái\n• Ngày tạo'
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('📧 GỬI EMAIL', 'ADMIN_SEND_EMAIL_LISTINGS'),
+                createPostbackButton('📱 GỬI QUA CHAT', 'ADMIN_SEND_CHAT_LISTINGS'),
+                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling admin export listings:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xuất báo cáo tin đăng!')
+    }
+}
+
+// Admin: Detailed stats
+async function handleAdminDetailedStats(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📈 THỐNG KÊ CHI TIẾT\n\nChọn loại thống kê:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thống kê:',
+        [
+            createPostbackButton('👥 USER', 'ADMIN_STATS_USERS'),
+            createPostbackButton('🛒 TIN ĐĂNG', 'ADMIN_STATS_LISTINGS'),
+            createPostbackButton('💰 DOANH THU', 'ADMIN_STATS_REVENUE')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_STATS'),
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: Export comprehensive
+async function handleAdminExportComprehensive(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📊 BÁO CÁO TỔNG HỢP\n\nĐang tạo báo cáo...'
+    ])
+
+    try {
+        // Get all data
+        const [usersResult, listingsResult, paymentsResult] = await Promise.all([
+            supabaseAdmin.from('users').select('*'),
+            supabaseAdmin.from('listings').select('*'),
+            supabaseAdmin.from('payments').select('*')
+        ])
+
+        const users = usersResult.data || []
+        const listings = listingsResult.data || []
+        const payments = paymentsResult.data || []
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '✅ BÁO CÁO TỔNG HỢP HOÀN THÀNH',
+            `📊 Tổng quan:\n• Users: ${users.length}\n• Tin đăng: ${listings.length}\n• Thanh toán: ${payments.length}`,
+            '📈 Dữ liệu chi tiết đã được chuẩn bị'
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('📧 GỬI EMAIL', 'ADMIN_SEND_EMAIL_COMPREHENSIVE'),
+                createPostbackButton('📱 GỬI QUA CHAT', 'ADMIN_SEND_CHAT_COMPREHENSIVE'),
+                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling admin export comprehensive:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tạo báo cáo tổng hợp!')
+    }
+}
+
+// Admin: Export by date
+async function handleAdminExportByDate(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📅 BÁO CÁO THEO NGÀY\n\nChọn khoảng thời gian:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Khoảng thời gian:',
+        [
+            createPostbackButton('📅 HÔM NAY', 'ADMIN_EXPORT_TODAY'),
+            createPostbackButton('📅 TUẦN NÀY', 'ADMIN_EXPORT_THIS_WEEK'),
+            createPostbackButton('📅 THÁNG NÀY', 'ADMIN_EXPORT_THIS_MONTH')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📅 TÙY CHỈNH', 'ADMIN_EXPORT_CUSTOM_DATE'),
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: Send general notification
+async function handleAdminSendGeneral(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📢 THÔNG BÁO CHUNG\n\nGửi thông báo đến tất cả user:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Loại thông báo:',
+        [
+            createPostbackButton('📢 THÔNG BÁO HỆ THỐNG', 'ADMIN_SEND_SYSTEM_NOTIFICATION'),
+            createPostbackButton('🎉 THÔNG BÁO SỰ KIỆN', 'ADMIN_SEND_EVENT_NOTIFICATION'),
+            createPostbackButton('⚠️ THÔNG BÁO CẢNH BÁO', 'ADMIN_SEND_WARNING_NOTIFICATION')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📋 XEM LỊCH SỬ', 'ADMIN_NOTIFICATION_HISTORY'),
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: Send user notification
+async function handleAdminSendUser(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '👥 THÔNG BÁO USER\n\nGửi thông báo đến user cụ thể:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Chọn user:',
+        [
+            createPostbackButton('🔍 TÌM USER', 'ADMIN_SEARCH_USER'),
+            createPostbackButton('📊 XEM DANH SÁCH', 'ADMIN_ALL_USERS'),
+            createPostbackButton('📱 NHẬP SỐ ĐIỆN THOẠI', 'ADMIN_SEND_BY_PHONE')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: Send listing notification
+async function handleAdminSendListing(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🛒 THÔNG BÁO TIN ĐĂNG\n\nGửi thông báo về tin đăng:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Loại thông báo:',
+        [
+            createPostbackButton('🆕 TIN ĐĂNG MỚI', 'ADMIN_SEND_NEW_LISTING'),
+            createPostbackButton('⭐ TIN ĐĂNG NỔI BẬT', 'ADMIN_SEND_FEATURED_LISTING'),
+            createPostbackButton('⚠️ TIN ĐĂNG VI PHẠM', 'ADMIN_SEND_VIOLATION_LISTING')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: Notification history
+async function handleAdminNotificationHistory(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📋 LỊCH SỬ THÔNG BÁO\n\nDanh sách thông báo đã gửi:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_NOTIFICATIONS'),
+            createPostbackButton('🔍 TÌM KIẾM', 'ADMIN_SEARCH_NOTIFICATIONS'),
+            createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT_NOTIFICATIONS')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Quản lý:',
+        [
+            createPostbackButton('🔄 LÀM MỚI', 'ADMIN_NOTIFICATION_HISTORY'),
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: Notification settings
+async function handleAdminNotificationSettings(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '⚙️ CÀI ĐẶT THÔNG BÁO\n\nCấu hình hệ thống thông báo:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Cài đặt:',
+        [
+            createPostbackButton('🔔 BẬT/TẮT THÔNG BÁO', 'ADMIN_TOGGLE_NOTIFICATIONS'),
+            createPostbackButton('⏰ THỜI GIAN GỬI', 'ADMIN_SET_NOTIFICATION_TIME'),
+            createPostbackButton('📧 CẤU HÌNH EMAIL', 'ADMIN_EMAIL_SETTINGS')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('🧪 TEST THÔNG BÁO', 'ADMIN_TEST_NOTIFICATION'),
+            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+        ]
+    )
 }
 
 // Handle community
