@@ -14,6 +14,8 @@ function verifySignature(payload: string, signature: string): boolean {
     return signature === `sha256=${expectedSignature}`
 }
 
+// Force rebuild - updated 2025-10-01
+
 // Handle GET request (webhook verification)
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
