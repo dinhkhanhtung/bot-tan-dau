@@ -257,7 +257,7 @@ export const HASHTAG_MAPPING = {
     '#chungcu': { category: 'BẤT ĐỘNG SẢN', keywords: ['chung cư', 'căn hộ'] },
     '#matbang': { category: 'BẤT ĐỘNG SẢN', keywords: ['mặt bằng', 'kinh doanh'] },
     '#bietthu': { category: 'BẤT ĐỘNG SẢN', keywords: ['biệt thự', 'villa'] },
-    
+
     // Ô tô
     '#oto': { category: 'Ô TÔ', keywords: ['ô tô', 'xe hơi'] },
     '#xemay': { category: 'Ô TÔ', keywords: ['xe máy', 'motor'] },
@@ -265,7 +265,7 @@ export const HASHTAG_MAPPING = {
     '#honda': { category: 'Ô TÔ', keywords: ['honda', 'xe honda'] },
     '#toyota': { category: 'Ô TÔ', keywords: ['toyota', 'xe toyota'] },
     '#yamaha': { category: 'Ô TÔ', keywords: ['yamaha', 'xe yamaha'] },
-    
+
     // Điện tử
     '#dienthoai': { category: 'ĐIỆN TỬ', keywords: ['điện thoại', 'smartphone'] },
     '#laptop': { category: 'ĐIỆN TỬ', keywords: ['laptop', 'máy tính'] },
@@ -273,21 +273,21 @@ export const HASHTAG_MAPPING = {
     '#samsung': { category: 'ĐIỆN TỬ', keywords: ['samsung', 'galaxy'] },
     '#maytinh': { category: 'ĐIỆN TỬ', keywords: ['máy tính', 'pc'] },
     '#tivi': { category: 'ĐIỆN TỬ', keywords: ['tivi', 'tv'] },
-    
+
     // Thời trang
     '#quanao': { category: 'THỜI TRANG', keywords: ['quần áo', 'thời trang'] },
     '#giaydep': { category: 'THỜI TRANG', keywords: ['giày dép', 'giày', 'dép'] },
     '#tui': { category: 'THỜI TRANG', keywords: ['túi', 'balo', 'ví'] },
     '#dongho': { category: 'THỜI TRANG', keywords: ['đồng hồ', 'watch'] },
     '#trangsuc': { category: 'THỜI TRANG', keywords: ['trang sức', 'nhẫn', 'dây chuyền'] },
-    
+
     // Ẩm thực
     '#monan': { category: 'ẨM THỰC', keywords: ['món ăn', 'thức ăn'] },
     '#comtrua': { category: 'ẨM THỰC', keywords: ['cơm trưa', 'cơm văn phòng'] },
     '#banh': { category: 'ẨM THỰC', keywords: ['bánh', 'bánh ngọt'] },
     '#traicay': { category: 'ẨM THỰC', keywords: ['trái cây', 'hoa quả'] },
     '#cafe': { category: 'ẨM THỰC', keywords: ['cà phê', 'coffee'] },
-    
+
     // Dịch vụ
     '#giasu': { category: 'DỊCH VỤ', keywords: ['gia sư', 'dạy kèm'] },
     '#massage': { category: 'DỊCH VỤ', keywords: ['massage', 'xoa bóp'] },
@@ -297,19 +297,19 @@ export const HASHTAG_MAPPING = {
     '#nauan': { category: 'DỊCH VỤ', keywords: ['nấu ăn', 'đầu bếp'] },
     '#trongtre': { category: 'DỊCH VỤ', keywords: ['trông trẻ', 'babysitter'] },
     '#dondep': { category: 'DỊCH VỤ', keywords: ['dọn dẹp', 'giúp việc'] },
-    
+
     // Địa điểm
     '#hanoi': { category: null, location: 'HÀ NỘI', keywords: ['hà nội', 'hanoi'] },
     '#hcm': { category: null, location: 'TP.HỒ CHÍ MINH', keywords: ['hồ chí minh', 'hcm', 'sài gòn'] },
     '#danang': { category: null, location: 'ĐÀ NẴNG', keywords: ['đà nẵng', 'danang'] },
     '#haiphong': { category: null, location: 'HẢI PHÒNG', keywords: ['hải phòng', 'haiphong'] },
     '#cantho': { category: null, location: 'CẦN THƠ', keywords: ['cần thơ', 'cantho'] },
-    
+
     // Giá cả
     '#re': { category: null, location: null, keywords: ['rẻ', 'giá rẻ', 'khuyến mãi'] },
     '#cao': { category: null, location: null, keywords: ['cao cấp', 'premium', 'đắt'] },
     '#mienphi': { category: null, location: null, keywords: ['miễn phí', 'free', 'tặng'] },
-    
+
     // Trạng thái
     '#moi': { category: null, location: null, keywords: ['mới', 'mới tinh', 'chưa sử dụng'] },
     '#cu': { category: null, location: null, keywords: ['cũ', 'đã sử dụng', 'second hand'] },
@@ -459,7 +459,7 @@ export const SEARCH_HELPERS = {
     // Hashtag functions
     findHashtagByKeyword: (keyword: string): string | null => {
         const normalizedKeyword = keyword.toLowerCase().trim()
-        
+
         for (const [hashtag, mapping] of Object.entries(HASHTAG_MAPPING)) {
             if (hashtag.toLowerCase() === normalizedKeyword) {
                 return hashtag
@@ -469,7 +469,7 @@ export const SEARCH_HELPERS = {
                 return hashtag
             }
         }
-        
+
         return null
     },
 
@@ -481,7 +481,7 @@ export const SEARCH_HELPERS = {
         const hashtagRegex = /#\w+/g
         const hashtags = query.match(hashtagRegex) || []
         const remainingQuery = query.replace(hashtagRegex, '').trim()
-        
+
         return { hashtags, remainingQuery }
     },
 
@@ -491,7 +491,7 @@ export const SEARCH_HELPERS = {
 
     searchWithHashtags: (listings: any[], query: string): any[] => {
         const { hashtags, remainingQuery } = SEARCH_HELPERS.parseHashtags(query)
-        
+
         if (hashtags.length === 0) {
             return SEARCH_HELPERS.searchListings(listings, query)
         }
@@ -504,13 +504,13 @@ export const SEARCH_HELPERS = {
             if (!mapping) continue
 
             if (mapping.category) {
-                filteredListings = filteredListings.filter(listing => 
+                filteredListings = filteredListings.filter(listing =>
                     listing.category === mapping.category
                 )
             }
 
             if ('location' in mapping && mapping.location) {
-                filteredListings = filteredListings.filter(listing => 
+                filteredListings = filteredListings.filter(listing =>
                     listing.location?.toLowerCase().includes(mapping.location!.toLowerCase())
                 )
             }
@@ -519,7 +519,7 @@ export const SEARCH_HELPERS = {
             if (mapping.keywords.length > 0) {
                 filteredListings = filteredListings.filter(listing => {
                     const searchText = `${listing.title} ${listing.description}`.toLowerCase()
-                    return mapping.keywords.some(keyword => 
+                    return mapping.keywords.some(keyword =>
                         searchText.includes(keyword.toLowerCase())
                     )
                 })

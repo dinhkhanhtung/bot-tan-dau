@@ -22,13 +22,22 @@ export async function handleListing(user: any) {
         'Chọn loại tin đăng bạn muốn đăng:'
     ])
 
+    // Send first set of categories
     await sendButtonTemplate(
         user.facebook_id,
         'Chọn danh mục:',
         [
             createPostbackButton('🏠 BẤT ĐỘNG SẢN', 'LISTING_CATEGORY_REAL_ESTATE'),
             createPostbackButton('🚗 Ô TÔ', 'LISTING_CATEGORY_CAR'),
-            createPostbackButton('📱 ĐIỆN TỬ', 'LISTING_CATEGORY_ELECTRONICS'),
+            createPostbackButton('📱 ĐIỆN TỬ', 'LISTING_CATEGORY_ELECTRONICS')
+        ]
+    )
+
+    // Send second set of categories
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tiếp tục chọn:',
+        [
             createPostbackButton('👕 THỜI TRANG', 'LISTING_CATEGORY_FASHION'),
             createPostbackButton('🍽️ ẨM THỰC', 'LISTING_CATEGORY_FOOD'),
             createPostbackButton('🔧 DỊCH VỤ', 'LISTING_CATEGORY_SERVICE')
@@ -141,23 +150,66 @@ async function handleListingDescriptionInput(user: any, text: string, data: any)
         'Bước 4/5: Vị trí cụ thể\n📍 Vui lòng chọn vị trí cụ thể:'
     ])
 
-    // Show location buttons based on main location
-    const locationButtons = Object.entries(DISTRICTS).flatMap(([province, districts]) =>
-        districts.map((district: string) =>
-            createPostbackButton(`🏠 ${district}`, `LISTING_LOCATION_${district}`)
-        )
-    )
-
+    // Show location buttons - only major cities first
+    const majorCities = ['HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ']
+    
     await sendButtonTemplate(
         user.facebook_id,
-        'Chọn vị trí:',
-        locationButtons
+        'Chọn thành phố:',
+        majorCities.map(city => 
+            createPostbackButton(`🏙️ ${city}`, `LISTING_CITY_${city}`)
+        )
     )
 
     await updateBotSession(user.facebook_id, {
         step: 'location',
         data: data
     })
+}
+
+// Handle city selection
+export async function handleListingCity(user: any, city: string) {
+    await sendTypingIndicator(user.facebook_id)
+
+    const session = await getBotSession(user.facebook_id)
+    if (!session || session.current_flow !== 'listing') return
+
+    const data = session.data as any
+    data.city = city
+
+    // Show districts for selected city
+    const districts = DISTRICTS[city as keyof typeof DISTRICTS] || []
+    
+    if (districts.length === 0) {
+        // No districts, use city as location
+        data.location = city
+        await handleListingLocation(user, city)
+        return
+    }
+
+    // Show first 3 districts
+    const firstDistricts = districts.slice(0, 3)
+    const remainingDistricts = districts.slice(3)
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        `Chọn quận/huyện tại ${city}:`,
+        firstDistricts.map(district => 
+            createPostbackButton(`🏠 ${district}`, `LISTING_LOCATION_${district}`)
+        )
+    )
+
+    if (remainingDistricts.length > 0) {
+        // Show more districts if available
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Xem thêm:',
+            [
+                createPostbackButton('📋 XEM TẤT CẢ', `LISTING_DISTRICTS_${city}`),
+                createPostbackButton('🏙️ CHỌN THÀNH PHỐ KHÁC', 'LISTING_LOCATION_SELECT')
+            ]
+        )
+    }
 }
 
 // Handle location selection
@@ -538,7 +590,7 @@ export async function handleSearchKeyword(user: any) {
     await sendButtonTemplate(
         user.facebook_id,
         'Hashtag phổ biến:',
-        popularHashtags.map(hashtag => 
+        popularHashtags.map(hashtag =>
             createPostbackButton(hashtag, `SEARCH_HASHTAG_${hashtag}`)
         )
     )
@@ -563,14 +615,14 @@ export async function handleSearchKeyword(user: any) {
 // Handle search keyword from suggestion
 export async function handleSearchKeywordSuggestion(user: any, suggestion: string) {
     await sendTypingIndicator(user.facebook_id)
-    
+
     // Set search session and process the suggestion
     await updateBotSession(user.facebook_id, {
         current_flow: 'search',
         step: 'keyword',
         data: { type: 'keyword', keyword: suggestion }
     })
-    
+
     // Process the suggestion as if user typed it
     await handleSearchKeywordInput(user, suggestion, { keyword: suggestion })
 }
@@ -578,14 +630,14 @@ export async function handleSearchKeywordSuggestion(user: any, suggestion: strin
 // Handle hashtag search
 export async function handleSearchHashtag(user: any, hashtag: string) {
     await sendTypingIndicator(user.facebook_id)
-    
+
     // Set search session and process the hashtag
     await updateBotSession(user.facebook_id, {
         current_flow: 'search',
         step: 'keyword',
         data: { type: 'hashtag', keyword: hashtag }
     })
-    
+
     // Process the hashtag as if user typed it
     await handleSearchKeywordInput(user, hashtag, { keyword: hashtag })
 }
@@ -616,7 +668,7 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
     try {
         // Check if query contains hashtags
         const { hashtags, remainingQuery } = SEARCH_HELPERS.parseHashtags(query)
-        
+
         let listings: any[] = []
         let searchMessage = ''
 
@@ -637,7 +689,7 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
         } else {
             // Regular smart search: Parse query for category, location, and keywords
             const searchParams = parseSearchQuery(query)
-            
+
             if (searchParams.category && searchParams.location) {
                 // Search by both category and location
                 const { data: categoryListings, error: categoryError } = await supabaseAdmin

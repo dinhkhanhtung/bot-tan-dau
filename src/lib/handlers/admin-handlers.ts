@@ -23,6 +23,10 @@ function isAdmin(facebookId: string): boolean {
 
 // Handle admin command
 export async function handleAdminCommand(user: any) {
+    console.log('Admin command called by:', user.facebook_id)
+    console.log('Admin IDs:', getAdminIds())
+    console.log('Is admin:', isAdmin(user.facebook_id))
+    
     if (!isAdmin(user.facebook_id)) {
         await sendMessage(user.facebook_id, '❌ Bạn không có quyền truy cập!')
         return
@@ -35,18 +39,25 @@ export async function handleAdminCommand(user: any) {
         'Bạn muốn quản lý gì?'
     ])
     
+    // First set of admin functions
     await sendButtonTemplate(
         user.facebook_id,
         'Chức năng admin:',
         [
             createPostbackButton('💰 THANH TOÁN', 'ADMIN_PAYMENTS'),
             createPostbackButton('👥 USER', 'ADMIN_USERS'),
-            createPostbackButton('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS'),
+            createPostbackButton('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS')
+        ]
+    )
+
+    // Second set of admin functions
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tiếp tục:',
+        [
             createPostbackButton('📊 THỐNG KÊ', 'ADMIN_STATS'),
-            createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT'),
             createPostbackButton('🔔 THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
-            createPostbackButton('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS'),
-            createPostbackButton('👨‍💼 QUẢN LÝ ADMIN', 'ADMIN_MANAGE_ADMINS')
+            createPostbackButton('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS')
         ]
     )
 }

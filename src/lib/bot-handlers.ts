@@ -130,6 +130,8 @@ export async function handlePostback(user: any, postback: string) {
             case 'LISTING':
                 if (params[0] === 'CATEGORY') {
                     await MarketplaceHandlers.handleListingCategory(user, params[1])
+                } else if (params[0] === 'CITY') {
+                    await MarketplaceHandlers.handleListingCity(user, params[1])
                 } else if (params[0] === 'LOCATION') {
                     await MarketplaceHandlers.handleListingLocation(user, params[1])
                 } else if (params[0] === 'CONFIRM') {
