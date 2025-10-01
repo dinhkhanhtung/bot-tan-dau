@@ -116,15 +116,38 @@ async function handleMessageEvent(event: any) {
         const user = await getUserByFacebookId(senderId)
         if (!user) {
             console.log('User not found for facebook_id:', senderId)
-            // Let bot handlers deal with new users
-            const { handleMessage } = await import('@/lib/bot-handlers')
-            await handleMessage(null, message.text || '')
+            // Send welcome message for new users
+            try {
+                const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
+                await sendMessage(senderId, '👋 Chào mừng bạn đến với Bot Tân Dậu 1981!')
+                await sendMessage(senderId, 'Để sử dụng bot, bạn cần đăng ký tài khoản trước.')
+                
+                await sendQuickReply(
+                    senderId,
+                    'Bạn muốn:',
+                    [
+                        createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+                        createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
+                        createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
+                    ]
+                )
+            } catch (error) {
+                console.error('Error sending welcome message:', error)
+            }
             return
         }
 
         // Handle different message types
         if (message.text) {
-            await handleTextMessage(user, message.text)
+            // Check if it's a quick reply
+            if (message.quick_reply && message.quick_reply.payload) {
+                await handlePostbackEvent({
+                    sender: { id: senderId },
+                    postback: { payload: message.quick_reply.payload }
+                })
+            } else {
+                await handleTextMessage(user, message.text)
+            }
         } else if (message.attachments) {
             await handleAttachmentMessage(user, message.attachments)
         }
