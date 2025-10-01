@@ -165,36 +165,33 @@ async function handleMessageEvent(event: any) {
         if (!user) {
             console.log('User not found for facebook_id:', senderId)
 
-            // Check if it's an admin command first
-            if (message.text === '/admin') {
-                try {
-                    const { isAdmin } = await import('@/lib/handlers/admin-handlers')
-                    const isAdminUser = await isAdmin(senderId)
-                    if (isAdminUser) {
-                        console.log('Admin user detected:', senderId)
-                        // Create a temporary user object for admin
-                        const adminUser = {
-                            facebook_id: senderId,
-                            status: 'admin',
-                            name: 'Admin',
-                            membership_expires_at: null
-                        }
-
+            // Check if it's an admin first (for any message type)
+            try {
+                const { isAdmin } = await import('@/lib/handlers/admin-handlers')
+                const isAdminUser = await isAdmin(senderId)
+                if (isAdminUser) {
+                    console.log('Admin user detected:', senderId)
+                    // Create a temporary user object for admin
+                    const adminUser = {
+                        facebook_id: senderId,
+                        status: 'admin',
+                        name: 'Admin',
+                        membership_expires_at: null
+                    }
+                    
+                    // Handle admin command or regular message
+                    if (message.text === '/admin') {
                         const { handleAdminCommand } = await import('@/lib/handlers/admin-handlers')
                         await handleAdminCommand(adminUser)
-                        return
                     } else {
-                        // Not admin, send access denied
-                        const { sendMessage } = await import('@/lib/facebook-api')
-                        await sendMessage(senderId, '❌ Bạn không có quyền truy cập!')
-                        return
+                        // Handle regular message for admin
+                        const { handleMessage } = await import('@/lib/bot-handlers')
+                        await handleMessage(adminUser, message.text || '')
                     }
-                } catch (error) {
-                    console.error('Error checking admin status:', error)
-                    const { sendMessage } = await import('@/lib/facebook-api')
-                    await sendMessage(senderId, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
                     return
                 }
+            } catch (error) {
+                console.error('Error checking admin status:', error)
             }
 
 
