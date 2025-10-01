@@ -81,6 +81,12 @@ export async function handleMessage(user: any, text: string) {
             return
         }
 
+        // Check if user is in search flow
+        if (session && session.current_flow === 'search') {
+            await handleSearchStep(user, text, session)
+            return
+        }
+
         // Handle different message types
         if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
             await handleRegistration(user)
@@ -170,6 +176,39 @@ export async function handlePostback(user: any, payload: string) {
             case 'MY':
                 if (params[0] === 'LISTINGS') {
                     await handleMyListings(user)
+                }
+                break
+            case 'VIEW':
+                if (params[0] === 'LISTING') {
+                    await handleViewListing(user, params[1])
+                }
+                break
+            case 'CONTACT':
+                if (params[0] === 'SELLER') {
+                    await handleContactSeller(user, params[1])
+                }
+                break
+            case 'RATE':
+                if (params[0] === 'SELLER') {
+                    await handleRateSeller(user, params[1])
+                } else if (params[0] && params[0].startsWith('RATE_')) {
+                    const rating = parseInt(params[0].split('_')[1])
+                    const sellerId = params[1]
+                    await handleRateSubmission(user, sellerId, rating)
+                }
+                break
+            case 'SEARCH':
+                if (params[0] === 'LOCATION') {
+                    const location = params.slice(1).join('_')
+                    await handleSearchLocation(user, location)
+                } else if (params[0] === 'ALL' && params[1] === 'LOCATIONS') {
+                    await handleSearchAllLocations(user)
+                } else if (params[0] === 'BY' && params[1] === 'PRICE') {
+                    await handleSearchByPrice(user)
+                } else if (params[0] === 'BY' && params[1] === 'RATING') {
+                    await handleSearchByRating(user)
+                } else if (params[0] === 'BY' && params[1] === 'DATE') {
+                    await handleSearchByDate(user)
                 }
                 break
             case 'COMMUNITY':
@@ -809,26 +848,71 @@ async function handleSearchCategory(user: any, category: string) {
             createPostbackButton('🏘️ ĐÀ NẴNG', 'SEARCH_LOCATION_ĐÀ NẴNG')
         ]
     )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('🌍 TẤT CẢ VỊ TRÍ', 'SEARCH_ALL_LOCATIONS'),
+            createPostbackButton('🔙 CHỌN LẠI DANH MỤC', 'SEARCH')
+        ]
+    )
+
+    // Store search session
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'search',
+        current_step: 1,
+        data: { category: category }
+    })
 }
 
 // Handle search advanced
 async function handleSearchAdvanced(user: any) {
     await sendMessagesWithTyping(user.facebook_id, [
-        '🎯 TÌM KIẾM NÂNG CAO\n\nTính năng này đang được phát triển!',
-        'Hiện tại bạn có thể sử dụng tìm kiếm theo danh mục ở trên.'
+        '🎯 TÌM KIẾM NÂNG CAO\n\nChọn tiêu chí tìm kiếm:'
     ])
 
-    await showMainMenu(user)
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tìm theo:',
+        [
+            createPostbackButton('💰 GIÁ', 'SEARCH_BY_PRICE'),
+            createPostbackButton('⭐ ĐÁNH GIÁ', 'SEARCH_BY_RATING'),
+            createPostbackButton('📅 NGÀY ĐĂNG', 'SEARCH_BY_DATE')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('🔍 TÌM THEO TỪ KHÓA', 'SEARCH_KEYWORD'),
+            createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+        ]
+    )
 }
 
 // Handle search keyword
 async function handleSearchKeyword(user: any) {
     await sendMessagesWithTyping(user.facebook_id, [
-        '🔍 TÌM THEO TỪ KHÓA\n\nTính năng này đang được phát triển!',
-        'Hiện tại bạn có thể sử dụng tìm kiếm theo danh mục ở trên.'
+        '🔍 TÌM THEO TỪ KHÓA\n\nNhập từ khóa bạn muốn tìm:\n\nVD: "nhà 3 tầng", "xe honda", "điện thoại samsung"'
     ])
 
-    await showMainMenu(user)
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hoặc chọn:',
+        [
+            createPostbackButton('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
+            createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+        ]
+    )
+
+    // Store search session for keyword input
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'search',
+        current_step: 0,
+        data: { type: 'keyword' }
+    })
 }
 
 // Handle buy & sell for new users
@@ -1990,7 +2074,7 @@ async function handleListingTitleInput(user: any, text: string, data: any) {
     }
 
     data.title = text.trim()
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Tiêu đề: ${data.title}`,
         'Bước 2/6: Giá bán\n💰 Nhập giá bán (VND):\n\nVD: 500000000 (500 triệu)'
@@ -2015,7 +2099,7 @@ async function handleListingTitleInput(user: any, text: string, data: any) {
 // Handle listing price input
 async function handleListingPriceInput(user: any, text: string, data: any) {
     let price = text.trim()
-    
+
     // Handle negotiable price
     if (price.includes('thương lượng') || price.includes('THƯƠNG LƯỢNG')) {
         price = 'Thương lượng'
@@ -2031,7 +2115,7 @@ async function handleListingPriceInput(user: any, text: string, data: any) {
     }
 
     data.price = price
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Giá: ${data.price}`,
         'Bước 3/6: Mô tả chi tiết\n📝 Nhập mô tả sản phẩm/dịch vụ:\n\n• Tình trạng\n• Đặc điểm nổi bật\n• Thông tin liên hệ'
@@ -2061,7 +2145,7 @@ async function handleListingDescriptionInput(user: any, text: string, data: any)
     }
 
     data.description = text.trim()
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Mô tả: ${data.description.substring(0, 50)}...`,
         'Bước 4/6: Vị trí\n📍 Chọn vị trí của sản phẩm/dịch vụ:'
@@ -2096,7 +2180,7 @@ async function handleListingDescriptionInput(user: any, text: string, data: any)
 // Handle listing location input
 async function handleListingLocationInput(user: any, text: string, data: any) {
     data.location = text.trim()
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Vị trí: ${data.location}`,
         'Bước 5/6: Hình ảnh\n📸 Gửi hình ảnh sản phẩm/dịch vụ:\n\n• Tối đa 5 hình\n• Chất lượng rõ nét\n• Góc chụp đẹp'
@@ -2328,7 +2412,7 @@ async function handleListingSubmit(user: any) {
 
     try {
         const data = session.data || {}
-        
+
         // Create listing in database
         const { data: newListing, error } = await supabaseAdmin
             .from('listings')
@@ -2397,7 +2481,7 @@ async function handleMyListings(user: any) {
             for (let i = 0; i < listings.length; i++) {
                 const listing = listings[i]
                 const status = listing.status === 'active' ? '✅' : listing.status === 'pending' ? '⏳' : '❌'
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${status} ${listing.title}\n💰 ${formatCurrency(listing.price)}\n📅 ${new Date(listing.created_at).toLocaleDateString('vi-VN')}`,
@@ -2426,6 +2510,549 @@ async function handleMyListings(user: any) {
     } catch (error) {
         console.error('Error handling my listings:', error)
         await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải danh sách tin đăng!')
+    }
+}
+
+// Handle search step
+async function handleSearchStep(user: any, text: string, session: any) {
+    const step = session.current_step
+    const data = session.data || {}
+
+    if (data.type === 'keyword') {
+        await handleSearchKeywordInput(user, text, data)
+    } else {
+        // Handle location selection
+        await handleSearchLocationInput(user, text, data)
+    }
+}
+
+// Handle search keyword input
+async function handleSearchKeywordInput(user: any, text: string, data: any) {
+    if (text.length < 2) {
+        await sendMessage(user.facebook_id, 'Từ khóa quá ngắn! Vui lòng nhập ít nhất 2 ký tự.')
+        return
+    }
+
+    data.keyword = text.trim()
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        `🔍 Tìm kiếm: "${data.keyword}"\n\nĐang tìm kiếm...`
+    ])
+
+    try {
+        // Search listings by keyword
+        const { data: listings, error } = await supabaseAdmin
+            .from('listings')
+            .select('*, users(name, phone, location)')
+            .or(`title.ilike.%${data.keyword}%,description.ilike.%${data.keyword}%`)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+        if (error) throw error
+
+        if (listings && listings.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                `✅ Tìm thấy ${listings.length} kết quả cho "${data.keyword}":`
+            ])
+
+            for (let i = 0; i < listings.length; i++) {
+                const listing = listings[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
+                    [
+                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createPostbackButton('💬 LIÊN HỆ', `CONTACT_SELLER_${listing.user_id}`),
+                        createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                `❌ Không tìm thấy kết quả nào cho "${data.keyword}"`,
+                '💡 Thử với từ khóa khác hoặc tìm kiếm theo danh mục'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔍 TÌM LẠI', 'SEARCH_KEYWORD'),
+                createPostbackButton('🎯 TÌM NÂNG CAO', 'SEARCH_ADVANCED'),
+                createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+            ]
+        )
+
+        // Clear search session
+        await updateBotSession(user.facebook_id, {
+            current_flow: null,
+            current_step: null,
+            data: {}
+        })
+    } catch (error) {
+        console.error('Error searching listings:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle search location input
+async function handleSearchLocationInput(user: any, text: string, data: any) {
+    data.location = text.trim()
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        `🔍 Tìm kiếm: ${data.category} tại ${data.location}\n\nĐang tìm kiếm...`
+    ])
+
+    try {
+        // Search listings by category and location
+        const { data: listings, error } = await supabaseAdmin
+            .from('listings')
+            .select('*, users(name, phone, location)')
+            .eq('category', data.category)
+            .eq('status', 'active')
+            .ilike('location', `%${data.location}%`)
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+        if (error) throw error
+
+        if (listings && listings.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                `✅ Tìm thấy ${listings.length} kết quả cho ${data.category} tại ${data.location}:`
+            ])
+
+            for (let i = 0; i < listings.length; i++) {
+                const listing = listings[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
+                    [
+                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createPostbackButton('💬 LIÊN HỆ', `CONTACT_SELLER_${listing.user_id}`),
+                        createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                `❌ Không tìm thấy kết quả nào cho ${data.category} tại ${data.location}`,
+                '💡 Thử tìm kiếm ở vị trí khác hoặc danh mục khác'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔍 TÌM LẠI', 'SEARCH'),
+                createPostbackButton('🎯 TÌM NÂNG CAO', 'SEARCH_ADVANCED'),
+                createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+
+        // Clear search session
+        await updateBotSession(user.facebook_id, {
+            current_flow: null,
+            current_step: null,
+            data: {}
+        })
+    } catch (error) {
+        console.error('Error searching listings:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle view listing details
+async function handleViewListing(user: any, listingId: string) {
+    try {
+        const { data: listing, error } = await supabaseAdmin
+            .from('listings')
+            .select('*, users(name, phone, location, rating)')
+            .eq('id', listingId)
+            .single()
+
+        if (error || !listing) {
+            await sendMessage(user.facebook_id, 'Không tìm thấy tin đăng này!')
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            `📋 CHI TIẾT TIN ĐĂNG\n\n📝 ${listing.title}\n💰 ${formatCurrency(listing.price)}\n📍 ${listing.location}\n📂 ${listing.category}`,
+            `👤 Người đăng: ${listing.users?.name || 'N/A'}\n📱 SĐT: ${listing.users?.phone || 'N/A'}\n⭐ Đánh giá: ${listing.users?.rating || 0}/5`,
+            `📝 Mô tả:\n${listing.description}`
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('💬 LIÊN HỆ NGƯỜI BÁN', `CONTACT_SELLER_${listing.user_id}`),
+                createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`),
+                createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+            ]
+        )
+    } catch (error) {
+        console.error('Error viewing listing:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xem chi tiết tin đăng!')
+    }
+}
+
+// Handle contact seller
+async function handleContactSeller(user: any, sellerId: string) {
+    try {
+        const { data: seller, error } = await supabaseAdmin
+            .from('users')
+            .select('name, phone, facebook_id')
+            .eq('id', sellerId)
+            .single()
+
+        if (error || !seller) {
+            await sendMessage(user.facebook_id, 'Không tìm thấy thông tin người bán!')
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '💬 LIÊN HỆ NGƯỜI BÁN\n\nThông tin liên hệ:',
+            `👤 Tên: ${seller.name}\n📱 SĐT: ${seller.phone}\n🆔 Facebook ID: ${seller.facebook_id}`
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('📞 GỌI ĐIỆN', `CALL_${seller.phone}`),
+                createPostbackButton('💬 NHẮN TIN FACEBOOK', `MESSAGE_${seller.facebook_id}`),
+                createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+            ]
+        )
+    } catch (error) {
+        console.error('Error contacting seller:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi lấy thông tin liên hệ!')
+    }
+}
+
+// Handle rate seller
+async function handleRateSeller(user: any, sellerId: string) {
+    try {
+        const { data: seller, error } = await supabaseAdmin
+            .from('users')
+            .select('name, rating')
+            .eq('id', sellerId)
+            .single()
+
+        if (error || !seller) {
+            await sendMessage(user.facebook_id, 'Không tìm thấy thông tin người bán!')
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            `⭐ ĐÁNH GIÁ NGƯỜI BÁN\n\n👤 ${seller.name}\n⭐ Đánh giá hiện tại: ${seller.rating || 0}/5`,
+            'Chọn mức độ hài lòng:'
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Đánh giá:',
+            [
+                createPostbackButton('⭐ 1 SAO', `RATE_1_${sellerId}`),
+                createPostbackButton('⭐⭐ 2 SAO', `RATE_2_${sellerId}`),
+                createPostbackButton('⭐⭐⭐ 3 SAO', `RATE_3_${sellerId}`)
+            ]
+        )
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tiếp tục:',
+            [
+                createPostbackButton('⭐⭐⭐⭐ 4 SAO', `RATE_4_${sellerId}`),
+                createPostbackButton('⭐⭐⭐⭐⭐ 5 SAO', `RATE_5_${sellerId}`),
+                createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+            ]
+        )
+    } catch (error) {
+        console.error('Error rating seller:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi đánh giá!')
+    }
+}
+
+// Handle search location selection
+async function handleSearchLocation(user: any, location: string) {
+    const session = await getBotSession(user.facebook_id)
+    if (!session || session.current_flow !== 'search') {
+        await sendMessage(user.facebook_id, 'Vui lòng bắt đầu tìm kiếm lại.')
+        return
+    }
+
+    const data = session.data || {}
+    data.location = location
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        `🔍 Tìm kiếm: ${data.category} tại ${location}\n\nĐang tìm kiếm...`
+    ])
+
+    try {
+        // Search listings by category and location
+        const { data: listings, error } = await supabaseAdmin
+            .from('listings')
+            .select('*, users(name, phone, location)')
+            .eq('category', data.category)
+            .eq('status', 'active')
+            .ilike('location', `%${location}%`)
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+        if (error) throw error
+
+        if (listings && listings.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                `✅ Tìm thấy ${listings.length} kết quả cho ${data.category} tại ${location}:`
+            ])
+
+            for (let i = 0; i < listings.length; i++) {
+                const listing = listings[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
+                    [
+                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createPostbackButton('💬 LIÊN HỆ', `CONTACT_SELLER_${listing.user_id}`),
+                        createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                `❌ Không tìm thấy kết quả nào cho ${data.category} tại ${location}`,
+                '💡 Thử tìm kiếm ở vị trí khác hoặc danh mục khác'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔍 TÌM LẠI', 'SEARCH'),
+                createPostbackButton('🎯 TÌM NÂNG CAO', 'SEARCH_ADVANCED'),
+                createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+
+        // Clear search session
+        await updateBotSession(user.facebook_id, {
+            current_flow: null,
+            current_step: null,
+            data: {}
+        })
+    } catch (error) {
+        console.error('Error searching listings:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle search all locations
+async function handleSearchAllLocations(user: any) {
+    const session = await getBotSession(user.facebook_id)
+    if (!session || session.current_flow !== 'search') {
+        await sendMessage(user.facebook_id, 'Vui lòng bắt đầu tìm kiếm lại.')
+        return
+    }
+
+    const data = session.data || {}
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        `🔍 Tìm kiếm: ${data.category} (Tất cả vị trí)\n\nĐang tìm kiếm...`
+    ])
+
+    try {
+        // Search listings by category only
+        const { data: listings, error } = await supabaseAdmin
+            .from('listings')
+            .select('*, users(name, phone, location)')
+            .eq('category', data.category)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+        if (error) throw error
+
+        if (listings && listings.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                `✅ Tìm thấy ${listings.length} kết quả cho ${data.category}:`
+            ])
+
+            for (let i = 0; i < listings.length; i++) {
+                const listing = listings[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
+                    [
+                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createPostbackButton('💬 LIÊN HỆ', `CONTACT_SELLER_${listing.user_id}`),
+                        createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                `❌ Không tìm thấy kết quả nào cho ${data.category}`,
+                '💡 Thử tìm kiếm danh mục khác'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔍 TÌM LẠI', 'SEARCH'),
+                createPostbackButton('🎯 TÌM NÂNG CAO', 'SEARCH_ADVANCED'),
+                createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+
+        // Clear search session
+        await updateBotSession(user.facebook_id, {
+            current_flow: null,
+            current_step: null,
+            data: {}
+        })
+    } catch (error) {
+        console.error('Error searching listings:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle search by price
+async function handleSearchByPrice(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '💰 TÌM KIẾM THEO GIÁ\n\nChọn khoảng giá:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Khoảng giá:',
+        [
+            createPostbackButton('💵 DƯỚI 100 TRIỆU', 'SEARCH_PRICE_UNDER_100M'),
+            createPostbackButton('💵 100-500 TRIỆU', 'SEARCH_PRICE_100_500M'),
+            createPostbackButton('💵 500 TRIỆU - 1 TỶ', 'SEARCH_PRICE_500M_1B')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tiếp tục:',
+        [
+            createPostbackButton('💵 1-5 TỶ', 'SEARCH_PRICE_1_5B'),
+            createPostbackButton('💵 TRÊN 5 TỶ', 'SEARCH_PRICE_OVER_5B'),
+            createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+        ]
+    )
+}
+
+// Handle search by rating
+async function handleSearchByRating(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '⭐ TÌM KIẾM THEO ĐÁNH GIÁ\n\nChọn mức đánh giá:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Mức đánh giá:',
+        [
+            createPostbackButton('⭐⭐⭐⭐⭐ 5 SAO', 'SEARCH_RATING_5'),
+            createPostbackButton('⭐⭐⭐⭐ 4 SAO TRỞ LÊN', 'SEARCH_RATING_4_PLUS'),
+            createPostbackButton('⭐⭐⭐ 3 SAO TRỞ LÊN', 'SEARCH_RATING_3_PLUS')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+        ]
+    )
+}
+
+// Handle search by date
+async function handleSearchByDate(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📅 TÌM KIẾM THEO NGÀY\n\nChọn khoảng thời gian:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Khoảng thời gian:',
+        [
+            createPostbackButton('📅 HÔM NAY', 'SEARCH_DATE_TODAY'),
+            createPostbackButton('📅 TUẦN NÀY', 'SEARCH_DATE_THIS_WEEK'),
+            createPostbackButton('📅 THÁNG NÀY', 'SEARCH_DATE_THIS_MONTH')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📅 3 NGÀY QUA', 'SEARCH_DATE_LAST_3_DAYS'),
+            createPostbackButton('📅 7 NGÀY QUA', 'SEARCH_DATE_LAST_7_DAYS'),
+            createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+        ]
+    )
+}
+
+// Handle rate submission
+async function handleRateSubmission(user: any, sellerId: string, rating: number) {
+    try {
+        // Create rating record
+        const { error } = await supabaseAdmin
+            .from('ratings')
+            .insert({
+                rater_id: user.id,
+                rated_id: sellerId,
+                rating: rating,
+                type: 'seller'
+            })
+
+        if (error) throw error
+
+        // Update seller's average rating
+        const { data: ratings, error: ratingsError } = await supabaseAdmin
+            .from('ratings')
+            .select('rating')
+            .eq('rated_id', sellerId)
+            .eq('type', 'seller')
+
+        if (!ratingsError && ratings) {
+            const averageRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+            
+            await supabaseAdmin
+                .from('users')
+                .update({ rating: Math.round(averageRating * 100) / 100 })
+                .eq('id', sellerId)
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '✅ ĐÁNH GIÁ THÀNH CÔNG!',
+            `⭐ Bạn đã đánh giá ${rating}/5 sao\nCảm ơn bạn đã đóng góp cho cộng đồng!`
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔍 TIẾP TỤC TÌM KIẾM', 'SEARCH'),
+                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+    } catch (error) {
+        console.error('Error submitting rating:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi đánh giá. Vui lòng thử lại sau!')
     }
 }
 
