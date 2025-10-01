@@ -159,30 +159,39 @@ export async function handlePostback(user: any, postback: string) {
                 break
             // Admin handlers
             case 'ADMIN':
+                console.log('Processing ADMIN postback for user:', user.facebook_id)
                 await AdminHandlers.handleAdminCommand(user)
                 break
             case 'ADMIN_PAYMENTS':
+                console.log('Processing ADMIN_PAYMENTS postback for user:', user.facebook_id)
                 await AdminHandlers.handleAdminPayments(user)
                 break
             case 'ADMIN_USERS':
+                console.log('Processing ADMIN_USERS postback for user:', user.facebook_id)
                 await AdminHandlers.handleAdminUsers(user)
                 break
             case 'ADMIN_LISTINGS':
+                console.log('Processing ADMIN_LISTINGS postback for user:', user.facebook_id)
                 await AdminHandlers.handleAdminListings(user)
                 break
             case 'ADMIN_STATS':
+                console.log('Processing ADMIN_STATS postback for user:', user.facebook_id)
                 await AdminHandlers.handleAdminStats(user)
                 break
             case 'ADMIN_NOTIFICATIONS':
+                console.log('Processing ADMIN_NOTIFICATIONS postback for user:', user.facebook_id)
                 await AdminHandlers.handleAdminNotifications(user)
                 break
             case 'ADMIN_SEND_REGISTRATION':
+                console.log('Processing ADMIN_SEND_REGISTRATION postback for user:', user.facebook_id)
                 await AdminHandlers.handleAdminSendRegistration(user)
                 break
             case 'ADMIN_MANAGE_ADMINS':
+                console.log('Processing ADMIN_MANAGE_ADMINS postback for user:', user.facebook_id)
                 await AdminHandlers.handleAdminManageAdmins(user)
                 break
             case 'ADMIN_SPAM_LOGS':
+                console.log('Processing ADMIN_SPAM_LOGS postback for user:', user.facebook_id)
                 await AdminHandlers.handleAdminSpamLogs(user)
                 break
 

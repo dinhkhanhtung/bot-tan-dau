@@ -388,6 +388,7 @@ async function handlePostbackEvent(event: any) {
 
     // Handle postback payload for registered users
     try {
+        console.log('Handling postback for user:', user.facebook_id, 'payload:', payload)
         await handlePostback(user, payload)
     } catch (error) {
         console.error('Error handling postback:', error)
