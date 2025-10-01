@@ -187,6 +187,22 @@ async function handleTextMessage(user: any, text: string) {
         return
     }
 
+    // Check if user wants to delete their account (for testing)
+    if (text === '/delete' || text === '/xoa') {
+        try {
+            const success = await deleteUserFromFacebook(user.facebook_id)
+            if (success) {
+                await sendMessageToUser(user.facebook_id, '✅ Tài khoản đã được xóa! Bạn có thể đăng ký lại.')
+            } else {
+                await sendMessageToUser(user.facebook_id, '❌ Không thể xóa tài khoản. Vui lòng thử lại sau.')
+            }
+        } catch (error) {
+            console.error('Error deleting user:', error)
+            await sendMessageToUser(user.facebook_id, '❌ Có lỗi xảy ra khi xóa tài khoản.')
+        }
+        return
+    }
+
     // Handle regular user messages
     try {
         await handleUserMessage(user, text)
@@ -326,6 +342,27 @@ async function createUserFromFacebook(facebookId: string) {
     }
 }
 
+// Delete user for testing
+async function deleteUserFromFacebook(facebookId: string) {
+    try {
+        const { error } = await supabaseAdmin
+            .from('users')
+            .delete()
+            .eq('facebook_id', facebookId)
+
+        if (error) {
+            console.error('Error deleting user:', error)
+            return false
+        }
+
+        console.log('User deleted successfully:', facebookId)
+        return true
+    } catch (error) {
+        console.error('Exception deleting user:', error)
+        return false
+    }
+}
+
 async function getBotSession(userId: string) {
     const { data, error } = await supabaseAdmin
         .from('bot_sessions')
@@ -356,9 +393,16 @@ async function updateBotSession(userId: string, sessionData: any) {
 
 // Import bot handlers
 async function handleUserMessage(user: any, text: string) {
-    // For registered users, use the registered user menu
-    const { handleDefaultMessageRegistered } = await import('@/lib/bot-handlers')
-    await handleDefaultMessageRegistered(user)
+    // Check if user is new (has default name 'User')
+    if (user.name === 'User' && user.phone === '0000000000') {
+        // New user - show welcome message
+        const { handleDefaultMessage } = await import('@/lib/bot-handlers')
+        await handleDefaultMessage(user)
+    } else {
+        // Registered user - show registered menu
+        const { handleDefaultMessageRegistered } = await import('@/lib/bot-handlers')
+        await handleDefaultMessageRegistered(user)
+    }
 }
 
 async function handlePostback(user: any, payload: string) {
