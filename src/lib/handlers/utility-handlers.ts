@@ -5,6 +5,7 @@ import {
     sendQuickReply,
     sendButtonTemplate,
     createPostbackButton,
+    createQuickReply,
     sendMessagesWithTyping
 } from '../facebook-api'
 import { formatCurrency, formatNumber, generateId, generateHoroscope } from '../utils'
@@ -30,21 +31,14 @@ export async function handleHoroscope(user: any) {
         `🔢 Số may mắn: ${horoscope.luckyNumber}`
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
-            createPostbackButton('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
-            createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH')
-        ]
-    )
-
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Điều hướng:',
-        [
-            createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+            createQuickReply('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
+            createQuickReply('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
+            createQuickReply('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
+            createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
         ]
     )
 }
@@ -193,39 +187,18 @@ export async function handlePoints(user: any) {
             '• Chia sẻ kỷ niệm: +3 điểm ✅'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
-            'Phần thưởng có thể đổi:',
+            'Chọn chức năng:',
             [
-                createPostbackButton('💳 Giảm giá', 'POINTS_REWARDS_DISCOUNT'),
-                createPostbackButton('🏆 Huy hiệu', 'POINTS_REWARDS_BADGES'),
-                createPostbackButton('🎁 Quà tặng', 'POINTS_REWARDS_GIFTS')
-            ]
-        )
-
-        await sendButtonTemplate(
-            user.facebook_id,
-            'Thêm:',
-            [
-                createPostbackButton('🎮 Game', 'POINTS_REWARDS_GAMES')
-            ]
-        )
-
-        await sendButtonTemplate(
-            user.facebook_id,
-            'Tùy chọn khác:',
-            [
-                createPostbackButton('📊 XEM LỊCH SỬ', 'POINTS_HISTORY'),
-                createPostbackButton('🎯 THÀNH TÍCH', 'POINTS_ACHIEVEMENTS'),
-                createPostbackButton('🏆 LEADERBOARD', 'POINTS_LEADERBOARD')
-            ]
-        )
-
-        await sendButtonTemplate(
-            user.facebook_id,
-            'Điều hướng:',
-            [
-                createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+                createQuickReply('💳 Giảm giá', 'POINTS_REWARDS_DISCOUNT'),
+                createQuickReply('🏆 Huy hiệu', 'POINTS_REWARDS_BADGES'),
+                createQuickReply('🎁 Quà tặng', 'POINTS_REWARDS_GIFTS'),
+                createQuickReply('🎮 Game', 'POINTS_REWARDS_GAMES'),
+                createQuickReply('📊 XEM LỊCH SỬ', 'POINTS_HISTORY'),
+                createQuickReply('🎯 THÀNH TÍCH', 'POINTS_ACHIEVEMENTS'),
+                createQuickReply('🏆 LEADERBOARD', 'POINTS_LEADERBOARD'),
+                createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
             ]
         )
 
@@ -571,36 +544,20 @@ export async function handleDefaultMessageRegistered(user: any) {
         'Hôm nay bạn muốn làm gì?'
     ])
 
-    // First set of main functions
-    await sendButtonTemplate(
+    // Send all options as quick replies (up to 13 buttons in a row)
+    await sendQuickReply(
         user.facebook_id,
-        'Chức năng chính:',
+        'Chọn chức năng:',
         [
-            createPostbackButton('🛒 NIÊM YẾT', 'LISTING'),
-            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('💬 KẾT NỐI', 'CONNECT')
-        ]
-    )
-
-    // Second set of functions
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Tiếp tục:',
-        [
-            createPostbackButton('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
-            createPostbackButton('💰 THANH TOÁN', 'PAYMENT'),
-            createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS')
-        ]
-    )
-
-    // Third set of functions
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Thêm:',
-        [
-            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE'),
-            createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS'),
-            createPostbackButton('❌ THOÁT', 'EXIT_BOT')
+            createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
+            createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+            createQuickReply('💬 KẾT NỐI', 'CONNECT'),
+            createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
+            createQuickReply('💰 THANH TOÁN', 'PAYMENT'),
+            createQuickReply('⭐ ĐIỂM THƯỞNG', 'POINTS'),
+            createQuickReply('🔮 TỬ VI', 'HOROSCOPE'),
+            createQuickReply('⚙️ CÀI ĐẶT', 'SETTINGS'),
+            createQuickReply('❌ THOÁT', 'EXIT_BOT')
         ]
     )
 }
