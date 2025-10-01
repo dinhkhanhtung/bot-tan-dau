@@ -106,6 +106,8 @@ export async function handleMessage(user: any, text: string) {
             await handleSettings(user)
         } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
             await handleSupport(user)
+        } else if (text.includes('admin') || text.includes('ADMIN')) {
+            await handleAdminCommand(user)
         } else {
             await handleDefaultMessage(user)
         }
@@ -412,6 +414,13 @@ export async function handlePostback(user: any, payload: string) {
 
 // Handle admin commands
 export async function handleAdminCommand(user: any) {
+    // Check if user is admin (you can add admin check here)
+    // For now, we'll allow any registered user to access admin
+    if (!user || user.status === 'expired') {
+        await sendMessage(user.facebook_id, 'Bạn cần đăng ký để sử dụng chức năng admin!')
+        return
+    }
+
     await sendTypingIndicator(user.facebook_id)
     await sendMessagesWithTyping(user.facebook_id, [
         '🔧 ADMIN DASHBOARD\n\nChào admin! 👋',
