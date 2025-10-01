@@ -306,7 +306,7 @@ async function createUserFromFacebook(facebookId: string) {
                 name: 'User',
                 phone: '0000000000', // Provide a default phone number
                 location: 'HÀ NỘI',
-                birthday: new Date('1981-01-01').toISOString(), // Trust-based verification
+                birthday: 1981, // Trust-based verification - chỉ cần xác nhận năm sinh
                 status: 'trial',
                 membership_expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days trial
                 referral_code: referralCode
