@@ -116,7 +116,16 @@ export async function handlePostback(user: any, payload: string) {
                 await handleListing(user)
                 break
             case 'SEARCH':
-                await handleSearch(user)
+                if (params[0] === 'CATEGORY') {
+                    const category = params.slice(1).join('_')
+                    await handleSearchCategory(user, category)
+                } else if (params[0] === 'ADVANCED') {
+                    await handleSearchAdvanced(user)
+                } else if (params[0] === 'KEYWORD') {
+                    await handleSearchKeyword(user)
+                } else {
+                    await handleSearch(user)
+                }
                 break
             case 'COMMUNITY':
                 await handleCommunity(user)
@@ -394,6 +403,44 @@ async function handleSearch(user: any) {
             createPostbackButton('🔍 TÌM THEO TỪ KHÓA', 'SEARCH_KEYWORD')
         ]
     )
+}
+
+// Handle search category selection
+async function handleSearchCategory(user: any, category: string) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        `🔍 TÌM KIẾM: ${category}\n\n✅ Đã chọn danh mục: ${category}`,
+        '📍 Bước tiếp theo: Chọn vị trí tìm kiếm'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Chọn vị trí tìm kiếm:',
+        [
+            createPostbackButton('🏙️ HÀ NỘI', 'SEARCH_LOCATION_HÀ NỘI'),
+            createPostbackButton('🌆 TP.HCM', 'SEARCH_LOCATION_TP.HCM'),
+            createPostbackButton('🏘️ ĐÀ NẴNG', 'SEARCH_LOCATION_ĐÀ NẴNG')
+        ]
+    )
+}
+
+// Handle search advanced
+async function handleSearchAdvanced(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🎯 TÌM KIẾM NÂNG CAO\n\nTính năng này đang được phát triển!',
+        'Hiện tại bạn có thể sử dụng tìm kiếm theo danh mục ở trên.'
+    ])
+    
+    await showMainMenu(user)
+}
+
+// Handle search keyword
+async function handleSearchKeyword(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🔍 TÌM THEO TỪ KHÓA\n\nTính năng này đang được phát triển!',
+        'Hiện tại bạn có thể sử dụng tìm kiếm theo danh mục ở trên.'
+    ])
+    
+    await showMainMenu(user)
 }
 
 // Handle community
