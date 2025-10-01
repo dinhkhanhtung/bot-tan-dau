@@ -5,6 +5,7 @@ import {
     sendQuickReply,
     sendButtonTemplate,
     createPostbackButton,
+    createQuickReply,
     sendMessagesWithTyping
 } from '../facebook-api'
 import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from '../utils'
