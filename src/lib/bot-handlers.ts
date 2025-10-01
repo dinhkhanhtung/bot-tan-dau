@@ -7,6 +7,7 @@ import {
     createPostbackButton
 } from './facebook-api'
 import { isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from './utils'
+import * as AdminHandlers from './handlers/admin-handlers'
 
 // Import handlers from modules
 import * as AuthHandlers from './handlers/auth-handlers'
@@ -130,6 +131,34 @@ export async function handlePostback(user: any, postback: string) {
                 if (params[0] === 'ADMIN') {
                     await handleContactAdmin(user)
                 }
+                break
+            // Admin handlers
+            case 'ADMIN':
+                await AdminHandlers.handleAdminCommand(user)
+                break
+            case 'ADMIN_PAYMENTS':
+                await AdminHandlers.handleAdminPayments(user)
+                break
+            case 'ADMIN_USERS':
+                await AdminHandlers.handleAdminUsers(user)
+                break
+            case 'ADMIN_LISTINGS':
+                await AdminHandlers.handleAdminListings(user)
+                break
+            case 'ADMIN_STATS':
+                await AdminHandlers.handleAdminStats(user)
+                break
+            case 'ADMIN_NOTIFICATIONS':
+                await AdminHandlers.handleAdminNotifications(user)
+                break
+            case 'ADMIN_SEND_REGISTRATION':
+                await AdminHandlers.handleAdminSendRegistration(user)
+                break
+            case 'ADMIN_MANAGE_ADMINS':
+                await AdminHandlers.handleAdminManageAdmins(user)
+                break
+            case 'ADMIN_SPAM_LOGS':
+                await AdminHandlers.handleAdminSpamLogs(user)
                 break
 
             // Marketplace handlers
