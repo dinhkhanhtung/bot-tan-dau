@@ -90,7 +90,7 @@ export async function checkSpam(facebookId: string, message: string): Promise<{
     if (identicalCount >= SPAM_CONFIG.WARNING_THRESHOLD) {
         const warningInfo = userSpamWarnings.get(facebookId)
         const warningCount = warningInfo ? warningInfo.count + 1 : 1
-        
+
         userSpamWarnings.set(facebookId, {
             count: warningCount,
             lastWarning: now
@@ -173,7 +173,7 @@ async function blockUser(facebookId: string, reason: string): Promise<void> {
 // Send spam warning message
 export async function sendSpamWarning(facebookId: string, warningCount: number): Promise<void> {
     const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api')
-    
+
     if (warningCount === 1) {
         await sendMessage(facebookId, '⚠️ Cảnh báo: Bạn đang gửi tin nhắn giống nhau liên tục!')
         await sendMessage(facebookId, 'Vui lòng dừng lại để tránh bị tạm khóa bot.')
@@ -186,11 +186,11 @@ export async function sendSpamWarning(facebookId: string, warningCount: number):
 // Send spam block message
 export async function sendSpamBlockMessage(facebookId: string): Promise<void> {
     const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api')
-    
+
     await sendMessage(facebookId, '🚫 BOT ĐÃ BỊ TẠM KHÓA DO SPAM!')
     await sendMessage(facebookId, 'Bạn đã gửi quá nhiều tin nhắn hoặc spam. Bot sẽ được mở khóa sau 30 phút.')
     await sendMessage(facebookId, 'Nếu cần hỗ trợ khẩn cấp, hãy liên hệ admin:')
-    
+
     await sendQuickReply(
         facebookId,
         'Liên hệ admin:',
@@ -209,7 +209,7 @@ export function isUserBlocked(facebookId: string): boolean {
 
     const now = Date.now()
     const blockDuration = now - blockInfo.blockTime
-    
+
     // Auto-unblock after cooldown period
     if (blockDuration >= SPAM_CONFIG.SPAM_COOLDOWN_MINUTES * 60 * 1000) {
         userSpamBlocks.delete(facebookId)
@@ -353,7 +353,7 @@ export function isBotStoppedForUser(facebookId: string): boolean {
 
     const now = Date.now()
     const stopDuration = now - stopInfo.stopTime
-    
+
     // Auto-unstop after cooldown period
     if (stopDuration >= SPAM_CONFIG.SPAM_COOLDOWN_MINUTES * 60 * 1000) {
         userBotStops.delete(facebookId)
@@ -371,11 +371,11 @@ export function resetNonButtonTracking(facebookId: string): void {
 // Send bot stopped message
 export async function sendBotStoppedMessage(facebookId: string, reason: string): Promise<void> {
     const { sendMessage, sendButtonTemplate, createPostbackButton } = await import('./facebook-api')
-    
+
     await sendMessage(facebookId, '🚫 BOT ĐÃ TẠM DỪNG!')
     await sendMessage(facebookId, 'Bạn đã gửi quá nhiều tin nhắn mà không chọn nút. Bot sẽ tạm dừng để tránh spam.')
     await sendMessage(facebookId, 'Nếu cần hỗ trợ, hãy liên hệ admin:')
-    
+
     await sendButtonTemplate(
         facebookId,
         'Liên hệ admin:',
@@ -390,7 +390,7 @@ export async function sendBotStoppedMessage(facebookId: string, reason: string):
 // Send non-button warning message
 export async function sendNonButtonWarning(facebookId: string, warningCount: number): Promise<void> {
     const { sendMessage, sendButtonTemplate, createPostbackButton } = await import('./facebook-api')
-    
+
     if (warningCount === 1) {
         await sendMessage(facebookId, '⚠️ Cảnh báo: Bạn đang gửi tin nhắn thay vì chọn nút!')
         await sendMessage(facebookId, 'Vui lòng sử dụng các nút bên dưới để tương tác với bot.')

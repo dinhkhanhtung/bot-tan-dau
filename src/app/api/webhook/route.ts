@@ -119,7 +119,7 @@ async function handleMessageEvent(event: any) {
             return
         }
         processedMessages.add(messageId)
-        
+
         // Clean up old entries (keep only last 1000)
         if (processedMessages.size > 1000) {
             const entries = Array.from(processedMessages)
@@ -129,11 +129,11 @@ async function handleMessageEvent(event: any) {
 
         // Get user first to check if they exist
         const user = await getUserByFacebookId(senderId)
-        
+
         // Only check spam for registered users
         if (user) {
             const { checkSpam, isUserBlocked, sendSpamWarning, sendSpamBlockMessage } = await import('@/lib/anti-spam')
-            
+
             // Check if user is currently blocked
             if (isUserBlocked(senderId)) {
                 await sendSpamBlockMessage(senderId)
@@ -142,7 +142,7 @@ async function handleMessageEvent(event: any) {
 
             // Check for spam
             const spamCheck = await checkSpam(senderId, message.text || '')
-            
+
             if (spamCheck.shouldBlock) {
                 await sendSpamBlockMessage(senderId)
                 return
@@ -164,7 +164,7 @@ async function handleMessageEvent(event: any) {
         // Check if user exists (already got user above)
         if (!user) {
             console.log('User not found for facebook_id:', senderId)
-            
+
             // Check if it's an admin first
             try {
                 const { isAdmin } = await import('@/lib/handlers/admin-handlers')
@@ -172,13 +172,13 @@ async function handleMessageEvent(event: any) {
                 if (isAdminUser) {
                     console.log('Admin user detected:', senderId)
                     // Create a temporary user object for admin
-                    const adminUser = { 
-                        facebook_id: senderId, 
+                    const adminUser = {
+                        facebook_id: senderId,
                         status: 'admin',
                         name: 'Admin',
                         membership_expires_at: null
                     }
-                    
+
                     // Handle admin command or regular message
                     if (message.text === '/admin') {
                         const { handleAdminCommand } = await import('@/lib/handlers/admin-handlers')
@@ -193,7 +193,7 @@ async function handleMessageEvent(event: any) {
             } catch (error) {
                 console.error('Error checking admin status:', error)
             }
-            
+
             // Check if it's an admin command first
             if (message.text === '/admin') {
                 try {
@@ -204,13 +204,13 @@ async function handleMessageEvent(event: any) {
                 }
                 return
             }
-            
+
             // Handle Quick Reply for unregistered users
             if (message.quick_reply?.payload) {
                 console.log('Handling Quick Reply for unregistered user:', message.quick_reply.payload)
                 try {
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
-                    
+
                     switch (message.quick_reply.payload) {
                         case 'REGISTER':
                             // Check if it's an admin first
@@ -225,7 +225,7 @@ async function handleMessageEvent(event: any) {
                             } catch (error) {
                                 console.error('Error checking admin status:', error)
                             }
-                            
+
                             await sendMessage(senderId, '📝 BẮT ĐẦU ĐĂNG KÝ')
                             await sendMessage(senderId, 'Để đăng ký, bạn cần cung cấp thông tin cá nhân. Hãy bắt đầu bằng cách gửi họ tên của bạn.')
                             // Start registration flow
@@ -271,13 +271,13 @@ async function handleMessageEvent(event: any) {
                 }
                 return
             }
-            
+
             // Send welcome message for new users (only if not Quick Reply and not admin command)
             try {
                 const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
                 await sendMessage(senderId, '👋 Chào mừng bạn đến với Bot Tân Dậu 1981!')
                 await sendMessage(senderId, 'Để sử dụng bot, bạn cần đăng ký tài khoản trước.')
-                
+
                 await sendQuickReply(
                     senderId,
                     'Bạn muốn:',
@@ -330,16 +330,16 @@ async function handlePostbackEvent(event: any) {
     const senderId = event.sender.id
     const payload = event.postback.payload
     const messageId = event.postback.mid || `${senderId}_${payload}_${Date.now()}`
-    
+
     // Check if this postback was already processed
     if (processedPostbacks.has(messageId)) {
         console.log('Skipping duplicate postback:', messageId)
         return
     }
-    
+
     // Mark as processed
     processedPostbacks.add(messageId)
-    
+
     // Clean up old entries (keep only last 1000)
     if (processedPostbacks.size > 1000) {
         const entries = Array.from(processedPostbacks)
@@ -349,7 +349,7 @@ async function handlePostbackEvent(event: any) {
 
     // Get user
     let user = await getUserByFacebookId(senderId)
-    
+
     // Check if it's an admin if no user found
     if (!user) {
         try {
@@ -358,8 +358,8 @@ async function handlePostbackEvent(event: any) {
             if (isAdminUser) {
                 console.log('Admin user detected in postback:', senderId)
                 // Create a temporary user object for admin
-                user = { 
-                    facebook_id: senderId, 
+                user = {
+                    facebook_id: senderId,
                     status: 'admin',
                     name: 'Admin',
                     membership_expires_at: null
@@ -369,14 +369,14 @@ async function handlePostbackEvent(event: any) {
             console.error('Error checking admin status in postback:', error)
         }
     }
-    
+
     if (!user) {
         // Send registration prompt for unregistered users
         try {
             const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
             await sendMessage(senderId, '❌ Bạn cần đăng ký trước để sử dụng chức năng này!')
             await sendMessage(senderId, 'Để sử dụng bot, bạn cần tạo tài khoản trước.')
-            
+
             await sendQuickReply(
                 senderId,
                 'Bạn muốn:',

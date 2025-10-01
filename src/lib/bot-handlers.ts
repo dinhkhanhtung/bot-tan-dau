@@ -48,17 +48,23 @@ export async function handleMessage(user: any, text: string) {
             await sendNonButtonWarning(user.facebook_id, nonButtonResult.warningCount)
         }
 
-        // Check if user is expired
-        if (isExpiredUser(user.membership_expires_at)) {
-            await PaymentHandlers.sendExpiredMessage(user.facebook_id)
-            return
-        }
+        // Check if user is admin - skip membership checks
+        const { isAdmin } = await import('./handlers/admin-handlers')
+        const userIsAdmin = await isAdmin(user.facebook_id)
+        
+        if (!userIsAdmin) {
+            // Check if user is expired
+            if (isExpiredUser(user.membership_expires_at)) {
+                await PaymentHandlers.sendExpiredMessage(user.facebook_id)
+                return
+            }
 
-        // Check if user is in trial and about to expire
-        if (isTrialUser(user.membership_expires_at)) {
-            const daysLeft = daysUntilExpiry(user.membership_expires_at!)
-            if (daysLeft <= 2) {
-                await PaymentHandlers.sendTrialExpiringMessage(user.facebook_id, daysLeft)
+            // Check if user is in trial and about to expire
+            if (isTrialUser(user.membership_expires_at)) {
+                const daysLeft = daysUntilExpiry(user.membership_expires_at!)
+                if (daysLeft <= 2) {
+                    await PaymentHandlers.sendTrialExpiringMessage(user.facebook_id, daysLeft)
+                }
             }
         }
 
