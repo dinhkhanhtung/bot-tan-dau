@@ -25,6 +25,14 @@ export function FacebookLoginReal({ onSuccess, onError }: FacebookLoginRealProps
 
   // Load Facebook SDK
   useEffect(() => {
+    const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
+    
+    if (!facebookAppId) {
+      console.error('Facebook App ID not configured')
+      toast.error('Facebook App ID chưa được cấu hình. Vui lòng liên hệ admin.')
+      return
+    }
+
     if (typeof window !== 'undefined' && !window.FB) {
       const script = document.createElement('script')
       script.src = 'https://connect.facebook.net/vi_VN/sdk.js'
@@ -35,7 +43,7 @@ export function FacebookLoginReal({ onSuccess, onError }: FacebookLoginRealProps
 
       script.onload = () => {
         window.FB.init({
-          appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID!,
+          appId: facebookAppId,
           cookie: true,
           xfbml: true,
           version: 'v18.0'
@@ -170,6 +178,49 @@ export function FacebookLoginReal({ onSuccess, onError }: FacebookLoginRealProps
       onError?.(error.message)
       setLoading(false)
     }
+  }
+
+  // Check if Facebook App ID is configured
+  const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
+  
+  if (!facebookAppId) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-yellow-500 bg-clip-text text-transparent">
+            Đăng nhập với Facebook
+          </CardTitle>
+          <CardDescription>
+            Chỉ dành cho thành viên sinh năm 1981
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <div className="text-yellow-600">⚠️</div>
+              <div className="text-sm text-yellow-800">
+                <p className="font-medium mb-1">Tính năng đang được cấu hình</p>
+                <p>
+                  Facebook Login đang được thiết lập. Vui lòng thử lại sau hoặc liên hệ admin.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <Button
+            onClick={() => {
+              alert('Tính năng Facebook Login sẽ được thêm vào sau!')
+              onSuccess?.({})
+            }}
+            className="w-full bg-[#1877F2] hover:bg-[#166FE5] text-white"
+            size="lg"
+          >
+            <Facebook className="w-5 h-5 mr-2" />
+            Tiếp tục với Facebook (Demo)
+          </Button>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
