@@ -109,7 +109,7 @@ async function checkIdenticalMessages(facebookId: string, message: string): Prom
     try {
         // Get recent messages from database
         const { data: recentMessages, error } = await supabaseAdmin
-            .from('messages')
+            .from('user_messages')
             .select('content')
             .eq('user_id', facebookId)
             .order('created_at', { ascending: false })

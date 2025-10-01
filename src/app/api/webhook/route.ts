@@ -476,7 +476,7 @@ async function logMessage(facebookId: string, content: string, messageId: string
     try {
         const { supabaseAdmin } = await import('@/lib/supabase')
         await supabaseAdmin
-            .from('messages')
+            .from('user_messages')
             .insert({
                 user_id: facebookId,
                 content: content,
