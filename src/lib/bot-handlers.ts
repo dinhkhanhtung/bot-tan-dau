@@ -169,7 +169,14 @@ export async function handleAdminCommand(user: any) {
         [
             createPostbackButton('💰 THANH TOÁN', 'ADMIN_PAYMENTS'),
             createPostbackButton('👥 USER', 'ADMIN_USERS'),
-            createPostbackButton('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS'),
+            createPostbackButton('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm tùy chọn admin:',
+        [
             createPostbackButton('📊 THỐNG KÊ', 'ADMIN_STATS')
         ]
     )
@@ -291,10 +298,24 @@ async function showMainMenu(user: any) {
         [
             createPostbackButton('🛒 NIÊM YẾT', 'LISTING'),
             createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('💬 KẾT NỐI', 'CONNECT'),
+            createPostbackButton('💬 KẾT NỐI', 'CONNECT')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm chức năng:',
+        [
             createPostbackButton('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
             createPostbackButton('💰 THANH TOÁN', 'PAYMENT'),
-            createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS'),
+            createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn khác:',
+        [
             createPostbackButton('🔮 TỬ VI', 'HOROSCOPE'),
             createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS')
         ]
@@ -328,7 +349,14 @@ async function handleListing(user: any) {
         [
             createPostbackButton('🏠 BẤT ĐỘNG SẢN', 'LISTING_CATEGORY_BẤT ĐỘNG SẢN'),
             createPostbackButton('🚗 Ô TÔ', 'LISTING_CATEGORY_Ô TÔ'),
-            createPostbackButton('📱 ĐIỆN TỬ', 'LISTING_CATEGORY_ĐIỆN TỬ'),
+            createPostbackButton('📱 ĐIỆN TỬ', 'LISTING_CATEGORY_ĐIỆN TỬ')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm danh mục:',
+        [
             createPostbackButton('👕 THỜI TRANG', 'LISTING_CATEGORY_THỜI TRANG'),
             createPostbackButton('🍽️ ẨM THỰC', 'LISTING_CATEGORY_ẨM THỰC'),
             createPostbackButton('🔧 DỊCH VỤ', 'LISTING_CATEGORY_DỊCH VỤ')
@@ -344,10 +372,24 @@ async function handleSearch(user: any) {
         [
             createPostbackButton('🏠 BẤT ĐỘNG SẢN', 'SEARCH_CATEGORY_BẤT ĐỘNG SẢN'),
             createPostbackButton('🚗 Ô TÔ', 'SEARCH_CATEGORY_Ô TÔ'),
-            createPostbackButton('📱 ĐIỆN TỬ', 'SEARCH_CATEGORY_ĐIỆN TỬ'),
+            createPostbackButton('📱 ĐIỆN TỬ', 'SEARCH_CATEGORY_ĐIỆN TỬ')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm danh mục tìm kiếm:',
+        [
             createPostbackButton('👕 THỜI TRANG', 'SEARCH_CATEGORY_THỜI TRANG'),
             createPostbackButton('🍽️ ẨM THỰC', 'SEARCH_CATEGORY_ẨM THỰC'),
-            createPostbackButton('🔧 DỊCH VỤ', 'SEARCH_CATEGORY_DỊCH VỤ'),
+            createPostbackButton('🔧 DỊCH VỤ', 'SEARCH_CATEGORY_DỊCH VỤ')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tìm kiếm nâng cao:',
+        [
             createPostbackButton('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
             createPostbackButton('🔍 TÌM THEO TỪ KHÓA', 'SEARCH_KEYWORD')
         ]
@@ -362,10 +404,24 @@ async function handleCommunity(user: any) {
         [
             createPostbackButton('🎂 SINH NHẬT', 'COMMUNITY_BIRTHDAY'),
             createPostbackButton('🏆 TOP SELLER', 'COMMUNITY_TOP_SELLER'),
-            createPostbackButton('📖 KỶ NIỆM', 'COMMUNITY_MEMORIES'),
+            createPostbackButton('📖 KỶ NIỆM', 'COMMUNITY_MEMORIES')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm hoạt động cộng đồng:',
+        [
             createPostbackButton('🎪 SỰ KIỆN', 'COMMUNITY_EVENTS'),
             createPostbackButton('⭐ THÀNH TÍCH', 'COMMUNITY_ACHIEVEMENTS'),
-            createPostbackButton('🔮 TỬ VI', 'COMMUNITY_HOROSCOPE'),
+            createPostbackButton('🔮 TỬ VI', 'COMMUNITY_HOROSCOPE')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hỗ trợ và kết nối:',
+        [
             createPostbackButton('🤝 HỖ TRỢ CHÉO', 'COMMUNITY_SUPPORT'),
             createPostbackButton('💬 CHAT NHÓM', 'COMMUNITY_CHAT')
         ]
@@ -412,7 +468,14 @@ async function handleHoroscope(user: any) {
         [
             createPostbackButton('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
             createPostbackButton('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
-            createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
+            createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn khác:',
+        [
             createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
         ]
     )
@@ -431,10 +494,24 @@ async function handlePoints(user: any) {
         [
             createPostbackButton('💳 Giảm giá', 'POINTS_REWARDS_DISCOUNT'),
             createPostbackButton('🏆 Huy hiệu', 'POINTS_REWARDS_BADGES'),
-            createPostbackButton('🎁 Quà tặng', 'POINTS_REWARDS_GIFTS'),
+            createPostbackButton('🎁 Quà tặng', 'POINTS_REWARDS_GIFTS')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm phần thưởng:',
+        [
             createPostbackButton('🎮 Game', 'POINTS_REWARDS_GAMES'),
             createPostbackButton('📊 XEM LỊCH SỬ', 'POINTS_HISTORY'),
-            createPostbackButton('🎯 THÀNH TÍCH', 'POINTS_ACHIEVEMENTS'),
+            createPostbackButton('🎯 THÀNH TÍCH', 'POINTS_ACHIEVEMENTS')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Xếp hạng:',
+        [
             createPostbackButton('🏆 LEADERBOARD', 'POINTS_LEADERBOARD')
         ]
     )
@@ -448,10 +525,24 @@ async function handleSettings(user: any) {
         [
             createPostbackButton('👤 THÔNG TIN CÁ NHÂN', 'SETTINGS_PROFILE'),
             createPostbackButton('🔔 THÔNG BÁO', 'SETTINGS_NOTIFICATIONS'),
-            createPostbackButton('🔒 BẢO MẬT', 'SETTINGS_SECURITY'),
+            createPostbackButton('🔒 BẢO MẬT', 'SETTINGS_SECURITY')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm cài đặt:',
+        [
             createPostbackButton('🌐 NGÔN NGỮ', 'SETTINGS_LANGUAGE'),
             createPostbackButton('🎨 GIAO DIỆN', 'SETTINGS_THEME'),
-            createPostbackButton('📊 PRIVACY', 'SETTINGS_PRIVACY'),
+            createPostbackButton('📊 PRIVACY', 'SETTINGS_PRIVACY')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hỗ trợ và điều hướng:',
+        [
             createPostbackButton('❓ HỖ TRỢ', 'SUPPORT'),
             createPostbackButton('📱 VỀ TRANG CHỦ', 'MAIN_MENU')
         ]
@@ -483,7 +574,15 @@ async function handleDefaultMessage(user: any) {
         [
             createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
             createPostbackButton('❓ HỖ TRỢ', 'SUPPORT'),
-            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE'),
+            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE')
+        ]
+    )
+    
+    // Send second set of buttons
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm tùy chọn:',
+        [
             createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
         ]
     )
