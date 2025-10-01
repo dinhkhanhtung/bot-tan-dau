@@ -152,7 +152,7 @@ export async function handlePostback(user: any, payload: string) {
                 } else if (params[0] === 'KEYWORD') {
                     await handleSearchKeyword(user)
                 } else {
-                    await handleSearch(user)
+                await handleSearch(user)
                 }
                 break
             case 'LISTING':
@@ -227,7 +227,7 @@ export async function handlePostback(user: any, payload: string) {
                 } else if (params[0] === 'EVENTS') {
                     await handleCommunityEvents(user)
                 } else {
-                    await handleCommunity(user)
+                await handleCommunity(user)
                 }
                 break
             case 'PAYMENT':
@@ -249,7 +249,7 @@ export async function handlePostback(user: any, payload: string) {
                 } else if (params[0] === 'UPLOAD' && params[1] === 'RECEIPT') {
                     await handlePaymentUploadReceipt(user)
                 } else {
-                    await handlePayment(user)
+                await handlePayment(user)
                 }
                 break
             case 'HOROSCOPE':
@@ -262,7 +262,7 @@ export async function handlePostback(user: any, payload: string) {
                 } else if (params[0] === 'TOMORROW') {
                     await handleHoroscopeTomorrow(user)
                 } else {
-                    await handleHoroscope(user)
+                await handleHoroscope(user)
                 }
                 break
             case 'POINTS':
@@ -285,7 +285,7 @@ export async function handlePostback(user: any, payload: string) {
                 } else if (params[0] === 'REDEEM') {
                     await handlePointsRedeem(user)
                 } else {
-                    await handlePoints(user)
+                await handlePoints(user)
                 }
                 break
             case 'SETTINGS':
@@ -357,6 +357,10 @@ export async function handlePostback(user: any, payload: string) {
                     await handleAdminExport(user)
                 } else if (params[0] === 'NOTIFICATIONS') {
                     await handleAdminNotifications(user)
+                } else if (params[0] === 'MANAGE' && params[1] === 'ADMINS') {
+                    await handleAdminManageAdmins(user)
+                } else if (params[0] === 'SETTINGS') {
+                    await handleAdminSettings(user)
                 } else if (params[0] === 'APPROVE' && params[1] === 'PAYMENT') {
                     await handleAdminApprovePayment(user, params[2])
                 } else if (params[0] === 'REJECT' && params[1] === 'PAYMENT') {
@@ -414,15 +418,16 @@ export async function handlePostback(user: any, payload: string) {
     }
 }
 
-// Admin IDs - Add your Facebook IDs here
-const ADMIN_IDS = [
-    '31268544269455564', // Add your Facebook ID here
-    // Add more admin IDs as needed
-]
+// Get admin IDs from environment variables
+function getAdminIds(): string[] {
+    const adminIds = process.env.ADMIN_IDS || ''
+    return adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
+}
 
 // Check if user is admin
 function isAdmin(facebookId: string): boolean {
-    return ADMIN_IDS.includes(facebookId)
+    const adminIds = getAdminIds()
+    return adminIds.includes(facebookId)
 }
 
 // Handle admin commands
@@ -456,6 +461,15 @@ export async function handleAdminCommand(user: any) {
             createPostbackButton('📊 THỐNG KÊ', 'ADMIN_STATS'),
             createPostbackButton('📤 XUẤT', 'ADMIN_EXPORT'),
             createPostbackButton('🔔 THÔNG BÁO', 'ADMIN_NOTIFICATIONS')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Cài đặt hệ thống:',
+        [
+            createPostbackButton('👑 QUẢN LÝ ADMIN', 'ADMIN_MANAGE_ADMINS'),
+            createPostbackButton('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS')
         ]
     )
 }
@@ -641,6 +655,46 @@ async function handleRegistrationPhone(user: any, text: string, data: any) {
             createPostbackButton('🏠 HÀ NỘI', 'REG_LOCATION_HÀ NỘI'),
             createPostbackButton('🏢 TP.HCM', 'REG_LOCATION_TP.HCM'),
             createPostbackButton('🏖️ ĐÀ NẴNG', 'REG_LOCATION_ĐÀ NẴNG')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tỉnh thành khác:',
+        [
+            createPostbackButton('🌊 HẢI PHÒNG', 'REG_LOCATION_HẢI PHÒNG'),
+            createPostbackButton('🏔️ CẦN THƠ', 'REG_LOCATION_CẦN THƠ'),
+            createPostbackButton('🌾 AN GIANG', 'REG_LOCATION_AN GIANG')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Miền Bắc:',
+        [
+            createPostbackButton('🏔️ QUẢNG NINH', 'REG_LOCATION_QUẢNG NINH'),
+            createPostbackButton('🌾 THÁI BÌNH', 'REG_LOCATION_THÁI BÌNH'),
+            createPostbackButton('🏞️ NINH BÌNH', 'REG_LOCATION_NINH BÌNH')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Miền Trung:',
+        [
+            createPostbackButton('🌊 QUẢNG NAM', 'REG_LOCATION_QUẢNG NAM'),
+            createPostbackButton('🏖️ QUẢNG NGÃI', 'REG_LOCATION_QUẢNG NGÃI'),
+            createPostbackButton('🌾 BÌNH ĐỊNH', 'REG_LOCATION_BÌNH ĐỊNH')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Miền Nam:',
+        [
+            createPostbackButton('🌾 ĐỒNG NAI', 'REG_LOCATION_ĐỒNG NAI'),
+            createPostbackButton('🏔️ BÌNH DƯƠNG', 'REG_LOCATION_BÌNH DƯƠNG'),
+            createPostbackButton('🌊 LONG AN', 'REG_LOCATION_LONG AN')
         ]
     )
 
@@ -875,7 +929,17 @@ async function handleListing(user: any) {
         [
             createPostbackButton('👕 THỜI TRANG', 'LISTING_CATEGORY_THỜI TRANG'),
             createPostbackButton('🍽️ ẨM THỰC', 'LISTING_CATEGORY_ẨM THỰC'),
-            createPostbackButton('🔧 DỊCH VỤ', 'LISTING_CATEGORY_DỊCH VỤ')
+            createPostbackButton('🎓 GIÁO DỤC', 'LISTING_CATEGORY_GIÁO DỤC')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Dịch vụ:',
+        [
+            createPostbackButton('💼 DỊCH VỤ', 'LISTING_CATEGORY_DỊCH VỤ'),
+            createPostbackButton('🔧 SỬA CHỮA', 'LISTING_CATEGORY_SỬA CHỮA'),
+            createPostbackButton('🎯 KHÁC', 'LISTING_CATEGORY_KHÁC')
         ]
     )
 
@@ -898,6 +962,26 @@ async function handleSearch(user: any) {
             createPostbackButton('🏠 BẤT ĐỘNG SẢN', 'SEARCH_CATEGORY_BẤT ĐỘNG SẢN'),
             createPostbackButton('🚗 Ô TÔ', 'SEARCH_CATEGORY_Ô TÔ'),
             createPostbackButton('📱 ĐIỆN TỬ', 'SEARCH_CATEGORY_ĐIỆN TỬ')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Danh mục khác:',
+        [
+            createPostbackButton('👕 THỜI TRANG', 'SEARCH_CATEGORY_THỜI TRANG'),
+            createPostbackButton('🍽️ ẨM THỰC', 'SEARCH_CATEGORY_ẨM THỰC'),
+            createPostbackButton('🎓 GIÁO DỤC', 'SEARCH_CATEGORY_GIÁO DỤC')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Dịch vụ:',
+        [
+            createPostbackButton('💼 DỊCH VỤ', 'SEARCH_CATEGORY_DỊCH VỤ'),
+            createPostbackButton('🔧 SỬA CHỮA', 'SEARCH_CATEGORY_SỬA CHỮA'),
+            createPostbackButton('🎯 KHÁC', 'SEARCH_CATEGORY_KHÁC')
         ]
     )
 
@@ -935,6 +1019,46 @@ async function handleSearchCategory(user: any, category: string) {
             createPostbackButton('🏙️ HÀ NỘI', 'SEARCH_LOCATION_HÀ NỘI'),
             createPostbackButton('🌆 TP.HCM', 'SEARCH_LOCATION_TP.HCM'),
             createPostbackButton('🏘️ ĐÀ NẴNG', 'SEARCH_LOCATION_ĐÀ NẴNG')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tỉnh thành khác:',
+        [
+            createPostbackButton('🌊 HẢI PHÒNG', 'SEARCH_LOCATION_HẢI PHÒNG'),
+            createPostbackButton('🏔️ CẦN THƠ', 'SEARCH_LOCATION_CẦN THƠ'),
+            createPostbackButton('🌾 AN GIANG', 'SEARCH_LOCATION_AN GIANG')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Miền Bắc:',
+        [
+            createPostbackButton('🏔️ QUẢNG NINH', 'SEARCH_LOCATION_QUẢNG NINH'),
+            createPostbackButton('🌾 THÁI BÌNH', 'SEARCH_LOCATION_THÁI BÌNH'),
+            createPostbackButton('🏞️ NINH BÌNH', 'SEARCH_LOCATION_NINH BÌNH')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Miền Trung:',
+        [
+            createPostbackButton('🌊 QUẢNG NAM', 'SEARCH_LOCATION_QUẢNG NAM'),
+            createPostbackButton('🏖️ QUẢNG NGÃI', 'SEARCH_LOCATION_QUẢNG NGÃI'),
+            createPostbackButton('🌾 BÌNH ĐỊNH', 'SEARCH_LOCATION_BÌNH ĐỊNH')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Miền Nam:',
+        [
+            createPostbackButton('🌾 ĐỒNG NAI', 'SEARCH_LOCATION_ĐỒNG NAI'),
+            createPostbackButton('🏔️ BÌNH DƯƠNG', 'SEARCH_LOCATION_BÌNH DƯƠNG'),
+            createPostbackButton('🌊 LONG AN', 'SEARCH_LOCATION_LONG AN')
         ]
     )
 
@@ -1069,6 +1193,7 @@ async function handleSupportAdmin(user: any) {
 
 // Admin: Handle payments
 async function handleAdminPayments(user: any) {
+    await sendTypingIndicator(user.facebook_id)
     try {
         // Get pending payments
         const { data: payments, error } = await supabaseAdmin
@@ -1134,6 +1259,7 @@ async function handleAdminPayments(user: any) {
 
 // Admin: Handle users
 async function handleAdminUsers(user: any) {
+    await sendTypingIndicator(user.facebook_id)
     try {
         // Get user statistics
         const { data: stats, error: statsError } = await supabaseAdmin
@@ -1179,6 +1305,7 @@ async function handleAdminUsers(user: any) {
 
 // Admin: Handle listings
 async function handleAdminListings(user: any) {
+    await sendTypingIndicator(user.facebook_id)
     try {
         // Get listing statistics
         const { data: stats, error: statsError } = await supabaseAdmin
@@ -1224,6 +1351,7 @@ async function handleAdminListings(user: any) {
 
 // Admin: Handle statistics
 async function handleAdminStats(user: any) {
+    await sendTypingIndicator(user.facebook_id)
     try {
         // Get comprehensive statistics
         const [usersResult, listingsResult, paymentsResult] = await Promise.all([
@@ -4311,7 +4439,7 @@ async function handlePoints(user: any) {
         const nextLevelPoints = getNextLevelPoints(parseInt(userLevel.toString()))
         const pointsToNext = nextLevelPoints - userPoints
 
-        await sendMessagesWithTyping(user.facebook_id, [
+    await sendMessagesWithTyping(user.facebook_id, [
             '⭐ HỆ THỐNG ĐIỂM THƯỞNG\n\n🏆 Level hiện tại: ' + userLevel + ' (' + userPoints + '/' + nextLevelPoints + ' điểm)\n⭐ Tổng điểm: ' + userPoints + ' điểm\n🎯 Streak: 7 ngày liên tiếp'
         ])
 
@@ -4542,6 +4670,68 @@ async function sendTrialExpiringMessage(facebookId: string, daysLeft: number) {
             createPostbackButton('💰 THANH TOÁN', 'PAYMENT_CONFIRM'),
             createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
             createPostbackButton('❌ HỦY', 'CANCEL')
+        ]
+    )
+}
+
+// Admin: Manage admins
+async function handleAdminManageAdmins(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+    const adminIds = getAdminIds()
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        '👑 QUẢN LÝ ADMIN\n\nDanh sách admin hiện tại:',
+        adminIds.map((id, index) => `${index + 1}. ${id}`).join('\n'),
+        `\nTổng số admin: ${adminIds.length}`
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('➕ THÊM ADMIN', 'ADMIN_ADD_ADMIN'),
+            createPostbackButton('❌ XÓA ADMIN', 'ADMIN_REMOVE_ADMIN'),
+            createPostbackButton('🔄 LÀM MỚI', 'ADMIN_MANAGE_ADMINS')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm tùy chọn:',
+        [
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
+        ]
+    )
+}
+
+// Admin: Settings
+async function handleAdminSettings(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        '⚙️ CÀI ĐẶT HỆ THỐNG\n\nCấu hình bot:',
+        `• Phí hàng ngày: ${process.env.BOT_DAILY_FEE || '1000'}đ`,
+        `• Số ngày tối thiểu: ${process.env.BOT_MINIMUM_DAYS || '7'} ngày`,
+        `• Trial miễn phí: ${process.env.BOT_TRIAL_DAYS || '3'} ngày`,
+        `• Thưởng giới thiệu: ${process.env.BOT_REFERRAL_REWARD || '10000'}đ`,
+        `• Phí dịch vụ tìm kiếm: ${process.env.BOT_SEARCH_SERVICE_FEE || '5000'}đ`
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('💰 CÀI ĐẶT PHÍ', 'ADMIN_SETTINGS_FEES'),
+            createPostbackButton('📧 CÀI ĐẶT EMAIL', 'ADMIN_SETTINGS_EMAIL'),
+            createPostbackButton('🔔 CÀI ĐẶT THÔNG BÁO', 'ADMIN_SETTINGS_NOTIFICATIONS')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm tùy chọn:',
+        [
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
