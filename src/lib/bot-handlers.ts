@@ -51,7 +51,7 @@ export async function handleMessage(user: any, text: string) {
         // Check if user is admin - skip membership checks
         const { isAdmin } = await import('./handlers/admin-handlers')
         const userIsAdmin = await isAdmin(user.facebook_id)
-        
+
         if (!userIsAdmin) {
             // Check if user is expired
             if (isExpiredUser(user.membership_expires_at)) {

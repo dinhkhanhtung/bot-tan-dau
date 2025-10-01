@@ -18,7 +18,7 @@ export async function isAdmin(facebookId: string): Promise<boolean> {
             .select('is_active')
             .eq('facebook_id', facebookId)
             .eq('is_active', true)
-            .single()
+            .maybeSingle() // Use maybeSingle instead of single to avoid error when no rows
 
         if (error) {
             console.error('Error checking admin status:', error)
@@ -28,7 +28,15 @@ export async function isAdmin(facebookId: string): Promise<boolean> {
             return envAdmins.includes(facebookId)
         }
 
-        return !!data
+        // If data exists and is_active is true
+        if (data && data.is_active) {
+            return true
+        }
+
+        // Fallback: check environment variable
+        const adminIds = process.env.ADMIN_IDS || ''
+        const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
+        return envAdmins.includes(facebookId)
     } catch (error) {
         console.error('Error in isAdmin function:', error)
         // Fallback: check environment variable
