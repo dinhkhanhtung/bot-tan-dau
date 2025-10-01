@@ -10,26 +10,37 @@ import {
 } from '../facebook-api'
 import { formatCurrency, formatNumber, updateBotSession } from '../utils'
 
-// Get admin IDs from environment variables
-function getAdminIds(): string[] {
-    const adminIds = process.env.ADMIN_IDS || ''
-    return adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
-}
-
 // Check if user is admin
-function isAdmin(facebookId: string): boolean {
-    const adminIds = getAdminIds()
-    return adminIds.includes(facebookId)
+async function isAdmin(facebookId: string): Promise<boolean> {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('admin_users')
+            .select('is_active')
+            .eq('facebook_id', facebookId)
+            .eq('is_active', true)
+            .single()
+
+        if (error) {
+            console.error('Error checking admin status:', error)
+            return false
+        }
+
+        return !!data
+    } catch (error) {
+        console.error('Error in isAdmin function:', error)
+        return false
+    }
 }
 
 // Handle admin command
 export async function handleAdminCommand(user: any) {
     console.log('Admin command called by:', user.facebook_id)
-    console.log('Admin IDs:', getAdminIds())
-    console.log('Is admin:', isAdmin(user.facebook_id))
     console.log('User object:', user)
 
-    if (!isAdmin(user.facebook_id)) {
+    const userIsAdmin = await isAdmin(user.facebook_id)
+    console.log('Is admin:', userIsAdmin)
+
+    if (!userIsAdmin) {
         console.log('User is not admin, sending access denied message')
         await sendMessage(user.facebook_id, '❌ Bạn không có quyền truy cập!')
         return
@@ -365,24 +376,44 @@ export async function handleAdminSettings(user: any) {
 // Handle admin manage admins
 export async function handleAdminManageAdmins(user: any) {
     await sendTypingIndicator(user.facebook_id)
-    const adminIds = getAdminIds()
+    
+    try {
+        const { data: admins, error } = await supabaseAdmin
+            .from('admin_users')
+            .select('facebook_id, name, role, is_active')
+            .order('created_at', { ascending: false })
 
-    await sendMessagesWithTyping(user.facebook_id, [
-        '👨‍💼 QUẢN LÝ ADMIN',
-        `Danh sách admin hiện tại:\n${adminIds.map((id, index) => `${index + 1}. ${id}`).join('\n')}`,
-        'Chức năng:'
-    ])
+        if (error) {
+            console.error('Error fetching admins:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải danh sách admin!')
+            return
+        }
 
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Tùy chọn:',
-        [
-            createPostbackButton('➕ THÊM ADMIN', 'ADMIN_ADD_ADMIN'),
-            createPostbackButton('➖ XÓA ADMIN', 'ADMIN_REMOVE_ADMIN'),
-            createPostbackButton('📊 QUYỀN HẠN', 'ADMIN_PERMISSIONS'),
-            createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
-        ]
-    )
+        const adminList = admins && admins.length > 0 
+            ? admins.map((admin, index) => `${index + 1}. ${admin.name} (${admin.role})\n   ID: ${admin.facebook_id}`).join('\n')
+            : '📭 Chưa có admin nào!'
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '👨‍💼 QUẢN LÝ ADMIN',
+            `Danh sách admin hiện tại:\n${adminList}`,
+            'Chức năng:'
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('➕ THÊM ADMIN', 'ADMIN_ADD_ADMIN'),
+                createPostbackButton('➖ XÓA ADMIN', 'ADMIN_REMOVE_ADMIN'),
+                createPostbackButton('📊 QUYỀN HẠN', 'ADMIN_PERMISSIONS'),
+                createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error in handleAdminManageAdmins:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi quản lý admin!')
+    }
 }
 
 // Handle admin approve payment
@@ -750,5 +781,32 @@ export async function handleAdminSpamLogs(user: any) {
     } catch (error) {
         console.error('Error in admin spam logs:', error)
         await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải spam logs!')
+    }
+}
+
+// Add admin user
+export async function addAdminUser(facebookId: string, name: string, role: string = 'admin') {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('admin_users')
+            .insert({
+                facebook_id: facebookId,
+                name: name,
+                role: role,
+                permissions: role === 'super_admin' ? { all: true } : {},
+                is_active: true
+            })
+            .select()
+
+        if (error) {
+            console.error('Error adding admin user:', error)
+            return false
+        }
+
+        console.log('Admin user added:', data)
+        return true
+    } catch (error) {
+        console.error('Error in addAdminUser:', error)
+        return false
     }
 }
