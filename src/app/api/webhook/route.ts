@@ -116,24 +116,9 @@ async function handleMessageEvent(event: any) {
         const user = await getUserByFacebookId(senderId)
         if (!user) {
             console.log('User not found for facebook_id:', senderId)
-            // Send registration required message for new users
-            try {
-                const { sendMessage, sendButtonTemplate, createPostbackButton } = await import('@/lib/facebook-api')
-                await sendMessage(senderId, '👋 Chào mừng bạn đến với Bot Tân Dậu 1981!')
-                await sendMessage(senderId, 'Để sử dụng bot, bạn cần đăng ký tài khoản trước.')
-                
-                await sendButtonTemplate(
-                    senderId,
-                    'Bạn muốn:',
-                    [
-                        createPostbackButton('📝 ĐĂNG KÝ', 'REGISTER'),
-                        createPostbackButton('ℹ️ TÌM HIỂU', 'INFO'),
-                        createPostbackButton('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
-                    ]
-                )
-            } catch (error) {
-                console.error('Error sending welcome message:', error)
-            }
+            // Let bot handlers deal with new users
+            const { handleMessage } = await import('@/lib/bot-handlers')
+            await handleMessage(null, message.text || '')
             return
         }
 
