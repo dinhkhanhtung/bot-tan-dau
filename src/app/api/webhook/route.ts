@@ -184,14 +184,7 @@ async function handleMessageEvent(event: any) {
                         case 'CONTACT_ADMIN':
                             await sendMessage(senderId, '💬 LIÊN HỆ ADMIN')
                             await sendMessage(senderId, 'Để được hỗ trợ, vui lòng liên hệ:\n📞 Hotline: 0901 234 567\n📧 Email: admin@tandau1981.com\n⏰ Thời gian: 8:00 - 22:00')
-                            await sendQuickReply(
-                                senderId,
-                                'Bạn muốn:',
-                                [
-                                    createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
-                                    createQuickReply('ℹ️ TÌM HIỂU', 'INFO')
-                                ]
-                            )
+                            await sendMessage(senderId, 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.')
                             break
                         default:
                             await sendMessage(senderId, '❌ Lựa chọn không hợp lệ. Vui lòng chọn lại.')

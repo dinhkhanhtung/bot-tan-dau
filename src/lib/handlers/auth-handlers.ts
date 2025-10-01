@@ -88,6 +88,7 @@ async function handleRegistrationName(user: any, text: string, data: any) {
     ])
 
     await updateBotSession(user.facebook_id, {
+        current_flow: 'registration',
         step: 'phone',
         data: data
     })
@@ -136,6 +137,7 @@ async function handleRegistrationPhone(user: any, text: string, data: any) {
     )
 
     await updateBotSession(user.facebook_id, {
+        current_flow: 'registration',
         step: 'location',
         data: data
     })
@@ -157,6 +159,7 @@ export async function handleRegistrationLocationPostback(user: any, location: st
     ])
 
     await updateBotSession(user.facebook_id, {
+        current_flow: 'registration',
         step: 'product_service',
         data: data
     })
