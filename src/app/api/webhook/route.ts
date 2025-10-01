@@ -213,8 +213,8 @@ async function handleMessageEvent(event: any) {
                             const { updateBotSession } = await import('@/lib/utils')
                             await updateBotSession(senderId, {
                                 current_flow: 'registration',
-                                current_step: 1,
-                                registration_data: {}
+                                step: 'name',
+                                data: {}
                             })
                             break
                         case 'INFO':
@@ -250,6 +250,15 @@ async function handleMessageEvent(event: any) {
                 } catch (error) {
                     console.error('Error handling Quick Reply for unregistered user:', error)
                 }
+                return
+            }
+
+            // Check if user is in registration flow session first
+            const sessionData = await getBotSession(senderId)
+            if (sessionData && sessionData.session_data?.current_flow === 'registration') {
+                // User is in registration flow, handle the text input
+                const { handleRegistrationStep } = await import('@/lib/handlers/auth-handlers')
+                await handleRegistrationStep({ facebook_id: senderId }, message.text || '', sessionData.session_data)
                 return
             }
 
