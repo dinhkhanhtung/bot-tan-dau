@@ -209,9 +209,20 @@ async function handleMessageEvent(event: any) {
                         case 'REGISTER':
                             await sendMessage(senderId, '📝 BẮT ĐẦU ĐĂNG KÝ')
                             await sendMessage(senderId, 'Để đăng ký, bạn cần cung cấp thông tin cá nhân. Hãy bắt đầu bằng cách gửi họ tên của bạn.')
-                            // Start registration flow - use auth-handlers directly
-                            const { handleRegistration } = await import('@/lib/handlers/auth-handlers')
-                            await handleRegistration({ facebook_id: senderId })
+                            // Start registration flow
+                            const { updateBotSession } = await import('@/lib/utils')
+                            const sessionData = {
+                                current_flow: 'registration',
+                                step: 'name',
+                                data: {}
+                            }
+                            console.log('Creating registration session for user:', senderId, 'data:', JSON.stringify(sessionData, null, 2))
+                            try {
+                                await updateBotSession(senderId, sessionData)
+                                console.log('Registration session created successfully')
+                            } catch (error) {
+                                console.error('Error creating registration session:', error)
+                            }
                             break
                         case 'INFO':
                             await sendMessage(senderId, 'ℹ️ THÔNG TIN BOT TÂN DẬU 1981')
