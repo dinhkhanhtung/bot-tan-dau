@@ -153,6 +153,10 @@ export async function handlePostback(user: any, postback: string) {
                     } else {
                         await MarketplaceHandlers.handleSearchKeyword(user)
                     }
+                } else if (params[0] === 'HASHTAG') {
+                    // Handle hashtag search
+                    const hashtag = params.slice(1).join('_')
+                    await MarketplaceHandlers.handleSearchHashtag(user, hashtag)
                 } else if (params[0] === 'UPDATE') {
                     await MarketplaceHandlers.handleSearchUpdate(user)
                 } else {

@@ -11,7 +11,7 @@ import {
     sendMessagesWithTyping
 } from '../facebook-api'
 import { formatCurrency, formatNumber, generateId } from '../utils'
-import { CATEGORIES, LOCATIONS, DISTRICTS, PRICE_RANGES, SEARCH_HELPERS } from '../constants'
+import { CATEGORIES, LOCATIONS, DISTRICTS, PRICE_RANGES, SEARCH_HELPERS, HASHTAG_MAPPING, POPULAR_HASHTAGS } from '../constants'
 
 // Handle listing flow
 export async function handleListing(user: any) {
@@ -527,10 +527,21 @@ export async function handleSearchKeyword(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
     await sendMessagesWithTyping(user.facebook_id, [
-        '🔍 TÌM THEO TỪ KHÓA',
-        'Nhập từ khóa bạn muốn tìm:\n\nVD: "nhà 3 tầng", "xe honda", "điện thoại samsung"',
-        '💡 Bạn có thể tìm kiếm:\n• "nhà ở hà nội" - Tìm nhà tại Hà Nội\n• "xe honda" - Tìm xe Honda\n• "gia sư toán" - Tìm gia sư dạy toán'
+        '🔍 TÌM THEO TỪ KHÓA & HASHTAG',
+        'Nhập từ khóa hoặc hashtag bạn muốn tìm:\n\nVD: "nhà 3 tầng", "xe honda", "điện thoại samsung"',
+        '💡 Bạn có thể tìm kiếm:\n• "nhà ở hà nội" - Tìm nhà tại Hà Nội\n• "xe honda" - Tìm xe Honda\n• "gia sư toán" - Tìm gia sư dạy toán',
+        '🏷️ Hoặc dùng hashtag:\n• #quanao - Tìm quần áo\n• #dienthoai - Tìm điện thoại\n• #hanoi - Tìm tại Hà Nội\n• #re - Tìm giá rẻ'
     ])
+
+    // Show popular hashtags
+    const popularHashtags = SEARCH_HELPERS.getPopularHashtags().slice(0, 6)
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hashtag phổ biến:',
+        popularHashtags.map(hashtag => 
+            createPostbackButton(hashtag, `SEARCH_HASHTAG_${hashtag}`)
+        )
+    )
 
     await sendButtonTemplate(
         user.facebook_id,
@@ -552,16 +563,31 @@ export async function handleSearchKeyword(user: any) {
 // Handle search keyword from suggestion
 export async function handleSearchKeywordSuggestion(user: any, suggestion: string) {
     await sendTypingIndicator(user.facebook_id)
-
+    
     // Set search session and process the suggestion
     await updateBotSession(user.facebook_id, {
         current_flow: 'search',
         step: 'keyword',
         data: { type: 'keyword', keyword: suggestion }
     })
-
+    
     // Process the suggestion as if user typed it
     await handleSearchKeywordInput(user, suggestion, { keyword: suggestion })
+}
+
+// Handle hashtag search
+export async function handleSearchHashtag(user: any, hashtag: string) {
+    await sendTypingIndicator(user.facebook_id)
+    
+    // Set search session and process the hashtag
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'search',
+        step: 'keyword',
+        data: { type: 'hashtag', keyword: hashtag }
+    })
+    
+    // Process the hashtag as if user typed it
+    await handleSearchKeywordInput(user, hashtag, { keyword: hashtag })
 }
 
 // Handle search step
@@ -588,68 +614,87 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
     const query = data.keyword
 
     try {
-        // Smart search: Parse query for category, location, and keywords
-        const searchParams = parseSearchQuery(query)
-
+        // Check if query contains hashtags
+        const { hashtags, remainingQuery } = SEARCH_HELPERS.parseHashtags(query)
+        
         let listings: any[] = []
         let searchMessage = ''
 
-        if (searchParams.category && searchParams.location) {
-            // Search by both category and location
-            const { data: categoryListings, error: categoryError } = await supabaseAdmin
+        if (hashtags.length > 0) {
+            // Hashtag search
+            const { data: allListings, error: listingsError } = await supabaseAdmin
                 .from('listings')
                 .select('*')
-                .eq('category', searchParams.category)
-                .ilike('location', `%${searchParams.location}%`)
                 .eq('status', 'active')
                 .order('created_at', { ascending: false })
-                .limit(20)
+                .limit(100)
 
-            if (!categoryError) {
-                listings = categoryListings || []
-                searchMessage = `Tìm thấy ${listings.length} kết quả cho "${searchParams.categoryName}" tại "${searchParams.location}"`
-            }
-        } else if (searchParams.category) {
-            // Search by category only
-            const { data: categoryListings, error: categoryError } = await supabaseAdmin
-                .from('listings')
-                .select('*')
-                .eq('category', searchParams.category)
-                .eq('status', 'active')
-                .order('created_at', { ascending: false })
-                .limit(20)
-
-            if (!categoryError) {
-                listings = categoryListings || []
-                searchMessage = `Tìm thấy ${listings.length} kết quả cho "${searchParams.categoryName}"`
-            }
-        } else if (searchParams.location) {
-            // Search by location only
-            const { data: locationListings, error: locationError } = await supabaseAdmin
-                .from('listings')
-                .select('*')
-                .ilike('location', `%${searchParams.location}%`)
-                .eq('status', 'active')
-                .order('created_at', { ascending: false })
-                .limit(20)
-
-            if (!locationError) {
-                listings = locationListings || []
-                searchMessage = `Tìm thấy ${listings.length} kết quả tại "${searchParams.location}"`
+            if (!listingsError) {
+                listings = SEARCH_HELPERS.searchWithHashtags(allListings || [], query)
+                const hashtagText = hashtags.join(' ')
+                searchMessage = `Tìm thấy ${listings.length} kết quả cho ${hashtagText}${remainingQuery ? ` + "${remainingQuery}"` : ''}`
             }
         } else {
-            // Fallback to keyword search
-            const { data: keywordListings, error: keywordError } = await supabaseAdmin
-                .from('listings')
-                .select('*')
-                .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-                .eq('status', 'active')
-                .order('created_at', { ascending: false })
-                .limit(20)
+            // Regular smart search: Parse query for category, location, and keywords
+            const searchParams = parseSearchQuery(query)
+            
+            if (searchParams.category && searchParams.location) {
+                // Search by both category and location
+                const { data: categoryListings, error: categoryError } = await supabaseAdmin
+                    .from('listings')
+                    .select('*')
+                    .eq('category', searchParams.category)
+                    .ilike('location', `%${searchParams.location}%`)
+                    .eq('status', 'active')
+                    .order('created_at', { ascending: false })
+                    .limit(20)
 
-            if (!keywordError) {
-                listings = keywordListings || []
-                searchMessage = `Tìm thấy ${listings.length} kết quả cho "${query}"`
+                if (!categoryError) {
+                    listings = categoryListings || []
+                    searchMessage = `Tìm thấy ${listings.length} kết quả cho "${searchParams.categoryName}" tại "${searchParams.location}"`
+                }
+            } else if (searchParams.category) {
+                // Search by category only
+                const { data: categoryListings, error: categoryError } = await supabaseAdmin
+                    .from('listings')
+                    .select('*')
+                    .eq('category', searchParams.category)
+                    .eq('status', 'active')
+                    .order('created_at', { ascending: false })
+                    .limit(20)
+
+                if (!categoryError) {
+                    listings = categoryListings || []
+                    searchMessage = `Tìm thấy ${listings.length} kết quả cho "${searchParams.categoryName}"`
+                }
+            } else if (searchParams.location) {
+                // Search by location only
+                const { data: locationListings, error: locationError } = await supabaseAdmin
+                    .from('listings')
+                    .select('*')
+                    .ilike('location', `%${searchParams.location}%`)
+                    .eq('status', 'active')
+                    .order('created_at', { ascending: false })
+                    .limit(20)
+
+                if (!locationError) {
+                    listings = locationListings || []
+                    searchMessage = `Tìm thấy ${listings.length} kết quả tại "${searchParams.location}"`
+                }
+            } else {
+                // Fallback to keyword search
+                const { data: keywordListings, error: keywordError } = await supabaseAdmin
+                    .from('listings')
+                    .select('*')
+                    .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+                    .eq('status', 'active')
+                    .order('created_at', { ascending: false })
+                    .limit(20)
+
+                if (!keywordError) {
+                    listings = keywordListings || []
+                    searchMessage = `Tìm thấy ${listings.length} kết quả cho "${query}"`
+                }
             }
         }
 

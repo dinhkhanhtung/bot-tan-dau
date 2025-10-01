@@ -1,5 +1,5 @@
 // Test file for search functionality
-import { SEARCH_HELPERS, CATEGORIES, LOCATIONS } from './src/lib/constants'
+import { SEARCH_HELPERS, CATEGORIES, LOCATIONS, HASHTAG_MAPPING, POPULAR_HASHTAGS } from './src/lib/constants'
 
 console.log('=== TESTING SEARCH FUNCTIONALITY ===\n')
 
@@ -100,5 +100,51 @@ console.log(`  Found ${searchResults.length} results for "nhà"`)
 searchResults.forEach((item, index) => {
     console.log(`    ${index + 1}. "${item.title}" (Score: ${item.relevanceScore})`)
 })
+
+// Test 7: Hashtag functionality
+console.log('\n7. Testing hashtag functionality:')
+const hashtagTests = [
+    '#quanao',
+    '#dienthoai', 
+    '#hanoi',
+    '#re',
+    '#moi'
+]
+
+hashtagTests.forEach(hashtag => {
+    const mapping = SEARCH_HELPERS.getHashtagMapping(hashtag)
+    const location = 'location' in mapping ? mapping.location : null
+    console.log(`  ${hashtag} -> Category: ${mapping?.category || 'None'}, Location: ${location || 'None'}, Keywords: [${mapping?.keywords.join(', ') || 'None'}]`)
+})
+
+// Test 8: Hashtag parsing
+console.log('\n8. Testing hashtag parsing:')
+const hashtagQueryTests = [
+    '#quanao áo sơ mi',
+    '#dienthoai iphone 13',
+    '#hanoi nhà 3 tầng',
+    '#re #moi laptop',
+    'xe honda #oto'
+]
+
+hashtagQueryTests.forEach(query => {
+    const parsed = SEARCH_HELPERS.parseHashtags(query)
+    console.log(`  "${query}" -> Hashtags: [${parsed.hashtags.join(', ')}], Remaining: "${parsed.remainingQuery}"`)
+})
+
+// Test 9: Popular hashtags
+console.log('\n9. Testing popular hashtags:')
+console.log(`  Popular hashtags: ${POPULAR_HASHTAGS.slice(0, 5).join(', ')}...`)
+
+// Test 10: Hashtag search with sample data
+console.log('\n10. Testing hashtag search:')
+const hashtagSearchResults = SEARCH_HELPERS.searchWithHashtags(sampleItems, '#quanao')
+console.log(`  Found ${hashtagSearchResults.length} results for "#quanao"`)
+
+const hashtagLocationResults = SEARCH_HELPERS.searchWithHashtags(sampleItems, '#hanoi')
+console.log(`  Found ${hashtagLocationResults.length} results for "#hanoi"`)
+
+const hashtagCombinedResults = SEARCH_HELPERS.searchWithHashtags(sampleItems, '#dienthoai samsung')
+console.log(`  Found ${hashtagCombinedResults.length} results for "#dienthoai samsung"`)
 
 console.log('\n=== TEST COMPLETED ===')

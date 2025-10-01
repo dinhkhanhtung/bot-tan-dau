@@ -249,6 +249,80 @@ export const USER_LEVELS = {
     PLATINUM: { min: 1000, max: Infinity, name: 'Bạch kim' }
 } as const
 
+// HASHTAG_MAPPING - Map hashtags to categories and keywords
+export const HASHTAG_MAPPING = {
+    // Bất động sản
+    '#nhadat': { category: 'BẤT ĐỘNG SẢN', keywords: ['nhà', 'đất', 'bất động sản'] },
+    '#nhathue': { category: 'BẤT ĐỘNG SẢN', keywords: ['nhà thuê', 'cho thuê nhà'] },
+    '#chungcu': { category: 'BẤT ĐỘNG SẢN', keywords: ['chung cư', 'căn hộ'] },
+    '#matbang': { category: 'BẤT ĐỘNG SẢN', keywords: ['mặt bằng', 'kinh doanh'] },
+    '#bietthu': { category: 'BẤT ĐỘNG SẢN', keywords: ['biệt thự', 'villa'] },
+    
+    // Ô tô
+    '#oto': { category: 'Ô TÔ', keywords: ['ô tô', 'xe hơi'] },
+    '#xemay': { category: 'Ô TÔ', keywords: ['xe máy', 'motor'] },
+    '#xehoi': { category: 'Ô TÔ', keywords: ['xe hơi', 'ô tô'] },
+    '#honda': { category: 'Ô TÔ', keywords: ['honda', 'xe honda'] },
+    '#toyota': { category: 'Ô TÔ', keywords: ['toyota', 'xe toyota'] },
+    '#yamaha': { category: 'Ô TÔ', keywords: ['yamaha', 'xe yamaha'] },
+    
+    // Điện tử
+    '#dienthoai': { category: 'ĐIỆN TỬ', keywords: ['điện thoại', 'smartphone'] },
+    '#laptop': { category: 'ĐIỆN TỬ', keywords: ['laptop', 'máy tính'] },
+    '#iphone': { category: 'ĐIỆN TỬ', keywords: ['iphone', 'apple'] },
+    '#samsung': { category: 'ĐIỆN TỬ', keywords: ['samsung', 'galaxy'] },
+    '#maytinh': { category: 'ĐIỆN TỬ', keywords: ['máy tính', 'pc'] },
+    '#tivi': { category: 'ĐIỆN TỬ', keywords: ['tivi', 'tv'] },
+    
+    // Thời trang
+    '#quanao': { category: 'THỜI TRANG', keywords: ['quần áo', 'thời trang'] },
+    '#giaydep': { category: 'THỜI TRANG', keywords: ['giày dép', 'giày', 'dép'] },
+    '#tui': { category: 'THỜI TRANG', keywords: ['túi', 'balo', 'ví'] },
+    '#dongho': { category: 'THỜI TRANG', keywords: ['đồng hồ', 'watch'] },
+    '#trangsuc': { category: 'THỜI TRANG', keywords: ['trang sức', 'nhẫn', 'dây chuyền'] },
+    
+    // Ẩm thực
+    '#monan': { category: 'ẨM THỰC', keywords: ['món ăn', 'thức ăn'] },
+    '#comtrua': { category: 'ẨM THỰC', keywords: ['cơm trưa', 'cơm văn phòng'] },
+    '#banh': { category: 'ẨM THỰC', keywords: ['bánh', 'bánh ngọt'] },
+    '#traicay': { category: 'ẨM THỰC', keywords: ['trái cây', 'hoa quả'] },
+    '#cafe': { category: 'ẨM THỰC', keywords: ['cà phê', 'coffee'] },
+    
+    // Dịch vụ
+    '#giasu': { category: 'DỊCH VỤ', keywords: ['gia sư', 'dạy kèm'] },
+    '#massage': { category: 'DỊCH VỤ', keywords: ['massage', 'xoa bóp'] },
+    '#spa': { category: 'DỊCH VỤ', keywords: ['spa', 'làm đẹp'] },
+    '#sua': { category: 'DỊCH VỤ', keywords: ['sửa chữa', 'sửa'] },
+    '#vanchuyen': { category: 'DỊCH VỤ', keywords: ['vận chuyển', 'chuyển nhà'] },
+    '#nauan': { category: 'DỊCH VỤ', keywords: ['nấu ăn', 'đầu bếp'] },
+    '#trongtre': { category: 'DỊCH VỤ', keywords: ['trông trẻ', 'babysitter'] },
+    '#dondep': { category: 'DỊCH VỤ', keywords: ['dọn dẹp', 'giúp việc'] },
+    
+    // Địa điểm
+    '#hanoi': { category: null, location: 'HÀ NỘI', keywords: ['hà nội', 'hanoi'] },
+    '#hcm': { category: null, location: 'TP.HỒ CHÍ MINH', keywords: ['hồ chí minh', 'hcm', 'sài gòn'] },
+    '#danang': { category: null, location: 'ĐÀ NẴNG', keywords: ['đà nẵng', 'danang'] },
+    '#haiphong': { category: null, location: 'HẢI PHÒNG', keywords: ['hải phòng', 'haiphong'] },
+    '#cantho': { category: null, location: 'CẦN THƠ', keywords: ['cần thơ', 'cantho'] },
+    
+    // Giá cả
+    '#re': { category: null, location: null, keywords: ['rẻ', 'giá rẻ', 'khuyến mãi'] },
+    '#cao': { category: null, location: null, keywords: ['cao cấp', 'premium', 'đắt'] },
+    '#mienphi': { category: null, location: null, keywords: ['miễn phí', 'free', 'tặng'] },
+    
+    // Trạng thái
+    '#moi': { category: null, location: null, keywords: ['mới', 'mới tinh', 'chưa sử dụng'] },
+    '#cu': { category: null, location: null, keywords: ['cũ', 'đã sử dụng', 'second hand'] },
+    '#tot': { category: null, location: null, keywords: ['tốt', 'chất lượng', 'uy tín'] }
+} as const
+
+// POPULAR_HASHTAGS - Most used hashtags for suggestions
+export const POPULAR_HASHTAGS = [
+    '#quanao', '#dienthoai', '#nhadat', '#oto', '#giasu',
+    '#massage', '#monan', '#laptop', '#hanoi', '#hcm',
+    '#re', '#moi', '#tot', '#mienphi', '#spa'
+] as const
+
 // Simple Search Helper Functions (No AI - Cost Effective)
 export const SEARCH_HELPERS = {
     // Find category by keyword (simple string matching)
@@ -380,5 +454,83 @@ export const SEARCH_HELPERS = {
             'nhà', 'xe', 'điện thoại', 'laptop', 'gia sư', 'massage',
             'hà nội', 'tp.hồ chí minh', 'đà nẵng', 'bình dương', 'đồng nai'
         ]
+    },
+
+    // Hashtag functions
+    findHashtagByKeyword: (keyword: string): string | null => {
+        const normalizedKeyword = keyword.toLowerCase().trim()
+        
+        for (const [hashtag, mapping] of Object.entries(HASHTAG_MAPPING)) {
+            if (hashtag.toLowerCase() === normalizedKeyword) {
+                return hashtag
+            }
+            // Check if keyword matches any of the hashtag's keywords
+            if (mapping.keywords.some(k => k.toLowerCase().includes(normalizedKeyword))) {
+                return hashtag
+            }
+        }
+        
+        return null
+    },
+
+    getHashtagMapping: (hashtag: string) => {
+        return HASHTAG_MAPPING[hashtag as keyof typeof HASHTAG_MAPPING] || null
+    },
+
+    parseHashtags: (query: string): { hashtags: string[], remainingQuery: string } => {
+        const hashtagRegex = /#\w+/g
+        const hashtags = query.match(hashtagRegex) || []
+        const remainingQuery = query.replace(hashtagRegex, '').trim()
+        
+        return { hashtags, remainingQuery }
+    },
+
+    getPopularHashtags: (): string[] => {
+        return [...POPULAR_HASHTAGS]
+    },
+
+    searchWithHashtags: (listings: any[], query: string): any[] => {
+        const { hashtags, remainingQuery } = SEARCH_HELPERS.parseHashtags(query)
+        
+        if (hashtags.length === 0) {
+            return SEARCH_HELPERS.searchListings(listings, query)
+        }
+
+        let filteredListings = listings
+
+        // Apply hashtag filters
+        for (const hashtag of hashtags) {
+            const mapping = SEARCH_HELPERS.getHashtagMapping(hashtag)
+            if (!mapping) continue
+
+            if (mapping.category) {
+                filteredListings = filteredListings.filter(listing => 
+                    listing.category === mapping.category
+                )
+            }
+
+            if ('location' in mapping && mapping.location) {
+                filteredListings = filteredListings.filter(listing => 
+                    listing.location?.toLowerCase().includes(mapping.location!.toLowerCase())
+                )
+            }
+
+            // Apply keyword filters
+            if (mapping.keywords.length > 0) {
+                filteredListings = filteredListings.filter(listing => {
+                    const searchText = `${listing.title} ${listing.description}`.toLowerCase()
+                    return mapping.keywords.some(keyword => 
+                        searchText.includes(keyword.toLowerCase())
+                    )
+                })
+            }
+        }
+
+        // Apply remaining query search
+        if (remainingQuery) {
+            filteredListings = SEARCH_HELPERS.searchListings(filteredListings, remainingQuery)
+        }
+
+        return filteredListings
     }
 } as const
