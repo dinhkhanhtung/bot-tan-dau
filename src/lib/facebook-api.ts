@@ -5,6 +5,12 @@ const FACEBOOK_API_URL = 'https://graph.facebook.com/v18.0'
 
 // Send text message
 export async function sendMessage(recipientId: string, message: string) {
+    // Validate message is not empty
+    if (!message || message.trim() === '') {
+        console.warn('Attempted to send empty message, skipping...')
+        return null
+    }
+
     try {
         const response = await axios.post(
             `${FACEBOOK_API_URL}/me/messages`,
@@ -232,6 +238,12 @@ export async function sendImage(recipientId: string, imageUrl: string) {
 // Send multiple messages with typing indicator
 export async function sendMessagesWithTyping(recipientId: string, messages: string[]) {
     for (let i = 0; i < messages.length; i++) {
+        // Skip empty messages
+        if (!messages[i] || messages[i].trim() === '') {
+            console.warn(`Skipping empty message at index ${i}`)
+            continue
+        }
+
         // Send typing indicator
         await sendTypingIndicator(recipientId)
 

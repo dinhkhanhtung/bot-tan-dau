@@ -437,7 +437,6 @@ async function showMainMenu(user: any) {
     await sendMessagesWithTyping(user.facebook_id, [
         '🏠 TRANG CHỦ TÂN DẬU',
         `Chào anh/chị ${user.name}! 👋`,
-        '',
         'Chọn chức năng:'
     ])
 
