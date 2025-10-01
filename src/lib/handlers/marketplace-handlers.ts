@@ -144,14 +144,14 @@ async function handleListingDescriptionInput(user: any, text: string, data: any)
         'Bước 4/5: Vị trí cụ thể\n📍 Vui lòng chọn vị trí cụ thể:'
     ])
 
-    // Show location buttons - only major cities first
-    const majorCities = ['HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG']
+    // Show location buttons - all major cities
+    const majorCities = ['HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ']
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Chọn thành phố:',
         majorCities.map(city =>
-            createPostbackButton(`🏙️ ${city}`, `LISTING_CITY_${city}`)
+            createQuickReply(`🏙️ ${city}`, `LISTING_CITY_${city}`)
         )
     )
 

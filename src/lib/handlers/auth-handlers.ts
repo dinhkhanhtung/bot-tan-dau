@@ -144,13 +144,17 @@ async function handleRegistrationPhone(user: any, text: string, data: any) {
         'Bước 3/6: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Chọn vị trí:',
         [
-            createPostbackButton('🏠 HÀ NỘI', 'REG_LOCATION_HANOI'),
-            createPostbackButton('🏢 TP.HCM', 'REG_LOCATION_HCM'),
-            createPostbackButton('🏞️ KHÁC...', 'REG_LOCATION_OTHER')
+            createQuickReply('🏠 HÀ NỘI', 'REG_LOCATION_HANOI'),
+            createQuickReply('🏢 TP.HCM', 'REG_LOCATION_HCM'),
+            createQuickReply('🏖️ ĐÀ NẴNG', 'REG_LOCATION_DANANG'),
+            createQuickReply('🌊 HẢI PHÒNG', 'REG_LOCATION_HAIPHONG'),
+            createQuickReply('🏔️ CẦN THƠ', 'REG_LOCATION_CANTHO'),
+            createQuickReply('🌾 AN GIANG', 'REG_LOCATION_ANGIANG'),
+            createQuickReply('🏞️ KHÁC...', 'REG_LOCATION_OTHER')
         ]
     )
 

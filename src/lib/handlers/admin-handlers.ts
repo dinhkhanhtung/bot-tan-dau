@@ -129,13 +129,14 @@ export async function handleAdminPayments(user: any) {
             await sendMessage(user.facebook_id, paymentText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
-                createPostbackButton('🔍 TÌM KIẾM', 'ADMIN_SEARCH_PAYMENT'),
-                createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+                createQuickReply('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
+                createQuickReply('🔍 TÌM KIẾM', 'ADMIN_SEARCH_PAYMENT'),
+                createQuickReply('🔄 LÀM MỚI', 'ADMIN_PAYMENTS'),
+                createQuickReply('🔙 QUAY LẠI', 'ADMIN')
             ]
         )
 
@@ -171,13 +172,16 @@ export async function handleAdminUsers(user: any) {
             'Chọn chức năng:'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Chức năng:',
             [
-                createPostbackButton('🔍 TÌM THEO TÊN', 'ADMIN_SEARCH_USER_NAME'),
-                createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_USERS'),
-                createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+                createQuickReply('🔍 TÌM THEO TÊN', 'ADMIN_SEARCH_USER_NAME'),
+                createQuickReply('🔍 TÌM THEO SĐT', 'ADMIN_SEARCH_USER_PHONE'),
+                createQuickReply('📊 XEM TẤT CẢ', 'ADMIN_ALL_USERS'),
+                createQuickReply('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT_USERS'),
+                createQuickReply('⚠️ VI PHẠM', 'ADMIN_VIOLATIONS'),
+                createQuickReply('🔙 QUAY LẠI', 'ADMIN')
             ]
         )
 
@@ -214,13 +218,16 @@ export async function handleAdminListings(user: any) {
             'Chọn chức năng:'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Chức năng:',
             [
-                createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_LISTINGS'),
-                createPostbackButton('⚠️ KIỂM DUYỆT', 'ADMIN_MODERATE_LISTINGS'),
-                createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+                createQuickReply('📊 XEM TẤT CẢ', 'ADMIN_ALL_LISTINGS'),
+                createQuickReply('⚠️ KIỂM DUYỆT', 'ADMIN_MODERATE_LISTINGS'),
+                createQuickReply('⭐ FEATURED', 'ADMIN_FEATURED_LISTINGS'),
+                createQuickReply('🔍 TÌM KIẾM', 'ADMIN_SEARCH_LISTINGS'),
+                createQuickReply('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT_LISTINGS'),
+                createQuickReply('🔙 QUAY LẠI', 'ADMIN')
             ]
         )
 
@@ -278,13 +285,15 @@ export async function handleAdminStats(user: any) {
             `🛒 Tin đăng:\n• Tổng: ${totalListings} (+${todayListings} hôm nay)\n• Active: ${activeListings}\n• Featured: ${featuredListings}`
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('📈 XEM CHI TIẾT', 'ADMIN_DETAILED_STATS'),
-                createPostbackButton('📊 XUẤT BÁO CÁO', 'ADMIN_EXPORT_COMPREHENSIVE'),
-                createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+                createQuickReply('📈 XEM CHI TIẾT', 'ADMIN_DETAILED_STATS'),
+                createQuickReply('📊 XUẤT BÁO CÁO', 'ADMIN_EXPORT_COMPREHENSIVE'),
+                createQuickReply('📅 THEO NGÀY', 'ADMIN_EXPORT_BY_DATE'),
+                createQuickReply('🔄 LÀM MỚI', 'ADMIN_STATS'),
+                createQuickReply('🔙 QUAY LẠI', 'ADMIN')
             ]
         )
 

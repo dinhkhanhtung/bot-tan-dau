@@ -241,13 +241,15 @@ export async function handlePointsRedeem(user: any) {
         'Chọn phần thưởng muốn đổi:'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Phần thưởng:',
         [
-            createPostbackButton('💳 10% phí niêm yết - 100 điểm', 'REDEEM_DISCOUNT_100'),
-            createPostbackButton('⏰ 1 ngày miễn phí - 200 điểm', 'REDEEM_FREE_200'),
-            createPostbackButton('🔙 QUAY LẠI', 'POINTS')
+            createQuickReply('💳 10% phí niêm yết - 100 điểm', 'REDEEM_DISCOUNT_100'),
+            createQuickReply('⏰ 1 ngày miễn phí - 200 điểm', 'REDEEM_FREE_200'),
+            createQuickReply('⭐ Featured listing 1 tuần - 500 điểm', 'REDEEM_FEATURED_500'),
+            createQuickReply('🎉 1 tuần miễn phí - 1000 điểm', 'REDEEM_FREE_WEEK_1000'),
+            createQuickReply('🔙 QUAY LẠI', 'POINTS')
         ]
     )
 }
