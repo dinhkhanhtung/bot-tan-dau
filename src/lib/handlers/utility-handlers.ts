@@ -36,7 +36,14 @@ export async function handleHoroscope(user: any) {
         [
             createPostbackButton('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
             createPostbackButton('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
-            createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
+            createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Điều hướng:',
+        [
             createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
         ]
     )
@@ -192,7 +199,14 @@ export async function handlePoints(user: any) {
             [
                 createPostbackButton('💳 Giảm giá', 'POINTS_REWARDS_DISCOUNT'),
                 createPostbackButton('🏆 Huy hiệu', 'POINTS_REWARDS_BADGES'),
-                createPostbackButton('🎁 Quà tặng', 'POINTS_REWARDS_GIFTS'),
+                createPostbackButton('🎁 Quà tặng', 'POINTS_REWARDS_GIFTS')
+            ]
+        )
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Thêm:',
+            [
                 createPostbackButton('🎮 Game', 'POINTS_REWARDS_GAMES')
             ]
         )
@@ -203,7 +217,14 @@ export async function handlePoints(user: any) {
             [
                 createPostbackButton('📊 XEM LỊCH SỬ', 'POINTS_HISTORY'),
                 createPostbackButton('🎯 THÀNH TÍCH', 'POINTS_ACHIEVEMENTS'),
-                createPostbackButton('🏆 LEADERBOARD', 'POINTS_LEADERBOARD'),
+                createPostbackButton('🏆 LEADERBOARD', 'POINTS_LEADERBOARD')
+            ]
+        )
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Điều hướng:',
+            [
                 createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
             ]
         )
@@ -253,7 +274,14 @@ export async function handlePointsRedeem(user: any) {
         [
             createPostbackButton('💳 10% phí niêm yết - 100 điểm', 'REDEEM_DISCOUNT_100'),
             createPostbackButton('⏰ 1 ngày miễn phí - 200 điểm', 'REDEEM_FREE_200'),
-            createPostbackButton('⭐ Featured listing 1 tuần - 500 điểm', 'REDEEM_FEATURED_500'),
+            createPostbackButton('⭐ Featured listing 1 tuần - 500 điểm', 'REDEEM_FEATURED_500')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm:',
+        [
             createPostbackButton('🎉 1 tuần miễn phí - 1000 điểm', 'REDEEM_FREE_WEEK_1000'),
             createPostbackButton('🔙 QUAY LẠI', 'POINTS')
         ]
@@ -543,21 +571,36 @@ export async function handleDefaultMessageRegistered(user: any) {
         'Hôm nay bạn muốn làm gì?'
     ])
 
+    // First set of main functions
     await sendButtonTemplate(
         user.facebook_id,
-        'Chọn chức năng:',
+        'Chức năng chính:',
         [
             createPostbackButton('🛒 NIÊM YẾT', 'LISTING'),
             createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('🔍 TÌM KIẾM HỘ', 'SEARCH_SERVICE'),
-            createPostbackButton('💬 KẾT NỐI', 'CONNECT'),
+            createPostbackButton('💬 KẾT NỐI', 'CONNECT')
+        ]
+    )
+
+    // Second set of functions
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tiếp tục:',
+        [
             createPostbackButton('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
             createPostbackButton('💰 THANH TOÁN', 'PAYMENT'),
-            createPostbackButton('💰 QUẢNG CÁO', 'ADVERTISING'),
-            createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS'),
-            createPostbackButton('📊 THỐNG KÊ', 'PERSONAL_STATS'),
+            createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS')
+        ]
+    )
+
+    // Third set of functions
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm:',
+        [
             createPostbackButton('🔮 TỬ VI', 'HOROSCOPE'),
-            createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS')
+            createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS'),
+            createPostbackButton('❌ THOÁT', 'EXIT_BOT')
         ]
     )
 }
