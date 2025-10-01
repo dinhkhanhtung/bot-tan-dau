@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.text()
         const signature = request.headers.get('x-hub-signature-256')
-        
+
         console.log('Webhook received:', { body, signature })
 
         // Verify signature
@@ -88,32 +88,50 @@ async function handleWebhookEvent(event: any) {
 
 // Handle message events
 async function handleMessageEvent(event: any) {
-    const senderId = event.sender.id
-    const message = event.message
+    try {
+        const senderId = event.sender.id
+        const message = event.message
 
-    // Skip if message is from bot
-    if (senderId === process.env.FACEBOOK_APP_ID) {
-        return
-    }
-
-    // Get or create user
-    let user = await getUserByFacebookId(senderId)
-    if (!user) {
-        console.log('User not found, creating new user for facebook_id:', senderId)
-        user = await createUserFromFacebook(senderId)
-        if (!user) {
-            console.error('Failed to create user for facebook_id:', senderId)
-            // Don't send message if user creation failed - just log and return
+        // Skip if message is from bot
+        if (senderId === process.env.FACEBOOK_APP_ID) {
             return
         }
-        console.log('Successfully created user:', user.id)
-    }
 
-    // Handle different message types
-    if (message.text) {
-        await handleTextMessage(user, message.text)
-    } else if (message.attachments) {
-        await handleAttachmentMessage(user, message.attachments)
+        // Get or create user
+        let user = await getUserByFacebookId(senderId)
+        if (!user) {
+            console.log('User not found, creating new user for facebook_id:', senderId)
+            user = await createUserFromFacebook(senderId)
+            if (!user) {
+                console.error('Failed to create user for facebook_id:', senderId)
+                // Send error message to the actual sender, not a hardcoded ID
+                try {
+                    await sendMessage(senderId, 'Xin lỗi, có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại sau.')
+                } catch (sendError) {
+                    console.error('Error sending error message:', sendError)
+                }
+                return
+            }
+            console.log('Successfully created user:', user.id)
+        }
+
+        // Handle different message types
+        if (message.text) {
+            await handleTextMessage(user, message.text)
+        } else if (message.attachments) {
+            await handleAttachmentMessage(user, message.attachments)
+        }
+    } catch (error) {
+        console.error('Error handling message event:', error)
+        // Try to send error message to sender if possible
+        try {
+            const senderId = event?.sender?.id
+            if (senderId) {
+                await sendMessage(senderId, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+            }
+        } catch (sendError) {
+            console.error('Error sending error message:', sendError)
+        }
     }
 }
 
@@ -125,58 +143,123 @@ async function handlePostbackEvent(event: any) {
     // Get user
     const user = await getUserByFacebookId(senderId)
     if (!user) {
-        await sendMessage(senderId, 'Vui lòng đăng ký trước khi sử dụng bot!')
+        try {
+            await sendMessage(senderId, 'Vui lòng đăng ký trước khi sử dụng bot!')
+        } catch (error) {
+            console.error('Error sending message to unregistered user:', error)
+        }
         return
     }
 
     // Handle postback payload
-    await handlePostback(user, payload)
+    try {
+        await handlePostback(user, payload)
+    } catch (error) {
+        console.error('Error handling postback:', error)
+        try {
+            await sendMessage(senderId, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+        } catch (sendError) {
+            console.error('Error sending error message:', sendError)
+        }
+    }
 }
 
 // Handle text messages
 async function handleTextMessage(user: any, text: string) {
+    // Check if user exists and has required properties
+    if (!user || !user.facebook_id) {
+        console.error('Invalid user in handleTextMessage:', user)
+        return
+    }
+
     // Check if user is admin
     if (text === '/admin' && user.facebook_id === 'admin') {
-        await handleAdminCommand(user)
+        try {
+            await handleAdminCommand(user)
+        } catch (error) {
+            console.error('Error handling admin command:', error)
+        }
         return
     }
 
     // Handle regular user messages
-    await handleUserMessage(user, text)
+    try {
+        await handleUserMessage(user, text)
+    } catch (error) {
+        console.error('Error handling user message:', error)
+        try {
+            await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+        } catch (sendError) {
+            console.error('Error sending error message:', sendError)
+        }
+    }
 }
 
 // Handle attachment messages
 async function handleAttachmentMessage(user: any, attachments: any[]) {
-    for (const attachment of attachments) {
-        if (attachment.type === 'image') {
-            await handleImageAttachment(user, attachment)
-        } else if (attachment.type === 'file') {
-            await handleFileAttachment(user, attachment)
+    // Check if user exists and has required properties
+    if (!user || !user.facebook_id) {
+        console.error('Invalid user in handleAttachmentMessage:', user)
+        return
+    }
+
+    try {
+        for (const attachment of attachments) {
+            if (attachment.type === 'image') {
+                await handleImageAttachment(user, attachment)
+            } else if (attachment.type === 'file') {
+                await handleFileAttachment(user, attachment)
+            }
+        }
+    } catch (error) {
+        console.error('Error handling attachment message:', error)
+        try {
+            await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra khi xử lý file. Vui lòng thử lại sau!')
+        } catch (sendError) {
+            console.error('Error sending error message:', sendError)
         }
     }
 }
 
 // Handle image attachments
 async function handleImageAttachment(user: any, attachment: any) {
-    const imageUrl = attachment.payload.url
+    try {
+        const imageUrl = attachment.payload.url
 
-    // Check if user is in payment flow
-    const session = await getBotSession(user.id)
-    if (session?.current_flow === 'payment' && session?.current_step === 2) {
-        // Handle payment receipt
-        await handlePaymentReceipt(user, imageUrl)
-    } else if (session?.current_flow === 'listing' && session?.current_step === 5) {
-        // Handle listing images
-        await handleListingImages(user, imageUrl)
-    } else {
-        await sendMessage(user.facebook_id, 'Cảm ơn bạn đã gửi ảnh! Tôi sẽ xử lý sau.')
+        // Check if user is in payment flow
+        const session = await getBotSession(user.id)
+        if (session?.current_flow === 'payment' && session?.current_step === 2) {
+            // Handle payment receipt
+            await handlePaymentReceipt(user, imageUrl)
+        } else if (session?.current_flow === 'listing' && session?.current_step === 5) {
+            // Handle listing images
+            await handleListingImages(user, imageUrl)
+        } else {
+            await sendMessage(user.facebook_id, 'Cảm ơn bạn đã gửi ảnh! Tôi sẽ xử lý sau.')
+        }
+    } catch (error) {
+        console.error('Error handling image attachment:', error)
+        try {
+            await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra khi xử lý ảnh. Vui lòng thử lại sau!')
+        } catch (sendError) {
+            console.error('Error sending error message:', sendError)
+        }
     }
 }
 
 // Handle file attachments
 async function handleFileAttachment(user: any, attachment: any) {
-    const fileUrl = attachment.payload.url
-    await sendMessage(user.facebook_id, 'Cảm ơn bạn đã gửi file! Tôi sẽ xử lý sau.')
+    try {
+        const fileUrl = attachment.payload.url
+        await sendMessage(user.facebook_id, 'Cảm ơn bạn đã gửi file! Tôi sẽ xử lý sau.')
+    } catch (error) {
+        console.error('Error handling file attachment:', error)
+        try {
+            await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra khi xử lý file. Vui lòng thử lại sau!')
+        } catch (sendError) {
+            console.error('Error sending error message:', sendError)
+        }
+    }
 }
 
 // Database helper functions
@@ -209,14 +292,14 @@ async function createUserFromFacebook(facebookId: string) {
     try {
         // Generate referral code
         const referralCode = `TD1981-${facebookId.slice(-6)}`
-        
+
         // Create a basic user record
         const { data, error } = await supabaseAdmin
             .from('users')
             .insert({
                 facebook_id: facebookId,
                 name: 'User',
-                phone: '',
+                phone: '0000000000', // Provide a default phone number
                 location: 'HÀ NỘI',
                 birthday: 1981,
                 status: 'trial',
