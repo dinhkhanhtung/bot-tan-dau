@@ -67,6 +67,7 @@ export async function handleAdminCommand(user: any) {
         'Thêm:',
         [
             createPostbackButton('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS'),
+            createPostbackButton('🛑 TẮT BOT', 'ADMIN_STOP_BOT'),
             createPostbackButton('❌ THOÁT', 'MAIN_MENU')
         ]
     )
@@ -578,4 +579,107 @@ export async function handleAdminCreateShareLink(user: any) {
             createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
         ]
     )
+}
+
+// Handle admin stop bot
+export async function handleAdminStopBot(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🛑 TẮT BOT',
+        '⚠️ CẢNH BÁO: Bạn đang tắt bot!',
+        'Bot sẽ ngừng phản hồi tất cả tin nhắn.',
+        'Để bật lại, bạn cần restart server.'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Xác nhận tắt bot:',
+        [
+            createPostbackButton('✅ XÁC NHẬN TẮT', 'ADMIN_CONFIRM_STOP'),
+            createPostbackButton('❌ HỦY', 'ADMIN')
+        ]
+    )
+}
+
+// Handle admin confirm stop bot
+export async function handleAdminConfirmStopBot(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        // Set bot status to stopped in database
+        const { error } = await supabaseAdmin
+            .from('bot_settings')
+            .upsert({
+                key: 'bot_status',
+                value: 'stopped',
+                updated_at: new Date().toISOString()
+            })
+
+        if (error) {
+            console.error('Error stopping bot:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tắt bot!')
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🛑 BOT ĐÃ TẮT!',
+            'Bot hiện tại đã ngừng phản hồi.',
+            'Để bật lại, restart server hoặc chạy lệnh bật bot.'
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Bot đã tắt:',
+            [
+                createPostbackButton('🔄 BẬT LẠI BOT', 'ADMIN_START_BOT'),
+                createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error in admin confirm stop bot:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tắt bot!')
+    }
+}
+
+// Handle admin start bot
+export async function handleAdminStartBot(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        // Set bot status to active in database
+        const { error } = await supabaseAdmin
+            .from('bot_settings')
+            .upsert({
+                key: 'bot_status',
+                value: 'active',
+                updated_at: new Date().toISOString()
+            })
+
+        if (error) {
+            console.error('Error starting bot:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi bật bot!')
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🟢 BOT ĐÃ BẬT!',
+            'Bot hiện tại đã hoạt động bình thường.',
+            'Có thể phản hồi tin nhắn từ user.'
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Bot đã bật:',
+            [
+                createPostbackButton('🛑 TẮT BOT', 'ADMIN_STOP_BOT'),
+                createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error in admin start bot:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi bật bot!')
+    }
 }

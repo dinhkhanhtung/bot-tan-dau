@@ -338,6 +338,18 @@ export async function handlePostback(user: any, postback: string) {
                     if (params[1] === 'LINK') {
                         await AdminExtra.handleAdminCopyLink(user)
                     }
+                } else if (params[0] === 'STOP') {
+                    if (params[1] === 'BOT') {
+                        await AdminHandlers.handleAdminStopBot(user)
+                    }
+                } else if (params[0] === 'CONFIRM') {
+                    if (params[1] === 'STOP') {
+                        await AdminHandlers.handleAdminConfirmStopBot(user)
+                    }
+                } else if (params[0] === 'START') {
+                    if (params[1] === 'BOT') {
+                        await AdminHandlers.handleAdminStartBot(user)
+                    }
                 } else {
                     await AdminHandlers.handleAdminCommand(user)
                 }

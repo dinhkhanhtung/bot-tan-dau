@@ -68,6 +68,18 @@ export async function POST(request: NextRequest) {
 // Handle webhook events
 async function handleWebhookEvent(event: any) {
     try {
+        // Check if bot is stopped
+        const { data: botStatus } = await supabaseAdmin
+            .from('bot_settings')
+            .select('value')
+            .eq('key', 'bot_status')
+            .single()
+
+        if (botStatus?.value === 'stopped') {
+            console.log('Bot is stopped, ignoring webhook event')
+            return
+        }
+
         // Handle message events
         if (event.message) {
             await handleMessageEvent(event)
