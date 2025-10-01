@@ -1,32 +1,29 @@
-# 🐓 BOT TÂN DẬU 1981
+# BOT TÂN DẬU 1981
 
-Platform kết nối mua bán dành riêng cho thành viên sinh năm 1981 (tuổi Tân Dậu).
+Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu 1981.
 
-## 🎯 Tính năng chính
+## 🎯 Mục đích
 
-- **Marketplace**: Mua bán sản phẩm và dịch vụ trong cộng đồng Tân Dậu
-- **Chat Kết Nối**: Trò chuyện trực tiếp với người bán/mua
-- **Cộng Đồng**: Kết nối với những người cùng tuổi Tân Dậu
-- **Xác Minh Tuổi**: Chỉ dành cho thành viên sinh năm 1981
-- **Trial 3 ngày**: Miễn phí 3 ngày đầu, sau đó 1,000đ/ngày
-- **Gamification**: Hệ thống điểm thưởng và achievement
-- **Tử Vi**: Dự báo hàng ngày cho tuổi Tân Dậu
-- **Storytelling**: Chia sẻ ký ức và câu chuyện cộng đồng
+- **Platform kết nối mua bán** cho thành viên sinh năm 1981
+- **Chỉ thu phí niêm yết**: 1,000đ/ngày, tối thiểu 7 ngày
+- **Bot chỉ kết nối, không tham gia giao dịch**
+- **Trial 3 ngày miễn phí** → yêu cầu thanh toán sau
+- **Xác nhận tuổi Tân Dậu 1981 dựa trên tin tưởng**
 
-## 🛠️ Tech Stack
+## 📱 Platform Architecture
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
-- **Backend**: Supabase (PostgreSQL + Realtime)
-- **Authentication**: Facebook Login API
-- **Deployment**: Vercel
-- **Database**: PostgreSQL với Row Level Security
+- **100% Facebook Messenger Bot** - Không có web app cho user
+- **Admin cũng sử dụng qua chat** - Không có web dashboard
+- **Next.js 14** + **TypeScript** + **Supabase** + **Vercel**
+- **Tất cả tương tác qua chat messages** với các nút bấm điều hướng
+- **Typing indicator** cho mọi phản hồi của bot
 
 ## 🚀 Cài đặt
 
 ### 1. Clone repository
 
 ```bash
-git clone https://github.com/your-username/bot-tan-dau-1981.git
+git clone <repository-url>
 cd bot-tan-dau-1981
 ```
 
@@ -38,175 +35,205 @@ npm install
 
 ### 3. Cấu hình environment variables
 
-Tạo file `.env.local`:
+Tạo file `.env.local` từ `env.example`:
 
-```env
-# Facebook API
-NEXT_PUBLIC_FACEBOOK_APP_ID=your_facebook_app_id
-FACEBOOK_APP_SECRET=your_facebook_app_secret
-FACEBOOK_ACCESS_TOKEN=your_facebook_access_token
-FACEBOOK_VERIFY_TOKEN=your_verify_token
-
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-
-# Admin
-SUPER_ADMIN_ID=your_facebook_id
-ADMIN_IDS=your_facebook_id
-
-# Security
-JWT_SECRET=your_jwt_secret
-ENCRYPTION_KEY=your_encryption_key
-SESSION_SECRET=your_session_secret
+```bash
+cp env.example .env.local
 ```
 
-### 4. Thiết lập database
+Cập nhật các giá trị trong `.env.local`:
 
-Chạy file `database-schema.sql` trong Supabase SQL Editor để tạo các bảng và functions.
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 
-### 5. Chạy development server
+# Facebook Messenger Configuration
+FACEBOOK_APP_ID=your_facebook_app_id
+FACEBOOK_APP_SECRET=your_facebook_app_secret
+FACEBOOK_ACCESS_TOKEN=your_facebook_access_token
+FACEBOOK_VERIFY_TOKEN=your_facebook_verify_token
+
+# Payment Configuration
+PAYMENT_BANK_ACCOUNT=0123456789
+PAYMENT_BANK_NAME=Vietcombank
+PAYMENT_ACCOUNT_HOLDER=BOT TÂN DẬU
+
+# Bot Configuration
+BOT_DAILY_FEE=1000
+BOT_MINIMUM_DAYS=7
+BOT_TRIAL_DAYS=3
+BOT_REFERRAL_REWARD=10000
+BOT_SEARCH_SERVICE_FEE=5000
+```
+
+### 4. Setup Supabase Database
+
+1. Tạo project mới trên [Supabase](https://supabase.com)
+2. Chạy script SQL trong `database-schema.sql` để tạo các bảng
+3. Cập nhật URL và keys trong `.env.local`
+
+### 5. Setup Facebook App
+
+1. Tạo app mới trên [Facebook Developers](https://developers.facebook.com)
+2. Thêm Messenger product
+3. Cấu hình webhook URL: `https://your-domain.com/api/webhook`
+4. Cập nhật tokens trong `.env.local`
+
+### 6. Chạy development server
 
 ```bash
 npm run dev
 ```
 
-Truy cập [http://localhost:3000](http://localhost:3000) để xem ứng dụng.
+### 7. Deploy lên Vercel
 
-## 📁 Cấu trúc project
-
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── api/               # API routes
-│   ├── (auth)/            # Auth pages
-│   ├── (main)/            # Main app pages
-│   └── (admin)/           # Admin pages
-├── components/            # React components
-│   ├── ui/               # UI components
-│   ├── auth/             # Auth components
-│   ├── marketplace/      # Marketplace components
-│   ├── chat/             # Chat components
-│   └── community/        # Community components
-├── lib/                  # Utilities và configs
-└── types/                # TypeScript types
+```bash
+npm run build
+vercel --prod
 ```
 
 ## 🗄️ Database Schema
 
-### Core Tables
-- `users` - Thông tin người dùng
-- `listings` - Tin đăng sản phẩm/dịch vụ
-- `conversations` - Cuộc trò chuyện
-- `messages` - Tin nhắn
-- `payments` - Thanh toán
+### Bảng chính:
 
-### Community Tables
-- `ratings` - Đánh giá người dùng
-- `events` - Sự kiện cộng đồng
-- `notifications` - Thông báo
-- `user_achievements` - Thành tích
+- **users**: Thông tin người dùng
+- **listings**: Tin đăng sản phẩm/dịch vụ
+- **conversations**: Cuộc trò chuyện giữa users
+- **payments**: Thanh toán
+- **ratings**: Đánh giá
+- **events**: Sự kiện cộng đồng
+- **notifications**: Thông báo
+- **ads**: Quảng cáo
+- **search_requests**: Yêu cầu tìm kiếm hộ
+- **referrals**: Giới thiệu
+- **user_points**: Điểm thưởng
+- **bot_sessions**: Session bot
 
-### Premium Tables
-- `ads` - Quảng cáo trả phí
-- `search_requests` - Yêu cầu tìm kiếm hộ
-- `referrals` - Giới thiệu thành viên
+## 🔧 API Endpoints
 
-### Analytics Tables
-- `user_analytics` - Phân tích người dùng
-- `platform_analytics` - Phân tích platform
+### Webhook
+- `POST /api/webhook` - Facebook Messenger webhook
 
-## 🔐 Authentication
+### Users
+- `POST /api/users` - Tạo user mới
+- `GET /api/users?facebook_id=xxx` - Lấy user theo Facebook ID
+- `PUT /api/users` - Cập nhật user
+- `DELETE /api/users?facebook_id=xxx` - Xóa user
 
-Sử dụng Facebook Login API với xác minh tuổi:
-- Chỉ chấp nhận người dùng sinh năm 1981
-- Tự động tạo trial 3 ngày
-- Tích hợp với Supabase Auth
+### Listings
+- `POST /api/listings` - Tạo tin đăng mới
+- `GET /api/listings` - Lấy danh sách tin đăng
+- `PUT /api/listings` - Cập nhật tin đăng
+- `DELETE /api/listings?id=xxx` - Xóa tin đăng
 
-## 💰 Business Model
+### Payments
+- `POST /api/payments` - Tạo thanh toán mới
+- `GET /api/payments` - Lấy danh sách thanh toán
+- `PUT /api/payments` - Cập nhật trạng thái thanh toán
+- `DELETE /api/payments?id=xxx` - Xóa thanh toán
 
-- **Trial**: 3 ngày miễn phí
-- **Membership**: 1,000đ/ngày (tối thiểu 7 ngày)
-- **Ads**: Quảng cáo trả phí
-- **Search Service**: Dịch vụ tìm kiếm hộ 5,000đ/lần
-- **Referrals**: Thưởng 10,000đ/người giới thiệu
+## 🎯 Tính năng chính
 
-## 🎮 Gamification
+### 1. Đăng ký & Xác thực
+- Đăng ký đơn giản: Họ tên, SĐT, Vị trí, Xác nhận tuổi 1981
+- Không cần Facebook Login phức tạp
+- Dựa trên tin tưởng, không kiểm tra chặt chẽ
+- Tạo referral code: TD1981-{USER_ID}
+- Trial 3 ngày tự động kích hoạt
 
-- **Point System**: Kiếm điểm từ các hoạt động
-- **Achievements**: Badge và thành tích
-- **Leaderboards**: Bảng xếp hạng
-- **Rewards**: Đổi điểm lấy phần thưởng
+### 2. Niêm yết sản phẩm/dịch vụ
+- Chia nhỏ từng bước: Chọn loại → Nhập tiêu đề → Giá → Mô tả → Vị trí → Hình ảnh
+- Categories: BĐS, Ô tô, Điện tử, Thời trang, Ẩm thực, Dịch vụ
+- Mỗi bước có nút bấm rõ ràng
+- Xác nhận thông tin trước khi đăng
 
-## 📱 Mobile-First Design
+### 3. Tìm kiếm & Kết nối
+- Tìm kiếm theo category và loại sản phẩm
+- Hiển thị kết quả với nút "XEM CHI TIẾT" và "KẾT NỐI"
+- Chi tiết sản phẩm: Thông tin, mô tả, hình ảnh, đánh giá người bán
+- Kết nối tạo conversation giữa 2 user
 
-- Responsive design cho mọi thiết bị
-- PWA support
-- Touch-friendly interface
-- Offline support
+### 4. Chat Dual Mode
+- **Bot Chat**: Hệ thống tự động, gợi ý sản phẩm, cross-selling
+- **Admin Chat**: Hỗ trợ trực tiếp, tư vấn cá nhân hóa
+- User chọn chế độ chat qua nút bấm
 
-## 🚀 Deployment
+### 5. Thanh toán
+- Nhắc nhở trial: 48h, 24h, khi hết hạn
+- Thông tin chuyển khoản: STK, Ngân hàng, Chủ TK, Nội dung
+- Upload biên lai qua chat
+- Admin duyệt qua chat với nút "DUYỆT"/"TỪ CHỐI"
+- Tự động gia hạn khi duyệt
+
+### 6. Cộng đồng Tân Dậu
+- **Top Sellers**: Ranking hàng tuần dựa trên rating và giao dịch
+- **Birthday Notifications**: Thông báo sinh nhật hàng ngày
+- **Rating System**: Đánh giá 1-5 sao sau mỗi giao dịch
+- **Hỗ trợ chéo**: Tìm việc, nhà trọ, đi chung xe, trông trẻ, nấu ăn, tư vấn
+- **Sự kiện cộng đồng**: Gặp mặt, triển lãm, hội chợ
+
+### 7. Tính năng nâng cao
+- **Cross-selling**: Gợi ý sản phẩm sau 3 tin nhắn
+- **Quảng cáo**: Homepage Banner, Search Boost, Cross-sell Spot, Featured Listing
+- **Dịch vụ tìm kiếm hộ**: 5,000đ/lần
+- **Referral**: Mã giới thiệu TD1981-{USER_ID}, thưởng 10,000đ
+- **Tử vi**: Tử vi hàng ngày cho Tân Dậu 1981
+- **Điểm thưởng**: Hệ thống điểm và level
+- **Admin**: Quản lý qua chat với duyệt thanh toán và thống kê
+
+## 🔧 Admin Commands
+
+Gửi `/admin` để vào admin dashboard:
+
+- **THANH TOÁN**: Duyệt thanh toán với nút "DUYỆT"/"TỪ CHỐI"
+- **USER**: Quản lý user và xem thống kê
+- **TIN ĐĂNG**: Quản lý tin đăng
+- **THỐNG KÊ**: Xem thống kê real-time
+
+## 📊 Thống kê
+
+- **User**: Tin đăng, kết nối, đánh giá, doanh thu
+- **Admin**: Tổng user, doanh thu, tin đăng, kết nối
+- **Real-time**: Cập nhật liên tục
+- **Xuất báo cáo**: Excel/CSV
+
+## 🚀 Triển khai
 
 ### Vercel (Recommended)
 
-1. Connect GitHub repository
-2. Set environment variables
-3. Deploy automatically
+1. Connect GitHub repository với Vercel
+2. Cấu hình environment variables
+3. Deploy tự động khi push code
 
-### Manual Deployment
+### Manual Deploy
 
 ```bash
 npm run build
-npm start
+vercel --prod
 ```
 
-## 📊 Monitoring
+## 🔒 Bảo mật
 
-- Real-time analytics
-- Error tracking
-- Performance monitoring
-- User behavior tracking
+- Webhook signature verification
+- Input validation
+- SQL injection protection
+- Rate limiting
+- Error handling
+
+## 📝 License
+
+MIT License
 
 ## 🤝 Contributing
 
 1. Fork repository
-2. Create feature branch
+2. Tạo feature branch
 3. Commit changes
 4. Push to branch
-5. Create Pull Request
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file
+5. Tạo Pull Request
 
 ## 📞 Support
 
-- Email: support@bot-tan-dau-1981.com
-- Phone: 1900-1981
-- Facebook: [BOT TÂN DẬU 1981](https://facebook.com/bot-tan-dau-1981)
-
-## 🎉 Roadmap
-
-### Phase 1 (Completed)
-- [x] Project setup
-- [x] Facebook authentication
-- [x] Age verification
-- [x] Basic marketplace
-- [x] Database schema
-
-### Phase 2 (In Progress)
-- [ ] Chat system
-- [ ] Rating system
-- [ ] Payment system
-- [ ] Admin dashboard
-
-### Phase 3 (Planned)
-- [ ] Gamification
-- [ ] Astrology features
-- [ ] Storytelling system
-- [ ] Mobile app
-
----
-
-**Made with ❤️ for Tân Dậu 1981 community**
+Liên hệ admin qua chat bot hoặc email: support@tandau1981.com

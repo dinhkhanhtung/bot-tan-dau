@@ -1,473 +1,469 @@
-import { createClient } from '@/lib/supabase'
+import { supabaseAdmin } from './supabase'
+import {
+    sendMessage,
+    sendTypingIndicator,
+    sendQuickReply,
+    sendButtonTemplate,
+    sendGenericTemplate,
+    sendCarouselTemplate,
+    createQuickReply,
+    createPostbackButton,
+    createGenericElement,
+    sendMessagesWithTyping
+} from './facebook-api'
+import {
+    CATEGORIES,
+    LOCATIONS,
+    DISTRICTS,
+    PRICE_RANGES,
+    AD_PACKAGES,
+    BOT_CONFIG
+} from './constants'
+import {
+    formatCurrency,
+    formatNumber,
+    generateReferralCode,
+    calculateUserLevel,
+    daysUntilExpiry,
+    isTrialUser,
+    isExpiredUser,
+    generateHoroscope,
+    validatePhoneNumber,
+    generateId
+} from './utils'
 
-// Bot handlers cho các tính năng cụ thể
-export class BotHandlers {
-  private supabase = createClient()
-
-  // Handle marketplace commands
-  async handleMarketplace(senderId: string, payload: string) {
-    switch (payload) {
-      case 'CATEGORY_PHONE':
-        await this.sendPhoneListings(senderId)
-        break
-      case 'CATEGORY_LAPTOP':
-        await this.sendLaptopListings(senderId)
-        break
-      case 'CATEGORY_VEHICLE':
-        await this.sendVehicleListings(senderId)
-        break
-      case 'CATEGORY_REAL_ESTATE':
-        await this.sendRealEstateListings(senderId)
-        break
-      case 'SEARCH':
-        await this.sendSearchPrompt(senderId)
-        break
-      case 'CREATE_LISTING':
-        await this.sendCreateListingForm(senderId)
-        break
-    }
-  }
-
-  // Handle chat commands
-  async handleChat(senderId: string, payload: string) {
-    switch (payload) {
-      case 'GROUP_CHAT':
-        await this.sendGroupChatInfo(senderId)
-        break
-      case 'PRIVATE_CHAT':
-        await this.sendPrivateChatInfo(senderId)
-        break
-      case 'FIND_CHAT':
-        await this.sendFindChatInfo(senderId)
-        break
-      case 'CHAT_HISTORY':
-        await this.sendChatHistory(senderId)
-        break
-    }
-  }
-
-  // Handle community commands
-  async handleCommunity(senderId: string, payload: string) {
-    switch (payload) {
-      case 'RATINGS':
-        await this.sendRatingsInfo(senderId)
-        break
-      case 'EVENTS':
-        await this.sendEventsInfo(senderId)
-        break
-      case 'ACHIEVEMENTS':
-        await this.sendAchievementsInfo(senderId)
-        break
-      case 'ASTROLOGY':
-        await this.sendAstrologyInfo(senderId)
-        break
-      case 'STORIES':
-        await this.sendStoriesInfo(senderId)
-        break
-    }
-  }
-
-  // Send phone listings
-  async sendPhoneListings(senderId: string) {
-    const { data: listings } = await this.supabase
-      .from('listings')
-      .select('*')
-      .eq('category', 'Điện thoại')
-      .eq('status', 'active')
-      .limit(5)
-
-    if (listings && listings.length > 0) {
-      const message = {
-        recipient: { id: senderId },
-        message: {
-          text: `📱 ĐIỆN THOẠI TÂN DẬU 1981\n\n${listings.map(listing => 
-            `• ${listing.title}\n💰 ${listing.price.toLocaleString()}đ\n📍 ${listing.location}\n👤 ${listing.seller_name}`
-          ).join('\n\n')}`
-        }
-      }
-      await this.sendMessage(message)
-    } else {
-      await this.sendMessage({
-        recipient: { id: senderId },
-        message: { text: 'Hiện tại chưa có điện thoại nào được đăng bán.' }
-      })
-    }
-  }
-
-  // Send laptop listings
-  async sendLaptopListings(senderId: string) {
-    const { data: listings } = await this.supabase
-      .from('listings')
-      .select('*')
-      .eq('category', 'Laptop')
-      .eq('status', 'active')
-      .limit(5)
-
-    if (listings && listings.length > 0) {
-      const message = {
-        recipient: { id: senderId },
-        message: {
-          text: `💻 LAPTOP TÂN DẬU 1981\n\n${listings.map(listing => 
-            `• ${listing.title}\n💰 ${listing.price.toLocaleString()}đ\n📍 ${listing.location}\n👤 ${listing.seller_name}`
-          ).join('\n\n')}`
-        }
-      }
-      await this.sendMessage(message)
-    } else {
-      await this.sendMessage({
-        recipient: { id: senderId },
-        message: { text: 'Hiện tại chưa có laptop nào được đăng bán.' }
-      })
-    }
-  }
-
-  // Send vehicle listings
-  async sendVehicleListings(senderId: string) {
-    const { data: listings } = await this.supabase
-      .from('listings')
-      .select('*')
-      .eq('category', 'Xe cộ')
-      .eq('status', 'active')
-      .limit(5)
-
-    if (listings && listings.length > 0) {
-      const message = {
-        recipient: { id: senderId },
-        message: {
-          text: `🚗 XE CỘ TÂN DẬU 1981\n\n${listings.map(listing => 
-            `• ${listing.title}\n💰 ${listing.price.toLocaleString()}đ\n📍 ${listing.location}\n👤 ${listing.seller_name}`
-          ).join('\n\n')}`
-        }
-      }
-      await this.sendMessage(message)
-    } else {
-      await this.sendMessage({
-        recipient: { id: senderId },
-        message: { text: 'Hiện tại chưa có xe cộ nào được đăng bán.' }
-      })
-    }
-  }
-
-  // Send real estate listings
-  async sendRealEstateListings(senderId: string) {
-    const { data: listings } = await this.supabase
-      .from('listings')
-      .select('*')
-      .eq('category', 'Bất động sản')
-      .eq('status', 'active')
-      .limit(5)
-
-    if (listings && listings.length > 0) {
-      const message = {
-        recipient: { id: senderId },
-        message: {
-          text: `🏠 BẤT ĐỘNG SẢN TÂN DẬU 1981\n\n${listings.map(listing => 
-            `• ${listing.title}\n💰 ${listing.price.toLocaleString()}đ\n📍 ${listing.location}\n👤 ${listing.seller_name}`
-          ).join('\n\n')}`
-        }
-      }
-      await this.sendMessage(message)
-    } else {
-      await this.sendMessage({
-        recipient: { id: senderId },
-        message: { text: 'Hiện tại chưa có bất động sản nào được đăng bán.' }
-      })
-    }
-  }
-
-  // Send search prompt
-  async sendSearchPrompt(senderId: string) {
-    const message = {
-      recipient: { id: senderId },
-      message: {
-        text: `🔍 TÌM KIẾM SẢN PHẨM
-
-Gõ từ khóa bạn muốn tìm kiếm, ví dụ:
-• "iPhone 13"
-• "MacBook Pro"
-• "Honda Wave"
-• "Nhà Hà Nội"
-
-Tôi sẽ tìm kiếm trong tất cả sản phẩm của cộng đồng Tân Dậu 1981.`
-      }
-    }
-    await this.sendMessage(message)
-  }
-
-  // Send create listing form
-  async sendCreateListingForm(senderId: string) {
-    const message = {
-      recipient: { id: senderId },
-      message: {
-        text: `📝 ĐĂNG TIN MỚI
-
-Để đăng tin, vui lòng cung cấp thông tin theo format:
-
-📋 Tên sản phẩm: [Tên sản phẩm]
-💰 Giá: [Giá tiền]
-📍 Địa điểm: [Thành phố/Tỉnh]
-📂 Danh mục: [Điện thoại/Laptop/Xe cộ/Bất động sản/Khác]
-📝 Mô tả: [Mô tả chi tiết]
-📞 Liên hệ: [Số điện thoại]
-
-Ví dụ:
-📋 Tên sản phẩm: iPhone 13 Pro Max 128GB
-💰 Giá: 15,000,000
-📍 Địa điểm: Hà Nội
-📂 Danh mục: Điện thoại
-📝 Mô tả: Máy còn bảo hành, ít sử dụng
-📞 Liên hệ: 0123456789`
-      }
-    }
-    await this.sendMessage(message)
-  }
-
-  // Send group chat info
-  async sendGroupChatInfo(senderId: string) {
-    const message = {
-      recipient: { id: senderId },
-      message: {
-        text: `👥 CHAT NHÓM TÂN DẬU 1981
-
-Chúng tôi có các nhóm chat theo chủ đề:
-• 💬 Chat chung - Thảo luận mọi chủ đề
-• 🛒 Mua bán - Chia sẻ sản phẩm
-• 🎉 Sự kiện - Thông báo sự kiện
-• 🔮 Tử vi - Chia sẻ tử vi hàng ngày
-
-Để tham gia nhóm chat, vui lòng liên hệ admin: @admin_tan_dau_1981`
-      }
-    }
-    await this.sendMessage(message)
-  }
-
-  // Send private chat info
-  async sendPrivateChatInfo(senderId: string) {
-    const message = {
-      recipient: { id: senderId },
-      message: {
-        text: `💬 CHAT RIÊNG TÂN DẬU 1981
-
-Để chat riêng với thành viên khác:
-1. Tìm thành viên qua marketplace
-2. Nhấn "Chat riêng" trên sản phẩm
-3. Hoặc gõ "Tìm [tên thành viên]"
-
-Ví dụ: "Tìm Nguyễn Văn A" để tìm và chat với thành viên đó.`
-      }
-    }
-    await this.sendMessage(message)
-  }
-
-  // Send find chat info
-  async sendFindChatInfo(senderId: string) {
-    const message = {
-      recipient: { id: senderId },
-      message: {
-        text: `🔍 TÌM NGƯỜI CHAT
-
-Gõ tên hoặc từ khóa để tìm thành viên:
-• "Tìm Nguyễn Văn A"
-• "Tìm người bán iPhone"
-• "Tìm người Hà Nội"
-
-Tôi sẽ tìm kiếm trong danh sách thành viên Tân Dậu 1981.`
-      }
-    }
-    await this.sendMessage(message)
-  }
-
-  // Send chat history
-  async sendChatHistory(senderId: string) {
-    const { data: chats } = await this.supabase
-      .from('chats')
-      .select('*')
-      .or(`sender_id.eq.${senderId},receiver_id.eq.${senderId}`)
-      .order('created_at', { ascending: false })
-      .limit(10)
-
-    if (chats && chats.length > 0) {
-      const message = {
-        recipient: { id: senderId },
-        message: {
-          text: `📋 LỊCH SỬ CHAT\n\n${chats.map(chat => 
-            `• ${chat.sender_name}: ${chat.message}\n⏰ ${new Date(chat.created_at).toLocaleString('vi-VN')}`
-          ).join('\n\n')}`
-        }
-      }
-      await this.sendMessage(message)
-    } else {
-      await this.sendMessage({
-        recipient: { id: senderId },
-        message: { text: 'Bạn chưa có lịch sử chat nào.' }
-      })
-    }
-  }
-
-  // Send ratings info
-  async sendRatingsInfo(senderId: string) {
-    const { data: user } = await this.supabase
-      .from('users')
-      .select('rating, total_transactions')
-      .eq('facebook_id', senderId)
-      .single()
-
-    const message = {
-      recipient: { id: senderId },
-      message: {
-        text: `⭐ ĐÁNH GIÁ CỦA BẠN
-
-🌟 Điểm đánh giá: ${user?.rating || 0}/5
-📊 Tổng giao dịch: ${user?.total_transactions || 0}
-🏆 Cấp độ: ${this.getUserLevel(user?.rating || 0)}
-
-Để xem đánh giá chi tiết, vui lòng truy cập web app.`
-      }
-    }
-    await this.sendMessage(message)
-  }
-
-  // Send events info
-  async sendEventsInfo(senderId: string) {
-    const { data: events } = await this.supabase
-      .from('fun_events')
-      .select('*')
-      .eq('status', 'active')
-      .order('event_date', { ascending: true })
-      .limit(5)
-
-    if (events && events.length > 0) {
-      const message = {
-        recipient: { id: senderId },
-        message: {
-          text: `🎉 SỰ KIỆN TÂN DẬU 1981\n\n${events.map(event => 
-            `• ${event.title}\n📅 ${new Date(event.event_date).toLocaleDateString('vi-VN')}\n📍 ${event.location}\n👥 ${event.participant_count} người tham gia`
-          ).join('\n\n')}`
-        }
-      }
-      await this.sendMessage(message)
-    } else {
-      await this.sendMessage({
-        recipient: { id: senderId },
-        message: { text: 'Hiện tại chưa có sự kiện nào.' }
-      })
-    }
-  }
-
-  // Send achievements info
-  async sendAchievementsInfo(senderId: string) {
-    const { data: achievements } = await this.supabase
-      .from('user_achievements')
-      .select('*')
-      .eq('user_id', senderId)
-      .order('created_at', { ascending: false })
-      .limit(10)
-
-    if (achievements && achievements.length > 0) {
-      const message = {
-        recipient: { id: senderId },
-        message: {
-          text: `🏆 THÀNH TÍCH CỦA BẠN\n\n${achievements.map(achievement => 
-            `• ${achievement.achievement_type}\n⏰ ${new Date(achievement.created_at).toLocaleDateString('vi-VN')}`
-          ).join('\n\n')}`
-        }
-      }
-      await this.sendMessage(message)
-    } else {
-      await this.sendMessage({
-        recipient: { id: senderId },
-        message: { text: 'Bạn chưa có thành tích nào.' }
-      })
-    }
-  }
-
-  // Send astrology info
-  async sendAstrologyInfo(senderId: string) {
-    const { data: astrology } = await this.supabase
-      .from('user_astrology')
-      .select('*')
-      .eq('user_id', senderId)
-      .single()
-
-    if (astrology) {
-      const message = {
-        recipient: { id: senderId },
-        message: {
-          text: `🔮 TỬ VI TÂN DẬU 1981
-
-🐓 Tuổi: ${astrology.chinese_zodiac}
-⚡ Ngũ hành: ${astrology.element}
-🍀 Số may mắn: ${astrology.lucky_numbers.join(', ')}
-🎨 Màu may mắn: ${astrology.lucky_colors.join(', ')}
-
-Hôm nay là ngày tốt để mua bán và giao lưu!`
-        }
-      }
-      await this.sendMessage(message)
-    } else {
-      await this.sendMessage({
-        recipient: { id: senderId },
-        message: { text: 'Chưa có thông tin tử vi. Vui lòng liên hệ admin.' }
-      })
-    }
-  }
-
-  // Send stories info
-  async sendStoriesInfo(senderId: string) {
-    const { data: stories } = await this.supabase
-      .from('community_stories')
-      .select('*')
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
-      .limit(5)
-
-    if (stories && stories.length > 0) {
-      const message = {
-        recipient: { id: senderId },
-        message: {
-          text: `📖 CÂU CHUYỆN CỘNG ĐỒNG\n\n${stories.map(story => 
-            `• ${story.title}\n👤 ${story.author_name}\n📅 ${new Date(story.created_at).toLocaleDateString('vi-VN')}\n❤️ ${story.likes} lượt thích`
-          ).join('\n\n')}`
-        }
-      }
-      await this.sendMessage(message)
-    } else {
-      await this.sendMessage({
-        recipient: { id: senderId },
-        message: { text: 'Chưa có câu chuyện nào.' }
-      })
-    }
-  }
-
-  // Get user level based on rating
-  getUserLevel(rating: number): string {
-    if (rating >= 4.5) return 'Kim Cương'
-    if (rating >= 4.0) return 'Vàng'
-    if (rating >= 3.5) return 'Bạc'
-    if (rating >= 3.0) return 'Đồng'
-    return 'Mới'
-  }
-
-  // Send message to Facebook
-  async sendMessage(messageData: any) {
+// Main message handler
+export async function handleMessage(user: any, text: string) {
     try {
-      const response = await fetch(
-        `https://graph.facebook.com/v18.0/me/messages?access_token=${process.env.FACEBOOK_PAGE_ACCESS_TOKEN}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(messageData),
+        // Check if user is expired
+        if (isExpiredUser(user.membership_expires_at)) {
+            await sendExpiredMessage(user.facebook_id)
+            return
         }
-      )
 
-      if (!response.ok) {
-        const error = await response.text()
-        console.error('Error sending message:', error)
-      }
+        // Check if user is in trial and about to expire
+        if (isTrialUser(user.membership_expires_at)) {
+            const daysLeft = daysUntilExpiry(user.membership_expires_at!)
+            if (daysLeft <= 2) {
+                await sendTrialExpiringMessage(user.facebook_id, daysLeft)
+            }
+        }
+
+        // Handle different message types
+        if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
+            await handleRegistration(user)
+        } else if (text.includes('niêm yết') || text.includes('NIÊM YẾT')) {
+            await handleListing(user)
+        } else if (text.includes('tìm kiếm') || text.includes('TÌM KIẾM')) {
+            await handleSearch(user)
+        } else if (text.includes('cộng đồng') || text.includes('CỘNG ĐỒNG')) {
+            await handleCommunity(user)
+        } else if (text.includes('thanh toán') || text.includes('THANH TOÁN')) {
+            await handlePayment(user)
+        } else if (text.includes('tử vi') || text.includes('TỬ VI')) {
+            await handleHoroscope(user)
+        } else if (text.includes('điểm thưởng') || text.includes('ĐIỂM THƯỞNG')) {
+            await handlePoints(user)
+        } else if (text.includes('cài đặt') || text.includes('CÀI ĐẶT')) {
+            await handleSettings(user)
+        } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
+            await handleSupport(user)
+        } else {
+            await handleDefaultMessage(user)
+        }
     } catch (error) {
-      console.error('Error sending message:', error)
+        console.error('Error handling message:', error)
+        await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
     }
-  }
+}
+
+// Handle postback (button clicks)
+export async function handlePostback(user: any, payload: string) {
+    try {
+        const [action, ...params] = payload.split('_')
+
+        switch (action) {
+            case 'REGISTER':
+                await handleRegistration(user)
+                break
+            case 'LISTING':
+                await handleListing(user)
+                break
+            case 'SEARCH':
+                await handleSearch(user)
+                break
+            case 'COMMUNITY':
+                await handleCommunity(user)
+                break
+            case 'PAYMENT':
+                await handlePayment(user)
+                break
+            case 'HOROSCOPE':
+                await handleHoroscope(user)
+                break
+            case 'POINTS':
+                await handlePoints(user)
+                break
+            case 'SETTINGS':
+                await handleSettings(user)
+                break
+            case 'SUPPORT':
+                await handleSupport(user)
+                break
+            case 'MAIN_MENU':
+                await showMainMenu(user)
+                break
+            default:
+                await handleDefaultMessage(user)
+        }
+    } catch (error) {
+        console.error('Error handling postback:', error)
+        await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle admin commands
+export async function handleAdminCommand(user: any) {
+    await sendButtonTemplate(
+        user.facebook_id,
+        '🔧 ADMIN DASHBOARD\n\nChào admin! 👋',
+        [
+            createPostbackButton('💰 THANH TOÁN', 'ADMIN_PAYMENTS'),
+            createPostbackButton('👥 USER', 'ADMIN_USERS'),
+            createPostbackButton('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS'),
+            createPostbackButton('📊 THỐNG KÊ', 'ADMIN_STATS')
+        ]
+    )
+}
+
+// Handle payment receipt
+export async function handlePaymentReceipt(user: any, imageUrl: string) {
+    try {
+        // Save payment with receipt
+        const { error } = await supabaseAdmin
+            .from('payments')
+            .insert({
+                user_id: user.id,
+                amount: BOT_CONFIG.DAILY_FEE * BOT_CONFIG.MINIMUM_DAYS,
+                receipt_image: imageUrl,
+                status: 'pending'
+            })
+
+        if (error) {
+            throw error
+        }
+
+        await sendMessage(
+            user.facebook_id,
+            '✅ BIÊN LAI ĐÃ NHẬN\n\n📸 Biên lai đã được lưu:\n• Số tiền: 7,000đ\n• Thời gian: ' + new Date().toLocaleString('vi-VN') + '\n• Trạng thái: Đang xử lý...\n\n⏱️ Thời gian xử lý: 2-4 giờ\n📱 Sẽ thông báo khi duyệt'
+        )
+
+        // Reset bot session
+        await updateBotSession(user.id, {})
+    } catch (error) {
+        console.error('Error handling payment receipt:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xử lý biên lai. Vui lòng thử lại!')
+    }
+}
+
+// Handle listing images
+export async function handleListingImages(user: any, imageUrl: string) {
+    try {
+        const session = await getBotSession(user.id)
+        if (!session) return
+
+        const sessionData = session.session_data || {}
+        const images = sessionData.images || []
+        images.push(imageUrl)
+
+        await updateBotSession(user.id, {
+            ...sessionData,
+            images: images
+        })
+
+        await sendMessage(
+            user.facebook_id,
+            `✅ Đã nhận ${images.length} ảnh\n\n📸 Bạn có thể gửi thêm ảnh hoặc bỏ qua để tiếp tục\n\n[📷 Chụp ảnh] [📁 Chọn từ thư viện] [⏭️ Bỏ qua]`
+        )
+    } catch (error) {
+        console.error('Error handling listing images:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xử lý ảnh. Vui lòng thử lại!')
+    }
+}
+
+// Show main menu
+async function showMainMenu(user: any) {
+    const statusText = isTrialUser(user.membership_expires_at)
+        ? `Trial ${daysUntilExpiry(user.membership_expires_at!)} ngày`
+        : 'Đã thanh toán'
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        `🏠 TRANG CHỦ TÂN DẬU\n\nChào anh/chị ${user.name}! 👋\n\n📊 Trạng thái: ${statusText}\n⭐ Điểm: 150 sao | Level: ${calculateUserLevel(150)}\n🎂 Sinh nhật: 1981 (42 tuổi)`,
+        [
+            createPostbackButton('🛒 NIÊM YẾT', 'LISTING'),
+            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
+            createPostbackButton('💬 KẾT NỐI', 'CONNECT'),
+            createPostbackButton('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
+            createPostbackButton('💰 THANH TOÁN', 'PAYMENT'),
+            createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS'),
+            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE'),
+            createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS')
+        ]
+    )
+}
+
+// Handle registration
+async function handleRegistration(user: any) {
+    if (user.status !== 'trial' && user.status !== 'active') {
+        await sendMessagesWithTyping(user.facebook_id, [
+            '📝 ĐĂNG KÝ THÀNH VIÊN\n\nChào bạn! Tôi sẽ hướng dẫn bạn đăng ký từng bước.\n\nBước 1/4: Họ tên\n👤 Vui lòng nhập họ tên đầy đủ của bạn:',
+            'VD: Nguyễn Văn Minh'
+        ])
+
+        await updateBotSession(user.id, {
+            current_flow: 'registration',
+            current_step: 1,
+            data: {}
+        })
+    } else {
+        await sendMessage(user.facebook_id, 'Bạn đã đăng ký rồi! Sử dụng menu bên dưới để tiếp tục.')
+        await showMainMenu(user)
+    }
+}
+
+// Handle listing
+async function handleListing(user: any) {
+    await sendButtonTemplate(
+        user.facebook_id,
+        '🛒 NIÊM YẾT SẢN PHẨM/DỊCH VỤ\n\nChọn loại tin đăng bạn muốn đăng:',
+        [
+            createPostbackButton('🏠 BẤT ĐỘNG SẢN', 'LISTING_CATEGORY_BẤT ĐỘNG SẢN'),
+            createPostbackButton('🚗 Ô TÔ', 'LISTING_CATEGORY_Ô TÔ'),
+            createPostbackButton('📱 ĐIỆN TỬ', 'LISTING_CATEGORY_ĐIỆN TỬ'),
+            createPostbackButton('👕 THỜI TRANG', 'LISTING_CATEGORY_THỜI TRANG'),
+            createPostbackButton('🍽️ ẨM THỰC', 'LISTING_CATEGORY_ẨM THỰC'),
+            createPostbackButton('🔧 DỊCH VỤ', 'LISTING_CATEGORY_DỊCH VỤ')
+        ]
+    )
+}
+
+// Handle search
+async function handleSearch(user: any) {
+    await sendButtonTemplate(
+        user.facebook_id,
+        '🔍 TÌM KIẾM SẢN PHẨM/DỊCH VỤ\n\nBạn muốn tìm gì?',
+        [
+            createPostbackButton('🏠 BẤT ĐỘNG SẢN', 'SEARCH_CATEGORY_BẤT ĐỘNG SẢN'),
+            createPostbackButton('🚗 Ô TÔ', 'SEARCH_CATEGORY_Ô TÔ'),
+            createPostbackButton('📱 ĐIỆN TỬ', 'SEARCH_CATEGORY_ĐIỆN TỬ'),
+            createPostbackButton('👕 THỜI TRANG', 'SEARCH_CATEGORY_THỜI TRANG'),
+            createPostbackButton('🍽️ ẨM THỰC', 'SEARCH_CATEGORY_ẨM THỰC'),
+            createPostbackButton('🔧 DỊCH VỤ', 'SEARCH_CATEGORY_DỊCH VỤ'),
+            createPostbackButton('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
+            createPostbackButton('🔍 TÌM THEO TỪ KHÓA', 'SEARCH_KEYWORD')
+        ]
+    )
+}
+
+// Handle community
+async function handleCommunity(user: any) {
+    await sendButtonTemplate(
+        user.facebook_id,
+        '👥 CỘNG ĐỒNG TÂN DẬU - HỖ TRỢ CHÉO',
+        [
+            createPostbackButton('🎂 SINH NHẬT', 'COMMUNITY_BIRTHDAY'),
+            createPostbackButton('🏆 TOP SELLER', 'COMMUNITY_TOP_SELLER'),
+            createPostbackButton('📖 KỶ NIỆM', 'COMMUNITY_MEMORIES'),
+            createPostbackButton('🎪 SỰ KIỆN', 'COMMUNITY_EVENTS'),
+            createPostbackButton('⭐ THÀNH TÍCH', 'COMMUNITY_ACHIEVEMENTS'),
+            createPostbackButton('🔮 TỬ VI', 'COMMUNITY_HOROSCOPE'),
+            createPostbackButton('🤝 HỖ TRỢ CHÉO', 'COMMUNITY_SUPPORT'),
+            createPostbackButton('💬 CHAT NHÓM', 'COMMUNITY_CHAT')
+        ]
+    )
+}
+
+// Handle payment
+async function handlePayment(user: any) {
+    if (isTrialUser(user.membership_expires_at)) {
+        const daysLeft = daysUntilExpiry(user.membership_expires_at!)
+        await sendMessagesWithTyping(user.facebook_id, [
+            '⏰ THÔNG BÁO QUAN TRỌNG\n\nTrial của bạn còn ' + daysLeft + ' ngày!',
+            '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Bạn muốn thanh toán ngay không?',
+            [
+                createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
+                createPostbackButton('⏰ NHẮC LẠI SAU', 'MAIN_MENU'),
+                createPostbackButton('ℹ️ TÌM HIỂU', 'PAYMENT_INFO')
+            ]
+        )
+    } else {
+        await sendMessage(user.facebook_id, 'Tài khoản của bạn đã được thanh toán!')
+        await showMainMenu(user)
+    }
+}
+
+// Handle horoscope
+async function handleHoroscope(user: any) {
+    const horoscope = generateHoroscope()
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🔮 TỬ VI TÂN DẬU HÔM NAY\n\n📅 ' + new Date().toLocaleDateString('vi-VN') + '\n🐓 Tuổi: Tân Dậu (1981)\n⭐ Tổng quan: 4/5 sao',
+        '💰 Tài lộc: ' + horoscope.fortune + ' - Nên đầu tư BĐS\n❤️ Tình cảm: ' + horoscope.love + ' - Gặp gỡ bạn bè\n🏥 Sức khỏe: ' + horoscope.health + ' - Nghỉ ngơi',
+        '🎯 Lời khuyên: ' + horoscope.advice + '\n🎨 Màu may mắn: ' + horoscope.luckyColor + '\n🔢 Số may mắn: ' + horoscope.luckyNumber
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Bạn muốn xem chi tiết không?',
+        [
+            createPostbackButton('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
+            createPostbackButton('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
+            createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
+            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Handle points
+async function handlePoints(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '⭐ HỆ THỐNG ĐIỂM THƯỞNG\n\n🏆 Level hiện tại: ' + calculateUserLevel(150) + ' (150/200 điểm)\n⭐ Tổng điểm: 1,250 điểm\n🎯 Streak: 7 ngày liên tiếp',
+        '📈 Hoạt động hôm nay:\n• Đăng nhập: +2 điểm ✅\n• Tạo tin đăng: +10 điểm ✅\n• Nhận đánh giá: +5 điểm ✅\n• Chia sẻ kỷ niệm: +3 điểm ✅'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        '🎁 Phần thưởng có thể đổi:',
+        [
+            createPostbackButton('💳 Giảm giá', 'POINTS_REWARDS_DISCOUNT'),
+            createPostbackButton('🏆 Huy hiệu', 'POINTS_REWARDS_BADGES'),
+            createPostbackButton('🎁 Quà tặng', 'POINTS_REWARDS_GIFTS'),
+            createPostbackButton('🎮 Game', 'POINTS_REWARDS_GAMES'),
+            createPostbackButton('📊 XEM LỊCH SỬ', 'POINTS_HISTORY'),
+            createPostbackButton('🎯 THÀNH TÍCH', 'POINTS_ACHIEVEMENTS'),
+            createPostbackButton('🏆 LEADERBOARD', 'POINTS_LEADERBOARD')
+        ]
+    )
+}
+
+// Handle settings
+async function handleSettings(user: any) {
+    await sendButtonTemplate(
+        user.facebook_id,
+        '⚙️ CÀI ĐẶT',
+        [
+            createPostbackButton('👤 THÔNG TIN CÁ NHÂN', 'SETTINGS_PROFILE'),
+            createPostbackButton('🔔 THÔNG BÁO', 'SETTINGS_NOTIFICATIONS'),
+            createPostbackButton('🔒 BẢO MẬT', 'SETTINGS_SECURITY'),
+            createPostbackButton('🌐 NGÔN NGỮ', 'SETTINGS_LANGUAGE'),
+            createPostbackButton('🎨 GIAO DIỆN', 'SETTINGS_THEME'),
+            createPostbackButton('📊 PRIVACY', 'SETTINGS_PRIVACY'),
+            createPostbackButton('❓ HỖ TRỢ', 'SUPPORT'),
+            createPostbackButton('📱 VỀ TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Handle support
+async function handleSupport(user: any) {
+    await sendButtonTemplate(
+        user.facebook_id,
+        '💬 CHỌN CHẾ ĐỘ CHAT\n\n🤖 [BOT TÂN DẬU] - Hệ thống tự động\n   • Gợi ý sản phẩm thông minh\n   • Cross-selling tự động\n   • Trả lời câu hỏi thường gặp\n\n👨‍💼 [ADMIN HỖ TRỢ] - Hỗ trợ trực tiếp\n   • Tư vấn cá nhân hóa\n   • Giải quyết vấn đề phức tạp\n   • Hỗ trợ kỹ thuật',
+        [
+            createPostbackButton('🤖 CHAT BOT', 'SUPPORT_BOT'),
+            createPostbackButton('👨‍💼 CHAT ADMIN', 'SUPPORT_ADMIN')
+        ]
+    )
+}
+
+// Handle default message
+async function handleDefaultMessage(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🤖 Tôi đã sẵn sàng hỗ trợ bạn!',
+        'Bạn có thể hỏi tôi về:\n• Tìm kiếm sản phẩm/dịch vụ\n• Hướng dẫn sử dụng\n• Thông tin cộng đồng\n• Tử vi hàng ngày'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Chọn chức năng bạn muốn sử dụng:',
+        [
+            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
+            createPostbackButton('❓ HỖ TRỢ', 'SUPPORT'),
+            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE'),
+            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Send expired message
+async function sendExpiredMessage(facebookId: string) {
+    await sendMessagesWithTyping(facebookId, [
+        '⏰ TRIAL ĐÃ HẾT HẠN!\n\nTrial của bạn đã hết hạn!',
+        '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+    ])
+
+    await sendButtonTemplate(
+        facebookId,
+        'Bạn muốn thanh toán để tiếp tục sử dụng không?',
+        [
+            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
+            createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
+            createPostbackButton('❌ HỦY', 'CANCEL')
+        ]
+    )
+}
+
+// Send trial expiring message
+async function sendTrialExpiringMessage(facebookId: string, daysLeft: number) {
+    const urgency = daysLeft === 1 ? '🚨 CẢNH BÁO TRIAL SẮP HẾT!' : '⏰ THÔNG BÁO QUAN TRỌNG'
+
+    await sendMessagesWithTyping(facebookId, [
+        urgency + '\n\nTrial của bạn còn ' + daysLeft + ' ngày!',
+        '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+    ])
+
+    await sendButtonTemplate(
+        facebookId,
+        'Bạn muốn thanh toán ngay không?',
+        [
+            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
+            createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
+            createPostbackButton('❌ HỦY', 'CANCEL')
+        ]
+    )
+}
+
+// Helper functions
+async function getBotSession(userId: string) {
+    const { data, error } = await supabaseAdmin
+        .from('bot_sessions')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+
+    if (error) {
+        return null
+    }
+
+    return data
+}
+
+async function updateBotSession(userId: string, sessionData: any) {
+    const { error } = await supabaseAdmin
+        .from('bot_sessions')
+        .upsert({
+            user_id: userId,
+            session_data: sessionData,
+            updated_at: new Date().toISOString()
+        })
+
+    if (error) {
+        console.error('Error updating bot session:', error)
+    }
 }

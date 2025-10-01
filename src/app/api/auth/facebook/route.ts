@@ -1,120 +1,118 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
+import { generateReferralCode } from '@/lib/utils'
 
+// Handle Facebook authentication and user creation
 export async function POST(request: NextRequest) {
     try {
-        const { accessToken, userInfo } = await request.json()
+        const body = await request.json()
+        const { facebook_id, name, phone, location, birthday } = body
 
-        if (!accessToken || !userInfo) {
+        // Validate required fields
+        if (!facebook_id || !name || !phone || !location || birthday !== 1981) {
             return NextResponse.json(
-                { error: 'Thiếu thông tin đăng nhập' },
+                { error: 'Missing required fields or invalid birthday' },
                 { status: 400 }
             )
         }
 
-        // Verify age (must be born in 1981)
-        if (userInfo.birthday) {
-            const birthYear = new Date(userInfo.birthday).getFullYear()
-            if (birthYear !== 1981) {
-                return NextResponse.json(
-                    { error: 'Chỉ dành cho thành viên sinh năm 1981' },
-                    { status: 403 }
-                )
-            }
-        } else {
-            return NextResponse.json(
-                { error: 'Không thể xác minh năm sinh. Vui lòng cập nhật thông tin trên Facebook' },
-                { status: 400 }
-            )
-        }
-
-        const supabase = createClient()
-
-        // Create or update user in database
-        const { data: userData, error: userError } = await supabase
+        // Check if user already exists
+        const { data: existingUser } = await supabaseAdmin
             .from('users')
-            .upsert({
-                facebook_id: userInfo.id,
-                name: userInfo.name,
-                email: userInfo.email,
-                birthday: userInfo.birthday,
-                avatar_url: userInfo.picture?.data?.url,
+            .select('*')
+            .eq('facebook_id', facebook_id)
+            .single()
+
+        if (existingUser) {
+            return NextResponse.json({
+                user: existingUser,
+                isNewUser: false
+            })
+        }
+
+        // Check if phone number is already used
+        const { data: existingPhone } = await supabaseAdmin
+            .from('users')
+            .select('id')
+            .eq('phone', phone)
+            .single()
+
+        if (existingPhone) {
+            return NextResponse.json(
+                { error: 'Phone number already registered' },
+                { status: 409 }
+            )
+        }
+
+        // Generate referral code
+        const referralCode = generateReferralCode(facebook_id)
+
+        // Calculate trial expiry date
+        const trialExpiry = new Date()
+        trialExpiry.setDate(trialExpiry.getDate() + 3) // 3 days trial
+
+        // Create user
+        const { data: user, error } = await supabaseAdmin
+            .from('users')
+            .insert({
+                facebook_id,
+                name,
+                phone,
+                location,
+                birthday,
                 status: 'trial',
-                membership_expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days trial
-                referral_code: `TD1981-${userInfo.id.slice(-6).toUpperCase()}`,
+                membership_expires_at: trialExpiry.toISOString(),
+                referral_code: referralCode
             })
             .select()
             .single()
 
-        if (userError) {
-            console.error('Database error:', userError)
+        if (error) {
+            console.error('Error creating user:', error)
             return NextResponse.json(
-                { error: 'Lỗi cơ sở dữ liệu' },
+                { error: 'Failed to create user' },
                 { status: 500 }
             )
         }
 
-        // Create user analytics record
-        await supabase
-            .from('user_analytics')
-            .upsert({
-                user_id: userData.id,
-                total_listings: 0,
-                total_connections: 0,
-                response_rate: 0,
-                avg_response_time: 0,
-                conversion_rate: 0,
-                revenue_generated: 0,
-                last_activity: new Date().toISOString(),
-            })
-
         // Create user points record
-        await supabase
+        await supabaseAdmin
             .from('user_points')
-            .upsert({
-                user_id: userData.id,
-                points: 0,
-                level: 1,
-                total_earned: 0,
-                last_activity: new Date().toISOString(),
-            })
-
-        // Create user astrology record
-        await supabase
-            .from('user_astrology')
-            .upsert({
-                user_id: userData.id,
-                chinese_zodiac: 'Tân Dậu',
-                element: 'Kim',
-                lucky_numbers: [1, 6, 8, 9],
-                lucky_colors: ['Vàng', 'Trắng', 'Xanh dương'],
-            })
-
-        // Add New Member achievement
-        await supabase
-            .from('user_achievements')
             .insert({
-                user_id: userData.id,
-                achievement_type: 'New Member',
+                user_id: user.id,
+                points: 0,
+                level: 'Đồng'
+            })
+
+        // Create bot session
+        await supabaseAdmin
+            .from('bot_sessions')
+            .insert({
+                user_id: user.id,
+                session_data: {},
+                current_flow: 'registration',
+                current_step: 0
+            })
+
+        // Send welcome notification
+        await supabaseAdmin
+            .from('notifications')
+            .insert({
+                user_id: user.id,
+                type: 'listing',
+                title: 'Chào mừng đến với BOT TÂN DẬU 1981!',
+                message: 'Bạn đã đăng ký thành công. Chúc mừng bạn đã gia nhập cộng đồng Tân Dậu 1981!'
             })
 
         return NextResponse.json({
-            success: true,
-            user: userData,
-            message: 'Đăng nhập thành công!'
+            user,
+            isNewUser: true
         })
-
     } catch (error) {
-        console.error('Facebook login error:', error)
+        console.error('Error in POST /api/auth/facebook:', error)
         return NextResponse.json(
-            { error: 'Lỗi đăng nhập Facebook' },
+            { error: 'Internal server error' },
             { status: 500 }
         )
     }
-}
-
-export async function GET() {
-    return NextResponse.json({
-        message: 'Facebook Auth API endpoint'
-    })
 }

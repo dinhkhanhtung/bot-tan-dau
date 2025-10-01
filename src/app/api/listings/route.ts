@@ -1,224 +1,177 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
+import { formatCurrency, formatNumber } from '@/lib/utils'
 
-export async function GET(request: NextRequest) {
-    try {
-        const { searchParams } = new URL(request.url)
-        const page = parseInt(searchParams.get('page') || '1')
-        const limit = parseInt(searchParams.get('limit') || '20')
-        const type = searchParams.get('type')
-        const category = searchParams.get('category')
-        const location = searchParams.get('location')
-        const price_min = searchParams.get('price_min')
-        const price_max = searchParams.get('price_max')
-        const search = searchParams.get('search')
-        const sort_by = searchParams.get('sort_by') || 'newest'
-        const user_id = searchParams.get('user_id')
-
-        const supabase = createClient()
-        let query = supabase
-            .from('listings')
-            .select(`
-        *,
-        user:users(id, name, avatar_url, rating, location),
-        product_listings(*),
-        service_listings(*)
-      `, { count: 'exact' })
-
-        // Apply filters
-        if (type) {
-            query = query.eq('type', type)
-        }
-        if (category) {
-            query = query.eq('category', category)
-        }
-        if (location) {
-            query = query.eq('user.location', location)
-        }
-        if (price_min) {
-            query = query.gte('price', parseFloat(price_min))
-        }
-        if (price_max) {
-            query = query.lte('price', parseFloat(price_max))
-        }
-        if (search) {
-            query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
-        }
-        if (user_id) {
-            query = query.eq('user_id', user_id)
-        }
-
-        // Only show active listings
-        query = query.eq('status', 'active')
-
-        // Apply sorting
-        switch (sort_by) {
-            case 'newest':
-                query = query.order('created_at', { ascending: false })
-                break
-            case 'oldest':
-                query = query.order('created_at', { ascending: true })
-                break
-            case 'price_low':
-                query = query.order('price', { ascending: true })
-                break
-            case 'price_high':
-                query = query.order('price', { ascending: false })
-                break
-            case 'rating':
-                query = query.order('user.rating', { ascending: false })
-                break
-            default:
-                query = query.order('created_at', { ascending: false })
-        }
-
-        // Apply pagination
-        const from = (page - 1) * limit
-        const to = from + limit - 1
-
-        const { data: listings, error, count } = await query
-            .range(from, to)
-
-        if (error) {
-            console.error('Database error:', error)
-            return NextResponse.json(
-                { error: 'Lỗi cơ sở dữ liệu' },
-                { status: 500 }
-            )
-        }
-
-        return NextResponse.json({
-            success: true,
-            data: listings,
-            pagination: {
-                page,
-                limit,
-                total: count || 0,
-                total_pages: Math.ceil((count || 0) / limit),
-                has_next: page * limit < (count || 0),
-                has_prev: page > 1,
-            }
-        })
-
-    } catch (error) {
-        console.error('Listings API error:', error)
-        return NextResponse.json(
-            { error: 'Lỗi server' },
-            { status: 500 }
-        )
-    }
-}
-
+// Create new listing
 export async function POST(request: NextRequest) {
     try {
-        const listingData = await request.json()
+        const body = await request.json()
+        const {
+            user_id,
+            type,
+            category,
+            subcategory,
+            title,
+            price,
+            description,
+            images,
+            location
+        } = body
 
-        const supabase = createClient()
-
-        // Create main listing
-        const { data: listing, error: listingError } = await supabase
-            .from('listings')
-            .insert({
-                user_id: listingData.user_id,
-                type: listingData.type,
-                category: listingData.category,
-                title: listingData.title,
-                price: listingData.price,
-                description: listingData.description,
-                images: listingData.images || [],
-                status: 'active',
-            })
-            .select()
-            .single()
-
-        if (listingError) {
-            console.error('Database error:', listingError)
+        // Validate required fields
+        if (!user_id || !type || !category || !subcategory || !title || !price || !description || !location) {
             return NextResponse.json(
-                { error: 'Lỗi tạo tin đăng' },
-                { status: 500 }
-            )
-        }
-
-        // Create type-specific data
-        if (listingData.type === 'product' && listingData.product_data) {
-            const { error: productError } = await supabase
-                .from('product_listings')
-                .insert({
-                    listing_id: listing.id,
-                    ...listingData.product_data
-                })
-
-            if (productError) {
-                console.error('Product data error:', productError)
-                // Continue without failing the main listing
-            }
-        }
-
-        if (listingData.type === 'service' && listingData.service_data) {
-            const { error: serviceError } = await supabase
-                .from('service_listings')
-                .insert({
-                    listing_id: listing.id,
-                    ...listingData.service_data
-                })
-
-            if (serviceError) {
-                console.error('Service data error:', serviceError)
-                // Continue without failing the main listing
-            }
-        }
-
-        // Update user analytics
-        await supabase
-            .from('user_analytics')
-            .upsert({
-                user_id: listingData.user_id,
-                total_listings: 1,
-                last_activity: new Date().toISOString(),
-            }, {
-                onConflict: 'user_id',
-                ignoreDuplicates: false
-            })
-
-        // Add points for creating listing
-        await supabase
-            .from('point_transactions')
-            .insert({
-                user_id: listingData.user_id,
-                points: 10,
-                type: 'earn',
-                reason: 'listing_created'
-            })
-
-        return NextResponse.json({
-            success: true,
-            data: listing,
-            message: 'Tạo tin đăng thành công'
-        })
-
-    } catch (error) {
-        console.error('Create listing error:', error)
-        return NextResponse.json(
-            { error: 'Lỗi tạo tin đăng' },
-            { status: 500 }
-        )
-    }
-}
-
-export async function PUT(request: NextRequest) {
-    try {
-        const { id, ...updateData } = await request.json()
-
-        if (!id) {
-            return NextResponse.json(
-                { error: 'Thiếu ID tin đăng' },
+                { error: 'Missing required fields' },
                 { status: 400 }
             )
         }
 
-        const supabase = createClient()
+        // Validate type
+        if (!['product', 'service'].includes(type)) {
+            return NextResponse.json(
+                { error: 'Invalid type. Must be "product" or "service"' },
+                { status: 400 }
+            )
+        }
 
-        const { data: listing, error } = await supabase
+        // Validate price
+        if (price <= 0) {
+            return NextResponse.json(
+                { error: 'Price must be greater than 0' },
+                { status: 400 }
+            )
+        }
+
+        // Create listing
+        const { data: listing, error } = await supabaseAdmin
+            .from('listings')
+            .insert({
+                user_id,
+                type,
+                category,
+                subcategory,
+                title,
+                price,
+                description,
+                images: images || [],
+                location,
+                status: 'active'
+            })
+            .select()
+            .single()
+
+        if (error) {
+            console.error('Error creating listing:', error)
+            return NextResponse.json(
+                { error: 'Failed to create listing' },
+                { status: 500 }
+            )
+        }
+
+        // Add points for creating listing
+        await supabaseAdmin
+            .from('point_transactions')
+            .insert({
+                user_id,
+                points: 10,
+                reason: 'create_listing'
+            })
+
+        return NextResponse.json({ listing }, { status: 201 })
+    } catch (error) {
+        console.error('Error in POST /api/listings:', error)
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        )
+    }
+}
+
+// Get listings with filters
+export async function GET(request: NextRequest) {
+    try {
+        const { searchParams } = new URL(request.url)
+        const category = searchParams.get('category')
+        const subcategory = searchParams.get('subcategory')
+        const location = searchParams.get('location')
+        const minPrice = searchParams.get('min_price')
+        const maxPrice = searchParams.get('max_price')
+        const limit = parseInt(searchParams.get('limit') || '20')
+        const offset = parseInt(searchParams.get('offset') || '0')
+
+        let query = supabaseAdmin
+            .from('listings')
+            .select(`
+        *,
+        users:user_id (
+          id,
+          name,
+          rating,
+          location
+        )
+      `)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1)
+
+        // Apply filters
+        if (category) {
+            query = query.eq('category', category)
+        }
+        if (subcategory) {
+            query = query.eq('subcategory', subcategory)
+        }
+        if (location) {
+            query = query.ilike('location', `%${location}%`)
+        }
+        if (minPrice) {
+            query = query.gte('price', parseInt(minPrice))
+        }
+        if (maxPrice) {
+            query = query.lte('price', parseInt(maxPrice))
+        }
+
+        const { data: listings, error } = await query
+
+        if (error) {
+            console.error('Error fetching listings:', error)
+            return NextResponse.json(
+                { error: 'Failed to fetch listings' },
+                { status: 500 }
+            )
+        }
+
+        // Format listings for display
+        const formattedListings = listings?.map(listing => ({
+            ...listing,
+            formatted_price: formatCurrency(listing.price),
+            time_ago: getTimeAgo(listing.created_at)
+        })) || []
+
+        return NextResponse.json({ listings: formattedListings })
+    } catch (error) {
+        console.error('Error in GET /api/listings:', error)
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        )
+    }
+}
+
+// Update listing
+export async function PUT(request: NextRequest) {
+    try {
+        const body = await request.json()
+        const { id, ...updateData } = body
+
+        if (!id) {
+            return NextResponse.json(
+                { error: 'Listing ID is required' },
+                { status: 400 }
+            )
+        }
+
+        const { data: listing, error } = await supabaseAdmin
             .from('listings')
             .update({
                 ...updateData,
@@ -229,28 +182,24 @@ export async function PUT(request: NextRequest) {
             .single()
 
         if (error) {
-            console.error('Database error:', error)
+            console.error('Error updating listing:', error)
             return NextResponse.json(
-                { error: 'Lỗi cập nhật tin đăng' },
+                { error: 'Failed to update listing' },
                 { status: 500 }
             )
         }
 
-        return NextResponse.json({
-            success: true,
-            data: listing,
-            message: 'Cập nhật tin đăng thành công'
-        })
-
+        return NextResponse.json({ listing })
     } catch (error) {
-        console.error('Update listing error:', error)
+        console.error('Error in PUT /api/listings:', error)
         return NextResponse.json(
-            { error: 'Lỗi cập nhật tin đăng' },
+            { error: 'Internal server error' },
             { status: 500 }
         )
     }
 }
 
+// Delete listing
 export async function DELETE(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url)
@@ -258,36 +207,44 @@ export async function DELETE(request: NextRequest) {
 
         if (!id) {
             return NextResponse.json(
-                { error: 'Thiếu ID tin đăng' },
+                { error: 'Listing ID is required' },
                 { status: 400 }
             )
         }
 
-        const supabase = createClient()
-
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
             .from('listings')
             .delete()
             .eq('id', id)
 
         if (error) {
-            console.error('Database error:', error)
+            console.error('Error deleting listing:', error)
             return NextResponse.json(
-                { error: 'Lỗi xóa tin đăng' },
+                { error: 'Failed to delete listing' },
                 { status: 500 }
             )
         }
 
-        return NextResponse.json({
-            success: true,
-            message: 'Xóa tin đăng thành công'
-        })
-
+        return NextResponse.json({ message: 'Listing deleted successfully' })
     } catch (error) {
-        console.error('Delete listing error:', error)
+        console.error('Error in DELETE /api/listings:', error)
         return NextResponse.json(
-            { error: 'Lỗi xóa tin đăng' },
+            { error: 'Internal server error' },
             { status: 500 }
         )
     }
+}
+
+// Helper function to get time ago
+function getTimeAgo(date: string): string {
+    const now = new Date()
+    const past = new Date(date)
+    const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000)
+
+    if (diffInSeconds < 60) return 'Vừa xong'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} ngày trước`
+    if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)} tháng trước`
+    return `${Math.floor(diffInSeconds / 31536000)} năm trước`
 }

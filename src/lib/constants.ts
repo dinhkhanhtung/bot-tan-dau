@@ -1,251 +1,155 @@
-// App Configuration
-export const APP_CONFIG = {
-    name: 'BOT TÂN DẬU 1981',
-    version: '1.0.0',
-    description: 'Platform kết nối mua bán dành riêng cho thành viên sinh năm 1981',
-    url: 'https://bot-tan-dau-1981.vercel.app',
-    supportEmail: 'support@bot-tan-dau-1981.com',
-    phone: '1900-1981',
+// Bot Configuration
+export const BOT_CONFIG = {
+    DAILY_FEE: 1000,
+    MINIMUM_DAYS: 7,
+    TRIAL_DAYS: 3,
+    REFERRAL_REWARD: 10000,
+    SEARCH_SERVICE_FEE: 5000,
 } as const
 
-// Business Configuration
-export const BUSINESS_CONFIG = {
-    trialDays: 3,
-    dailyFee: 1000, // VND
-    minPaymentDays: 7,
-    gracePeriodHours: 24,
-    maxConnectionsPerDay: 20,
-    maxListingsPerDay: 5,
-    maxMessagesPerMinute: 5,
-} as const
-
-// Target Year for Age Verification
-export const TARGET_YEAR = 1981
-export const TARGET_ZODIAC = 'Tân Dậu'
-
-// Vietnamese Provinces/Cities
-export const VIETNAM_LOCATIONS = [
-    'Hà Nội',
-    'TP. Hồ Chí Minh',
-    'Đà Nẵng',
-    'Hải Phòng',
-    'Cần Thơ',
-    'An Giang',
-    'Bà Rịa - Vũng Tàu',
-    'Bắc Giang',
-    'Bắc Kạn',
-    'Bạc Liêu',
-    'Bắc Ninh',
-    'Bến Tre',
-    'Bình Định',
-    'Bình Dương',
-    'Bình Phước',
-    'Bình Thuận',
-    'Cà Mau',
-    'Cao Bằng',
-    'Đắk Lắk',
-    'Đắk Nông',
-    'Điện Biên',
-    'Đồng Nai',
-    'Đồng Tháp',
-    'Gia Lai',
-    'Hà Giang',
-    'Hà Nam',
-    'Hà Tĩnh',
-    'Hải Dương',
-    'Hậu Giang',
-    'Hòa Bình',
-    'Hưng Yên',
-    'Khánh Hòa',
-    'Kiên Giang',
-    'Kon Tum',
-    'Lai Châu',
-    'Lâm Đồng',
-    'Lạng Sơn',
-    'Lào Cai',
-    'Long An',
-    'Nam Định',
-    'Nghệ An',
-    'Ninh Bình',
-    'Ninh Thuận',
-    'Phú Thọ',
-    'Phú Yên',
-    'Quảng Bình',
-    'Quảng Nam',
-    'Quảng Ngãi',
-    'Quảng Ninh',
-    'Quảng Trị',
-    'Sóc Trăng',
-    'Sơn La',
-    'Tây Ninh',
-    'Thái Bình',
-    'Thái Nguyên',
-    'Thanh Hóa',
-    'Thừa Thiên Huế',
-    'Tiền Giang',
-    'Trà Vinh',
-    'Tuyên Quang',
-    'Vĩnh Long',
-    'Vĩnh Phúc',
-    'Yên Bái',
-] as const
-
-// Product Categories
-export const PRODUCT_CATEGORIES = [
-    'Bất động sản',
-    'Ô tô - Xe máy',
-    'Điện tử - Công nghệ',
-    'Thời trang - Làm đẹp',
-    'Ẩm thực - Đồ uống',
-    'Nội thất - Gia dụng',
-    'Thể thao - Du lịch',
-    'Sách - Văn phòng phẩm',
-    'Đồ chơi - Trẻ em',
-    'Khác',
-] as const
-
-// Service Categories
-export const SERVICE_CATEGORIES = [
-    'Tư vấn pháp luật',
-    'Xây dựng - Sửa chữa',
-    'Y tế - Sức khỏe',
-    'Kế toán - Thuế',
-    'Giáo dục - Đào tạo',
-    'Du lịch - Dịch vụ',
-    'Công nghệ thông tin',
-    'Tài chính - Ngân hàng',
-    'Bất động sản',
-    'Khác',
-] as const
-
-// User Status
-export const USER_STATUS = {
-    TRIAL: 'trial',
-    ACTIVE: 'active',
-    EXPIRED: 'expired',
-    BANNED: 'banned',
-} as const
-
-// Listing Status
-export const LISTING_STATUS = {
-    ACTIVE: 'active',
-    SOLD: 'sold',
-    EXPIRED: 'expired',
-    HIDDEN: 'hidden',
-} as const
-
-// Payment Status
-export const PAYMENT_STATUS = {
-    PENDING: 'pending',
-    APPROVED: 'approved',
-    REJECTED: 'rejected',
-} as const
-
-// Achievement Types
-export const ACHIEVEMENTS = {
-    NEW_MEMBER: 'New Member',
-    FIRST_SALE: 'First Sale',
-    TOP_SELLER: 'Top Seller',
-    ACTIVE_USER: 'Active User',
-    COMMUNITY_BUILDER: 'Community Builder',
-    POWER_SELLER: 'Power Seller',
-    TRUSTED_MEMBER: 'Trusted Member',
-} as const
-
-// Point System
-export const POINT_SYSTEM = {
-    LISTING_CREATED: 10,
-    LISTING_SOLD: 50,
-    REVIEW_GIVEN: 5,
-    REVIEW_RECEIVED: 3,
-    DAILY_LOGIN: 2,
-    REFERRAL_COMPLETED: 100,
-    EVENT_PARTICIPATION: 20,
-    BIRTHDAY_GREETING: 1,
-    CHALLENGE_COMPLETED: 30,
-} as const
-
-// Rewards
-export const REWARDS = {
-    DISCOUNT_VOUCHERS: [
-        { points: 100, discount: '10% phí niêm yết' },
-        { points: 200, discount: '1 ngày miễn phí' },
-        { points: 500, discount: 'Featured listing 1 tuần' },
-    ],
-    SPECIAL_BADGES: [
-        { points: 1000, badge: 'Tân Dậu Siêu Sao 🐓' },
-        { points: 2000, badge: 'Thành Viên Vàng ✨' },
-        { points: 5000, badge: 'Huyền Thoại Tân Dậu 🌟' },
-    ],
-} as const
-
-// API Endpoints
-export const API_ENDPOINTS = {
-    AUTH: {
-        FACEBOOK: '/api/auth/facebook',
-        LOGOUT: '/api/auth/logout',
+// Categories and Subcategories
+export const CATEGORIES = {
+    'BẤT ĐỘNG SẢN': {
+        'NHÀ Ở': ['Nhà riêng', 'Nhà phố', 'Biệt thự', 'Nhà cấp 4'],
+        'CHUNG CƯ': ['Căn hộ', 'Penthouse', 'Duplex'],
+        'MẶT BẰNG': ['Mặt bằng kinh doanh', 'Văn phòng', 'Kho bãi'],
+        'ĐẤT NỀN': ['Đất thổ cư', 'Đất nông nghiệp', 'Đất dự án']
     },
-    USERS: '/api/users',
-    LISTINGS: '/api/listings',
-    CHAT: '/api/chat',
-    PAYMENTS: '/api/payments',
-    ADS: '/api/ads',
-    SEARCH_REQUESTS: '/api/search-requests',
-    REFERRALS: '/api/referrals',
-    ANALYTICS: '/api/analytics',
-    COMMUNITY: {
-        BIRTHDAYS: '/api/community/birthdays',
-        EVENTS: '/api/community/events',
-        RATINGS: '/api/community/ratings',
+    'Ô TÔ': {
+        'SEDAN': ['Honda City', 'Toyota Vios', 'Hyundai Accent', 'Kia Cerato'],
+        'SUV': ['Honda CR-V', 'Toyota Fortuner', 'Mazda CX-5', 'Hyundai Tucson'],
+        'HATCHBACK': ['Honda Jazz', 'Toyota Yaris', 'Ford Fiesta', 'Hyundai i10'],
+        'PICKUP': ['Ford Ranger', 'Toyota Hilux', 'Isuzu D-Max', 'Mitsubishi Triton']
     },
+    'ĐIỆN TỬ': {
+        'ĐIỆN THOẠI': ['iPhone', 'Samsung Galaxy', 'Xiaomi', 'Oppo', 'Vivo'],
+        'LAPTOP': ['MacBook', 'Dell', 'HP', 'Asus', 'Lenovo'],
+        'TABLET': ['iPad', 'Samsung Tab', 'Huawei', 'Xiaomi'],
+        'PHỤ KIỆN': ['Tai nghe', 'Sạc', 'Ốp lưng', 'Cáp']
+    },
+    'THỜI TRANG': {
+        'QUẦN ÁO NAM': ['Áo sơ mi', 'Quần âu', 'Áo thun', 'Quần jean'],
+        'QUẦN ÁO NỮ': ['Váy', 'Đầm', 'Áo blouse', 'Quần short'],
+        'GIÀY DÉP': ['Giày thể thao', 'Giày tây', 'Dép', 'Sandal'],
+        'PHỤ KIỆN': ['Túi xách', 'Ví', 'Đồng hồ', 'Trang sức']
+    },
+    'ẨM THỰC': {
+        'MÓN ĂN': ['Cơm', 'Phở', 'Bún', 'Chả cá'],
+        'ĐỒ UỐNG': ['Cà phê', 'Trà sữa', 'Nước ép', 'Sinh tố'],
+        'BÁNH KẸO': ['Bánh ngọt', 'Kẹo', 'Bánh mì', 'Bánh tráng'],
+        'NGUYÊN LIỆU': ['Gạo', 'Thịt', 'Rau củ', 'Gia vị']
+    },
+    'DỊCH VỤ': {
+        'GIÁO DỤC': ['Gia sư', 'Dạy kèm', 'Luyện thi', 'Ngoại ngữ'],
+        'SỨC KHỎE': ['Massage', 'Yoga', 'Gym', 'Spa'],
+        'VẬN CHUYỂN': ['Giao hàng', 'Chuyển nhà', 'Taxi', 'Xe máy'],
+        'SỬA CHỮA': ['Điện tử', 'Xe máy', 'Điện lạnh', 'Nội thất']
+    }
 } as const
 
-// Cache Configuration
-export const CACHE_CONFIG = {
-    USER_DATA: 24 * 60 * 60 * 1000, // 24 hours
-    LISTINGS: 60 * 60 * 1000, // 1 hour
-    CONVERSATIONS: 30 * 60 * 1000, // 30 minutes
-    SEARCH_RESULTS: 10 * 60 * 1000, // 10 minutes
-    ADS: 5 * 60 * 1000, // 5 minutes
+// Locations
+export const LOCATIONS = [
+    'HÀ NỘI', 'TP.HCM', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ',
+    'AN GIANG', 'BẠC LIÊU', 'BẮC GIANG', 'BẮC KẠN', 'BẮC NINH',
+    'BẾN TRE', 'BÌNH DƯƠNG', 'BÌNH PHƯỚC', 'BÌNH THUẬN',
+    'CÀ MAU', 'CAO BẰNG', 'ĐẮK LẮK', 'ĐẮK NÔNG', 'ĐIỆN BIÊN',
+    'ĐỒNG NAI', 'ĐỒNG THÁP', 'GIA LAI', 'HÀ GIANG', 'HÀ NAM',
+    'HÀ TĨNH', 'HẢI DƯƠNG', 'HẬU GIANG', 'HÒA BÌNH', 'HƯNG YÊN',
+    'KHÁNH HÒA', 'KIÊN GIANG', 'KONTUM', 'LAI CHÂU', 'LÂM ĐỒNG',
+    'LẠNG SƠN', 'LÀO CAI', 'LONG AN', 'NAM ĐỊNH', 'NGHỆ AN',
+    'NINH BÌNH', 'NINH THUẬN', 'PHÚ THỌ', 'PHÚ YÊN', 'QUẢNG BÌNH',
+    'QUẢNG NAM', 'QUẢNG NGÃI', 'QUẢNG NINH', 'QUẢNG TRỊ', 'SÓC TRĂNG',
+    'SƠN LA', 'TAY NINH', 'THÁI BÌNH', 'THÁI NGUYÊN', 'THANH HÓA',
+    'THỪA THIÊN HUẾ', 'TIỀN GIANG', 'TRÀ VINH', 'TUYÊN QUANG',
+    'VĨNH LONG', 'VĨNH PHÚC', 'YÊN BÁI'
+] as const
+
+// Districts for major cities
+export const DISTRICTS = {
+    'HÀ NỘI': [
+        'QUẬN BA ĐÌNH', 'QUẬN HOÀN KIẾM', 'QUẬN TÂY HỒ', 'QUẬN LONG BIÊN',
+        'QUẬN CẦU GIẤY', 'QUẬN ĐỐNG ĐA', 'QUẬN HAI BÀ TRƯNG', 'QUẬN HOÀNG MAI',
+        'QUẬN THANH XUÂN', 'QUẬN HÀ ĐÔNG', 'QUẬN NAM TỪ LIÊM', 'QUẬN BẮC TỪ LIÊM'
+    ],
+    'TP.HCM': [
+        'QUẬN 1', 'QUẬN 2', 'QUẬN 3', 'QUẬN 4', 'QUẬN 5', 'QUẬN 6',
+        'QUẬN 7', 'QUẬN 8', 'QUẬN 9', 'QUẬN 10', 'QUẬN 11', 'QUẬN 12',
+        'QUẬN THỦ ĐỨC', 'QUẬN BÌNH THẠNH', 'QUẬN GÒ VẤP', 'QUẬN TÂN BÌNH',
+        'QUẬN TÂN PHÚ', 'QUẬN PHÚ NHUẬN', 'QUẬN BÌNH TÂN', 'QUẬN HỐC MÔN',
+        'QUẬN CỦ CHI', 'QUẬN BÌNH CHÁNH', 'QUẬN NHÀ BÈ', 'QUẬN CẦN GIỜ'
+    ],
+    'ĐÀ NẴNG': [
+        'QUẬN HẢI CHÂU', 'QUẬN THANH KHÊ', 'QUẬN SƠN TRÀ', 'QUẬN NGŨ HÀNH SƠN',
+        'QUẬN LIÊN CHIỂU', 'QUẬN CẨM LỆ', 'QUẬN HÒA VANG', 'QUẬN HOÀNG SA'
+    ]
 } as const
 
-// Rate Limiting
-export const RATE_LIMITS = {
-    MESSAGES: { window: 60 * 1000, max: 5 }, // 5 per minute
-    LISTINGS: { window: 24 * 60 * 60 * 1000, max: 5 }, // 5 per day
-    CONNECTIONS: { window: 24 * 60 * 60 * 1000, max: 20 }, // 20 per day
-    SEARCHES: { window: 60 * 60 * 1000, max: 10 }, // 10 per hour
+// Price ranges
+export const PRICE_RANGES = [
+    { label: 'Dưới 100 triệu', min: 0, max: 100000000 },
+    { label: '100-500 triệu', min: 100000000, max: 500000000 },
+    { label: '500 triệu - 1 tỷ', min: 500000000, max: 1000000000 },
+    { label: '1-3 tỷ', min: 1000000000, max: 3000000000 },
+    { label: '3-5 tỷ', min: 3000000000, max: 5000000000 },
+    { label: 'Trên 5 tỷ', min: 5000000000, max: Infinity }
+] as const
+
+// Ad packages
+export const AD_PACKAGES = {
+    'HOMEPAGE_BANNER': {
+        name: 'Homepage Banner',
+        price: 50000,
+        description: 'Hiển thị trên trang chủ, vị trí top, dễ nhìn'
+    },
+    'SEARCH_BOOST': {
+        name: 'Search Boost',
+        price: 30000,
+        description: 'Tăng 3x khả năng hiển thị, ưu tiên trong kết quả tìm kiếm'
+    },
+    'CROSS_SELL_SPOT': {
+        name: 'Cross-sell Spot',
+        price: 20000,
+        description: 'Ưu tiên trong gợi ý, hiển thị trong cross-selling'
+    },
+    'FEATURED_LISTING': {
+        name: 'Featured Listing',
+        price: 15000,
+        description: 'Làm nổi bật tin đăng, badge "Nổi bật"'
+    }
 } as const
 
-// UI Configuration
-export const UI_CONFIG = {
-    ITEMS_PER_PAGE: 20,
-    MOBILE_BREAKPOINT: 640,
-    TABLET_BREAKPOINT: 768,
-    DESKTOP_BREAKPOINT: 1024,
-    ANIMATION_DURATION: 300,
-    DEBOUNCE_DELAY: 500,
+// Horoscope data for Tân Dậu 1981
+export const HOROSCOPE_DATA = {
+    general: {
+        element: 'Kim',
+        direction: 'Tây',
+        color: 'Vàng, Trắng',
+        luckyNumbers: [1, 6, 8],
+        personality: 'Thông minh, nhanh nhẹn, có tài lãnh đạo'
+    },
+    daily: {
+        fortune: ['Rất tốt', 'Tốt', 'Bình thường', 'Kém', 'Rất kém'],
+        love: ['Rất tốt', 'Tốt', 'Bình thường', 'Kém', 'Rất kém'],
+        health: ['Rất tốt', 'Tốt', 'Bình thường', 'Kém', 'Rất kém'],
+        career: ['Rất tốt', 'Tốt', 'Bình thường', 'Kém', 'Rất kém']
+    }
 } as const
 
-// Error Messages
-export const ERROR_MESSAGES = {
-    AUTH_REQUIRED: 'Vui lòng đăng nhập để tiếp tục',
-    AGE_VERIFICATION_FAILED: 'Chỉ dành cho thành viên sinh năm 1981',
-    TRIAL_EXPIRED: 'Trial đã hết hạn. Vui lòng thanh toán để tiếp tục sử dụng',
-    RATE_LIMIT_EXCEEDED: 'Bạn đã vượt quá giới hạn. Vui lòng thử lại sau',
-    INVALID_INPUT: 'Dữ liệu không hợp lệ',
-    NETWORK_ERROR: 'Lỗi kết nối. Vui lòng thử lại',
-    UNAUTHORIZED: 'Bạn không có quyền thực hiện hành động này',
-    NOT_FOUND: 'Không tìm thấy dữ liệu',
-    SERVER_ERROR: 'Lỗi hệ thống. Vui lòng thử lại sau',
+// Points system
+export const POINTS_SYSTEM = {
+    LOGIN: 2,
+    CREATE_LISTING: 10,
+    RECEIVE_RATING: 5,
+    SHARE_MEMORY: 3,
+    REFERRAL: 100,
+    BIRTHDAY: 20,
+    EVENT_PARTICIPATION: 15
 } as const
 
-// Success Messages
-export const SUCCESS_MESSAGES = {
-    LOGIN_SUCCESS: 'Đăng nhập thành công!',
-    REGISTRATION_SUCCESS: 'Đăng ký thành công!',
-    LISTING_CREATED: 'Đăng tin thành công!',
-    PAYMENT_SUCCESS: 'Thanh toán thành công!',
-    MESSAGE_SENT: 'Tin nhắn đã được gửi!',
-    PROFILE_UPDATED: 'Cập nhật thông tin thành công!',
+// User levels
+export const USER_LEVELS = {
+    BRONZE: { min: 0, max: 200, name: 'Đồng' },
+    SILVER: { min: 200, max: 500, name: 'Bạc' },
+    GOLD: { min: 500, max: 1000, name: 'Vàng' },
+    PLATINUM: { min: 1000, max: Infinity, name: 'Bạch kim' }
 } as const

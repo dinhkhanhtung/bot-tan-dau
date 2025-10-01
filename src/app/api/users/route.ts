@@ -1,186 +1,236 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
+import { generateReferralCode, validatePhoneNumber } from '@/lib/utils'
 
-export async function GET(request: NextRequest) {
-    try {
-        const { searchParams } = new URL(request.url)
-        const page = parseInt(searchParams.get('page') || '1')
-        const limit = parseInt(searchParams.get('limit') || '20')
-        const status = searchParams.get('status')
-        const location = searchParams.get('location')
-        const search = searchParams.get('search')
-
-        const supabase = createClient()
-        let query = supabase
-            .from('users')
-            .select('*', { count: 'exact' })
-
-        // Apply filters
-        if (status) {
-            query = query.eq('status', status)
-        }
-        if (location) {
-            query = query.eq('location', location)
-        }
-        if (search) {
-            query = query.ilike('name', `%${search}%`)
-        }
-
-        // Apply pagination
-        const from = (page - 1) * limit
-        const to = from + limit - 1
-
-        const { data: users, error, count } = await query
-            .range(from, to)
-            .order('created_at', { ascending: false })
-
-        if (error) {
-            console.error('Database error:', error)
-            return NextResponse.json(
-                { error: 'Lỗi cơ sở dữ liệu' },
-                { status: 500 }
-            )
-        }
-
-        return NextResponse.json({
-            success: true,
-            data: users,
-            pagination: {
-                page,
-                limit,
-                total: count || 0,
-                total_pages: Math.ceil((count || 0) / limit),
-                has_next: page * limit < (count || 0),
-                has_prev: page > 1,
-            }
-        })
-
-    } catch (error) {
-        console.error('Users API error:', error)
-        return NextResponse.json(
-            { error: 'Lỗi server' },
-            { status: 500 }
-        )
-    }
-}
-
+// Create new user
 export async function POST(request: NextRequest) {
     try {
-        const userData = await request.json()
+        const body = await request.json()
+        const { facebook_id, name, phone, location, birthday } = body
 
-        const supabase = createClient()
-
-        const { data: user, error } = await supabase
-            .from('users')
-            .insert(userData)
-            .select()
-            .single()
-
-        if (error) {
-            console.error('Database error:', error)
+        // Validate required fields
+        if (!facebook_id || !name || !phone || !location || birthday !== 1981) {
             return NextResponse.json(
-                { error: 'Lỗi tạo người dùng' },
-                { status: 500 }
-            )
-        }
-
-        return NextResponse.json({
-            success: true,
-            data: user,
-            message: 'Tạo người dùng thành công'
-        })
-
-    } catch (error) {
-        console.error('Create user error:', error)
-        return NextResponse.json(
-            { error: 'Lỗi tạo người dùng' },
-            { status: 500 }
-        )
-    }
-}
-
-export async function PUT(request: NextRequest) {
-    try {
-        const { id, ...updateData } = await request.json()
-
-        if (!id) {
-            return NextResponse.json(
-                { error: 'Thiếu ID người dùng' },
+                { error: 'Missing required fields or invalid birthday' },
                 { status: 400 }
             )
         }
 
-        const supabase = createClient()
+        // Validate phone number
+        if (!validatePhoneNumber(phone)) {
+            return NextResponse.json(
+                { error: 'Invalid phone number format' },
+                { status: 400 }
+            )
+        }
 
-        const { data: user, error } = await supabase
+        // Check if user already exists
+        const { data: existingUser } = await supabaseAdmin
+            .from('users')
+            .select('id')
+            .eq('facebook_id', facebook_id)
+            .single()
+
+        if (existingUser) {
+            return NextResponse.json(
+                { error: 'User already exists' },
+                { status: 409 }
+            )
+        }
+
+        // Check if phone number is already used
+        const { data: existingPhone } = await supabaseAdmin
+            .from('users')
+            .select('id')
+            .eq('phone', phone)
+            .single()
+
+        if (existingPhone) {
+            return NextResponse.json(
+                { error: 'Phone number already registered' },
+                { status: 409 }
+            )
+        }
+
+        // Generate referral code
+        const referralCode = generateReferralCode(facebook_id)
+
+        // Calculate trial expiry date
+        const trialExpiry = new Date()
+        trialExpiry.setDate(trialExpiry.getDate() + 3) // 3 days trial
+
+        // Create user
+        const { data: user, error } = await supabaseAdmin
+            .from('users')
+            .insert({
+                facebook_id,
+                name,
+                phone,
+                location,
+                birthday,
+                status: 'trial',
+                membership_expires_at: trialExpiry.toISOString(),
+                referral_code: referralCode
+            })
+            .select()
+            .single()
+
+        if (error) {
+            console.error('Error creating user:', error)
+            return NextResponse.json(
+                { error: 'Failed to create user' },
+                { status: 500 }
+            )
+        }
+
+        // Create user points record
+        await supabaseAdmin
+            .from('user_points')
+            .insert({
+                user_id: user.id,
+                points: 0,
+                level: 'Đồng'
+            })
+
+        // Create bot session
+        await supabaseAdmin
+            .from('bot_sessions')
+            .insert({
+                user_id: user.id,
+                session_data: {},
+                current_flow: 'registration',
+                current_step: 0
+            })
+
+        return NextResponse.json({ user }, { status: 201 })
+    } catch (error) {
+        console.error('Error in POST /api/users:', error)
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        )
+    }
+}
+
+// Get user by Facebook ID
+export async function GET(request: NextRequest) {
+    try {
+        const { searchParams } = new URL(request.url)
+        const facebook_id = searchParams.get('facebook_id')
+
+        if (!facebook_id) {
+            return NextResponse.json(
+                { error: 'Facebook ID is required' },
+                { status: 400 }
+            )
+        }
+
+        const { data: user, error } = await supabaseAdmin
+            .from('users')
+            .select('*')
+            .eq('facebook_id', facebook_id)
+            .single()
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return NextResponse.json(
+                    { error: 'User not found' },
+                    { status: 404 }
+                )
+            }
+            throw error
+        }
+
+        return NextResponse.json({ user })
+    } catch (error) {
+        console.error('Error in GET /api/users:', error)
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        )
+    }
+}
+
+// Update user
+export async function PUT(request: NextRequest) {
+    try {
+        const body = await request.json()
+        const { facebook_id, ...updateData } = body
+
+        if (!facebook_id) {
+            return NextResponse.json(
+                { error: 'Facebook ID is required' },
+                { status: 400 }
+            )
+        }
+
+        // Validate phone number if provided
+        if (updateData.phone && !validatePhoneNumber(updateData.phone)) {
+            return NextResponse.json(
+                { error: 'Invalid phone number format' },
+                { status: 400 }
+            )
+        }
+
+        const { data: user, error } = await supabaseAdmin
             .from('users')
             .update({
                 ...updateData,
                 updated_at: new Date().toISOString()
             })
-            .eq('id', id)
+            .eq('facebook_id', facebook_id)
             .select()
             .single()
 
         if (error) {
-            console.error('Database error:', error)
+            console.error('Error updating user:', error)
             return NextResponse.json(
-                { error: 'Lỗi cập nhật người dùng' },
+                { error: 'Failed to update user' },
                 { status: 500 }
             )
         }
 
-        return NextResponse.json({
-            success: true,
-            data: user,
-            message: 'Cập nhật người dùng thành công'
-        })
-
+        return NextResponse.json({ user })
     } catch (error) {
-        console.error('Update user error:', error)
+        console.error('Error in PUT /api/users:', error)
         return NextResponse.json(
-            { error: 'Lỗi cập nhật người dùng' },
+            { error: 'Internal server error' },
             { status: 500 }
         )
     }
 }
 
+// Delete user
 export async function DELETE(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url)
-        const id = searchParams.get('id')
+        const facebook_id = searchParams.get('facebook_id')
 
-        if (!id) {
+        if (!facebook_id) {
             return NextResponse.json(
-                { error: 'Thiếu ID người dùng' },
+                { error: 'Facebook ID is required' },
                 { status: 400 }
             )
         }
 
-        const supabase = createClient()
-
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
             .from('users')
             .delete()
-            .eq('id', id)
+            .eq('facebook_id', facebook_id)
 
         if (error) {
-            console.error('Database error:', error)
+            console.error('Error deleting user:', error)
             return NextResponse.json(
-                { error: 'Lỗi xóa người dùng' },
+                { error: 'Failed to delete user' },
                 { status: 500 }
             )
         }
 
-        return NextResponse.json({
-            success: true,
-            message: 'Xóa người dùng thành công'
-        })
-
+        return NextResponse.json({ message: 'User deleted successfully' })
     } catch (error) {
-        console.error('Delete user error:', error)
+        console.error('Error in DELETE /api/users:', error)
         return NextResponse.json(
-            { error: 'Lỗi xóa người dùng' },
+            { error: 'Internal server error' },
             { status: 500 }
         )
     }
