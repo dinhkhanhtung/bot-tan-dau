@@ -264,7 +264,27 @@ export async function handlePostback(user: any, payload: string) {
                 }
                 break
             case 'POINTS':
-                await handlePoints(user)
+                if (params[0] === 'REWARDS') {
+                    if (params[1] === 'DISCOUNT') {
+                        await handlePointsRewardsDiscount(user)
+                    } else if (params[1] === 'BADGES') {
+                        await handlePointsRewardsBadges(user)
+                    } else if (params[1] === 'GIFTS') {
+                        await handlePointsRewardsGifts(user)
+                    } else if (params[1] === 'GAMES') {
+                        await handlePointsRewardsGames(user)
+                    }
+                } else if (params[0] === 'HISTORY') {
+                    await handlePointsHistory(user)
+                } else if (params[0] === 'ACHIEVEMENTS') {
+                    await handlePointsAchievements(user)
+                } else if (params[0] === 'LEADERBOARD') {
+                    await handlePointsLeaderboard(user)
+                } else if (params[0] === 'REDEEM') {
+                    await handlePointsRedeem(user)
+                } else {
+                    await handlePoints(user)
+                }
                 break
             case 'SETTINGS':
                 await handleSettings(user)
@@ -3862,12 +3882,435 @@ async function handleHoroscope(user: any) {
     )
 }
 
+// Handle points rewards discount
+async function handlePointsRewardsDiscount(user: any) {
+    try {
+        const { data: discounts, error } = await supabaseAdmin
+            .from('rewards')
+            .select('*')
+            .eq('type', 'discount')
+            .eq('status', 'active')
+            .order('points_required', { ascending: true })
+
+        if (error) throw error
+
+        if (discounts && discounts.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '💳 PHẦN THƯỞNG GIẢM GIÁ\n\nDanh sách giảm giá có thể đổi:'
+            ])
+
+            for (let i = 0; i < discounts.length; i++) {
+                const discount = discounts[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${discount.name}\n💰 Giá: ${discount.points_required} điểm\n📝 Mô tả: ${discount.description}`,
+                    [
+                        createPostbackButton('🛒 ĐỔI NGAY', `REDEEM_${discount.id}`),
+                        createPostbackButton('ℹ️ CHI TIẾT', `REWARD_DETAIL_${discount.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '💳 PHẦN THƯỞNG GIẢM GIÁ\n\n❌ Chưa có phần thưởng giảm giá nào!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling points rewards discount:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải phần thưởng giảm giá!')
+    }
+}
+
+// Handle points rewards badges
+async function handlePointsRewardsBadges(user: any) {
+    try {
+        const { data: badges, error } = await supabaseAdmin
+            .from('rewards')
+            .select('*')
+            .eq('type', 'badge')
+            .eq('status', 'active')
+            .order('points_required', { ascending: true })
+
+        if (error) throw error
+
+        if (badges && badges.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🏆 PHẦN THƯỞNG HUY HIỆU\n\nDanh sách huy hiệu có thể đổi:'
+            ])
+
+            for (let i = 0; i < badges.length; i++) {
+                const badge = badges[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${badge.name}\n💰 Giá: ${badge.points_required} điểm\n📝 Mô tả: ${badge.description}`,
+                    [
+                        createPostbackButton('🛒 ĐỔI NGAY', `REDEEM_${badge.id}`),
+                        createPostbackButton('ℹ️ CHI TIẾT', `REWARD_DETAIL_${badge.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🏆 PHẦN THƯỞNG HUY HIỆU\n\n❌ Chưa có huy hiệu nào!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling points rewards badges:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải huy hiệu!')
+    }
+}
+
+// Handle points rewards gifts
+async function handlePointsRewardsGifts(user: any) {
+    try {
+        const { data: gifts, error } = await supabaseAdmin
+            .from('rewards')
+            .select('*')
+            .eq('type', 'gift')
+            .eq('status', 'active')
+            .order('points_required', { ascending: true })
+
+        if (error) throw error
+
+        if (gifts && gifts.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🎁 PHẦN THƯỞNG QUÀ TẶNG\n\nDanh sách quà tặng có thể đổi:'
+            ])
+
+            for (let i = 0; i < gifts.length; i++) {
+                const gift = gifts[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${gift.name}\n💰 Giá: ${gift.points_required} điểm\n📝 Mô tả: ${gift.description}`,
+                    [
+                        createPostbackButton('🛒 ĐỔI NGAY', `REDEEM_${gift.id}`),
+                        createPostbackButton('ℹ️ CHI TIẾT', `REWARD_DETAIL_${gift.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🎁 PHẦN THƯỞNG QUÀ TẶNG\n\n❌ Chưa có quà tặng nào!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling points rewards gifts:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải quà tặng!')
+    }
+}
+
+// Handle points rewards games
+async function handlePointsRewardsGames(user: any) {
+    try {
+        const { data: games, error } = await supabaseAdmin
+            .from('rewards')
+            .select('*')
+            .eq('type', 'game')
+            .eq('status', 'active')
+            .order('points_required', { ascending: true })
+
+        if (error) throw error
+
+        if (games && games.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🎮 PHẦN THƯỞNG GAME\n\nDanh sách game có thể đổi:'
+            ])
+
+            for (let i = 0; i < games.length; i++) {
+                const game = games[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${game.name}\n💰 Giá: ${game.points_required} điểm\n📝 Mô tả: ${game.description}`,
+                    [
+                        createPostbackButton('🛒 ĐỔI NGAY', `REDEEM_${game.id}`),
+                        createPostbackButton('ℹ️ CHI TIẾT', `REWARD_DETAIL_${game.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🎮 PHẦN THƯỞNG GAME\n\n❌ Chưa có game nào!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling points rewards games:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải game!')
+    }
+}
+
+// Handle points history
+async function handlePointsHistory(user: any) {
+    try {
+        const { data: transactions, error } = await supabaseAdmin
+            .from('points_transactions')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(20)
+
+        if (error) throw error
+
+        if (transactions && transactions.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📊 LỊCH SỬ ĐIỂM THƯỞNG\n\nDanh sách giao dịch gần nhất:'
+            ])
+
+            for (let i = 0; i < transactions.length; i++) {
+                const transaction = transactions[i]
+                const sign = transaction.points > 0 ? '+' : ''
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${transaction.type}\n${sign}${transaction.points} điểm\n📅 ${new Date(transaction.created_at).toLocaleDateString('vi-VN')}\n⏰ ${new Date(transaction.created_at).toLocaleTimeString('vi-VN')}`,
+                    [
+                        createPostbackButton('ℹ️ CHI TIẾT', `TRANSACTION_DETAIL_${transaction.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📊 LỊCH SỬ ĐIỂM THƯỞNG\n\n❌ Bạn chưa có giao dịch nào!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔄 LÀM MỚI', 'POINTS_HISTORY'),
+                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling points history:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải lịch sử điểm thưởng!')
+    }
+}
+
+// Handle points achievements
+async function handlePointsAchievements(user: any) {
+    try {
+        const { data: achievements, error } = await supabaseAdmin
+            .from('achievements')
+            .select('*')
+            .eq('status', 'active')
+            .order('points_required', { ascending: true })
+
+        if (error) throw error
+
+        if (achievements && achievements.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🎯 THÀNH TÍCH\n\nDanh sách thành tích có thể đạt được:'
+            ])
+
+            for (let i = 0; i < achievements.length; i++) {
+                const achievement = achievements[i]
+                const isUnlocked = user.points >= achievement.points_required
+                const status = isUnlocked ? '✅' : '🔒'
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${status} ${achievement.name}\n💰 Yêu cầu: ${achievement.points_required} điểm\n📝 Mô tả: ${achievement.description}`,
+                    [
+                        createPostbackButton('ℹ️ CHI TIẾT', `ACHIEVEMENT_DETAIL_${achievement.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🎯 THÀNH TÍCH\n\n❌ Chưa có thành tích nào!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling points achievements:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải thành tích!')
+    }
+}
+
+// Handle points leaderboard
+async function handlePointsLeaderboard(user: any) {
+    try {
+        const { data: leaderboard, error } = await supabaseAdmin
+            .from('users')
+            .select('name, phone, points')
+            .eq('status', 'active')
+            .order('points', { ascending: false })
+            .limit(20)
+
+        if (error) throw error
+
+        if (leaderboard && leaderboard.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🏆 BẢNG XẾP HẠNG ĐIỂM THƯỞNG\n\nTop 20 thành viên có điểm cao nhất:'
+            ])
+
+            for (let i = 0; i < leaderboard.length; i++) {
+                const member = leaderboard[i]
+                const rank = i + 1
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏆'
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${medal} ${rank}. ${member.name}\n⭐ ${member.points || 0} điểm\n📱 ${member.phone}`,
+                    [
+                        createPostbackButton('👀 XEM PROFILE', `PROFILE_${member.phone}`),
+                        createPostbackButton('💬 LIÊN HỆ', `CONTACT_${member.phone}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🏆 BẢNG XẾP HẠNG ĐIỂM THƯỞNG\n\n❌ Chưa có dữ liệu xếp hạng!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔄 LÀM MỚI', 'POINTS_LEADERBOARD'),
+                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling points leaderboard:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải bảng xếp hạng!')
+    }
+}
+
+// Handle points redeem
+async function handlePointsRedeem(user: any) {
+    try {
+        const { data: rewards, error } = await supabaseAdmin
+            .from('rewards')
+            .select('*')
+            .eq('status', 'active')
+            .order('points_required', { ascending: true })
+
+        if (error) throw error
+
+        if (rewards && rewards.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🛒 ĐỔI PHẦN THƯỞNG\n\nDanh sách phần thưởng có thể đổi:'
+            ])
+
+            for (let i = 0; i < rewards.length; i++) {
+                const reward = rewards[i]
+                const canAfford = user.points >= reward.points_required
+                const status = canAfford ? '✅' : '❌'
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${status} ${reward.name}\n💰 Giá: ${reward.points_required} điểm\n📝 Mô tả: ${reward.description}`,
+                    [
+                        createPostbackButton('🛒 ĐỔI NGAY', `REDEEM_${reward.id}`),
+                        createPostbackButton('ℹ️ CHI TIẾT', `REWARD_DETAIL_${reward.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🛒 ĐỔI PHẦN THƯỞNG\n\n❌ Chưa có phần thưởng nào!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling points redeem:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải phần thưởng!')
+    }
+}
+
+// Helper functions for points
+function getNextLevelPoints(level: number): number {
+    return (level + 1) * 100
+}
+
 // Handle points
 async function handlePoints(user: any) {
-    await sendMessagesWithTyping(user.facebook_id, [
-        '⭐ HỆ THỐNG ĐIỂM THƯỞNG\n\n🏆 Level hiện tại: ' + calculateUserLevel(150) + ' (150/200 điểm)\n⭐ Tổng điểm: 1,250 điểm\n🎯 Streak: 7 ngày liên tiếp',
-        '📈 Hoạt động hôm nay:\n• Đăng nhập: +2 điểm ✅\n• Tạo tin đăng: +10 điểm ✅\n• Nhận đánh giá: +5 điểm ✅\n• Chia sẻ kỷ niệm: +3 điểm ✅'
-    ])
+    try {
+        // Get user's current points and level
+        const userPoints = parseInt(user.points) || 0
+        const userLevel = calculateUserLevel(userPoints)
+        const nextLevelPoints = getNextLevelPoints(parseInt(userLevel.toString()))
+        const pointsToNext = nextLevelPoints - userPoints
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '⭐ HỆ THỐNG ĐIỂM THƯỞNG\n\n🏆 Level hiện tại: ' + userLevel + ' (' + userPoints + '/' + nextLevelPoints + ' điểm)\n⭐ Tổng điểm: ' + userPoints + ' điểm\n🎯 Streak: 7 ngày liên tiếp'
+        ])
+
+        // Get today's activities
+        const today = new Date().toISOString().split('T')[0]
+        const { data: todayActivities, error } = await supabaseAdmin
+            .from('points_transactions')
+            .select('type, points')
+            .eq('user_id', user.id)
+            .gte('created_at', today)
+
+        if (!error && todayActivities) {
+            const activities: { [key: string]: number } = todayActivities.reduce((acc: { [key: string]: number }, transaction) => {
+                acc[transaction.type] = (acc[transaction.type] || 0) + transaction.points
+                return acc
+            }, {})
+
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📈 Hoạt động hôm nay:\n• Đăng nhập: +' + (activities.login || 0) + ' điểm ✅\n• Tạo tin đăng: +' + (activities.listing || 0) + ' điểm ✅\n• Nhận đánh giá: +' + (activities.rating || 0) + ' điểm ✅\n• Chia sẻ kỷ niệm: +' + (activities.share || 0) + ' điểm ✅'
+            ])
+        }
+    } catch (error) {
+        console.error('Error handling points:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải thông tin điểm thưởng!')
+    }
 
     await sendButtonTemplate(
         user.facebook_id,
