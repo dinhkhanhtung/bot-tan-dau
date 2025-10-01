@@ -11,13 +11,19 @@ const SPAM_CONFIG = {
     // Cooldown period after spam detection (minutes)
     SPAM_COOLDOWN_MINUTES: 30,
     // Max consecutive identical messages before warning
-    WARNING_THRESHOLD: 2
+    WARNING_THRESHOLD: 2,
+    // Max consecutive non-button messages before bot stops
+    MAX_NON_BUTTON_MESSAGES: 3,
+    // Time window for non-button message tracking (minutes)
+    NON_BUTTON_WINDOW_MINUTES: 10
 }
 
 // In-memory store for rate limiting (in production, use Redis)
 const userMessageCounts = new Map<string, { count: number, lastReset: number }>()
 const userSpamWarnings = new Map<string, { count: number, lastWarning: number }>()
 const userSpamBlocks = new Map<string, { blocked: boolean, blockTime: number }>()
+const userNonButtonMessages = new Map<string, { count: number, lastMessage: number, messages: string[] }>()
+const userBotStops = new Map<string, { stopped: boolean, stopTime: number, reason: string }>()
 
 // Check if user is spamming
 export async function checkSpam(facebookId: string, message: string): Promise<{
@@ -250,6 +256,150 @@ export async function getSpamStats(): Promise<{
     }
 }
 
+// Track non-button messages (when user sends text instead of clicking buttons)
+export async function trackNonButtonMessage(facebookId: string, message: string): Promise<{
+    shouldStopBot: boolean,
+    warningCount: number,
+    reason?: string
+}> {
+    const now = Date.now()
+    const windowMs = SPAM_CONFIG.NON_BUTTON_WINDOW_MINUTES * 60 * 1000
+
+    // Check if user is already stopped
+    const stopInfo = userBotStops.get(facebookId)
+    if (stopInfo && stopInfo.stopped) {
+        const stopDuration = now - stopInfo.stopTime
+        if (stopDuration < SPAM_CONFIG.SPAM_COOLDOWN_MINUTES * 60 * 1000) {
+            return {
+                shouldStopBot: true,
+                warningCount: 0,
+                reason: stopInfo.reason
+            }
+        } else {
+            // Auto-unstop after cooldown
+            userBotStops.delete(facebookId)
+        }
+    }
+
+    // Get or create non-button message tracking
+    let nonButtonData = userNonButtonMessages.get(facebookId)
+    if (!nonButtonData || (now - nonButtonData.lastMessage) > windowMs) {
+        nonButtonData = { count: 0, lastMessage: now, messages: [] }
+        userNonButtonMessages.set(facebookId, nonButtonData)
+    }
+
+    // Increment count and add message
+    nonButtonData.count++
+    nonButtonData.lastMessage = now
+    nonButtonData.messages.push(message)
+
+    // Keep only recent messages
+    if (nonButtonData.messages.length > SPAM_CONFIG.MAX_NON_BUTTON_MESSAGES) {
+        nonButtonData.messages.shift()
+    }
+
+    // Check if should stop bot
+    if (nonButtonData.count >= SPAM_CONFIG.MAX_NON_BUTTON_MESSAGES) {
+        await stopBotForUser(facebookId, 'User sent too many non-button messages')
+        return {
+            shouldStopBot: true,
+            warningCount: nonButtonData.count,
+            reason: 'User sent too many non-button messages'
+        }
+    }
+
+    // Check if should warn
+    if (nonButtonData.count >= SPAM_CONFIG.WARNING_THRESHOLD) {
+        return {
+            shouldStopBot: false,
+            warningCount: nonButtonData.count
+        }
+    }
+
+    return {
+        shouldStopBot: false,
+        warningCount: 0
+    }
+}
+
+// Stop bot for specific user
+async function stopBotForUser(facebookId: string, reason: string): Promise<void> {
+    const now = Date.now()
+    userBotStops.set(facebookId, {
+        stopped: true,
+        stopTime: now,
+        reason: reason
+    })
+
+    // Log bot stop
+    try {
+        await supabaseAdmin
+            .from('spam_logs')
+            .insert({
+                user_id: facebookId,
+                reason: reason,
+                blocked_at: new Date().toISOString(),
+                action: 'bot_stopped'
+            })
+    } catch (error) {
+        console.error('Error logging bot stop:', error)
+    }
+}
+
+// Check if bot is stopped for user
+export function isBotStoppedForUser(facebookId: string): boolean {
+    const stopInfo = userBotStops.get(facebookId)
+    if (!stopInfo) return false
+
+    const now = Date.now()
+    const stopDuration = now - stopInfo.stopTime
+    
+    // Auto-unstop after cooldown period
+    if (stopDuration >= SPAM_CONFIG.SPAM_COOLDOWN_MINUTES * 60 * 1000) {
+        userBotStops.delete(facebookId)
+        return false
+    }
+
+    return stopInfo.stopped
+}
+
+// Reset non-button message tracking (call when user clicks a button)
+export function resetNonButtonTracking(facebookId: string): void {
+    userNonButtonMessages.delete(facebookId)
+}
+
+// Send bot stopped message
+export async function sendBotStoppedMessage(facebookId: string, reason: string): Promise<void> {
+    const { sendMessage, sendButtonTemplate, createPostbackButton } = await import('./facebook-api')
+    
+    await sendMessage(facebookId, '🚫 BOT ĐÃ TẠM DỪNG!')
+    await sendMessage(facebookId, 'Bạn đã gửi quá nhiều tin nhắn mà không chọn nút. Bot sẽ tạm dừng để tránh spam.')
+    await sendMessage(facebookId, 'Nếu cần hỗ trợ, hãy liên hệ admin:')
+    
+    await sendButtonTemplate(
+        facebookId,
+        'Liên hệ admin:',
+        [
+            createPostbackButton('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN'),
+            createPostbackButton('🔄 THỬ LẠI SAU', 'MAIN_MENU'),
+            createPostbackButton('ℹ️ THÔNG TIN', 'INFO')
+        ]
+    )
+}
+
+// Send non-button warning message
+export async function sendNonButtonWarning(facebookId: string, warningCount: number): Promise<void> {
+    const { sendMessage, sendButtonTemplate, createPostbackButton } = await import('./facebook-api')
+    
+    if (warningCount === 1) {
+        await sendMessage(facebookId, '⚠️ Cảnh báo: Bạn đang gửi tin nhắn thay vì chọn nút!')
+        await sendMessage(facebookId, 'Vui lòng sử dụng các nút bên dưới để tương tác với bot.')
+    } else if (warningCount === 2) {
+        await sendMessage(facebookId, '🚨 Cảnh báo lần 2: Bạn vẫn chưa chọn nút!')
+        await sendMessage(facebookId, 'Nếu tiếp tục gửi tin nhắn, bot sẽ tạm dừng và bạn cần liên hệ admin.')
+    }
+}
+
 // Clean up old data (call this periodically)
 export function cleanupSpamData(): void {
     const now = Date.now()
@@ -268,6 +418,22 @@ export function cleanupSpamData(): void {
         const data = userSpamWarnings.get(facebookId)
         if (data && data.lastWarning < oneHourAgo) {
             userSpamWarnings.delete(facebookId)
+        }
+    })
+
+    // Clean up old non-button tracking
+    Array.from(userNonButtonMessages.keys()).forEach(facebookId => {
+        const data = userNonButtonMessages.get(facebookId)
+        if (data && (now - data.lastMessage) > oneHourAgo) {
+            userNonButtonMessages.delete(facebookId)
+        }
+    })
+
+    // Clean up old bot stops
+    Array.from(userBotStops.keys()).forEach(facebookId => {
+        const data = userBotStops.get(facebookId)
+        if (data && (now - data.stopTime) > oneHourAgo) {
+            userBotStops.delete(facebookId)
         }
     })
 }

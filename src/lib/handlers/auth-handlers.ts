@@ -14,6 +14,30 @@ import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysU
 export async function handleRegistration(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
+    // Check if user is admin first
+    const { isAdmin } = await import('./admin-handlers')
+    const userIsAdmin = await isAdmin(user.facebook_id)
+    
+    if (userIsAdmin) {
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🔧 ADMIN DASHBOARD',
+            'Chào admin! 👋',
+            'Bạn có quyền truy cập đầy đủ mà không cần đăng ký.'
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Chọn chức năng:',
+            [
+                createPostbackButton('🔧 ADMIN PANEL', 'ADMIN'),
+                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU'),
+                createPostbackButton('🛒 NIÊM YẾT', 'LISTING'),
+                createPostbackButton('🔍 TÌM KIẾM', 'SEARCH')
+            ]
+        )
+        return
+    }
+
     // Check if user is already registered
     if (user.status === 'registered' || user.status === 'trial') {
         await sendMessagesWithTyping(user.facebook_id, [

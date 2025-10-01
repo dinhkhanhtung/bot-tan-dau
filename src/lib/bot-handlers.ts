@@ -32,6 +32,22 @@ export async function handleMessage(user: any, text: string) {
             return
         }
 
+        // Check if bot is stopped for this user
+        const { isBotStoppedForUser, trackNonButtonMessage, sendBotStoppedMessage, sendNonButtonWarning } = await import('./anti-spam')
+        if (isBotStoppedForUser(user.facebook_id)) {
+            await sendBotStoppedMessage(user.facebook_id, 'Bot temporarily stopped for spam prevention')
+            return
+        }
+
+        // Track non-button messages for spam prevention
+        const nonButtonResult = await trackNonButtonMessage(user.facebook_id, text)
+        if (nonButtonResult.shouldStopBot) {
+            await sendBotStoppedMessage(user.facebook_id, nonButtonResult.reason || 'Too many non-button messages')
+            return
+        } else if (nonButtonResult.warningCount > 0) {
+            await sendNonButtonWarning(user.facebook_id, nonButtonResult.warningCount)
+        }
+
         // Check if user is expired
         if (isExpiredUser(user.membership_expires_at)) {
             await PaymentHandlers.sendExpiredMessage(user.facebook_id)
@@ -105,6 +121,10 @@ export async function handleMessage(user: any, text: string) {
 // Handle postback (button clicks)
 export async function handlePostback(user: any, postback: string) {
     try {
+        // Reset non-button tracking when user clicks a button
+        const { resetNonButtonTracking } = await import('./anti-spam')
+        resetNonButtonTracking(user.facebook_id)
+
         const [action, ...params] = postback.split('_')
 
         switch (action) {
