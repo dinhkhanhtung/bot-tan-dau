@@ -139,6 +139,17 @@ export async function handlePostback(user: any, payload: string) {
             case 'MAIN_MENU':
                 await showMainMenu(user)
                 break
+            case 'VERIFY':
+                if (params[0] === 'BIRTHDAY') {
+                    await handleBirthdayVerification(user)
+                }
+                break
+            case 'CANCEL':
+                if (params[0] === 'REGISTRATION') {
+                    await sendMessage(user.facebook_id, 'Đăng ký đã bị hủy. Bạn có thể đăng ký lại bất cứ lúc nào!')
+                    await showMainMenu(user)
+                }
+                break
             default:
                 await handleDefaultMessage(user)
         }
@@ -196,6 +207,51 @@ export async function handlePaymentReceipt(user: any, imageUrl: string) {
     }
 }
 
+// Handle final verification
+export async function handleFinalVerification(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🎉 HOÀN THÀNH ĐĂNG KÝ!\n\n✅ Thông tin của bạn đã được lưu:\n• Họ tên: ' + user.name + '\n• SĐT: ' + user.phone + '\n• Địa điểm: ' + user.location,
+        '🔐 XÁC MINH CUỐI CÙNG\n\nĐể hoàn tất đăng ký, vui lòng xác nhận bạn là thành viên cộng đồng Tân Dậu 1981.'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Bạn có xác nhận mình là thành viên Tân Dậu 1981 không?',
+        [
+            createPostbackButton('✅ XÁC MINH', 'VERIFY_BIRTHDAY'),
+            createPostbackButton('❌ HỦY', 'CANCEL_REGISTRATION')
+        ]
+    )
+}
+
+// Handle birthday verification (trust-based)
+export async function handleBirthdayVerification(user: any) {
+    try {
+        // Update user status to active
+        const { error } = await supabaseAdmin
+            .from('users')
+            .update({ 
+                status: 'active',
+                birthday: 1981 // Trust-based verification
+            })
+            .eq('id', user.id)
+
+        if (error) {
+            throw error
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🎉 CHÚC MỪNG!\n\n✅ Đăng ký thành công!\n🏆 Bạn đã trở thành thành viên chính thức của cộng đồng Tân Dậu 1981!',
+            '🎁 Bạn nhận được:\n• 3 ngày trial miễn phí\n• Quyền truy cập đầy đủ\n• Tham gia cộng đồng\n• Tử vi hàng ngày'
+        ])
+
+        await showMainMenu(user)
+    } catch (error) {
+        console.error('Error verifying birthday:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xác minh. Vui lòng thử lại sau!')
+    }
+}
+
 // Handle listing images
 export async function handleListingImages(user: any, imageUrl: string) {
     try {
@@ -249,7 +305,7 @@ async function showMainMenu(user: any) {
 async function handleRegistration(user: any) {
     if (user.status !== 'trial' && user.status !== 'active') {
         await sendMessagesWithTyping(user.facebook_id, [
-            '📝 ĐĂNG KÝ THÀNH VIÊN\n\nChào bạn! Tôi sẽ hướng dẫn bạn đăng ký từng bước.\n\nBước 1/4: Họ tên\n👤 Vui lòng nhập họ tên đầy đủ của bạn:',
+            '📝 ĐĂNG KÝ THÀNH VIÊN\n\nChào bạn! Tôi sẽ hướng dẫn bạn đăng ký từng bước.\n\nBước 1/3: Họ tên\n👤 Vui lòng nhập họ tên đầy đủ của bạn:',
             'VD: Nguyễn Văn Minh'
         ])
 
@@ -432,6 +488,7 @@ async function handleDefaultMessage(user: any) {
         ]
     )
 }
+
 
 // Send expired message
 async function sendExpiredMessage(facebookId: string) {
