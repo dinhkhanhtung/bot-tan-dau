@@ -412,6 +412,7 @@ export async function handlePostback(user: any, payload: string) {
 
 // Handle admin commands
 export async function handleAdminCommand(user: any) {
+    await sendTypingIndicator(user.facebook_id)
     await sendMessagesWithTyping(user.facebook_id, [
         '🔧 ADMIN DASHBOARD\n\nChào admin! 👋',
         'Bạn muốn quản lý gì?'
@@ -432,7 +433,7 @@ export async function handleAdminCommand(user: any) {
         'Thống kê và báo cáo:',
         [
             createPostbackButton('📊 THỐNG KÊ', 'ADMIN_STATS'),
-            createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT'),
+            createPostbackButton('📤 XUẤT', 'ADMIN_EXPORT'),
             createPostbackButton('🔔 THÔNG BÁO', 'ADMIN_NOTIFICATIONS')
         ]
     )
@@ -517,6 +518,7 @@ export async function handleListingImages(user: any, imageUrl?: string) {
 
 // Show main menu
 async function showMainMenu(user: any) {
+    await sendTypingIndicator(user.facebook_id)
     const statusText = isTrialUser(user.membership_expires_at)
         ? `Trial ${daysUntilExpiry(user.membership_expires_at!)} ngày`
         : 'Đã thanh toán'
@@ -861,7 +863,7 @@ async function handleListing(user: any) {
         'Tùy chọn:',
         [
             createPostbackButton('📋 XEM TIN ĐÃ ĐĂNG', 'MY_LISTINGS'),
-            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -953,7 +955,7 @@ async function handleSearchAdvanced(user: any) {
         'Tùy chọn:',
         [
             createPostbackButton('🔍 TÌM THEO TỪ KHÓA', 'SEARCH_KEYWORD'),
-            createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+            createPostbackButton('🔙 TÌM KIẾM', 'SEARCH')
         ]
     )
 }
@@ -969,7 +971,7 @@ async function handleSearchKeyword(user: any) {
         'Hoặc chọn:',
         [
             createPostbackButton('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
-            createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+            createPostbackButton('🔙 TÌM KIẾM', 'SEARCH')
         ]
     )
 
@@ -1039,7 +1041,7 @@ async function handleSupportAdmin(user: any) {
         [
             createPostbackButton('📝 ĐĂNG KÝ', 'REGISTER'),
             createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -1084,8 +1086,8 @@ async function handleAdminPayments(user: any) {
                 'Tùy chọn khác:',
                 [
                     createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
-                    createPostbackButton('🔄 LÀM MỚI', 'ADMIN_PAYMENTS'),
-                    createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                    createPostbackButton('🔄 MỚI', 'ADMIN_PAYMENTS'),
+                    createPostbackButton('🔙 ADMIN', 'ADMIN')
                 ]
             )
         } else {
@@ -1098,8 +1100,8 @@ async function handleAdminPayments(user: any) {
                 'Tùy chọn:',
                 [
                     createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
-                    createPostbackButton('🔄 LÀM MỚI', 'ADMIN_PAYMENTS'),
-                    createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                    createPostbackButton('🔄 MỚI', 'ADMIN_PAYMENTS'),
+                    createPostbackButton('🔙 ADMIN', 'ADMIN')
                 ]
             )
         }
@@ -1135,7 +1137,7 @@ async function handleAdminUsers(user: any) {
             [
                 createPostbackButton('🔍 TÌM USER', 'ADMIN_SEARCH_USER'),
                 createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_USERS'),
-                createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT_USERS')
+                createPostbackButton('📤 XUẤT', 'ADMIN_EXPORT_USERS')
             ]
         )
 
@@ -1145,7 +1147,7 @@ async function handleAdminUsers(user: any) {
             [
                 createPostbackButton('⚠️ USER VI PHẠM', 'ADMIN_VIOLATIONS'),
                 createPostbackButton('🔔 GỬI THÔNG BÁO', 'ADMIN_SEND_NOTIFICATION'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1189,8 +1191,8 @@ async function handleAdminListings(user: any) {
             'Quản lý:',
             [
                 createPostbackButton('🔍 TÌM KIẾM', 'ADMIN_SEARCH_LISTINGS'),
-                createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT_LISTINGS'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('📤 XUẤT', 'ADMIN_EXPORT_LISTINGS'),
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1257,10 +1259,10 @@ async function handleAdminStats(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('📈 XEM CHI TIẾT', 'ADMIN_DETAILED_STATS'),
-                createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT'),
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_STATS'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('📈 XEM', 'ADMIN_DETAILED_STATS'),
+                createPostbackButton('📤 XUẤT', 'ADMIN_EXPORT'),
+                createPostbackButton('🔄 MỚI', 'ADMIN_STATS'),
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1291,7 +1293,7 @@ async function handleAdminExport(user: any) {
         [
             createPostbackButton('📊 BÁO CÁO TỔNG HỢP', 'ADMIN_EXPORT_COMPREHENSIVE'),
             createPostbackButton('📅 BÁO CÁO THEO NGÀY', 'ADMIN_EXPORT_BY_DATE'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -1316,9 +1318,9 @@ async function handleAdminNotifications(user: any) {
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📋 XEM LỊCH SỬ', 'ADMIN_NOTIFICATION_HISTORY'),
+            createPostbackButton('📋 LỊCH SỬ', 'ADMIN_NOTIFICATION_HISTORY'),
             createPostbackButton('⚙️ CÀI ĐẶT', 'ADMIN_NOTIFICATION_SETTINGS'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -1380,7 +1382,7 @@ async function handleAdminApprovePayment(user: any, paymentId: string) {
             payment.users.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU'),
+                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU'),
                 createPostbackButton('💬 HỖ TRỢ', 'SUPPORT_ADMIN')
             ]
         )
@@ -1396,8 +1398,8 @@ async function handleAdminApprovePayment(user: any, paymentId: string) {
             'Tùy chọn:',
             [
                 createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_PAYMENTS'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('🔄 MỚI', 'ADMIN_PAYMENTS'),
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1448,7 +1450,7 @@ async function handleAdminRejectPayment(user: any, paymentId: string) {
             [
                 createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
                 createPostbackButton('💰 THANH TOÁN LẠI', 'PAYMENT'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -1463,8 +1465,8 @@ async function handleAdminRejectPayment(user: any, paymentId: string) {
             'Tùy chọn:',
             [
                 createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_PAYMENTS'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('🔄 MỚI', 'ADMIN_PAYMENTS'),
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1545,9 +1547,9 @@ async function handleAdminAllPayments(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_ALL_PAYMENTS'),
+                createPostbackButton('🔄 MỚI', 'ADMIN_ALL_PAYMENTS'),
                 createPostbackButton('📤 XUẤT EXCEL', 'ADMIN_EXPORT_PAYMENTS'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1577,7 +1579,7 @@ async function handleAdminSearchUser(user: any) {
         'Tùy chọn:',
         [
             createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_USERS'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -1616,9 +1618,9 @@ async function handleAdminAllUsers(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_ALL_USERS'),
+                createPostbackButton('🔄 MỚI', 'ADMIN_ALL_USERS'),
                 createPostbackButton('📤 XUẤT EXCEL', 'ADMIN_EXPORT_USERS'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1648,7 +1650,7 @@ async function handleAdminExportUsers(user: any) {
             [
                 createPostbackButton('📧 GỬI EMAIL', 'ADMIN_SEND_EMAIL_USERS'),
                 createPostbackButton('📱 GỬI QUA CHAT', 'ADMIN_SEND_CHAT_USERS'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1678,7 +1680,7 @@ async function handleAdminViolations(user: any) {
         'Tùy chọn:',
         [
             createPostbackButton('📊 BÁO CÁO', 'ADMIN_VIOLATIONS_REPORT'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -1703,8 +1705,8 @@ async function handleAdminSendNotification(user: any) {
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📋 XEM LỊCH SỬ', 'ADMIN_NOTIFICATION_HISTORY'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('📋 LỊCH SỬ', 'ADMIN_NOTIFICATION_HISTORY'),
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -1749,9 +1751,9 @@ async function handleAdminModerateListings(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_MODERATE_LISTINGS'),
+                createPostbackButton('🔄 MỚI', 'ADMIN_MODERATE_LISTINGS'),
                 createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_LISTINGS'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1794,9 +1796,9 @@ async function handleAdminAllListings(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_ALL_LISTINGS'),
+                createPostbackButton('🔄 MỚI', 'ADMIN_ALL_LISTINGS'),
                 createPostbackButton('📤 XUẤT EXCEL', 'ADMIN_EXPORT_LISTINGS'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1825,8 +1827,8 @@ async function handleAdminFeaturedListings(user: any) {
         user.facebook_id,
         'Quản lý:',
         [
-            createPostbackButton('🔄 LÀM MỚI', 'ADMIN_FEATURED_LISTINGS'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔄 MỚI', 'ADMIN_FEATURED_LISTINGS'),
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -1852,7 +1854,7 @@ async function handleAdminSearchListings(user: any) {
         'Tùy chọn:',
         [
             createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_LISTINGS'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -1878,7 +1880,7 @@ async function handleAdminExportListings(user: any) {
             [
                 createPostbackButton('📧 GỬI EMAIL', 'ADMIN_SEND_EMAIL_LISTINGS'),
                 createPostbackButton('📱 GỬI QUA CHAT', 'ADMIN_SEND_CHAT_LISTINGS'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1908,7 +1910,7 @@ async function handleAdminDetailedStats(user: any) {
         'Tùy chọn:',
         [
             createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_STATS'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -1943,7 +1945,7 @@ async function handleAdminExportComprehensive(user: any) {
             [
                 createPostbackButton('📧 GỬI EMAIL', 'ADMIN_SEND_EMAIL_COMPREHENSIVE'),
                 createPostbackButton('📱 GỬI QUA CHAT', 'ADMIN_SEND_CHAT_COMPREHENSIVE'),
-                createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+                createPostbackButton('🔙 ADMIN', 'ADMIN')
             ]
         )
     } catch (error) {
@@ -1973,7 +1975,7 @@ async function handleAdminExportByDate(user: any) {
         'Tùy chọn:',
         [
             createPostbackButton('📅 TÙY CHỈNH', 'ADMIN_EXPORT_CUSTOM_DATE'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -1998,8 +2000,8 @@ async function handleAdminSendGeneral(user: any) {
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📋 XEM LỊCH SỬ', 'ADMIN_NOTIFICATION_HISTORY'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('📋 LỊCH SỬ', 'ADMIN_NOTIFICATION_HISTORY'),
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -2024,7 +2026,7 @@ async function handleAdminSendUser(user: any) {
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -2049,7 +2051,7 @@ async function handleAdminSendListing(user: any) {
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -2066,7 +2068,7 @@ async function handleAdminNotificationHistory(user: any) {
         [
             createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_NOTIFICATIONS'),
             createPostbackButton('🔍 TÌM KIẾM', 'ADMIN_SEARCH_NOTIFICATIONS'),
-            createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT_NOTIFICATIONS')
+            createPostbackButton('📤 XUẤT', 'ADMIN_EXPORT_NOTIFICATIONS')
         ]
     )
 
@@ -2074,8 +2076,8 @@ async function handleAdminNotificationHistory(user: any) {
         user.facebook_id,
         'Quản lý:',
         [
-            createPostbackButton('🔄 LÀM MỚI', 'ADMIN_NOTIFICATION_HISTORY'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔄 MỚI', 'ADMIN_NOTIFICATION_HISTORY'),
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -2101,7 +2103,7 @@ async function handleAdminNotificationSettings(user: any) {
         'Tùy chọn:',
         [
             createPostbackButton('🧪 TEST THÔNG BÁO', 'ADMIN_TEST_NOTIFICATION'),
-            createPostbackButton('🔙 VỀ ADMIN', 'ADMIN')
+            createPostbackButton('🔙 ADMIN', 'ADMIN')
         ]
     )
 }
@@ -2456,7 +2458,7 @@ async function handleListingConfirm(user: any) {
         [
             createPostbackButton('📋 XEM TIN ĐÃ ĐĂNG', 'MY_LISTINGS'),
             createPostbackButton('🛒 ĐĂNG TIN MỚI', 'LISTING'),
-            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 
@@ -2511,7 +2513,7 @@ async function handleListingSubmit(user: any) {
             [
                 createPostbackButton('📋 XEM TIN ĐÃ ĐĂNG', 'MY_LISTINGS'),
                 createPostbackButton('🛒 ĐĂNG TIN MỚI', 'LISTING'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -2569,8 +2571,8 @@ async function handleMyListings(user: any) {
             'Tùy chọn:',
             [
                 createPostbackButton('🛒 ĐĂNG TIN MỚI', 'LISTING'),
-                createPostbackButton('🔄 LÀM MỚI', 'MY_LISTINGS'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createPostbackButton('🔄 MỚI', 'MY_LISTINGS'),
+                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
     } catch (error) {
@@ -2629,7 +2631,7 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
                     user.facebook_id,
                     `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createPostbackButton('👀 XEM', `VIEW_LISTING_${listing.id}`),
                         createPostbackButton('💬 LIÊN HỆ', `CONTACT_SELLER_${listing.user_id}`),
                         createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`)
                     ]
@@ -2648,7 +2650,7 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
             [
                 createPostbackButton('🔍 TÌM LẠI', 'SEARCH_KEYWORD'),
                 createPostbackButton('🎯 TÌM NÂNG CAO', 'SEARCH_ADVANCED'),
-                createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+                createPostbackButton('🔙 TÌM KIẾM', 'SEARCH')
             ]
         )
 
@@ -2697,7 +2699,7 @@ async function handleSearchLocationInput(user: any, text: string, data: any) {
                     user.facebook_id,
                     `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createPostbackButton('👀 XEM', `VIEW_LISTING_${listing.id}`),
                         createPostbackButton('💬 LIÊN HỆ', `CONTACT_SELLER_${listing.user_id}`),
                         createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`)
                     ]
@@ -2716,7 +2718,7 @@ async function handleSearchLocationInput(user: any, text: string, data: any) {
             [
                 createPostbackButton('🔍 TÌM LẠI', 'SEARCH'),
                 createPostbackButton('🎯 TÌM NÂNG CAO', 'SEARCH_ADVANCED'),
-                createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -2758,7 +2760,7 @@ async function handleViewListing(user: any, listingId: string) {
             [
                 createPostbackButton('💬 LIÊN HỆ NGƯỜI BÁN', `CONTACT_SELLER_${listing.user_id}`),
                 createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`),
-                createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+                createPostbackButton('🔙 TÌM KIẾM', 'SEARCH')
             ]
         )
     } catch (error) {
@@ -2792,7 +2794,7 @@ async function handleContactSeller(user: any, sellerId: string) {
             [
                 createPostbackButton('📞 GỌI ĐIỆN', `CALL_${seller.phone}`),
                 createPostbackButton('💬 NHẮN TIN FACEBOOK', `MESSAGE_${seller.facebook_id}`),
-                createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+                createPostbackButton('🔙 TÌM KIẾM', 'SEARCH')
             ]
         )
     } catch (error) {
@@ -2836,7 +2838,7 @@ async function handleRateSeller(user: any, sellerId: string) {
             [
                 createPostbackButton('⭐⭐⭐⭐ 4 SAO', `RATE_4_${sellerId}`),
                 createPostbackButton('⭐⭐⭐⭐⭐ 5 SAO', `RATE_5_${sellerId}`),
-                createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+                createPostbackButton('🔙 TÌM KIẾM', 'SEARCH')
             ]
         )
     } catch (error) {
@@ -2885,7 +2887,7 @@ async function handleSearchLocation(user: any, location: string) {
                     user.facebook_id,
                     `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createPostbackButton('👀 XEM', `VIEW_LISTING_${listing.id}`),
                         createPostbackButton('💬 LIÊN HỆ', `CONTACT_SELLER_${listing.user_id}`),
                         createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`)
                     ]
@@ -2904,7 +2906,7 @@ async function handleSearchLocation(user: any, location: string) {
             [
                 createPostbackButton('🔍 TÌM LẠI', 'SEARCH'),
                 createPostbackButton('🎯 TÌM NÂNG CAO', 'SEARCH_ADVANCED'),
-                createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -2958,7 +2960,7 @@ async function handleSearchAllLocations(user: any) {
                     user.facebook_id,
                     `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createPostbackButton('👀 XEM', `VIEW_LISTING_${listing.id}`),
                         createPostbackButton('💬 LIÊN HỆ', `CONTACT_SELLER_${listing.user_id}`),
                         createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`)
                     ]
@@ -2977,7 +2979,7 @@ async function handleSearchAllLocations(user: any) {
             [
                 createPostbackButton('🔍 TÌM LẠI', 'SEARCH'),
                 createPostbackButton('🎯 TÌM NÂNG CAO', 'SEARCH_ADVANCED'),
-                createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -3015,7 +3017,7 @@ async function handleSearchByPrice(user: any) {
         [
             createPostbackButton('💵 1-5 TỶ', 'SEARCH_PRICE_1_5B'),
             createPostbackButton('💵 TRÊN 5 TỶ', 'SEARCH_PRICE_OVER_5B'),
-            createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+            createPostbackButton('🔙 TÌM KIẾM', 'SEARCH')
         ]
     )
 }
@@ -3040,7 +3042,7 @@ async function handleSearchByRating(user: any) {
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+            createPostbackButton('🔙 TÌM KIẾM', 'SEARCH')
         ]
     )
 }
@@ -3067,7 +3069,7 @@ async function handleSearchByDate(user: any) {
         [
             createPostbackButton('📅 3 NGÀY QUA', 'SEARCH_DATE_LAST_3_DAYS'),
             createPostbackButton('📅 7 NGÀY QUA', 'SEARCH_DATE_LAST_7_DAYS'),
-            createPostbackButton('🔙 VỀ TÌM KIẾM', 'SEARCH')
+            createPostbackButton('🔙 TÌM KIẾM', 'SEARCH')
         ]
     )
 }
@@ -3113,7 +3115,7 @@ async function handleRateSubmission(user: any, sellerId: string, rating: number)
             'Tùy chọn:',
             [
                 createPostbackButton('🔍 TIẾP TỤC TÌM KIẾM', 'SEARCH'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
     } catch (error) {
@@ -3142,8 +3144,8 @@ async function handlePaymentConfirm(user: any) {
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('❓ HƯỚNG DẪN THANH TOÁN', 'PAYMENT_GUIDE'),
-            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('❓ HƯỚNG DẪN', 'PAYMENT_GUIDE'),
+            createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -3169,8 +3171,8 @@ async function handlePaymentInfo(user: any) {
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
-            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('💰 THANH TOÁN', 'PAYMENT_CONFIRM'),
+            createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -3195,7 +3197,7 @@ async function handlePaymentExtend(user: any) {
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -3225,7 +3227,7 @@ async function handlePaymentHistory(user: any) {
                     user.facebook_id,
                     `${i + 1}️⃣ ${status} ${formatCurrency(payment.amount)}\n📅 ${new Date(payment.created_at).toLocaleDateString('vi-VN')}\n⏰ ${new Date(payment.created_at).toLocaleTimeString('vi-VN')}`,
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `PAYMENT_DETAILS_${payment.id}`),
+                        createPostbackButton('👀 XEM', `PAYMENT_DETAILS_${payment.id}`),
                         createPostbackButton('📸 XEM BIÊN LAI', `PAYMENT_RECEIPT_${payment.id}`)
                     ]
                 )
@@ -3240,9 +3242,9 @@ async function handlePaymentHistory(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
-                createPostbackButton('🔄 LÀM MỚI', 'PAYMENT_HISTORY'),
-                createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createPostbackButton('💰 THANH TOÁN', 'PAYMENT_CONFIRM'),
+                createPostbackButton('🔄 MỚI', 'PAYMENT_HISTORY'),
+                createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
     } catch (error) {
@@ -3271,8 +3273,8 @@ async function handlePaymentGuide(user: any) {
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
-            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('💰 THANH TOÁN', 'PAYMENT_CONFIRM'),
+            createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -3326,7 +3328,7 @@ async function handlePaymentSubmit(user: any) {
         [
             createPostbackButton('📸 GỬI BIÊN LAI', 'PAYMENT_UPLOAD_RECEIPT'),
             createPostbackButton('📞 LIÊN HỆ HỖ TRỢ', 'SUPPORT_ADMIN'),
-            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -3399,8 +3401,8 @@ async function handleCommunityBirthday(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔄 LÀM MỚI', 'COMMUNITY_BIRTHDAY'),
-                createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+                createPostbackButton('🔄 MỚI', 'COMMUNITY_BIRTHDAY'),
+                createPostbackButton('🔙 CỘNG ĐỒNG', 'COMMUNITY')
             ]
         )
     } catch (error) {
@@ -3451,8 +3453,8 @@ async function handleCommunityTopSeller(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔄 LÀM MỚI', 'COMMUNITY_TOP_SELLER'),
-                createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+                createPostbackButton('🔄 MỚI', 'COMMUNITY_TOP_SELLER'),
+                createPostbackButton('🔙 CỘNG ĐỒNG', 'COMMUNITY')
             ]
         )
     } catch (error) {
@@ -3502,8 +3504,8 @@ async function handleCommunityRanking(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔄 LÀM MỚI', 'COMMUNITY_RANKING'),
-                createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+                createPostbackButton('🔄 MỚI', 'COMMUNITY_RANKING'),
+                createPostbackButton('🔙 CỘNG ĐỒNG', 'COMMUNITY')
             ]
         )
     } catch (error) {
@@ -3534,7 +3536,7 @@ async function handleCommunitySupport(user: any) {
         [
             createPostbackButton('📝 ĐĂNG YÊU CẦU', 'SUPPORT_POST_REQUEST'),
             createPostbackButton('🔍 TÌM HỖ TRỢ', 'SUPPORT_SEARCH'),
-            createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+            createPostbackButton('🔙 CỘNG ĐỒNG', 'COMMUNITY')
         ]
     )
 }
@@ -3563,7 +3565,7 @@ async function handleCommunityAnnouncements(user: any) {
                     user.facebook_id,
                     `${i + 1}️⃣ ${announcement.title}\n📅 ${new Date(announcement.created_at).toLocaleDateString('vi-VN')}\n⏰ ${new Date(announcement.created_at).toLocaleTimeString('vi-VN')}`,
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `ANNOUNCEMENT_${announcement.id}`),
+                        createPostbackButton('👀 XEM', `ANNOUNCEMENT_${announcement.id}`),
                         createPostbackButton('📤 CHIA SẺ', `SHARE_${announcement.id}`)
                     ]
                 )
@@ -3578,8 +3580,8 @@ async function handleCommunityAnnouncements(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔄 LÀM MỚI', 'COMMUNITY_ANNOUNCEMENTS'),
-                createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+                createPostbackButton('🔄 MỚI', 'COMMUNITY_ANNOUNCEMENTS'),
+                createPostbackButton('🔙 CỘNG ĐỒNG', 'COMMUNITY')
             ]
         )
     } catch (error) {
@@ -3612,7 +3614,7 @@ async function handleCommunityEvents(user: any) {
                     user.facebook_id,
                     `${i + 1}️⃣ ${event.title}\n📅 ${new Date(event.event_date).toLocaleDateString('vi-VN')}\n📍 ${event.location}\n👥 ${event.participants || 0} người tham gia`,
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `EVENT_${event.id}`),
+                        createPostbackButton('👀 XEM', `EVENT_${event.id}`),
                         createPostbackButton('📝 ĐĂNG KÝ', `EVENT_REGISTER_${event.id}`)
                     ]
                 )
@@ -3628,8 +3630,8 @@ async function handleCommunityEvents(user: any) {
             'Tùy chọn:',
             [
                 createPostbackButton('➕ TẠO SỰ KIỆN', 'EVENT_CREATE'),
-                createPostbackButton('🔄 LÀM MỚI', 'COMMUNITY_EVENTS'),
-                createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+                createPostbackButton('🔄 MỚI', 'COMMUNITY_EVENTS'),
+                createPostbackButton('🔙 CỘNG ĐỒNG', 'COMMUNITY')
             ]
         )
     } catch (error) {
@@ -3688,7 +3690,7 @@ async function handlePayment(user: any) {
             user.facebook_id,
             'Bạn muốn thanh toán ngay không?',
             [
-                createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
+                createPostbackButton('💰 THANH TOÁN', 'PAYMENT_CONFIRM'),
                 createPostbackButton('⏰ NHẮC LẠI SAU', 'MAIN_MENU'),
                 createPostbackButton('ℹ️ TÌM HIỂU', 'PAYMENT_INFO')
             ]
@@ -3706,9 +3708,9 @@ async function handlePayment(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('💰 GIA HẠN THÊM', 'PAYMENT_EXTEND'),
-                createPostbackButton('📋 LỊCH SỬ THANH TOÁN', 'PAYMENT_HISTORY'),
-                createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createPostbackButton('💰 GIA HẠN', 'PAYMENT_EXTEND'),
+                createPostbackButton('📋 LỊCH SỬ', 'PAYMENT_HISTORY'),
+                createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
     }
@@ -3744,7 +3746,7 @@ async function handleHoroscopeDetail(user: any) {
         [
             createPostbackButton('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
             createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
-            createPostbackButton('🔙 VỀ TỬ VI', 'HOROSCOPE')
+            createPostbackButton('🔙 TỬ VI', 'HOROSCOPE')
         ]
     )
 }
@@ -3772,7 +3774,7 @@ async function handleHoroscopeWeek(user: any) {
         'Tùy chọn:',
         [
             createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
-            createPostbackButton('🔙 VỀ TỬ VI', 'HOROSCOPE')
+            createPostbackButton('🔙 TỬ VI', 'HOROSCOPE')
         ]
     )
 }
@@ -3799,7 +3801,7 @@ async function handleHoroscopeMonth(user: any) {
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('🔙 VỀ TỬ VI', 'HOROSCOPE')
+            createPostbackButton('🔙 TỬ VI', 'HOROSCOPE')
         ]
     )
 }
@@ -3828,7 +3830,7 @@ async function handleHoroscopeTomorrow(user: any) {
         [
             createPostbackButton('🔮 TỬ VI HÔM NAY', 'HOROSCOPE'),
             createPostbackButton('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
-            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -3870,7 +3872,7 @@ async function handleHoroscope(user: any) {
         user.facebook_id,
         'Bạn muốn xem chi tiết không?',
         [
-            createPostbackButton('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
+            createPostbackButton('🎲 XEM', 'HOROSCOPE_DETAIL'),
             createPostbackButton('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
             createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH')
         ]
@@ -3880,7 +3882,7 @@ async function handleHoroscope(user: any) {
         user.facebook_id,
         'Tùy chọn khác:',
         [
-            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -3924,7 +3926,7 @@ async function handlePointsRewardsDiscount(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+                createPostbackButton('🔙 ĐIỂM', 'POINTS')
             ]
         )
     } catch (error) {
@@ -3972,7 +3974,7 @@ async function handlePointsRewardsBadges(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+                createPostbackButton('🔙 ĐIỂM', 'POINTS')
             ]
         )
     } catch (error) {
@@ -4020,7 +4022,7 @@ async function handlePointsRewardsGifts(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+                createPostbackButton('🔙 ĐIỂM', 'POINTS')
             ]
         )
     } catch (error) {
@@ -4068,7 +4070,7 @@ async function handlePointsRewardsGames(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+                createPostbackButton('🔙 ĐIỂM', 'POINTS')
             ]
         )
     } catch (error) {
@@ -4116,8 +4118,8 @@ async function handlePointsHistory(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔄 LÀM MỚI', 'POINTS_HISTORY'),
-                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+                createPostbackButton('🔄 MỚI', 'POINTS_HISTORY'),
+                createPostbackButton('🔙 ĐIỂM', 'POINTS')
             ]
         )
     } catch (error) {
@@ -4165,7 +4167,7 @@ async function handlePointsAchievements(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+                createPostbackButton('🔙 ĐIỂM', 'POINTS')
             ]
         )
     } catch (error) {
@@ -4215,8 +4217,8 @@ async function handlePointsLeaderboard(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔄 LÀM MỚI', 'POINTS_LEADERBOARD'),
-                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+                createPostbackButton('🔄 MỚI', 'POINTS_LEADERBOARD'),
+                createPostbackButton('🔙 ĐIỂM', 'POINTS')
             ]
         )
     } catch (error) {
@@ -4265,7 +4267,7 @@ async function handlePointsRedeem(user: any) {
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔙 VỀ ĐIỂM THƯỞNG', 'POINTS')
+                createPostbackButton('🔙 ĐIỂM', 'POINTS')
             ]
         )
     } catch (error) {
@@ -4330,7 +4332,7 @@ async function handlePoints(user: any) {
         'Thêm phần thưởng:',
         [
             createPostbackButton('🎮 Game', 'POINTS_REWARDS_GAMES'),
-            createPostbackButton('📊 XEM LỊCH SỬ', 'POINTS_HISTORY'),
+            createPostbackButton('📊 LỊCH SỬ', 'POINTS_HISTORY'),
             createPostbackButton('🎯 THÀNH TÍCH', 'POINTS_ACHIEVEMENTS')
         ]
     )
@@ -4371,7 +4373,7 @@ async function handleSettings(user: any) {
         'Hỗ trợ và điều hướng:',
         [
             createPostbackButton('❓ HỖ TRỢ', 'SUPPORT'),
-            createPostbackButton('📱 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('📱 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -4390,6 +4392,7 @@ async function handleSupport(user: any) {
 
 // Handle default message for new users
 async function handleDefaultMessage(user: any) {
+    await sendTypingIndicator(user.facebook_id)
     await sendMessagesWithTyping(user.facebook_id, [
         '🎉 CHÀO MỪNG ĐẾN VỚI BOT TÂN DẬU 1981! 🎉',
         '👋 Xin chào! Tôi là bot hỗ trợ cộng đồng Tân Dậu 1981.',
@@ -4400,15 +4403,16 @@ async function handleDefaultMessage(user: any) {
         user.facebook_id,
         'Bạn muốn:',
         [
-            createPostbackButton('📝 ĐĂNG KÝ NGAY', 'REGISTER'),
-            createPostbackButton('ℹ️ TÌM HIỂU THÊM', 'INFO'),
-            createPostbackButton('👨‍💼 CHAT VỚI ADMIN', 'SUPPORT_ADMIN')
+            createPostbackButton('📝 ĐĂNG KÝ', 'REGISTER'),
+            createPostbackButton('ℹ️ THÔNG TIN', 'INFO'),
+            createPostbackButton('💬 HỖ TRỢ', 'SUPPORT_ADMIN')
         ]
     )
 }
 
 // Handle info for new users
 async function handleInfo(user: any) {
+    await sendTypingIndicator(user.facebook_id)
     await sendMessagesWithTyping(user.facebook_id, [
         'ℹ️ THÔNG TIN VỀ BOT TÂN DẬU 1981',
         '🤖 Bot này được thiết kế đặc biệt cho cộng đồng Tân Dậu 1981',
@@ -4430,15 +4434,16 @@ async function handleInfo(user: any) {
         user.facebook_id,
         'Bạn muốn:',
         [
-            createPostbackButton('📝 ĐĂNG KÝ NGAY', 'REGISTER'),
-            createPostbackButton('👨‍💼 CHAT VỚI ADMIN', 'SUPPORT_ADMIN'),
-            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('📝 ĐĂNG KÝ', 'REGISTER'),
+            createPostbackButton('💬 HỖ TRỢ', 'SUPPORT_ADMIN'),
+            createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
 
 // Handle default message for registered users
 async function handleDefaultMessageRegistered(user: any) {
+    await sendTypingIndicator(user.facebook_id)
     await sendMessagesWithTyping(user.facebook_id, [
         `👋 Chào anh/chị ${user.name}!`,
         'Hôm nay bạn muốn làm gì?'
@@ -4448,8 +4453,8 @@ async function handleDefaultMessageRegistered(user: any) {
         user.facebook_id,
         'Chọn chức năng:',
         [
-            createPostbackButton('🔍 TÌM KIẾM & CẬP NHẬT', 'SEARCH_UPDATE'),
-            createPostbackButton('👨‍💼 CHAT VỚI ADMIN', 'SUPPORT_ADMIN')
+            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH_UPDATE'),
+            createPostbackButton('💬 HỖ TRỢ', 'SUPPORT_ADMIN')
         ]
     )
 }
@@ -4466,7 +4471,7 @@ async function sendExpiredMessage(facebookId: string) {
         facebookId,
         'Bạn muốn thanh toán để tiếp tục sử dụng không?',
         [
-            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
+            createPostbackButton('💰 THANH TOÁN', 'PAYMENT_CONFIRM'),
             createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
             createPostbackButton('❌ HỦY', 'CANCEL')
         ]
@@ -4486,7 +4491,7 @@ async function sendTrialExpiringMessage(facebookId: string, daysLeft: number) {
         facebookId,
         'Bạn muốn thanh toán ngay không?',
         [
-            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
+            createPostbackButton('💰 THANH TOÁN', 'PAYMENT_CONFIRM'),
             createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
             createPostbackButton('❌ HỦY', 'CANCEL')
         ]
