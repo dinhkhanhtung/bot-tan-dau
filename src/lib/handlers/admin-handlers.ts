@@ -11,7 +11,7 @@ import {
 import { formatCurrency, formatNumber, updateBotSession } from '../utils'
 
 // Check if user is admin
-async function isAdmin(facebookId: string): Promise<boolean> {
+export async function isAdmin(facebookId: string): Promise<boolean> {
     try {
         const { data, error } = await supabaseAdmin
             .from('admin_users')

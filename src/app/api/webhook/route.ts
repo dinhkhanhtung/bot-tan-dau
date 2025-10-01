@@ -169,6 +169,19 @@ async function handleMessageEvent(event: any) {
                     
                     switch (message.quick_reply.payload) {
                         case 'REGISTER':
+                            // Check if it's an admin first
+                            try {
+                                const { isAdmin } = await import('@/lib/handlers/admin-handlers')
+                                const isAdminUser = await isAdmin(senderId)
+                                if (isAdminUser) {
+                                    const { handleAdminCommand } = await import('@/lib/handlers/admin-handlers')
+                                    await handleAdminCommand({ facebook_id: senderId })
+                                    return
+                                }
+                            } catch (error) {
+                                console.error('Error checking admin status:', error)
+                            }
+                            
                             await sendMessage(senderId, '📝 BẮT ĐẦU ĐĂNG KÝ')
                             await sendMessage(senderId, 'Để đăng ký, bạn cần cung cấp thông tin cá nhân. Hãy bắt đầu bằng cách gửi họ tên của bạn.')
                             // Start registration flow
