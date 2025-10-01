@@ -298,17 +298,5 @@ function validatePhoneNumber(phone: string): boolean {
     return phoneRegex.test(phone.replace(/\s/g, ''))
 }
 
-async function getBotSession(userId: string) {
-    const { data, error } = await supabaseAdmin
-        .from('bot_sessions')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-
-    if (error) {
-        return null
-    }
-
-    return data
-}
+// getBotSession imported from utils
 

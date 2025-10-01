@@ -6,7 +6,7 @@ import {
     sendButtonTemplate,
     createPostbackButton
 } from './facebook-api'
-import { isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession } from './utils'
+import { isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from './utils'
 
 // Import handlers from modules
 import * as AuthHandlers from './handlers/auth-handlers'
@@ -496,20 +496,7 @@ async function showMainMenu(user: any) {
     )
 }
 
-// Helper functions
-async function getBotSession(userId: string) {
-    const { data, error } = await supabaseAdmin
-        .from('bot_sessions')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-
-    if (error && error.code !== 'PGRST116') {
-        console.error('Error getting bot session:', error)
-    }
-
-    return data
-}
+// Helper functions - getBotSession imported from utils
 
 
 // Export missing functions for webhook

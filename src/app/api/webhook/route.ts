@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase'
 import { handleMessage } from '@/lib/bot-handlers'
 import { sendMessage } from '@/lib/facebook-api'
-import { updateBotSession } from '@/lib/utils'
+import { updateBotSession, getBotSession } from '@/lib/utils'
 
 // Verify webhook signature
 function verifySignature(payload: string, signature: string): boolean {
@@ -389,19 +389,7 @@ async function deleteUserFromFacebook(facebookId: string) {
     }
 }
 
-async function getBotSession(userId: string) {
-    const { data, error } = await supabaseAdmin
-        .from('bot_sessions')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-
-    if (error) {
-        return null
-    }
-
-    return data
-}
+// getBotSession imported from utils
 
 
 // Import bot handlers

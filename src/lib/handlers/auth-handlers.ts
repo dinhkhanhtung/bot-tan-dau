@@ -332,20 +332,7 @@ export async function sendTrialExpiringMessage(facebookId: string, daysLeft: num
     )
 }
 
-// Helper functions
-async function getBotSession(userId: string) {
-    const { data, error } = await supabaseAdmin
-        .from('bot_sessions')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-
-    if (error && error.code !== 'PGRST116') {
-        console.error('Error getting bot session:', error)
-    }
-
-    return data
-}
+// Helper functions - getBotSession imported from utils
 
 
 // Handle registration location input
