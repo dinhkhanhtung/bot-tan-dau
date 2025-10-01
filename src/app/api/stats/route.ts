@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 // Get user statistics
 export async function GET(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url)
+        const { searchParams } = request.nextUrl
         const user_id = searchParams.get('user_id')
         const type = searchParams.get('type') || 'user'
 
