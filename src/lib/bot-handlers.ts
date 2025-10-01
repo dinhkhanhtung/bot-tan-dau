@@ -6,7 +6,7 @@ import {
     sendButtonTemplate,
     createPostbackButton
 } from './facebook-api'
-import { isTrialUser, isExpiredUser, daysUntilExpiry, generateId } from './utils'
+import { isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from './utils'
 
 // Import handlers from modules
 import * as AuthHandlers from './handlers/auth-handlers'
@@ -500,19 +500,6 @@ async function getBotSession(userId: string) {
     return data
 }
 
-async function updateBotSession(userId: string, sessionData: any) {
-    const { error } = await supabaseAdmin
-        .from('bot_sessions')
-        .upsert({
-            user_id: userId,
-            session_data: sessionData,
-            updated_at: new Date().toISOString()
-        })
-
-    if (error) {
-        console.error('Error updating bot session:', error)
-    }
-}
 
 // Export missing functions for webhook
 export async function handleDefaultMessage(user: any) {

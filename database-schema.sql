@@ -182,7 +182,7 @@ CREATE TABLE point_transactions (
 -- Bot sessions table (for tracking user conversation state)
 CREATE TABLE bot_sessions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    facebook_id VARCHAR(255) NOT NULL,
     session_data JSONB DEFAULT '{}',
     current_flow VARCHAR(100),
     current_step INTEGER DEFAULT 0,
@@ -238,7 +238,7 @@ CREATE INDEX idx_referrals_referred_id ON referrals(referred_id);
 CREATE INDEX idx_user_points_user_id ON user_points(user_id);
 CREATE INDEX idx_point_transactions_user_id ON point_transactions(user_id);
 
-CREATE INDEX idx_bot_sessions_user_id ON bot_sessions(user_id);
+CREATE INDEX idx_bot_sessions_facebook_id ON bot_sessions(facebook_id);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()

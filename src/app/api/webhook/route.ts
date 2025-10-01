@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase'
 import { handleMessage } from '@/lib/bot-handlers'
 import { sendMessage } from '@/lib/facebook-api'
+import { updateBotSession, getBotSession } from '@/lib/utils'
 
 // Verify webhook signature
 function verifySignature(payload: string, signature: string): boolean {
@@ -388,19 +389,6 @@ async function getBotSession(userId: string) {
     return data
 }
 
-async function updateBotSession(userId: string, sessionData: any) {
-    const { error } = await supabaseAdmin
-        .from('bot_sessions')
-        .upsert({
-            user_id: userId,
-            session_data: sessionData,
-            updated_at: new Date().toISOString()
-        })
-
-    if (error) {
-        console.error('Error updating bot session:', error)
-    }
-}
 
 // Import bot handlers
 async function handleUserMessage(user: any, text: string) {

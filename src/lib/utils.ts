@@ -180,6 +180,31 @@ export function deepClone<T>(obj: T): T {
     return JSON.parse(JSON.stringify(obj))
 }
 
+// Update bot session
+export async function updateBotSession(facebookId: string, sessionData: any) {
+    const { supabaseAdmin } = await import('./supabase')
+    await supabaseAdmin
+        .from('bot_sessions')
+        .upsert({
+            facebook_id: facebookId,
+            session_data: sessionData,
+            updated_at: new Date().toISOString()
+        })
+}
+
+// Get bot session
+export async function getBotSession(facebookId: string) {
+    const { supabaseAdmin } = await import('./supabase')
+    const { data, error } = await supabaseAdmin
+        .from('bot_sessions')
+        .select('*')
+        .eq('facebook_id', facebookId)
+        .single()
+    
+    if (error) return null
+    return data
+}
+
 // Sleep function
 export function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms))

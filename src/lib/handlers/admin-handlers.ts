@@ -7,19 +7,7 @@ import {
     createPostbackButton,
     sendMessagesWithTyping
 } from '../facebook-api'
-import { formatCurrency, formatNumber } from '../utils'
-
-// Helper function to update bot session
-async function updateBotSession(userId: string, sessionData: any) {
-    const { supabaseAdmin } = await import('../supabase')
-    await supabaseAdmin
-        .from('bot_sessions')
-        .upsert({
-            user_id: userId,
-            session_data: sessionData,
-            updated_at: new Date().toISOString()
-        })
-}
+import { formatCurrency, formatNumber, updateBotSession } from '../utils'
 
 // Get admin IDs from environment variables
 function getAdminIds(): string[] {

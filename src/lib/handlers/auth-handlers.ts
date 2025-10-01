@@ -7,7 +7,7 @@ import {
     createPostbackButton,
     sendMessagesWithTyping
 } from '../facebook-api'
-import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId } from '../utils'
+import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from '../utils'
 
 
 // Handle registration flow
@@ -347,19 +347,6 @@ async function getBotSession(userId: string) {
     return data
 }
 
-async function updateBotSession(userId: string, sessionData: any) {
-    const { error } = await supabaseAdmin
-        .from('bot_sessions')
-        .upsert({
-            user_id: userId,
-            session_data: sessionData,
-            updated_at: new Date().toISOString()
-        })
-
-    if (error) {
-        console.error('Error updating bot session:', error)
-    }
-}
 
 // Handle registration location input
 export async function handleRegistrationLocation(user: any, text: string, data: any) {

@@ -7,22 +7,7 @@ import {
     createPostbackButton,
     sendMessagesWithTyping
 } from '../facebook-api'
-import { formatCurrency, isTrialUser, isExpiredUser, daysUntilExpiry, generateId } from '../utils'
-
-// Helper function to update bot session
-async function updateBotSession(userId: string, sessionData: any) {
-    const { error } = await supabaseAdmin
-        .from('bot_sessions')
-        .upsert({
-            user_id: userId,
-            session_data: sessionData,
-            updated_at: new Date().toISOString()
-        })
-
-    if (error) {
-        console.error('Error updating bot session:', error)
-    }
-}
+import { formatCurrency, isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession } from '../utils'
 
 // Handle payment flow
 export async function handlePayment(user: any) {

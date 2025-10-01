@@ -9,16 +9,16 @@ import {
     sendMessagesWithTyping
 } from './facebook-api'
 import { CATEGORIES, LOCATIONS, DISTRICTS, PRICE_RANGES } from './constants'
-import { formatCurrency, formatNumber } from './utils'
+import { formatCurrency, formatNumber, updateBotSession, getBotSession } from './utils'
 
 // Registration flow handlers
 export async function handleRegistrationStep(user: any, step: number, input: string) {
-    const session = await getBotSession(user.id)
+    const session = await getBotSession(user.facebook_id)
     const sessionData = session?.session_data || {}
 
     switch (step) {
         case 1: // Name input
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_flow: 'registration',
                 current_step: 2,
@@ -37,7 +37,7 @@ export async function handleRegistrationStep(user: any, step: number, input: str
                 return
             }
 
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_step: 3,
                 data: { ...sessionData.data, phone: input }
@@ -52,7 +52,7 @@ export async function handleRegistrationStep(user: any, step: number, input: str
             break
 
         case 3: // Location selection
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_step: 4,
                 data: { ...sessionData.data, location: input }
@@ -84,7 +84,7 @@ export async function handleListingStep(user: any, step: number, input: string) 
 
     switch (step) {
         case 1: // Category selection
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_flow: 'listing',
                 current_step: 2,
@@ -95,7 +95,7 @@ export async function handleListingStep(user: any, step: number, input: string) 
             break
 
         case 2: // Subcategory selection
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_step: 3,
                 data: { ...sessionData.data, subcategory: input }
@@ -109,7 +109,7 @@ export async function handleListingStep(user: any, step: number, input: string) 
             break
 
         case 3: // Title input
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_step: 4,
                 data: { ...sessionData.data, title: input }
@@ -129,7 +129,7 @@ export async function handleListingStep(user: any, step: number, input: string) 
                 return
             }
 
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_step: 5,
                 data: { ...sessionData.data, price: price }
@@ -143,7 +143,7 @@ export async function handleListingStep(user: any, step: number, input: string) 
             break
 
         case 5: // Description input
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_step: 6,
                 data: { ...sessionData.data, description: input }
@@ -158,7 +158,7 @@ export async function handleListingStep(user: any, step: number, input: string) 
             break
 
         case 6: // Location selection
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_step: 7,
                 data: { ...sessionData.data, location: input }
@@ -189,7 +189,7 @@ export async function handleSearchStep(user: any, step: number, input: string) {
 
     switch (step) {
         case 1: // Category selection
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_flow: 'search',
                 current_step: 2,
@@ -200,7 +200,7 @@ export async function handleSearchStep(user: any, step: number, input: string) {
             break
 
         case 2: // Subcategory selection
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_step: 3,
                 data: { ...sessionData.data, subcategory: input }
@@ -215,7 +215,7 @@ export async function handleSearchStep(user: any, step: number, input: string) {
             break
 
         case 3: // Location selection
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_step: 4,
                 data: { ...sessionData.data, location: input }
@@ -230,7 +230,7 @@ export async function handleSearchStep(user: any, step: number, input: string) {
             break
 
         case 4: // Price range selection
-            await updateBotSession(user.id, {
+            await updateBotSession(user.facebook_id, {
                 ...sessionData,
                 current_step: 5,
                 data: { ...sessionData.data, priceRange: input }
@@ -312,16 +312,3 @@ async function getBotSession(userId: string) {
     return data
 }
 
-async function updateBotSession(userId: string, sessionData: any) {
-    const { error } = await supabaseAdmin
-        .from('bot_sessions')
-        .upsert({
-            user_id: userId,
-            session_data: sessionData,
-            updated_at: new Date().toISOString()
-        })
-
-    if (error) {
-        console.error('Error updating bot session:', error)
-    }
-}

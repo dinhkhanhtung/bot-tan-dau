@@ -10,7 +10,7 @@ import {
     createGenericElement,
     sendMessagesWithTyping
 } from '../facebook-api'
-import { formatCurrency, formatNumber, generateId } from '../utils'
+import { formatCurrency, formatNumber, generateId, updateBotSession, getBotSession } from '../utils'
 import { CATEGORIES, LOCATIONS, DISTRICTS, PRICE_RANGES, SEARCH_HELPERS, HASHTAG_MAPPING, POPULAR_HASHTAGS } from '../constants'
 
 // Handle listing flow
@@ -1082,19 +1082,6 @@ async function getBotSession(userId: string) {
     return data
 }
 
-async function updateBotSession(userId: string, sessionData: any) {
-    const { error } = await supabaseAdmin
-        .from('bot_sessions')
-        .upsert({
-            user_id: userId,
-            session_data: sessionData,
-            updated_at: new Date().toISOString()
-        })
-
-    if (error) {
-        console.error('Error updating bot session:', error)
-    }
-}
 
 // Handle search location
 export async function handleSearchLocation(user: any, location: string) {
