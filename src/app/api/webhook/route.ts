@@ -150,6 +150,17 @@ async function handleMessageEvent(event: any) {
         if (!user) {
             console.log('User not found for facebook_id:', senderId)
             
+            // Check if it's an admin command first
+            if (message.text === '/admin') {
+                try {
+                    const { handleAdminCommand } = await import('@/lib/handlers/admin-handlers')
+                    await handleAdminCommand({ facebook_id: senderId })
+                } catch (error) {
+                    console.error('Error handling admin command:', error)
+                }
+                return
+            }
+            
             // Handle Quick Reply for unregistered users
             if (message.quick_reply?.payload) {
                 console.log('Handling Quick Reply for unregistered user:', message.quick_reply.payload)

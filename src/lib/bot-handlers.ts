@@ -47,21 +47,21 @@ export async function handleMessage(user: any, text: string) {
         }
 
         // Check if user is in registration flow
-        const session = await getBotSession(user.facebook_id)
-        if (session && session.current_flow === 'registration') {
-            await AuthHandlers.handleRegistrationStep(user, text, session)
+        const sessionData = await getBotSession(user.facebook_id)
+        if (sessionData && sessionData.session_data?.current_flow === 'registration') {
+            await AuthHandlers.handleRegistrationStep(user, text, sessionData.session_data)
             return
         }
 
         // Check if user is in listing flow
-        if (session && session.current_flow === 'listing') {
-            await MarketplaceHandlers.handleListingStep(user, text, session)
+        if (sessionData && sessionData.session_data?.current_flow === 'listing') {
+            await MarketplaceHandlers.handleListingStep(user, text, sessionData.session_data)
             return
         }
 
         // Check if user is in search flow
-        if (session && session.current_flow === 'search') {
-            await MarketplaceHandlers.handleSearchStep(user, text, session)
+        if (sessionData && sessionData.session_data?.current_flow === 'search') {
+            await MarketplaceHandlers.handleSearchStep(user, text, sessionData.session_data)
             return
         }
 
