@@ -37,8 +37,8 @@ export async function handleRegistration(user: any) {
     await sendMessagesWithTyping(user.facebook_id, [
         '📝 ĐĂNG KÝ THÀNH VIÊN',
         'Chào bạn! Tôi sẽ hướng dẫn bạn đăng ký từng bước.',
-        '📋 Thông tin cần thiết:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Ngày sinh (năm 1981)',
-        'Bước 1/4: Họ tên\n👤 Vui lòng nhập họ tên đầy đủ của bạn:'
+        '📋 Thông tin cần thiết:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Ngày sinh (năm 1981)\n• Sản phẩm/dịch vụ bạn muốn chia sẻ',
+        'Bước 1/5: Họ tên\n👤 Vui lòng nhập họ tên đầy đủ của bạn:'
     ])
 
     // Create session for registration flow
@@ -61,6 +61,9 @@ export async function handleRegistrationStep(user: any, text: string, session: a
         case 'location':
             await handleRegistrationLocation(user, text, session.data)
             break
+        case 'product_service':
+            await handleRegistrationProductService(user, text, session.data)
+            break
         case 'birthday':
             await handleRegistrationBirthday(user, text, session.data)
             break
@@ -78,7 +81,7 @@ async function handleRegistrationName(user: any, text: string, data: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Họ tên: ${data.name}`,
-        'Bước 2/4: Số điện thoại\n📱 Vui lòng nhập số điện thoại của bạn:'
+        'Bước 2/5: Số điện thoại\n📱 Vui lòng nhập số điện thoại của bạn:'
     ])
 
     await updateBotSession(user.facebook_id, {
@@ -112,7 +115,7 @@ async function handleRegistrationPhone(user: any, text: string, data: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ SĐT: ${phone}`,
-        'Bước 3/4: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:'
+        'Bước 3/5: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:'
     ])
 
     await sendButtonTemplate(
@@ -145,22 +148,13 @@ export async function handleRegistrationLocationPostback(user: any, location: st
 
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Vị trí: ${location}`,
-        'Bước 4/4: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!',
-        'Bot Tân Dậu 1981 được tạo ra dành riêng cho cộng đồng Tân Dậu 1981.',
-        '❓ Bạn có phải sinh năm 1981 không?'
+        'Bước 4/5: Sản phẩm/Dịch vụ\n🛒 Bạn có sản phẩm hoặc dịch vụ gì muốn chia sẻ với cộng đồng Tân Dậu 1981?',
+        'VD: Nhà đất, xe cộ, điện tử, thời trang, ẩm thực, dịch vụ tư vấn...',
+        '📝 Vui lòng mô tả ngắn gọn (có thể để trống nếu chưa có):'
     ])
 
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Xác nhận tuổi:',
-        [
-            createPostbackButton('✅ CÓ - TÔI SINH NĂM 1981', 'REG_BIRTHDAY_YES'),
-            createPostbackButton('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REG_BIRTHDAY_NO')
-        ]
-    )
-
     await updateBotSession(user.facebook_id, {
-        step: 'birthday',
+        step: 'product_service',
         data: data
     })
 }
@@ -341,8 +335,37 @@ export async function handleRegistrationLocation(user: any, text: string, data: 
 
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Địa điểm: ${data.location}`,
-        'Bước 4/4: Ngày sinh\n📅 Vui lòng nhập ngày sinh (DD/MM/YYYY):\n\nVD: 15/01/1981'
+        'Bước 4/5: Sản phẩm/Dịch vụ\n🛒 Bạn có sản phẩm hoặc dịch vụ gì muốn chia sẻ với cộng đồng Tân Dậu 1981?',
+        'VD: Nhà đất, xe cộ, điện tử, thời trang, ẩm thực, dịch vụ tư vấn...',
+        '📝 Vui lòng mô tả ngắn gọn (có thể để trống nếu chưa có):'
     ])
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'registration',
+        step: 'product_service',
+        data: data
+    })
+}
+
+// Handle registration product/service input
+export async function handleRegistrationProductService(user: any, text: string, data: any) {
+    data.product_service = text.trim()
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Bạn chưa có sản phẩm/dịch vụ nào',
+        'Bước 5/5: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!',
+        'Bot Tân Dậu 1981 được tạo ra dành riêng cho cộng đồng Tân Dậu 1981.',
+        '❓ Bạn có phải sinh năm 1981 không?'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Xác nhận tuổi:',
+        [
+            createPostbackButton('✅ CÓ - TÔI SINH NĂM 1981', 'REG_BIRTHDAY_YES'),
+            createPostbackButton('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REG_BIRTHDAY_NO')
+        ]
+    )
 
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
@@ -387,6 +410,7 @@ async function completeRegistration(user: any, data: any) {
                 phone: data.phone,
                 location: data.location,
                 birthday: data.birthday,
+                product_service: data.product_service || null,
                 status: 'trial',
                 membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days trial
                 created_at: new Date().toISOString()
@@ -408,6 +432,7 @@ async function completeRegistration(user: any, data: any) {
             `✅ SĐT: ${data.phone}`,
             `✅ Địa điểm: ${data.location}`,
             `✅ Ngày sinh: ${new Date(data.birthday).toLocaleDateString('vi-VN')}`,
+            data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ',
             '',
             '🎁 Bạn được dùng thử miễn phí 7 ngày!',
             'Sau đó cần nâng cấp để tiếp tục sử dụng.'
