@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase'
 import { handleMessage } from '@/lib/bot-handlers'
+import { sendMessage } from '@/lib/facebook-api'
 
 // Verify webhook signature
 function verifySignature(payload: string, signature: string): boolean {
@@ -37,11 +38,11 @@ export async function POST(request: NextRequest) {
         
         console.log('Webhook received:', { body, signature })
 
-        // Verify signature (temporarily disabled for testing)
-        // if (signature && !verifySignature(body, signature)) {
-        //     console.log('Invalid signature')
-        //     return new NextResponse('Unauthorized', { status: 401 })
-        // }
+        // Verify signature
+        if (signature && !verifySignature(body, signature)) {
+            console.log('Invalid signature')
+            return new NextResponse('Unauthorized', { status: 401 })
+        }
 
         const data = JSON.parse(body)
 
@@ -99,6 +100,11 @@ async function handleMessageEvent(event: any) {
     let user = await getUserByFacebookId(senderId)
     if (!user) {
         user = await createUserFromFacebook(senderId)
+        if (!user) {
+            console.error('Failed to create user for facebook_id:', senderId)
+            await sendMessage(senderId, 'Xin lỗi, có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại sau.')
+            return
+        }
     }
 
     // Handle different message types
