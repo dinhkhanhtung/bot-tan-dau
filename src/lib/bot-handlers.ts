@@ -75,6 +75,12 @@ export async function handleMessage(user: any, text: string) {
             return
         }
 
+        // Check if user is in listing flow
+        if (session && session.current_flow === 'listing') {
+            await handleListingStep(user, text, session)
+            return
+        }
+
         // Handle different message types
         if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
             await handleRegistration(user)
@@ -139,6 +145,31 @@ export async function handlePostback(user: any, payload: string) {
                     await handleSearchKeyword(user)
                 } else {
                     await handleSearch(user)
+                }
+                break
+            case 'LISTING':
+                if (params[0] === 'CATEGORY') {
+                    const category = params.slice(1).join('_')
+                    await handleListingCategory(user, category)
+                } else if (params[0] === 'TITLE') {
+                    await handleListingTitle(user)
+                } else if (params[0] === 'PRICE') {
+                    await handleListingPrice(user)
+                } else if (params[0] === 'DESCRIPTION') {
+                    await handleListingDescription(user)
+                } else if (params[0] === 'LOCATION') {
+                    await handleListingLocation(user)
+                } else if (params[0] === 'IMAGES') {
+                    await handleListingImages(user)
+                } else if (params[0] === 'CONFIRM') {
+                    await handleListingConfirm(user)
+                } else if (params[0] === 'SUBMIT') {
+                    await handleListingSubmit(user)
+                }
+                break
+            case 'MY':
+                if (params[0] === 'LISTINGS') {
+                    await handleMyListings(user)
                 }
                 break
             case 'COMMUNITY':
@@ -290,7 +321,7 @@ export async function handleAdminCommand(user: any) {
             createPostbackButton('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Thống kê và báo cáo:',
@@ -353,7 +384,7 @@ export async function handleFinalVerification(user: any) {
 
 
 // Handle listing images
-export async function handleListingImages(user: any, imageUrl: string) {
+export async function handleListingImages(user: any, imageUrl?: string) {
     try {
         const session = await getBotSession(user.id)
         if (!session) return
@@ -394,7 +425,7 @@ async function showMainMenu(user: any) {
             createPostbackButton('💬 KẾT NỐI', 'CONNECT')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Thêm chức năng:',
@@ -404,7 +435,7 @@ async function showMainMenu(user: any) {
             createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Tùy chọn khác:',
@@ -446,7 +477,7 @@ async function handleRegistrationName(user: any, text: string, data: any) {
     }
 
     data.name = text.trim()
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Họ tên: ${data.name}`,
         'Bước 2/4: Số điện thoại\n📱 Vui lòng nhập số điện thoại của bạn:\n\nVD: 0123456789'
@@ -462,14 +493,14 @@ async function handleRegistrationName(user: any, text: string, data: any) {
 // Handle registration phone step
 async function handleRegistrationPhone(user: any, text: string, data: any) {
     const phone = text.replace(/\D/g, '') // Remove non-digits
-    
+
     if (phone.length < 10 || phone.length > 11) {
         await sendMessage(user.facebook_id, 'Số điện thoại không hợp lệ! Vui lòng nhập lại.')
         return
     }
 
     data.phone = phone
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ SĐT: ${data.phone}`,
         'Bước 3/4: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:'
@@ -519,7 +550,7 @@ async function handleRegistrationLocation(user: any, text: string, data: any) {
     }
 
     data.location = text.trim()
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Vị trí: ${data.location}`,
         'Bước 4/4: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!',
@@ -590,7 +621,7 @@ async function handleBirthdayVerification(user: any) {
     }
 
     const data = session.data || {}
-    
+
     try {
         // Create user in database
         const { data: newUser, error } = await supabaseAdmin
@@ -696,23 +727,36 @@ async function handleRegistration(user: any) {
 
 // Handle listing
 async function handleListing(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🛒 NIÊM YẾT SẢN PHẨM/DỊCH VỤ\n\nChọn loại tin đăng bạn muốn đăng:'
+    ])
+
     await sendButtonTemplate(
         user.facebook_id,
-        '🛒 NIÊM YẾT SẢN PHẨM/DỊCH VỤ\n\nChọn loại tin đăng bạn muốn đăng:',
+        'Danh mục chính:',
         [
             createPostbackButton('🏠 BẤT ĐỘNG SẢN', 'LISTING_CATEGORY_BẤT ĐỘNG SẢN'),
             createPostbackButton('🚗 Ô TÔ', 'LISTING_CATEGORY_Ô TÔ'),
             createPostbackButton('📱 ĐIỆN TỬ', 'LISTING_CATEGORY_ĐIỆN TỬ')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
-        'Thêm danh mục:',
+        'Danh mục khác:',
         [
             createPostbackButton('👕 THỜI TRANG', 'LISTING_CATEGORY_THỜI TRANG'),
             createPostbackButton('🍽️ ẨM THỰC', 'LISTING_CATEGORY_ẨM THỰC'),
             createPostbackButton('🔧 DỊCH VỤ', 'LISTING_CATEGORY_DỊCH VỤ')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📋 XEM TIN ĐÃ ĐĂNG', 'MY_LISTINGS'),
+            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -728,7 +772,7 @@ async function handleSearch(user: any) {
             createPostbackButton('📱 ĐIỆN TỬ', 'SEARCH_CATEGORY_ĐIỆN TỬ')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Thêm danh mục tìm kiếm:',
@@ -738,7 +782,7 @@ async function handleSearch(user: any) {
             createPostbackButton('🔧 DỊCH VỤ', 'SEARCH_CATEGORY_DỊCH VỤ')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Tìm kiếm nâng cao:',
@@ -773,7 +817,7 @@ async function handleSearchAdvanced(user: any) {
         '🎯 TÌM KIẾM NÂNG CAO\n\nTính năng này đang được phát triển!',
         'Hiện tại bạn có thể sử dụng tìm kiếm theo danh mục ở trên.'
     ])
-    
+
     await showMainMenu(user)
 }
 
@@ -783,7 +827,7 @@ async function handleSearchKeyword(user: any) {
         '🔍 TÌM THEO TỪ KHÓA\n\nTính năng này đang được phát triển!',
         'Hiện tại bạn có thể sử dụng tìm kiếm theo danh mục ở trên.'
     ])
-    
+
     await showMainMenu(user)
 }
 
@@ -820,7 +864,7 @@ async function handleSearchUpdate(user: any) {
             createPostbackButton('👥 CỘNG ĐỒNG', 'COMMUNITY')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Cập nhật:',
@@ -873,7 +917,7 @@ async function handleAdminPayments(user: any) {
             for (let i = 0; i < payments.length; i++) {
                 const payment = payments[i]
                 const userInfo = payment.users
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${userInfo?.name || 'N/A'} - ${formatCurrency(payment.amount)}\n📅 ${new Date(payment.created_at).toLocaleDateString('vi-VN')} ${new Date(payment.created_at).toLocaleTimeString('vi-VN')}\n📱 ${userInfo?.phone || 'N/A'}`,
@@ -922,7 +966,7 @@ async function handleAdminUsers(user: any) {
         const { data: stats, error: statsError } = await supabaseAdmin
             .from('users')
             .select('status')
-        
+
         if (statsError) throw statsError
 
         const totalUsers = stats?.length || 0
@@ -967,7 +1011,7 @@ async function handleAdminListings(user: any) {
         const { data: stats, error: statsError } = await supabaseAdmin
             .from('listings')
             .select('status')
-        
+
         if (statsError) throw statsError
 
         const totalListings = stats?.length || 0
@@ -1147,7 +1191,7 @@ async function handleAdminApprovePayment(user: any, paymentId: string) {
         // Update payment status
         const { error: updateError } = await supabaseAdmin
             .from('payments')
-            .update({ 
+            .update({
                 status: 'approved',
                 approved_at: new Date().toISOString(),
                 approved_by: user.facebook_id
@@ -1164,7 +1208,7 @@ async function handleAdminApprovePayment(user: any, paymentId: string) {
 
         const { error: userError } = await supabaseAdmin
             .from('users')
-            .update({ 
+            .update({
                 status: 'active',
                 membership_expires_at: membershipExpiresAt.toISOString()
             })
@@ -1230,7 +1274,7 @@ async function handleAdminRejectPayment(user: any, paymentId: string) {
         // Update payment status
         const { error: updateError } = await supabaseAdmin
             .from('payments')
-            .update({ 
+            .update({
                 status: 'rejected',
                 rejected_at: new Date().toISOString(),
                 rejected_by: user.facebook_id
@@ -1336,7 +1380,7 @@ async function handleAdminAllPayments(user: any) {
         for (let i = 0; i < payments.length; i++) {
             const payment = payments[i]
             const status = payment.status === 'approved' ? '✅' : payment.status === 'rejected' ? '❌' : '⏳'
-            
+
             await sendButtonTemplate(
                 user.facebook_id,
                 `${i + 1}️⃣ ${status} ${payment.users?.name || 'N/A'} - ${formatCurrency(payment.amount)}\n📅 ${new Date(payment.created_at).toLocaleDateString('vi-VN')} ${new Date(payment.created_at).toLocaleTimeString('vi-VN')}\n📱 ${payment.users?.phone || 'N/A'}`,
@@ -1406,7 +1450,7 @@ async function handleAdminAllUsers(user: any) {
         for (let i = 0; i < users.length; i++) {
             const u = users[i]
             const status = u.status === 'active' ? '✅' : u.status === 'trial' ? '⏳' : '❌'
-            
+
             await sendButtonTemplate(
                 user.facebook_id,
                 `${i + 1}️⃣ ${status} ${u.name}\n📱 ${u.phone} | 📍 ${u.location}\n📅 ${new Date(u.created_at).toLocaleDateString('vi-VN')}`,
@@ -1534,7 +1578,7 @@ async function handleAdminModerateListings(user: any) {
 
             for (let i = 0; i < listings.length; i++) {
                 const listing = listings[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${listing.title}\n👤 ${listing.users?.name || 'N/A'}\n💰 ${formatCurrency(listing.price)}\n📅 ${new Date(listing.created_at).toLocaleDateString('vi-VN')}`,
@@ -1584,7 +1628,7 @@ async function handleAdminAllListings(user: any) {
         for (let i = 0; i < listings.length; i++) {
             const listing = listings[i]
             const status = listing.status === 'active' ? '✅' : listing.status === 'pending' ? '⏳' : '❌'
-            
+
             await sendButtonTemplate(
                 user.facebook_id,
                 `${i + 1}️⃣ ${status} ${listing.title}\n👤 ${listing.users?.name || 'N/A'}\n💰 ${formatCurrency(listing.price)}\n📅 ${new Date(listing.created_at).toLocaleDateString('vi-VN')}`,
@@ -1912,6 +1956,479 @@ async function handleAdminNotificationSettings(user: any) {
     )
 }
 
+// Handle listing step
+async function handleListingStep(user: any, text: string, session: any) {
+    const step = session.current_step
+    const data = session.data || {}
+
+    switch (step) {
+        case 1: // Title
+            await handleListingTitleInput(user, text, data)
+            break
+        case 2: // Price
+            await handleListingPriceInput(user, text, data)
+            break
+        case 3: // Description
+            await handleListingDescriptionInput(user, text, data)
+            break
+        case 4: // Location
+            await handleListingLocationInput(user, text, data)
+            break
+        case 5: // Images
+            await handleListingImagesInput(user, text, data)
+            break
+        default:
+            await sendMessage(user.facebook_id, 'Vui lòng bắt đầu tạo tin đăng lại.')
+    }
+}
+
+// Handle listing title input
+async function handleListingTitleInput(user: any, text: string, data: any) {
+    if (text.length < 5) {
+        await sendMessage(user.facebook_id, 'Tiêu đề quá ngắn! Vui lòng nhập ít nhất 5 ký tự.')
+        return
+    }
+
+    data.title = text.trim()
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        `✅ Tiêu đề: ${data.title}`,
+        'Bước 2/6: Giá bán\n💰 Nhập giá bán (VND):\n\nVD: 500000000 (500 triệu)'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hoặc chọn:',
+        [
+            createPostbackButton('💬 THƯƠNG LƯỢNG', 'LISTING_PRICE_NEGOTIABLE'),
+            createPostbackButton('❌ HỦY TẠO TIN', 'CANCEL_LISTING')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'listing',
+        current_step: 2,
+        data: data
+    })
+}
+
+// Handle listing price input
+async function handleListingPriceInput(user: any, text: string, data: any) {
+    let price = text.trim()
+    
+    // Handle negotiable price
+    if (price.includes('thương lượng') || price.includes('THƯƠNG LƯỢNG')) {
+        price = 'Thương lượng'
+    } else {
+        // Extract numbers from text
+        const numbers = price.replace(/[^\d]/g, '')
+        if (numbers.length > 0) {
+            price = parseInt(numbers).toLocaleString('vi-VN') + ' VND'
+        } else {
+            await sendMessage(user.facebook_id, 'Vui lòng nhập giá hợp lệ hoặc chọn "Thương lượng".')
+            return
+        }
+    }
+
+    data.price = price
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        `✅ Giá: ${data.price}`,
+        'Bước 3/6: Mô tả chi tiết\n📝 Nhập mô tả sản phẩm/dịch vụ:\n\n• Tình trạng\n• Đặc điểm nổi bật\n• Thông tin liên hệ'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hoặc chọn:',
+        [
+            createPostbackButton('📝 MẪU CÓ SẴN', 'LISTING_DESCRIPTION_TEMPLATE'),
+            createPostbackButton('❌ HỦY TẠO TIN', 'CANCEL_LISTING')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'listing',
+        current_step: 3,
+        data: data
+    })
+}
+
+// Handle listing description input
+async function handleListingDescriptionInput(user: any, text: string, data: any) {
+    if (text.length < 10) {
+        await sendMessage(user.facebook_id, 'Mô tả quá ngắn! Vui lòng nhập ít nhất 10 ký tự.')
+        return
+    }
+
+    data.description = text.trim()
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        `✅ Mô tả: ${data.description.substring(0, 50)}...`,
+        'Bước 4/6: Vị trí\n📍 Chọn vị trí của sản phẩm/dịch vụ:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Khu vực:',
+        [
+            createPostbackButton('🏙️ TP.HCM', 'LISTING_LOCATION_TPHCM'),
+            createPostbackButton('🏛️ HÀ NỘI', 'LISTING_LOCATION_HANOI'),
+            createPostbackButton('🌊 ĐÀ NẴNG', 'LISTING_LOCATION_DANANG')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📍 KHÁC', 'LISTING_LOCATION_OTHER'),
+            createPostbackButton('❌ HỦY TẠO TIN', 'CANCEL_LISTING')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'listing',
+        current_step: 4,
+        data: data
+    })
+}
+
+// Handle listing location input
+async function handleListingLocationInput(user: any, text: string, data: any) {
+    data.location = text.trim()
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        `✅ Vị trí: ${data.location}`,
+        'Bước 5/6: Hình ảnh\n📸 Gửi hình ảnh sản phẩm/dịch vụ:\n\n• Tối đa 5 hình\n• Chất lượng rõ nét\n• Góc chụp đẹp'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hoặc chọn:',
+        [
+            createPostbackButton('⏭️ BỎ QUA HÌNH ẢNH', 'LISTING_IMAGES_SKIP'),
+            createPostbackButton('❌ HỦY TẠO TIN', 'CANCEL_LISTING')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'listing',
+        current_step: 5,
+        data: data
+    })
+}
+
+// Handle listing images input
+async function handleListingImagesInput(user: any, text: string, data: any) {
+    // For now, just proceed to confirmation
+    await sendMessagesWithTyping(user.facebook_id, [
+        'Bước 6/6: Xác nhận\n✅ Kiểm tra lại thông tin tin đăng:'
+    ])
+
+    // Display listing preview
+    await sendMessagesWithTyping(user.facebook_id, [
+        `📋 THÔNG TIN TIN ĐĂNG\n\n📝 Tiêu đề: ${data.title}\n💰 Giá: ${data.price}\n📍 Vị trí: ${data.location}\n📂 Danh mục: ${data.category}`,
+        `📝 Mô tả:\n${data.description}`
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Xác nhận:',
+        [
+            createPostbackButton('✅ ĐĂNG TIN', 'LISTING_SUBMIT'),
+            createPostbackButton('✏️ SỬA LẠI', 'LISTING_EDIT'),
+            createPostbackButton('❌ HỦY TẠO TIN', 'CANCEL_LISTING')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'listing',
+        current_step: 6,
+        data: data
+    })
+}
+
+// Handle listing category selection
+async function handleListingCategory(user: any, category: string) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        `📝 TẠO TIN ĐĂNG - ${category}\n\nBước 1/6: Tiêu đề`,
+        '📝 Nhập tiêu đề tin đăng:\n\nVD: Bán nhà 3 tầng mặt tiền đường Lê Văn Việt'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hoặc chọn:',
+        [
+            createPostbackButton('❌ HỦY TẠO TIN', 'CANCEL_LISTING'),
+            createPostbackButton('🔙 CHỌN LẠI DANH MỤC', 'LISTING')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'listing',
+        current_step: 1,
+        data: { category: category }
+    })
+}
+
+// Handle listing title input
+async function handleListingTitle(user: any) {
+    const session = await getBotSession(user.facebook_id)
+    if (!session || session.current_flow !== 'listing') {
+        await sendMessage(user.facebook_id, 'Vui lòng bắt đầu tạo tin đăng lại.')
+        return
+    }
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        'Bước 2/6: Giá bán\n💰 Nhập giá bán (VND):\n\nVD: 500000000 (500 triệu)'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hoặc chọn:',
+        [
+            createPostbackButton('💬 THƯƠNG LƯỢNG', 'LISTING_PRICE_NEGOTIABLE'),
+            createPostbackButton('❌ HỦY TẠO TIN', 'CANCEL_LISTING')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'listing',
+        current_step: 2,
+        data: { ...session.data, title: 'TITLE_PLACEHOLDER' }
+    })
+}
+
+// Handle listing price input
+async function handleListingPrice(user: any) {
+    const session = await getBotSession(user.facebook_id)
+    if (!session || session.current_flow !== 'listing') {
+        await sendMessage(user.facebook_id, 'Vui lòng bắt đầu tạo tin đăng lại.')
+        return
+    }
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        'Bước 3/6: Mô tả chi tiết\n📝 Nhập mô tả sản phẩm/dịch vụ:\n\n• Tình trạng\n• Đặc điểm nổi bật\n• Thông tin liên hệ'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hoặc chọn:',
+        [
+            createPostbackButton('📝 MẪU CÓ SẴN', 'LISTING_DESCRIPTION_TEMPLATE'),
+            createPostbackButton('❌ HỦY TẠO TIN', 'CANCEL_LISTING')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'listing',
+        current_step: 3,
+        data: { ...session.data, price: 'PRICE_PLACEHOLDER' }
+    })
+}
+
+// Handle listing description input
+async function handleListingDescription(user: any) {
+    const session = await getBotSession(user.facebook_id)
+    if (!session || session.current_flow !== 'listing') {
+        await sendMessage(user.facebook_id, 'Vui lòng bắt đầu tạo tin đăng lại.')
+        return
+    }
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        'Bước 4/6: Vị trí\n📍 Chọn vị trí của sản phẩm/dịch vụ:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Khu vực:',
+        [
+            createPostbackButton('🏙️ TP.HCM', 'LISTING_LOCATION_TPHCM'),
+            createPostbackButton('🏛️ HÀ NỘI', 'LISTING_LOCATION_HANOI'),
+            createPostbackButton('🌊 ĐÀ NẴNG', 'LISTING_LOCATION_DANANG')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📍 KHÁC', 'LISTING_LOCATION_OTHER'),
+            createPostbackButton('❌ HỦY TẠO TIN', 'CANCEL_LISTING')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'listing',
+        current_step: 4,
+        data: { ...session.data, description: 'DESCRIPTION_PLACEHOLDER' }
+    })
+}
+
+// Handle listing location selection
+async function handleListingLocation(user: any) {
+    const session = await getBotSession(user.facebook_id)
+    if (!session || session.current_flow !== 'listing') {
+        await sendMessage(user.facebook_id, 'Vui lòng bắt đầu tạo tin đăng lại.')
+        return
+    }
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        'Bước 5/6: Hình ảnh\n📸 Gửi hình ảnh sản phẩm/dịch vụ:\n\n• Tối đa 5 hình\n• Chất lượng rõ nét\n• Góc chụp đẹp'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hoặc chọn:',
+        [
+            createPostbackButton('⏭️ BỎ QUA HÌNH ẢNH', 'LISTING_IMAGES_SKIP'),
+            createPostbackButton('❌ HỦY TẠO TIN', 'CANCEL_LISTING')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'listing',
+        current_step: 5,
+        data: { ...session.data, location: 'LOCATION_PLACEHOLDER' }
+    })
+}
+
+
+// Handle listing confirmation
+async function handleListingConfirm(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '✅ XÁC NHẬN ĐĂNG TIN\n\nTin đăng của bạn đã được gửi để kiểm duyệt!'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📋 XEM TIN ĐÃ ĐĂNG', 'MY_LISTINGS'),
+            createPostbackButton('🛒 ĐĂNG TIN MỚI', 'LISTING'),
+            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+
+    // Clear listing session
+    await updateBotSession(user.facebook_id, {
+        current_flow: null,
+        current_step: null,
+        data: {}
+    })
+}
+
+// Handle listing submission
+async function handleListingSubmit(user: any) {
+    const session = await getBotSession(user.facebook_id)
+    if (!session || session.current_flow !== 'listing') {
+        await sendMessage(user.facebook_id, 'Vui lòng bắt đầu tạo tin đăng lại.')
+        return
+    }
+
+    try {
+        const data = session.data || {}
+        
+        // Create listing in database
+        const { data: newListing, error } = await supabaseAdmin
+            .from('listings')
+            .insert({
+                user_id: user.id,
+                category: data.category,
+                title: data.title,
+                price: data.price,
+                description: data.description,
+                location: data.location,
+                images: data.images ? [data.images] : [],
+                status: 'pending'
+            })
+            .select()
+            .single()
+
+        if (error) {
+            throw error
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🎉 ĐĂNG TIN THÀNH CÔNG!',
+            '✅ Tin đăng của bạn đã được gửi để kiểm duyệt\n⏰ Thời gian duyệt: 24-48 giờ',
+            '📋 Mã tin đăng: #' + newListing.id.slice(-8).toUpperCase()
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('📋 XEM TIN ĐÃ ĐĂNG', 'MY_LISTINGS'),
+                createPostbackButton('🛒 ĐĂNG TIN MỚI', 'LISTING'),
+                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+
+        // Clear listing session
+        await updateBotSession(user.facebook_id, {
+            current_flow: null,
+            current_step: null,
+            data: {}
+        })
+    } catch (error) {
+        console.error('Error creating listing:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi đăng tin. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle my listings
+async function handleMyListings(user: any) {
+    try {
+        const { data: listings, error } = await supabaseAdmin
+            .from('listings')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+        if (error) throw error
+
+        if (listings && listings.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📋 TIN ĐĂNG CỦA BẠN\n\nDanh sách tin đăng gần nhất:'
+            ])
+
+            for (let i = 0; i < listings.length; i++) {
+                const listing = listings[i]
+                const status = listing.status === 'active' ? '✅' : listing.status === 'pending' ? '⏳' : '❌'
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${status} ${listing.title}\n💰 ${formatCurrency(listing.price)}\n📅 ${new Date(listing.created_at).toLocaleDateString('vi-VN')}`,
+                    [
+                        createPostbackButton('👀 XEM', `VIEW_LISTING_${listing.id}`),
+                        createPostbackButton('✏️ SỬA', `EDIT_LISTING_${listing.id}`),
+                        createPostbackButton('🗑️ XÓA', `DELETE_LISTING_${listing.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📋 TIN ĐĂNG CỦA BẠN\n\n❌ Bạn chưa có tin đăng nào!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🛒 ĐĂNG TIN MỚI', 'LISTING'),
+                createPostbackButton('🔄 LÀM MỚI', 'MY_LISTINGS'),
+                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling my listings:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải danh sách tin đăng!')
+    }
+}
+
 // Handle community
 async function handleCommunity(user: any) {
     await sendButtonTemplate(
@@ -1923,7 +2440,7 @@ async function handleCommunity(user: any) {
             createPostbackButton('📖 KỶ NIỆM', 'COMMUNITY_MEMORIES')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Thêm hoạt động cộng đồng:',
@@ -1933,7 +2450,7 @@ async function handleCommunity(user: any) {
             createPostbackButton('🔮 TỬ VI', 'COMMUNITY_HOROSCOPE')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Hỗ trợ và kết nối:',
@@ -1987,7 +2504,7 @@ async function handleHoroscope(user: any) {
             createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Tùy chọn khác:',
@@ -2013,7 +2530,7 @@ async function handlePoints(user: any) {
             createPostbackButton('🎁 Quà tặng', 'POINTS_REWARDS_GIFTS')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Thêm phần thưởng:',
@@ -2023,7 +2540,7 @@ async function handlePoints(user: any) {
             createPostbackButton('🎯 THÀNH TÍCH', 'POINTS_ACHIEVEMENTS')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Xếp hạng:',
@@ -2044,7 +2561,7 @@ async function handleSettings(user: any) {
             createPostbackButton('🔒 BẢO MẬT', 'SETTINGS_SECURITY')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Thêm cài đặt:',
@@ -2054,7 +2571,7 @@ async function handleSettings(user: any) {
             createPostbackButton('📊 PRIVACY', 'SETTINGS_PRIVACY')
         ]
     )
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Hỗ trợ và điều hướng:',
