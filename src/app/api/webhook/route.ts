@@ -99,12 +99,14 @@ async function handleMessageEvent(event: any) {
     // Get or create user
     let user = await getUserByFacebookId(senderId)
     if (!user) {
+        console.log('User not found, creating new user for facebook_id:', senderId)
         user = await createUserFromFacebook(senderId)
         if (!user) {
             console.error('Failed to create user for facebook_id:', senderId)
             await sendMessage(senderId, 'Xin lỗi, có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại sau.')
             return
         }
+        console.log('Successfully created user:', user.id)
     }
 
     // Handle different message types
@@ -179,18 +181,28 @@ async function handleFileAttachment(user: any, attachment: any) {
 
 // Database helper functions
 async function getUserByFacebookId(facebookId: string) {
-    const { data, error } = await supabaseAdmin
-        .from('users')
-        .select('*')
-        .eq('facebook_id', facebookId)
-        .single()
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('users')
+            .select('*')
+            .eq('facebook_id', facebookId)
+            .single()
 
-    if (error) {
-        console.error('Error getting user:', error)
+        if (error) {
+            // PGRST116 means no rows found, which is normal for new users
+            if (error.code === 'PGRST116') {
+                console.log('No user found for facebook_id:', facebookId)
+                return null
+            }
+            console.error('Error getting user:', error)
+            return null
+        }
+
+        return data
+    } catch (error) {
+        console.error('Exception getting user:', error)
         return null
     }
-
-    return data
 }
 
 async function createUserFromFacebook(facebookId: string) {

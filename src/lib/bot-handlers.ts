@@ -37,7 +37,13 @@ export async function handleMessage(user: any, text: string) {
     try {
         // Check if user exists
         if (!user) {
-            await sendMessage('123456789', 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.')
+            console.error('User is null in handleMessage')
+            return
+        }
+
+        // Check if user has required properties
+        if (!user.facebook_id) {
+            console.error('User missing facebook_id:', user)
             return
         }
 
@@ -79,13 +85,27 @@ export async function handleMessage(user: any, text: string) {
         }
     } catch (error) {
         console.error('Error handling message:', error)
-        await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+        if (user && user.facebook_id) {
+            await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+        }
     }
 }
 
 // Handle postback (button clicks)
 export async function handlePostback(user: any, payload: string) {
     try {
+        // Check if user exists
+        if (!user) {
+            console.error('User is null in handlePostback')
+            return
+        }
+
+        // Check if user has required properties
+        if (!user.facebook_id) {
+            console.error('User missing facebook_id in handlePostback:', user)
+            return
+        }
+
         const [action, ...params] = payload.split('_')
 
         switch (action) {
@@ -124,7 +144,9 @@ export async function handlePostback(user: any, payload: string) {
         }
     } catch (error) {
         console.error('Error handling postback:', error)
-        await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+        if (user && user.facebook_id) {
+            await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+        }
     }
 }
 

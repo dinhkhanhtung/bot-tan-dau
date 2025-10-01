@@ -11,6 +11,11 @@ import { formatCurrency, formatNumber, formatDateTime } from './utils'
 // Admin command handlers
 export async function handleAdminPayments(user: any) {
     try {
+        // Check if user exists and has required properties
+        if (!user || !user.facebook_id) {
+            console.error('Invalid user in handleAdminPayments:', user)
+            return
+        }
         const { data: payments, error } = await supabaseAdmin
             .from('payments')
             .select(`
@@ -55,6 +60,11 @@ export async function handleAdminPayments(user: any) {
 
 export async function handleAdminUsers(user: any) {
     try {
+        // Check if user exists and has required properties
+        if (!user || !user.facebook_id) {
+            console.error('Invalid user in handleAdminUsers:', user)
+            return
+        }
         const { data: users, error } = await supabaseAdmin
             .from('users')
             .select('*')
@@ -91,6 +101,11 @@ export async function handleAdminUsers(user: any) {
 
 export async function handleAdminListings(user: any) {
     try {
+        // Check if user exists and has required properties
+        if (!user || !user.facebook_id) {
+            console.error('Invalid user in handleAdminListings:', user)
+            return
+        }
         const { data: listings, error } = await supabaseAdmin
             .from('listings')
             .select(`
@@ -133,6 +148,11 @@ export async function handleAdminListings(user: any) {
 
 export async function handleAdminStats(user: any) {
     try {
+        // Check if user exists and has required properties
+        if (!user || !user.facebook_id) {
+            console.error('Invalid user in handleAdminStats:', user)
+            return
+        }
         // Get user stats
         const { count: totalUsers } = await supabaseAdmin
             .from('users')
