@@ -251,7 +251,17 @@ export async function handlePostback(user: any, payload: string) {
                 }
                 break
             case 'HOROSCOPE':
-                await handleHoroscope(user)
+                if (params[0] === 'DETAIL') {
+                    await handleHoroscopeDetail(user)
+                } else if (params[0] === 'WEEK') {
+                    await handleHoroscopeWeek(user)
+                } else if (params[0] === 'MONTH') {
+                    await handleHoroscopeMonth(user)
+                } else if (params[0] === 'TOMORROW') {
+                    await handleHoroscopeTomorrow(user)
+                } else {
+                    await handleHoroscope(user)
+                }
                 break
             case 'POINTS':
                 await handlePoints(user)
@@ -3328,7 +3338,7 @@ async function handleCommunityBirthday(user: any) {
         const today = new Date()
         const month = today.getMonth() + 1
         const day = today.getDate()
-        
+
         const { data: birthdayUsers, error } = await supabaseAdmin
             .from('users')
             .select('name, phone, location')
@@ -3344,7 +3354,7 @@ async function handleCommunityBirthday(user: any) {
 
             for (let i = 0; i < birthdayUsers.length; i++) {
                 const birthdayUser = birthdayUsers[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `🎉 ${birthdayUser.name}\n📱 ${birthdayUser.phone}\n📍 ${birthdayUser.location}`,
@@ -3397,7 +3407,7 @@ async function handleCommunityTopSeller(user: any) {
                 const seller = topSellers[i]
                 const rank = i + 1
                 const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '⭐'
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${medal} ${rank}. ${seller.name}\n⭐ ${seller.rating || 0}/5 sao\n📍 ${seller.location}\n📱 ${seller.phone}`,
@@ -3449,7 +3459,7 @@ async function handleCommunityRanking(user: any) {
                 const member = rankings[i]
                 const rank = i + 1
                 const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏆'
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${medal} ${rank}. ${member.name}\n⭐ ${member.rating || 0}/5 sao\n📍 ${member.location}`,
@@ -3525,7 +3535,7 @@ async function handleCommunityAnnouncements(user: any) {
 
             for (let i = 0; i < announcements.length; i++) {
                 const announcement = announcements[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${announcement.title}\n📅 ${new Date(announcement.created_at).toLocaleDateString('vi-VN')}\n⏰ ${new Date(announcement.created_at).toLocaleTimeString('vi-VN')}`,
@@ -3574,7 +3584,7 @@ async function handleCommunityEvents(user: any) {
 
             for (let i = 0; i < events.length; i++) {
                 const event = events[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${event.title}\n📅 ${new Date(event.event_date).toLocaleDateString('vi-VN')}\n📍 ${event.location}\n👥 ${event.participants || 0} người tham gia`,
@@ -3681,13 +3691,155 @@ async function handlePayment(user: any) {
     }
 }
 
+// Handle horoscope detail
+async function handleHoroscopeDetail(user: any) {
+    const horoscope = generateHoroscope()
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🔮 TỬ VI CHI TIẾT TÂN DẬU 1981\n\n📅 ' + new Date().toLocaleDateString('vi-VN') + '\n🐓 Tuổi: Tân Dậu (1981)'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '💰 TÀI LỘC:\n' + horoscope.fortune + '\n\n💡 Lời khuyên: Nên đầu tư vào bất động sản, tránh đầu tư rủi ro cao'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '❤️ TÌNH CẢM:\n' + horoscope.love + '\n\n💡 Lời khuyên: Gặp gỡ bạn bè cũ, có thể gặp người đặc biệt'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🏥 SỨC KHỎE:\n' + horoscope.health + '\n\n💡 Lời khuyên: Nghỉ ngơi nhiều, tránh căng thẳng'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🎯 LỜI KHUYÊN TỔNG QUAN:\n' + horoscope.advice + '\n\n🎨 Màu may mắn: ' + horoscope.luckyColor + '\n🔢 Số may mắn: ' + horoscope.luckyNumber
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
+            createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
+            createPostbackButton('🔙 VỀ TỬ VI', 'HOROSCOPE')
+        ]
+    )
+}
+
+// Handle horoscope week
+async function handleHoroscopeWeek(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📅 TỬ VI TUẦN TÂN DẬU 1981\n\n📅 Tuần từ ' + getWeekStartDate() + ' đến ' + getWeekEndDate()
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '💰 TÀI LỘC TUẦN:\n• Thứ 2-3: Tốt cho giao dịch\n• Thứ 4-5: Nên thận trọng\n• Thứ 6-7: Cơ hội đầu tư\n• Chủ nhật: Nghỉ ngơi'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '❤️ TÌNH CẢM TUẦN:\n• Thứ 2-3: Gặp gỡ bạn bè\n• Thứ 4-5: Tình cảm ổn định\n• Thứ 6-7: Có thể gặp người mới\n• Chủ nhật: Thời gian cho gia đình'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🏥 SỨC KHỎE TUẦN:\n• Thứ 2-3: Năng lượng cao\n• Thứ 4-5: Cần nghỉ ngơi\n• Thứ 6-7: Tập thể dục nhẹ\n• Chủ nhật: Thư giãn hoàn toàn'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
+            createPostbackButton('🔙 VỀ TỬ VI', 'HOROSCOPE')
+        ]
+    )
+}
+
+// Handle horoscope month
+async function handleHoroscopeMonth(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🔮 TỬ VI THÁNG TÂN DẬU 1981\n\n📅 Tháng ' + new Date().toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '💰 TÀI LỘC THÁNG:\n• Tuần 1: Cơ hội đầu tư tốt\n• Tuần 2: Thận trọng với chi tiêu\n• Tuần 3: Giao dịch thuận lợi\n• Tuần 4: Có thể có lợi nhuận'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '❤️ TÌNH CẢM THÁNG:\n• Tuần 1: Gặp gỡ bạn bè cũ\n• Tuần 2: Tình cảm ổn định\n• Tuần 3: Có thể gặp người đặc biệt\n• Tuần 4: Thời gian cho gia đình'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🏥 SỨC KHỎE THÁNG:\n• Tuần 1: Năng lượng cao\n• Tuần 2: Cần nghỉ ngơi\n• Tuần 3: Tập thể dục đều đặn\n• Tuần 4: Thư giãn và phục hồi'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('🔙 VỀ TỬ VI', 'HOROSCOPE')
+        ]
+    )
+}
+
+// Handle horoscope tomorrow
+async function handleHoroscopeTomorrow(user: any) {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const horoscope = generateHoroscope()
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🔮 TỬ VI NGÀY MAI TÂN DẬU 1981\n\n📅 ' + tomorrow.toLocaleDateString('vi-VN') + '\n🐓 Tuổi: Tân Dậu (1981)'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '💰 Tài lộc: ' + horoscope.fortune + '\n❤️ Tình cảm: ' + horoscope.love + '\n🏥 Sức khỏe: ' + horoscope.health
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🎯 Lời khuyên: ' + horoscope.advice + '\n🎨 Màu may mắn: ' + horoscope.luckyColor + '\n🔢 Số may mắn: ' + horoscope.luckyNumber
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('🔮 TỬ VI HÔM NAY', 'HOROSCOPE'),
+            createPostbackButton('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
+            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Helper functions for horoscope
+function getWeekStartDate() {
+    const today = new Date()
+    const day = today.getDay()
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1)
+    const monday = new Date(today.setDate(diff))
+    return monday.toLocaleDateString('vi-VN')
+}
+
+function getWeekEndDate() {
+    const today = new Date()
+    const day = today.getDay()
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1)
+    const sunday = new Date(today.setDate(diff + 6))
+    return sunday.toLocaleDateString('vi-VN')
+}
+
 // Handle horoscope
 async function handleHoroscope(user: any) {
     const horoscope = generateHoroscope()
 
     await sendMessagesWithTyping(user.facebook_id, [
-        '🔮 TỬ VI TÂN DẬU HÔM NAY\n\n📅 ' + new Date().toLocaleDateString('vi-VN') + '\n🐓 Tuổi: Tân Dậu (1981)\n⭐ Tổng quan: 4/5 sao',
-        '💰 Tài lộc: ' + horoscope.fortune + ' - Nên đầu tư BĐS\n❤️ Tình cảm: ' + horoscope.love + ' - Gặp gỡ bạn bè\n🏥 Sức khỏe: ' + horoscope.health + ' - Nghỉ ngơi',
+        '🔮 TỬ VI TÂN DẬU HÔM NAY\n\n📅 ' + new Date().toLocaleDateString('vi-VN') + '\n🐓 Tuổi: Tân Dậu (1981)\n⭐ Tổng quan: 4/5 sao'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '💰 Tài lộc: ' + horoscope.fortune + ' - Nên đầu tư BĐS\n❤️ Tình cảm: ' + horoscope.love + ' - Gặp gỡ bạn bè\n🏥 Sức khỏe: ' + horoscope.health + ' - Nghỉ ngơi'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
         '🎯 Lời khuyên: ' + horoscope.advice + '\n🎨 Màu may mắn: ' + horoscope.luckyColor + '\n🔢 Số may mắn: ' + horoscope.luckyNumber
     ])
 
