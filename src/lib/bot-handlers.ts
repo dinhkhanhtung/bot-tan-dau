@@ -14,7 +14,6 @@ import * as AuthHandlers from './handlers/auth-handlers'
 import * as MarketplaceHandlers from './handlers/marketplace-handlers'
 import * as CommunityHandlers from './handlers/community-handlers'
 import * as PaymentHandlers from './handlers/payment-handlers'
-import * as AdminHandlers from './handlers/admin-handlers'
 import * as AdminExtra from './handlers/admin-extra'
 import * as UtilityHandlers from './handlers/utility-handlers'
 
