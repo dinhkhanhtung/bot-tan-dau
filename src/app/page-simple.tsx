@@ -15,7 +15,7 @@ import {
   Heart
 } from 'lucide-react'
 
-export default function HomePage() {
+export default function HomePageSimple() {
   const [showAgeVerification, setShowAgeVerification] = useState(false)
 
   return (
