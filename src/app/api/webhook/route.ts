@@ -260,27 +260,51 @@ async function handleMessageEvent(event: any) {
     }
 }
 
+// Cache to prevent duplicate postback processing
+const processedPostbacks = new Set<string>()
+
 // Handle postback events (button clicks)
 async function handlePostbackEvent(event: any) {
     const senderId = event.sender.id
     const payload = event.postback.payload
+    const messageId = event.postback.mid || `${senderId}_${payload}_${Date.now()}`
+    
+    // Check if this postback was already processed
+    if (processedPostbacks.has(messageId)) {
+        console.log('Skipping duplicate postback:', messageId)
+        return
+    }
+    
+    // Mark as processed
+    processedPostbacks.add(messageId)
+    
+    // Clean up old entries (keep only last 1000)
+    if (processedPostbacks.size > 1000) {
+        const entries = Array.from(processedPostbacks)
+        processedPostbacks.clear()
+        entries.slice(-500).forEach(entry => processedPostbacks.add(entry))
+    }
 
     // Get user
     const user = await getUserByFacebookId(senderId)
     if (!user) {
-        // Handle postback for unregistered users
+        // Send registration prompt for unregistered users
         try {
-            const { handlePostback } = await import('@/lib/bot-handlers')
-            await handlePostback({ facebook_id: senderId }, payload)
+            const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
+            await sendMessage(senderId, '❌ Bạn cần đăng ký trước để sử dụng chức năng này!')
+            await sendMessage(senderId, 'Để sử dụng bot, bạn cần tạo tài khoản trước.')
+            
+            await sendQuickReply(
+                senderId,
+                'Bạn muốn:',
+                [
+                    createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+                    createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
+                    createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
+                ]
+            )
         } catch (error) {
-            console.error('Error handling postback for unregistered user:', error)
-            try {
-                const { sendMessage } = await import('@/lib/facebook-api')
-                await sendMessage(senderId, '❌ Bạn cần đăng ký trước để sử dụng chức năng này!')
-                await sendMessage(senderId, 'Nhấn "ĐĂNG KÝ" để tạo tài khoản.')
-            } catch (sendError) {
-                console.error('Error sending error message:', sendError)
-            }
+            console.error('Error sending registration prompt:', error)
         }
         return
     }
