@@ -108,7 +108,7 @@ async function handleMessageEvent(event: any) {
                 console.error('Failed to create user for facebook_id:', senderId)
                 // Send error message to the actual sender, not a hardcoded ID
                 try {
-                    await sendMessage(senderId, 'Xin lỗi, có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại sau.')
+                    await sendMessageToUser(senderId, 'Xin lỗi, có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại sau.')
                 } catch (sendError) {
                     console.error('Error sending error message:', sendError)
                 }
@@ -129,7 +129,7 @@ async function handleMessageEvent(event: any) {
         try {
             const senderId = event?.sender?.id
             if (senderId) {
-                await sendMessage(senderId, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+                await sendMessageToUser(senderId, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
             }
         } catch (sendError) {
             console.error('Error sending error message:', sendError)
@@ -146,7 +146,7 @@ async function handlePostbackEvent(event: any) {
     const user = await getUserByFacebookId(senderId)
     if (!user) {
         try {
-            await sendMessage(senderId, 'Vui lòng đăng ký trước khi sử dụng bot!')
+            await sendMessageToUser(senderId, 'Vui lòng đăng ký trước khi sử dụng bot!')
         } catch (error) {
             console.error('Error sending message to unregistered user:', error)
         }
@@ -159,7 +159,7 @@ async function handlePostbackEvent(event: any) {
     } catch (error) {
         console.error('Error handling postback:', error)
         try {
-            await sendMessage(senderId, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+            await sendMessageToUser(senderId, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
         } catch (sendError) {
             console.error('Error sending error message:', sendError)
         }
@@ -190,7 +190,7 @@ async function handleTextMessage(user: any, text: string) {
     } catch (error) {
         console.error('Error handling user message:', error)
         try {
-            await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+            await sendMessageToUser(user.facebook_id, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
         } catch (sendError) {
             console.error('Error sending error message:', sendError)
         }
@@ -216,7 +216,7 @@ async function handleAttachmentMessage(user: any, attachments: any[]) {
     } catch (error) {
         console.error('Error handling attachment message:', error)
         try {
-            await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra khi xử lý file. Vui lòng thử lại sau!')
+            await sendMessageToUser(user.facebook_id, 'Xin lỗi, có lỗi xảy ra khi xử lý file. Vui lòng thử lại sau!')
         } catch (sendError) {
             console.error('Error sending error message:', sendError)
         }
@@ -237,12 +237,12 @@ async function handleImageAttachment(user: any, attachment: any) {
             // Handle listing images
             await handleListingImages(user, imageUrl)
         } else {
-            await sendMessage(user.facebook_id, 'Cảm ơn bạn đã gửi ảnh! Tôi sẽ xử lý sau.')
+            await sendMessageToUser(user.facebook_id, 'Cảm ơn bạn đã gửi ảnh! Tôi sẽ xử lý sau.')
         }
     } catch (error) {
         console.error('Error handling image attachment:', error)
         try {
-            await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra khi xử lý ảnh. Vui lòng thử lại sau!')
+            await sendMessageToUser(user.facebook_id, 'Xin lỗi, có lỗi xảy ra khi xử lý ảnh. Vui lòng thử lại sau!')
         } catch (sendError) {
             console.error('Error sending error message:', sendError)
         }
@@ -253,11 +253,11 @@ async function handleImageAttachment(user: any, attachment: any) {
 async function handleFileAttachment(user: any, attachment: any) {
     try {
         const fileUrl = attachment.payload.url
-        await sendMessage(user.facebook_id, 'Cảm ơn bạn đã gửi file! Tôi sẽ xử lý sau.')
+        await sendMessageToUser(user.facebook_id, 'Cảm ơn bạn đã gửi file! Tôi sẽ xử lý sau.')
     } catch (error) {
         console.error('Error handling file attachment:', error)
         try {
-            await sendMessage(user.facebook_id, 'Xin lỗi, có lỗi xảy ra khi xử lý file. Vui lòng thử lại sau!')
+            await sendMessageToUser(user.facebook_id, 'Xin lỗi, có lỗi xảy ra khi xử lý file. Vui lòng thử lại sau!')
         } catch (sendError) {
             console.error('Error sending error message:', sendError)
         }
@@ -378,7 +378,7 @@ async function handleListingImages(user: any, imageUrl: string) {
 }
 
 // Send message to Facebook
-async function sendMessage(recipientId: string, message: string) {
+async function sendMessageToUser(recipientId: string, message: string) {
     const { sendMessage } = await import('@/lib/facebook-api')
     await sendMessage(recipientId, message)
 }
