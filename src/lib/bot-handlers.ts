@@ -414,12 +414,22 @@ export async function handlePostback(user: any, payload: string) {
     }
 }
 
+// Admin IDs - Add your Facebook IDs here
+const ADMIN_IDS = [
+    '31268544269455564', // Add your Facebook ID here
+    // Add more admin IDs as needed
+]
+
+// Check if user is admin
+function isAdmin(facebookId: string): boolean {
+    return ADMIN_IDS.includes(facebookId)
+}
+
 // Handle admin commands
 export async function handleAdminCommand(user: any) {
-    // Check if user is admin (you can add admin check here)
-    // For now, we'll allow any user to access admin for testing
-    if (!user) {
-        await sendMessage(user.facebook_id, 'Bạn cần đăng ký để sử dụng chức năng admin!')
+    // Check if user is admin
+    if (!user || !isAdmin(user.facebook_id)) {
+        await sendMessage(user.facebook_id, '❌ Bạn không có quyền truy cập admin dashboard!')
         return
     }
 
