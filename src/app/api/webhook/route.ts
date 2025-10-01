@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase'
 import { handleMessage } from '@/lib/bot-handlers'
 import { sendMessage } from '@/lib/facebook-api'
-import { updateBotSession, getBotSession } from '@/lib/utils'
+import { updateBotSession } from '@/lib/utils'
 
 // Verify webhook signature
 function verifySignature(payload: string, signature: string): boolean {
