@@ -190,7 +190,9 @@ export async function handlePaymentReceipt(user: any, imageUrl: string) {
         await updateBotSession(user.id, {})
     } catch (error) {
         console.error('Error handling payment receipt:', error)
-        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xử lý biên lai. Vui lòng thử lại!')
+        if (user && user.facebook_id) {
+            await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xử lý biên lai. Vui lòng thử lại!')
+        }
     }
 }
 
@@ -215,7 +217,9 @@ export async function handleListingImages(user: any, imageUrl: string) {
         )
     } catch (error) {
         console.error('Error handling listing images:', error)
-        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xử lý ảnh. Vui lòng thử lại!')
+        if (user && user.facebook_id) {
+            await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xử lý ảnh. Vui lòng thử lại!')
+        }
     }
 }
 
