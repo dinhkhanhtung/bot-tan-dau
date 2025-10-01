@@ -68,6 +68,13 @@ export async function handleMessage(user: any, text: string) {
             }
         }
 
+        // Check if user is in registration flow
+        const session = await getBotSession(user.facebook_id)
+        if (session && session.current_flow === 'registration') {
+            await handleRegistrationStep(user, text, session)
+            return
+        }
+
         // Handle different message types
         if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
             await handleRegistration(user)
@@ -164,6 +171,22 @@ export async function handlePostback(user: any, payload: string) {
                 if (params[0] === 'REGISTRATION') {
                     await sendMessage(user.facebook_id, 'Đăng ký đã bị hủy. Bạn có thể đăng ký lại bất cứ lúc nào!')
                     await showMainMenu(user)
+                }
+                break
+            case 'REG':
+                if (params[0] === 'LOCATION') {
+                    const location = params.slice(1).join('_')
+                    await handleRegistrationLocationPostback(user, location)
+                }
+                break
+            case 'VERIFY':
+                if (params[0] === 'BIRTHDAY') {
+                    await handleBirthdayVerification(user)
+                }
+                break
+            case 'REJECT':
+                if (params[0] === 'BIRTHDAY') {
+                    await handleBirthdayRejection(user)
                 }
                 break
             case 'BUY':
@@ -290,33 +313,6 @@ export async function handleFinalVerification(user: any) {
     )
 }
 
-// Handle birthday verification (trust-based)
-export async function handleBirthdayVerification(user: any) {
-    try {
-        // Update user status to active
-        const { error } = await supabaseAdmin
-            .from('users')
-            .update({ 
-                status: 'active',
-                birthday: 1981 // Trust-based verification
-            })
-            .eq('id', user.id)
-
-        if (error) {
-            throw error
-        }
-
-        await sendMessagesWithTyping(user.facebook_id, [
-            '🎉 CHÚC MỪNG!\n\n✅ Đăng ký thành công!\n🏆 Bạn đã trở thành thành viên chính thức của cộng đồng Tân Dậu 1981!',
-            '🎁 Bạn nhận được:\n• 3 ngày trial miễn phí\n• Quyền truy cập đầy đủ\n• Tham gia cộng đồng\n• Tử vi hàng ngày'
-        ])
-
-        await showMainMenu(user)
-    } catch (error) {
-        console.error('Error verifying birthday:', error)
-        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi xác minh. Vui lòng thử lại sau!')
-    }
-}
 
 // Handle listing images
 export async function handleListingImages(user: any, imageUrl: string) {
@@ -381,15 +377,275 @@ async function showMainMenu(user: any) {
     )
 }
 
+// Handle registration step by step
+async function handleRegistrationStep(user: any, text: string, session: any) {
+    const step = session.current_step || 1
+    const data = session.data || {}
+
+    switch (step) {
+        case 1: // Name
+            await handleRegistrationName(user, text, data)
+            break
+        case 2: // Phone
+            await handleRegistrationPhone(user, text, data)
+            break
+        case 3: // Location
+            await handleRegistrationLocation(user, text, data)
+            break
+        case 4: // Birthday verification
+            await handleRegistrationBirthday(user, text, data)
+            break
+        default:
+            await handleRegistration(user)
+    }
+}
+
+// Handle registration name step
+async function handleRegistrationName(user: any, text: string, data: any) {
+    if (text.length < 2) {
+        await sendMessage(user.facebook_id, 'Tên quá ngắn! Vui lòng nhập họ tên đầy đủ.')
+        return
+    }
+
+    data.name = text.trim()
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        `✅ Họ tên: ${data.name}`,
+        'Bước 2/4: Số điện thoại\n📱 Vui lòng nhập số điện thoại của bạn:\n\nVD: 0123456789'
+    ])
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'registration',
+        current_step: 2,
+        data: data
+    })
+}
+
+// Handle registration phone step
+async function handleRegistrationPhone(user: any, text: string, data: any) {
+    const phone = text.replace(/\D/g, '') // Remove non-digits
+    
+    if (phone.length < 10 || phone.length > 11) {
+        await sendMessage(user.facebook_id, 'Số điện thoại không hợp lệ! Vui lòng nhập lại.')
+        return
+    }
+
+    data.phone = phone
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        `✅ SĐT: ${data.phone}`,
+        'Bước 3/4: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Chọn vị trí:',
+        [
+            createPostbackButton('🏠 HÀ NỘI', 'REG_LOCATION_HÀ NỘI'),
+            createPostbackButton('🏢 TP.HCM', 'REG_LOCATION_TP.HCM'),
+            createPostbackButton('🏖️ ĐÀ NẴNG', 'REG_LOCATION_ĐÀ NẴNG')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm tùy chọn:',
+        [
+            createPostbackButton('🌊 HẢI PHÒNG', 'REG_LOCATION_HẢI PHÒNG'),
+            createPostbackButton('🏔️ CẦN THƠ', 'REG_LOCATION_CẦN THƠ'),
+            createPostbackButton('🌾 AN GIANG', 'REG_LOCATION_AN GIANG')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn khác:',
+        [
+            createPostbackButton('🏞️ KHÁC...', 'REG_LOCATION_OTHER')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'registration',
+        current_step: 3,
+        data: data
+    })
+}
+
+// Handle registration location step
+async function handleRegistrationLocation(user: any, text: string, data: any) {
+    // This will be handled by postback, but we can also handle text input
+    if (text.length < 2) {
+        await sendMessage(user.facebook_id, 'Vui lòng chọn vị trí từ danh sách bên dưới.')
+        return
+    }
+
+    data.location = text.trim()
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        `✅ Vị trí: ${data.location}`,
+        'Bước 4/4: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!',
+        'Bot Tân Dậu 1981 được tạo ra dành riêng cho cộng đồng Tân Dậu 1981.'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        '❓ Bạn có phải sinh năm 1981 không?',
+        [
+            createPostbackButton('✅ CÓ - TÔI SINH NĂM 1981', 'VERIFY_BIRTHDAY'),
+            createPostbackButton('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REJECT_BIRTHDAY')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'registration',
+        current_step: 4,
+        data: data
+    })
+}
+
+// Handle registration birthday step
+async function handleRegistrationBirthday(user: any, text: string, data: any) {
+    // This will be handled by postback buttons
+    await sendMessage(user.facebook_id, 'Vui lòng chọn từ các nút bên dưới.')
+}
+
+// Handle registration location postback
+async function handleRegistrationLocationPostback(user: any, location: string) {
+    const session = await getBotSession(user.facebook_id)
+    if (!session || session.current_flow !== 'registration') {
+        await sendMessage(user.facebook_id, 'Vui lòng bắt đầu đăng ký lại.')
+        return
+    }
+
+    const data = session.data || {}
+    data.location = location
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        `✅ Vị trí: ${location}`,
+        'Bước 4/4: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!',
+        'Bot Tân Dậu 1981 được tạo ra dành riêng cho cộng đồng Tân Dậu 1981.'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        '❓ Bạn có phải sinh năm 1981 không?',
+        [
+            createPostbackButton('✅ CÓ - TÔI SINH NĂM 1981', 'VERIFY_BIRTHDAY'),
+            createPostbackButton('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REJECT_BIRTHDAY')
+        ]
+    )
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'registration',
+        current_step: 4,
+        data: data
+    })
+}
+
+// Handle birthday verification
+async function handleBirthdayVerification(user: any) {
+    const session = await getBotSession(user.facebook_id)
+    if (!session || session.current_flow !== 'registration') {
+        await sendMessage(user.facebook_id, 'Vui lòng bắt đầu đăng ký lại.')
+        return
+    }
+
+    const data = session.data || {}
+    
+    try {
+        // Create user in database
+        const { data: newUser, error } = await supabaseAdmin
+            .from('users')
+            .insert({
+                facebook_id: user.facebook_id,
+                name: data.name,
+                phone: data.phone,
+                location: data.location,
+                birthday: 1981,
+                status: 'trial',
+                membership_expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days trial
+                referral_code: `TD1981-${user.facebook_id.slice(-6)}`
+            })
+            .select()
+            .single()
+
+        if (error) {
+            throw error
+        }
+
+        // Clear registration session
+        await updateBotSession(user.facebook_id, {
+            current_flow: null,
+            current_step: null,
+            data: {}
+        })
+
+        // Send success message
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🎉 XÁC NHẬN THÀNH CÔNG!',
+            '✅ Chào mừng anh/chị Tân Dậu 1981!\n👥 Bạn đã gia nhập cộng đồng Tân Dậu - hỗ trợ chéo',
+            `📱 Thông tin tài khoản:\n• Họ tên: ${data.name}\n• SĐT: ${data.phone}\n• Vị trí: ${data.location}\n• Sinh nhật: 1981 (42 tuổi)\n• Mã giới thiệu: TD1981-${user.facebook_id.slice(-6)}`,
+            '🎯 Trial 3 ngày miễn phí đã được kích hoạt\n⏰ Hết hạn: ' + new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN')
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🏠 VÀO TRANG CHỦ', 'MAIN_MENU'),
+                createPostbackButton('💬 HỖ TRỢ', 'SUPPORT_ADMIN')
+            ]
+        )
+    } catch (error) {
+        console.error('Error creating user:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle birthday rejection
+async function handleBirthdayRejection(user: any) {
+    // Clear registration session
+    await updateBotSession(user.facebook_id, {
+        current_flow: null,
+        current_step: null,
+        data: {}
+    })
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '⚠️ THÔNG BÁO QUAN TRỌNG',
+        'Bot Tân Dậu 1981 được tạo ra dành riêng cho cộng đồng Tân Dậu 1981.',
+        '🎯 Mục đích:\n• Kết nối mua bán trong cộng đồng cùng tuổi\n• Chia sẻ kinh nghiệm và kỷ niệm\n• Hỗ trợ lẫn nhau trong cuộc sống',
+        '💡 Nếu bạn không phải Tân Dậu 1981:\n• Có thể sử dụng các platform khác\n• Hoặc giới thiệu cho bạn bè Tân Dậu 1981'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('🔄 CHỌN LẠI 1981', 'VERIFY_BIRTHDAY'),
+            createPostbackButton('❌ THOÁT', 'MAIN_MENU')
+        ]
+    )
+}
+
 // Handle registration
 async function handleRegistration(user: any) {
     if (user.status !== 'trial' && user.status !== 'active') {
         await sendMessagesWithTyping(user.facebook_id, [
-            '📝 ĐĂNG KÝ THÀNH VIÊN\n\nChào bạn! Tôi sẽ hướng dẫn bạn đăng ký từng bước.\n\nBước 1/3: Họ tên\n👤 Vui lòng nhập họ tên đầy đủ của bạn:',
-            'VD: Nguyễn Văn Minh'
+            '📝 ĐĂNG KÝ THÀNH VIÊN\n\nChào bạn! Tôi sẽ hướng dẫn bạn đăng ký từng bước.',
+            'Bước 1/4: Họ tên\n👤 Vui lòng nhập họ tên đầy đủ của bạn:\n\nVD: Nguyễn Văn Minh'
         ])
 
-        await updateBotSession(user.id, {
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Hoặc chọn:',
+            [
+                createPostbackButton('❌ HỦY ĐĂNG KÝ', 'CANCEL_REGISTRATION')
+            ]
+        )
+
+        await updateBotSession(user.facebook_id, {
             current_flow: 'registration',
             current_step: 1,
             data: {}
