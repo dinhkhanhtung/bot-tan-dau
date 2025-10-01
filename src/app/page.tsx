@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Navigation } from '@/components/Navigation'
+import { FacebookLoginReal } from '@/components/auth/FacebookLoginReal'
+import { useUser } from '@/contexts/UserContext'
 import { 
   ShoppingBag, 
   MessageCircle, 
@@ -20,6 +22,8 @@ import {
 
 export default function HomePage() {
   const [showAgeVerification, setShowAgeVerification] = useState(false)
+  const [showFacebookLogin, setShowFacebookLogin] = useState(false)
+  const { user, loading } = useUser()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50">
@@ -217,8 +221,8 @@ export default function HomePage() {
                   </Button>
                   <Button
                     onClick={() => {
-                      alert('Tính năng Facebook Login sẽ được thêm vào sau!')
                       setShowAgeVerification(false)
+                      setShowFacebookLogin(true)
                     }}
                     className="flex-1"
                   >
@@ -241,6 +245,33 @@ export default function HomePage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Facebook Login Modal */}
+      {showFacebookLogin && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md">
+            <FacebookLoginReal 
+              onSuccess={() => {
+                setShowFacebookLogin(false)
+                // Refresh page to show user dashboard
+                window.location.reload()
+              }}
+              onError={() => {
+                setShowFacebookLogin(false)
+              }}
+            />
+            <div className="mt-4 text-center">
+              <Button
+                variant="outline"
+                onClick={() => setShowFacebookLogin(false)}
+                className="w-full"
+              >
+                Hủy
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

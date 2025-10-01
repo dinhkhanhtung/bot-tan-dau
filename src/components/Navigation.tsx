@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useUser } from '@/contexts/UserContext'
 import { 
   Home, 
   ShoppingBag, 
@@ -11,13 +13,15 @@ import {
   Users, 
   User,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react'
 import { useState } from 'react'
 
 export function Navigation() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user, signOut } = useUser()
 
   const navItems = [
     { name: 'Trang chủ', href: '/', icon: Home },
@@ -71,12 +75,39 @@ export function Navigation() {
               <Badge variant="tan" className="text-sm">
                 🐓 Tân Dậu 1981
               </Badge>
-              <Button variant="outline" size="sm">
-                Đăng tin
-              </Button>
-              <Button size="sm">
-                Đăng nhập
-              </Button>
+              {user ? (
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={user.avatar_url} />
+                      <AvatarFallback>
+                        {user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden sm:block">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {user.status === 'trial' ? 'Trial' : 'Active'}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Đăng tin
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={signOut}>
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm">
+                    Đăng tin
+                  </Button>
+                  <Button size="sm">
+                    Đăng nhập
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
