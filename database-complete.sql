@@ -438,3 +438,4 @@ AND table_name IN (
     'referrals', 'user_points', 'point_transactions', 'bot_sessions',
     'user_messages', 'spam_logs', 'admin_users'
 ) ORDER BY table_name;
+
