@@ -215,7 +215,26 @@ export async function handlePostback(user: any, payload: string) {
                 await handleCommunity(user)
                 break
             case 'PAYMENT':
-                await handlePayment(user)
+                if (params[0] === 'CONFIRM') {
+                    await handlePaymentConfirm(user)
+                } else if (params[0] === 'INFO') {
+                    await handlePaymentInfo(user)
+                } else if (params[0] === 'EXTEND') {
+                    await handlePaymentExtend(user)
+                } else if (params[0] === 'HISTORY') {
+                    await handlePaymentHistory(user)
+                } else if (params[0] === 'GUIDE') {
+                    await handlePaymentGuide(user)
+                } else if (params[0] === 'SUBMIT') {
+                    await handlePaymentSubmit(user)
+                } else if (params[0] === 'PACKAGE') {
+                    const packageType = params.slice(1).join('_')
+                    await handlePaymentPackage(user, packageType)
+                } else if (params[0] === 'UPLOAD' && params[1] === 'RECEIPT') {
+                    await handlePaymentUploadReceipt(user)
+                } else {
+                    await handlePayment(user)
+                }
                 break
             case 'HOROSCOPE':
                 await handleHoroscope(user)
@@ -2534,7 +2553,7 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
     }
 
     data.keyword = text.trim()
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         `🔍 Tìm kiếm: "${data.keyword}"\n\nĐang tìm kiếm...`
     ])
@@ -2558,7 +2577,7 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
 
             for (let i = 0; i < listings.length; i++) {
                 const listing = listings[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
@@ -2601,7 +2620,7 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
 // Handle search location input
 async function handleSearchLocationInput(user: any, text: string, data: any) {
     data.location = text.trim()
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         `🔍 Tìm kiếm: ${data.category} tại ${data.location}\n\nĐang tìm kiếm...`
     ])
@@ -2626,7 +2645,7 @@ async function handleSearchLocationInput(user: any, text: string, data: any) {
 
             for (let i = 0; i < listings.length; i++) {
                 const listing = listings[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
@@ -2789,7 +2808,7 @@ async function handleSearchLocation(user: any, location: string) {
 
     const data = session.data || {}
     data.location = location
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         `🔍 Tìm kiếm: ${data.category} tại ${location}\n\nĐang tìm kiếm...`
     ])
@@ -2814,7 +2833,7 @@ async function handleSearchLocation(user: any, location: string) {
 
             for (let i = 0; i < listings.length; i++) {
                 const listing = listings[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
@@ -2863,7 +2882,7 @@ async function handleSearchAllLocations(user: any) {
     }
 
     const data = session.data || {}
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         `🔍 Tìm kiếm: ${data.category} (Tất cả vị trí)\n\nĐang tìm kiếm...`
     ])
@@ -2887,7 +2906,7 @@ async function handleSearchAllLocations(user: any) {
 
             for (let i = 0; i < listings.length; i++) {
                 const listing = listings[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${listing.title}\n💰 ${formatCurrency(listing.price)}\n👤 ${listing.users?.name || 'N/A'}\n📍 ${listing.users?.location || 'N/A'}`,
@@ -3030,7 +3049,7 @@ async function handleRateSubmission(user: any, sellerId: string, rating: number)
 
         if (!ratingsError && ratings) {
             const averageRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
-            
+
             await supabaseAdmin
                 .from('users')
                 .update({ rating: Math.round(averageRating * 100) / 100 })
@@ -3054,6 +3073,238 @@ async function handleRateSubmission(user: any, sellerId: string, rating: number)
         console.error('Error submitting rating:', error)
         await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi đánh giá. Vui lòng thử lại sau!')
     }
+}
+
+// Handle payment confirmation
+async function handlePaymentConfirm(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '💰 XÁC NHẬN THANH TOÁN\n\nChọn gói dịch vụ:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Gói dịch vụ:',
+        [
+            createPostbackButton('💰 GÓI 1 TUẦN - 50K', 'PAYMENT_PACKAGE_1_WEEK'),
+            createPostbackButton('💎 GÓI 1 THÁNG - 200K', 'PAYMENT_PACKAGE_1_MONTH'),
+            createPostbackButton('👑 GÓI 3 THÁNG - 500K', 'PAYMENT_PACKAGE_3_MONTHS')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('❓ HƯỚNG DẪN THANH TOÁN', 'PAYMENT_GUIDE'),
+            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Handle payment info
+async function handlePaymentInfo(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        'ℹ️ THÔNG TIN THANH TOÁN\n\n💳 Phí duy trì: 1,000đ/ngày',
+        '📅 Gói dịch vụ:\n• 1 tuần: 50,000đ\n• 1 tháng: 200,000đ\n• 3 tháng: 500,000đ (tiết kiệm 100,000đ)'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Phương thức thanh toán:',
+        [
+            createPostbackButton('🏦 CHUYỂN KHOẢN', 'PAYMENT_METHOD_BANK'),
+            createPostbackButton('💳 VÍ ĐIỆN TỬ', 'PAYMENT_METHOD_WALLET'),
+            createPostbackButton('📱 THANH TOÁN QUA APP', 'PAYMENT_METHOD_APP')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
+            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Handle payment extend
+async function handlePaymentExtend(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '💰 GIA HẠN THÊM\n\nChọn gói gia hạn:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Gói gia hạn:',
+        [
+            createPostbackButton('💰 GÓI 1 TUẦN - 50K', 'PAYMENT_PACKAGE_1_WEEK'),
+            createPostbackButton('💎 GÓI 1 THÁNG - 200K', 'PAYMENT_PACKAGE_1_MONTH'),
+            createPostbackButton('👑 GÓI 3 THÁNG - 500K', 'PAYMENT_PACKAGE_3_MONTHS')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Handle payment history
+async function handlePaymentHistory(user: any) {
+    try {
+        const { data: payments, error } = await supabaseAdmin
+            .from('payments')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+        if (error) throw error
+
+        if (payments && payments.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📋 LỊCH SỬ THANH TOÁN\n\nDanh sách thanh toán gần nhất:'
+            ])
+
+            for (let i = 0; i < payments.length; i++) {
+                const payment = payments[i]
+                const status = payment.status === 'approved' ? '✅' : payment.status === 'rejected' ? '❌' : '⏳'
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${status} ${formatCurrency(payment.amount)}\n📅 ${new Date(payment.created_at).toLocaleDateString('vi-VN')}\n⏰ ${new Date(payment.created_at).toLocaleTimeString('vi-VN')}`,
+                    [
+                        createPostbackButton('👀 XEM CHI TIẾT', `PAYMENT_DETAILS_${payment.id}`),
+                        createPostbackButton('📸 XEM BIÊN LAI', `PAYMENT_RECEIPT_${payment.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📋 LỊCH SỬ THANH TOÁN\n\n❌ Bạn chưa có thanh toán nào!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
+                createPostbackButton('🔄 LÀM MỚI', 'PAYMENT_HISTORY'),
+                createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling payment history:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải lịch sử thanh toán!')
+    }
+}
+
+// Handle payment guide
+async function handlePaymentGuide(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📖 HƯỚNG DẪN THANH TOÁN\n\nCách thức thanh toán:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Phương thức:',
+        [
+            createPostbackButton('🏦 CHUYỂN KHOẢN', 'PAYMENT_GUIDE_BANK'),
+            createPostbackButton('💳 VÍ ĐIỆN TỬ', 'PAYMENT_GUIDE_WALLET'),
+            createPostbackButton('📱 THANH TOÁN QUA APP', 'PAYMENT_GUIDE_APP')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_CONFIRM'),
+            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Handle payment package selection
+async function handlePaymentPackage(user: any, packageType: string) {
+    let packageInfo: { name: string; price: number; days: number } = { name: '', price: 0, days: 0 }
+    
+    switch (packageType) {
+        case '1_WEEK':
+            packageInfo = { name: 'Gói 1 tuần', price: 50000, days: 7 }
+            break
+        case '1_MONTH':
+            packageInfo = { name: 'Gói 1 tháng', price: 200000, days: 30 }
+            break
+        case '3_MONTHS':
+            packageInfo = { name: 'Gói 3 tháng', price: 500000, days: 90 }
+            break
+        default:
+            await sendMessage(user.facebook_id, 'Gói dịch vụ không hợp lệ!')
+            return
+    }
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        `💰 ${packageInfo.name}\n\n💵 Giá: ${formatCurrency(packageInfo.price)}\n📅 Thời gian: ${packageInfo.days} ngày\n💳 Phí: ${formatCurrency(packageInfo.price / packageInfo.days)}/ngày`
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Xác nhận thanh toán:',
+        [
+            createPostbackButton('✅ XÁC NHẬN', `PAYMENT_SUBMIT_${packageType}`),
+            createPostbackButton('❌ HỦY', 'PAYMENT_CONFIRM')
+        ]
+    )
+}
+
+// Handle payment submission
+async function handlePaymentSubmit(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '💰 THANH TOÁN\n\nThông tin chuyển khoản:'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🏦 THÔNG TIN CHUYỂN KHOẢN\n\n📧 STK: 1234567890\n🏦 Ngân hàng: Vietcombank\n👤 Chủ TK: NGUYEN VAN A\n💬 Nội dung: TD1981-[SỐ ĐIỆN THOẠI]'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Sau khi chuyển khoản:',
+        [
+            createPostbackButton('📸 GỬI BIÊN LAI', 'PAYMENT_UPLOAD_RECEIPT'),
+            createPostbackButton('📞 LIÊN HỆ HỖ TRỢ', 'SUPPORT_ADMIN'),
+            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Handle payment upload receipt
+async function handlePaymentUploadReceipt(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📸 GỬI BIÊN LAI\n\nVui lòng gửi hình ảnh biên lai chuyển khoản:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Lưu ý:',
+        [
+            createPostbackButton('📋 HƯỚNG DẪN CHỤP ẢNH', 'PAYMENT_PHOTO_GUIDE'),
+            createPostbackButton('❌ HỦY', 'PAYMENT_CONFIRM')
+        ]
+    )
+
+    // Store payment session
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'payment',
+        current_step: 1,
+        data: { waiting_for_receipt: true }
+    })
 }
 
 // Handle community
@@ -3090,6 +3341,7 @@ async function handleCommunity(user: any) {
 
 // Handle payment
 async function handlePayment(user: any) {
+    // Check if user is in trial and about to expire
     if (isTrialUser(user.membership_expires_at)) {
         const daysLeft = daysUntilExpiry(user.membership_expires_at!)
         await sendMessagesWithTyping(user.facebook_id, [
@@ -3106,9 +3358,24 @@ async function handlePayment(user: any) {
                 createPostbackButton('ℹ️ TÌM HIỂU', 'PAYMENT_INFO')
             ]
         )
+    } else if (isExpiredUser(user.membership_expires_at)) {
+        await sendExpiredMessage(user.facebook_id)
     } else {
-        await sendMessage(user.facebook_id, 'Tài khoản của bạn đã được thanh toán!')
-        await showMainMenu(user)
+        // User has active membership
+        await sendMessagesWithTyping(user.facebook_id, [
+            '💳 THANH TOÁN & GIA HẠN\n\nTài khoản của bạn đang hoạt động!',
+            '📅 Hết hạn: ' + new Date(user.membership_expires_at!).toLocaleDateString('vi-VN')
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('💰 GIA HẠN THÊM', 'PAYMENT_EXTEND'),
+                createPostbackButton('📋 LỊCH SỬ THANH TOÁN', 'PAYMENT_HISTORY'),
+                createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
     }
 }
 
