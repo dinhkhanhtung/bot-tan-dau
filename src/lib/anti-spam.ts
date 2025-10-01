@@ -117,6 +117,7 @@ async function checkIdenticalMessages(facebookId: string, message: string): Prom
 
         if (error) {
             console.error('Error checking identical messages:', error)
+            // Fallback: return 0 if table doesn't exist
             return 0
         }
 
@@ -135,6 +136,7 @@ async function checkIdenticalMessages(facebookId: string, message: string): Prom
         return identicalCount
     } catch (error) {
         console.error('Error in checkIdenticalMessages:', error)
+        // Fallback: return 0 if any error
         return 0
     }
 }

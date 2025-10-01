@@ -22,13 +22,19 @@ async function isAdmin(facebookId: string): Promise<boolean> {
 
         if (error) {
             console.error('Error checking admin status:', error)
-            return false
+            // Fallback: check environment variable if table doesn't exist
+            const adminIds = process.env.ADMIN_IDS || ''
+            const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
+            return envAdmins.includes(facebookId)
         }
 
         return !!data
     } catch (error) {
         console.error('Error in isAdmin function:', error)
-        return false
+        // Fallback: check environment variable
+        const adminIds = process.env.ADMIN_IDS || ''
+        const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
+        return envAdmins.includes(facebookId)
     }
 }
 
@@ -376,7 +382,7 @@ export async function handleAdminSettings(user: any) {
 // Handle admin manage admins
 export async function handleAdminManageAdmins(user: any) {
     await sendTypingIndicator(user.facebook_id)
-    
+
     try {
         const { data: admins, error } = await supabaseAdmin
             .from('admin_users')
@@ -389,7 +395,7 @@ export async function handleAdminManageAdmins(user: any) {
             return
         }
 
-        const adminList = admins && admins.length > 0 
+        const adminList = admins && admins.length > 0
             ? admins.map((admin, index) => `${index + 1}. ${admin.name} (${admin.role})\n   ID: ${admin.facebook_id}`).join('\n')
             : '📭 Chưa có admin nào!'
 
