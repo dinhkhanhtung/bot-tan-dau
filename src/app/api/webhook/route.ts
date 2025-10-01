@@ -179,7 +179,7 @@ async function handleMessageEvent(event: any) {
                             name: 'Admin',
                             membership_expires_at: null
                         }
-                        
+
                         const { handleAdminCommand } = await import('@/lib/handlers/admin-handlers')
                         await handleAdminCommand(adminUser)
                         return

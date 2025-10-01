@@ -247,15 +247,6 @@ export async function handlePointsRedeem(user: any) {
         [
             createPostbackButton('💳 10% phí niêm yết - 100 điểm', 'REDEEM_DISCOUNT_100'),
             createPostbackButton('⏰ 1 ngày miễn phí - 200 điểm', 'REDEEM_FREE_200'),
-            createPostbackButton('⭐ Featured listing 1 tuần - 500 điểm', 'REDEEM_FEATURED_500')
-        ]
-    )
-
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Thêm:',
-        [
-            createPostbackButton('🎉 1 tuần miễn phí - 1000 điểm', 'REDEEM_FREE_WEEK_1000'),
             createPostbackButton('🔙 QUAY LẠI', 'POINTS')
         ]
     )

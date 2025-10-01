@@ -135,14 +135,6 @@ export async function handleAdminPayments(user: any) {
             [
                 createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
                 createPostbackButton('🔍 TÌM KIẾM', 'ADMIN_SEARCH_PAYMENT'),
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_PAYMENTS')
-            ]
-        )
-
-        await sendButtonTemplate(
-            user.facebook_id,
-            'Điều hướng:',
-            [
                 createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
             ]
         )
@@ -184,17 +176,7 @@ export async function handleAdminUsers(user: any) {
             'Chức năng:',
             [
                 createPostbackButton('🔍 TÌM THEO TÊN', 'ADMIN_SEARCH_USER_NAME'),
-                createPostbackButton('🔍 TÌM THEO SĐT', 'ADMIN_SEARCH_USER_PHONE'),
-                createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_USERS')
-            ]
-        )
-
-        await sendButtonTemplate(
-            user.facebook_id,
-            'Tiếp tục:',
-            [
-                createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT_USERS'),
-                createPostbackButton('⚠️ VI PHẠM', 'ADMIN_VIOLATIONS'),
+                createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_USERS'),
                 createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
             ]
         )
@@ -238,16 +220,6 @@ export async function handleAdminListings(user: any) {
             [
                 createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_LISTINGS'),
                 createPostbackButton('⚠️ KIỂM DUYỆT', 'ADMIN_MODERATE_LISTINGS'),
-                createPostbackButton('⭐ FEATURED', 'ADMIN_FEATURED_LISTINGS')
-            ]
-        )
-
-        await sendButtonTemplate(
-            user.facebook_id,
-            'Tiếp tục:',
-            [
-                createPostbackButton('🔍 TÌM KIẾM', 'ADMIN_SEARCH_LISTINGS'),
-                createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT_LISTINGS'),
                 createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
             ]
         )
@@ -312,8 +284,6 @@ export async function handleAdminStats(user: any) {
             [
                 createPostbackButton('📈 XEM CHI TIẾT', 'ADMIN_DETAILED_STATS'),
                 createPostbackButton('📊 XUẤT BÁO CÁO', 'ADMIN_EXPORT_COMPREHENSIVE'),
-                createPostbackButton('📅 THEO NGÀY', 'ADMIN_EXPORT_BY_DATE'),
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_STATS'),
                 createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
             ]
         )

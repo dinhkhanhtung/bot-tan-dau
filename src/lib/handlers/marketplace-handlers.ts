@@ -145,7 +145,7 @@ async function handleListingDescriptionInput(user: any, text: string, data: any)
     ])
 
     // Show location buttons - only major cities first
-    const majorCities = ['HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ']
+    const majorCities = ['HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG']
 
     await sendButtonTemplate(
         user.facebook_id,

@@ -150,10 +150,6 @@ async function handleRegistrationPhone(user: any, text: string, data: any) {
         [
             createPostbackButton('🏠 HÀ NỘI', 'REG_LOCATION_HANOI'),
             createPostbackButton('🏢 TP.HCM', 'REG_LOCATION_HCM'),
-            createPostbackButton('🏖️ ĐÀ NẴNG', 'REG_LOCATION_DANANG'),
-            createPostbackButton('🌊 HẢI PHÒNG', 'REG_LOCATION_HAIPHONG'),
-            createPostbackButton('🏔️ CẦN THƠ', 'REG_LOCATION_CANTHO'),
-            createPostbackButton('🌾 AN GIANG', 'REG_LOCATION_ANGIANG'),
             createPostbackButton('🏞️ KHÁC...', 'REG_LOCATION_OTHER')
         ]
     )
