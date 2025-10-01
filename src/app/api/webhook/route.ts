@@ -103,7 +103,7 @@ async function handleMessageEvent(event: any) {
         user = await createUserFromFacebook(senderId)
         if (!user) {
             console.error('Failed to create user for facebook_id:', senderId)
-            await sendMessage(senderId, 'Xin lỗi, có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại sau.')
+            // Don't send message if user creation failed - just log and return
             return
         }
         console.log('Successfully created user:', user.id)
@@ -207,6 +207,9 @@ async function getUserByFacebookId(facebookId: string) {
 
 async function createUserFromFacebook(facebookId: string) {
     try {
+        // Generate referral code
+        const referralCode = `TD1981-${facebookId.slice(-6)}`
+        
         // Create a basic user record
         const { data, error } = await supabaseAdmin
             .from('users')
@@ -214,12 +217,11 @@ async function createUserFromFacebook(facebookId: string) {
                 facebook_id: facebookId,
                 name: 'User',
                 phone: '',
-                email: '',
-                birth_year: 1981,
-                is_verified: false,
-                membership_expires_at: null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                location: 'HÀ NỘI',
+                birthday: 1981,
+                status: 'trial',
+                membership_expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days trial
+                referral_code: referralCode
             })
             .select()
             .single()
