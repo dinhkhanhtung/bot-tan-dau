@@ -503,7 +503,7 @@ async function showMainMenu(user: any) {
 export async function handleDefaultMessage(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
-    await sendMessage(user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu 1981!')
+    await sendMessage(user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
 
     await sendButtonTemplate(
         user.facebook_id,
