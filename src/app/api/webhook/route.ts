@@ -157,7 +157,9 @@ async function handlePostbackEvent(event: any) {
         } catch (error) {
             console.error('Error handling postback for unregistered user:', error)
             try {
-                await sendMessageToUser(senderId, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+                const { sendMessage } = await import('@/lib/facebook-api')
+                await sendMessage(senderId, '❌ Bạn cần đăng ký trước để sử dụng chức năng này!')
+                await sendMessage(senderId, 'Nhấn "ĐĂNG KÝ" để tạo tài khoản.')
             } catch (sendError) {
                 console.error('Error sending error message:', sendError)
             }

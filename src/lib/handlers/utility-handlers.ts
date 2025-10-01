@@ -270,18 +270,18 @@ export async function handleSettings(user: any) {
         'Quản lý tài khoản và cài đặt:'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Cài đặt:',
         [
-            createPostbackButton('👤 THÔNG TIN CÁ NHÂN', 'SETTINGS_PROFILE'),
-            createPostbackButton('🔔 THÔNG BÁO', 'SETTINGS_NOTIFICATIONS'),
-            createPostbackButton('🔒 BẢO MẬT', 'SETTINGS_SECURITY'),
-            createPostbackButton('🌐 NGÔN NGỮ', 'SETTINGS_LANGUAGE'),
-            createPostbackButton('🎨 GIAO DIỆN', 'SETTINGS_THEME'),
-            createPostbackButton('📊 PRIVACY', 'SETTINGS_PRIVACY'),
-            createPostbackButton('❓ HỖ TRỢ', 'SUPPORT'),
-            createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+            createQuickReply('👤 THÔNG TIN CÁ NHÂN', 'SETTINGS_PROFILE'),
+            createQuickReply('🔔 THÔNG BÁO', 'SETTINGS_NOTIFICATIONS'),
+            createQuickReply('🔒 BẢO MẬT', 'SETTINGS_SECURITY'),
+            createQuickReply('🌐 NGÔN NGỮ', 'SETTINGS_LANGUAGE'),
+            createQuickReply('🎨 GIAO DIỆN', 'SETTINGS_THEME'),
+            createQuickReply('📊 PRIVACY', 'SETTINGS_PRIVACY'),
+            createQuickReply('❓ HỖ TRỢ', 'SUPPORT'),
+            createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
         ]
     )
 }
