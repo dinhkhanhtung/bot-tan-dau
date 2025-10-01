@@ -35,6 +35,12 @@ import {
 // Main message handler
 export async function handleMessage(user: any, text: string) {
     try {
+        // Check if user exists
+        if (!user) {
+            await sendMessage('123456789', 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.')
+            return
+        }
+
         // Check if user is expired
         if (isExpiredUser(user.membership_expires_at)) {
             await sendExpiredMessage(user.facebook_id)
