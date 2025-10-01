@@ -6,7 +6,7 @@ import {
     sendButtonTemplate,
     createPostbackButton
 } from './facebook-api'
-import { isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from './utils'
+import { isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession } from './utils'
 
 // Import handlers from modules
 import * as AuthHandlers from './handlers/auth-handlers'
@@ -84,7 +84,7 @@ export async function handleMessage(user: any, text: string) {
             await UtilityHandlers.handleSettings(user)
         } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
             await UtilityHandlers.handleSupport(user)
-        } else if (text.includes('admin') || text.includes('ADMIN')) {
+        } else if (text === '/admin') {
             await AdminHandlers.handleAdminCommand(user)
         } else {
             // Check if user is registered

@@ -190,7 +190,7 @@ async function handleTextMessage(user: any, text: string) {
     }
 
     // Check if user is admin
-    if (text === '/admin' && user.facebook_id === 'admin') {
+    if (text === '/admin') {
         try {
             await handleAdminCommand(user, text)
         } catch (error) {
@@ -217,7 +217,8 @@ async function handleTextMessage(user: any, text: string) {
 
     // Handle regular user messages
     try {
-        await handleUserMessage(user, text)
+        const { handleMessage } = await import('@/lib/bot-handlers')
+        await handleMessage(user, text)
     } catch (error) {
         console.error('Error handling user message:', error)
         try {
