@@ -179,9 +179,9 @@ export async function handleListingCity(user: any, city: string) {
     data.city = city
 
     // Show districts for selected city
-    const districts = DISTRICTS[city as keyof typeof DISTRICTS] || []
+    const districts = DISTRICTS[city as keyof typeof DISTRICTS]
 
-    if (districts.length === 0) {
+    if (!districts) {
         // No districts, use city as location
         data.location = city
         await handleListingLocation(user, city)
