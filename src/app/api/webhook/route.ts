@@ -99,22 +99,18 @@ async function handleMessageEvent(event: any) {
             return
         }
 
-        // Get or create user
-        let user = await getUserByFacebookId(senderId)
+        // Get user (don't auto-create)
+        const user = await getUserByFacebookId(senderId)
         if (!user) {
-            console.log('User not found, creating new user for facebook_id:', senderId)
-            user = await createUserFromFacebook(senderId)
-            if (!user) {
-                console.error('Failed to create user for facebook_id:', senderId)
-                // Send error message to the actual sender, not a hardcoded ID
-                try {
-                    await sendMessageToUser(senderId, 'Xin lỗi, có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại sau.')
-                } catch (sendError) {
-                    console.error('Error sending error message:', sendError)
-                }
-                return
+            console.log('User not found for facebook_id:', senderId)
+            // Send welcome message for new users
+            try {
+                const { handleDefaultMessage } = await import('@/lib/bot-handlers')
+                await handleDefaultMessage({ facebook_id: senderId })
+            } catch (error) {
+                console.error('Error sending welcome message:', error)
             }
-            console.log('Successfully created user:', user.id)
+            return
         }
 
         // Handle different message types
@@ -145,15 +141,22 @@ async function handlePostbackEvent(event: any) {
     // Get user
     const user = await getUserByFacebookId(senderId)
     if (!user) {
+        // Handle postback for unregistered users
         try {
-            await sendMessageToUser(senderId, 'Vui lòng đăng ký trước khi sử dụng bot!')
+            const { handlePostback } = await import('@/lib/bot-handlers')
+            await handlePostback({ facebook_id: senderId }, payload)
         } catch (error) {
-            console.error('Error sending message to unregistered user:', error)
+            console.error('Error handling postback for unregistered user:', error)
+            try {
+                await sendMessageToUser(senderId, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+            } catch (sendError) {
+                console.error('Error sending error message:', sendError)
+            }
         }
         return
     }
 
-    // Handle postback payload
+    // Handle postback payload for registered users
     try {
         await handlePostback(user, payload)
     } catch (error) {
@@ -353,8 +356,9 @@ async function updateBotSession(userId: string, sessionData: any) {
 
 // Import bot handlers
 async function handleUserMessage(user: any, text: string) {
-    const { handleMessage } = await import('@/lib/bot-handlers')
-    await handleMessage(user, text)
+    // For registered users, use the registered user menu
+    const { handleDefaultMessageRegistered } = await import('@/lib/bot-handlers')
+    await handleDefaultMessageRegistered(user)
 }
 
 async function handlePostback(user: any, payload: string) {

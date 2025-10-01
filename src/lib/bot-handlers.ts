@@ -159,6 +159,21 @@ export async function handlePostback(user: any, payload: string) {
                     await showMainMenu(user)
                 }
                 break
+            case 'BUY':
+                if (params[0] === 'SELL') {
+                    await handleBuySell(user)
+                }
+                break
+            case 'SEARCH':
+                if (params[0] === 'UPDATE') {
+                    await handleSearchUpdate(user)
+                }
+                break
+            case 'SUPPORT':
+                if (params[0] === 'ADMIN') {
+                    await handleSupportAdmin(user)
+                }
+                break
             default:
                 await handleDefaultMessage(user)
         }
@@ -443,6 +458,69 @@ async function handleSearchKeyword(user: any) {
     await showMainMenu(user)
 }
 
+// Handle buy & sell for new users
+async function handleBuySell(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🛒 MUA BÁN & TÌM KIẾM\n\nChào mừng bạn đến với cộng đồng Tân Dậu 1981!',
+        'Để sử dụng đầy đủ tính năng mua bán, bạn cần đăng ký thành viên trước.'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Bạn muốn:',
+        [
+            createPostbackButton('📝 ĐĂNG KÝ NGAY', 'REGISTER'),
+            createPostbackButton('🔍 XEM TRƯỚC', 'SEARCH'),
+            createPostbackButton('❓ HỎI THÊM', 'SUPPORT_ADMIN')
+        ]
+    )
+}
+
+// Handle search & update for registered users
+async function handleSearchUpdate(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🔍 TÌM KIẾM & CẬP NHẬT\n\nChọn chức năng bạn muốn:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tìm kiếm:',
+        [
+            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
+            createPostbackButton('🛒 NIÊM YẾT', 'LISTING'),
+            createPostbackButton('👥 CỘNG ĐỒNG', 'COMMUNITY')
+        ]
+    )
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Cập nhật:',
+        [
+            createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS'),
+            createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS'),
+            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE')
+        ]
+    )
+}
+
+// Handle support admin
+async function handleSupportAdmin(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '👨‍💼 CHAT VỚI ADMIN\n\nAdmin sẽ hỗ trợ bạn trong thời gian sớm nhất!',
+        'Trong khi chờ đợi, bạn có thể:'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📝 ĐĂNG KÝ', 'REGISTER'),
+            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
+            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
 // Handle community
 async function handleCommunity(user: any) {
     await sendButtonTemplate(
@@ -608,29 +686,37 @@ async function handleSupport(user: any) {
     )
 }
 
-// Handle default message
+// Handle default message for new users
 async function handleDefaultMessage(user: any) {
     await sendMessagesWithTyping(user.facebook_id, [
-        '🤖 Tôi đã sẵn sàng hỗ trợ bạn!',
-        'Bạn có thể hỏi tôi về:\n• Tìm kiếm sản phẩm/dịch vụ\n• Hướng dẫn sử dụng\n• Thông tin cộng đồng\n• Tử vi hàng ngày'
+        '👋 Chào bạn! Hôm nay bạn muốn...',
+        'Tôi có thể giúp bạn:\n• Tìm kiếm sản phẩm/dịch vụ\n• Mua bán an toàn\n• Kết nối cộng đồng Tân Dậu 1981'
     ])
 
     await sendButtonTemplate(
         user.facebook_id,
-        'Chọn chức năng bạn muốn sử dụng:',
+        'Chọn chức năng bạn muốn:',
         [
-            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('❓ HỖ TRỢ', 'SUPPORT'),
-            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE')
+            createPostbackButton('🛒 MUA BÁN & TÌM KIẾM', 'BUY_SELL'),
+            createPostbackButton('📝 ĐĂNG KÝ VÀ CẬP NHẬT', 'REGISTER'),
+            createPostbackButton('👨‍💼 CHAT VỚI ADMIN', 'SUPPORT_ADMIN')
         ]
     )
-    
-    // Send second set of buttons
+}
+
+// Handle default message for registered users
+async function handleDefaultMessageRegistered(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        `👋 Chào anh/chị ${user.name}!`,
+        'Hôm nay bạn muốn làm gì?'
+    ])
+
     await sendButtonTemplate(
         user.facebook_id,
-        'Thêm tùy chọn:',
+        'Chọn chức năng:',
         [
-            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createPostbackButton('🔍 TÌM KIẾM & CẬP NHẬT', 'SEARCH_UPDATE'),
+            createPostbackButton('👨‍💼 CHAT VỚI ADMIN', 'SUPPORT_ADMIN')
         ]
     )
 }
