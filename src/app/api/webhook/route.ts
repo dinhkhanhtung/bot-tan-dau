@@ -112,26 +112,31 @@ async function handleMessageEvent(event: any) {
             return
         }
 
-        // Check for spam before processing
-        const { checkSpam, isUserBlocked, sendSpamWarning, sendSpamBlockMessage } = await import('@/lib/anti-spam')
+        // Get user first to check if they exist
+        const user = await getUserByFacebookId(senderId)
         
-        // Check if user is currently blocked
-        if (isUserBlocked(senderId)) {
-            await sendSpamBlockMessage(senderId)
-            return
-        }
+        // Only check spam for registered users
+        if (user) {
+            const { checkSpam, isUserBlocked, sendSpamWarning, sendSpamBlockMessage } = await import('@/lib/anti-spam')
+            
+            // Check if user is currently blocked
+            if (isUserBlocked(senderId)) {
+                await sendSpamBlockMessage(senderId)
+                return
+            }
 
-        // Check for spam
-        const spamCheck = await checkSpam(senderId, message.text || '')
-        
-        if (spamCheck.shouldBlock) {
-            await sendSpamBlockMessage(senderId)
-            return
-        }
+            // Check for spam
+            const spamCheck = await checkSpam(senderId, message.text || '')
+            
+            if (spamCheck.shouldBlock) {
+                await sendSpamBlockMessage(senderId)
+                return
+            }
 
-        if (spamCheck.warningCount > 0) {
-            await sendSpamWarning(senderId, spamCheck.warningCount)
-            // Continue processing but with warning
+            if (spamCheck.warningCount > 0) {
+                await sendSpamWarning(senderId, spamCheck.warningCount)
+                // Continue processing but with warning
+            }
         }
 
         // Log message to database for spam tracking
@@ -141,11 +146,72 @@ async function handleMessageEvent(event: any) {
             console.error('Error logging message:', error)
         }
 
-        // Get user (don't auto-create)
-        const user = await getUserByFacebookId(senderId)
+        // Check if user exists (already got user above)
         if (!user) {
             console.log('User not found for facebook_id:', senderId)
-            // Send welcome message for new users
+            
+            // Handle Quick Reply for unregistered users
+            if (message.quick_reply?.payload) {
+                console.log('Handling Quick Reply for unregistered user:', message.quick_reply.payload)
+                try {
+                    const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
+                    
+                    switch (message.quick_reply.payload) {
+                        case 'REGISTER':
+                            await sendMessage(senderId, '📝 BẮT ĐẦU ĐĂNG KÝ')
+                            await sendMessage(senderId, 'Để đăng ký, bạn cần cung cấp thông tin cá nhân. Hãy bắt đầu bằng cách gửi họ tên của bạn.')
+                            // Start registration flow
+                            const { updateBotSession } = await import('@/lib/utils')
+                            await updateBotSession(senderId, {
+                                current_flow: 'registration',
+                                current_step: 1,
+                                registration_data: {}
+                            })
+                            break
+                        case 'INFO':
+                            await sendMessage(senderId, 'ℹ️ THÔNG TIN BOT TÂN DẬU 1981')
+                            await sendMessage(senderId, 'Bot Tân Dậu 1981 là nền tảng kết nối cộng đồng sinh năm 1981. Chúng tôi cung cấp:')
+                            await sendMessage(senderId, '• 🛒 Niêm yết sản phẩm/dịch vụ\n• 🔍 Tìm kiếm và kết nối\n• 👥 Cộng đồng Tân Dậu\n• 💰 Thanh toán an toàn\n• ⭐ Hệ thống đánh giá')
+                            await sendQuickReply(
+                                senderId,
+                                'Bạn muốn:',
+                                [
+                                    createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+                                    createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
+                                ]
+                            )
+                            break
+                        case 'CONTACT_ADMIN':
+                            await sendMessage(senderId, '💬 LIÊN HỆ ADMIN')
+                            await sendMessage(senderId, 'Để được hỗ trợ, vui lòng liên hệ:\n📞 Hotline: 0901 234 567\n📧 Email: admin@tandau1981.com\n⏰ Thời gian: 8:00 - 22:00')
+                            await sendQuickReply(
+                                senderId,
+                                'Bạn muốn:',
+                                [
+                                    createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+                                    createQuickReply('ℹ️ TÌM HIỂU', 'INFO')
+                                ]
+                            )
+                            break
+                        default:
+                            await sendMessage(senderId, '❌ Lựa chọn không hợp lệ. Vui lòng chọn lại.')
+                            await sendQuickReply(
+                                senderId,
+                                'Bạn muốn:',
+                                [
+                                    createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+                                    createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
+                                    createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
+                                ]
+                            )
+                    }
+                } catch (error) {
+                    console.error('Error handling Quick Reply for unregistered user:', error)
+                }
+                return
+            }
+            
+            // Send welcome message for new users (only if not Quick Reply)
             try {
                 const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
                 await sendMessage(senderId, '👋 Chào mừng bạn đến với Bot Tân Dậu 1981!')
