@@ -10,68 +10,124 @@ export const BOT_CONFIG = {
 // Categories and Subcategories
 export const CATEGORIES = {
     'BẤT ĐỘNG SẢN': {
-        'NHÀ Ở': ['Nhà riêng', 'Nhà phố', 'Biệt thự', 'Nhà cấp 4'],
-        'CHUNG CƯ': ['Căn hộ', 'Penthouse', 'Duplex'],
-        'MẶT BẰNG': ['Mặt bằng kinh doanh', 'Văn phòng', 'Kho bãi'],
-        'ĐẤT NỀN': ['Đất thổ cư', 'Đất nông nghiệp', 'Đất dự án']
+        icon: '🏠',
+        name: 'BẤT ĐỘNG SẢN',
+        keywords: ['nhà', 'đất', 'bất động sản', 'real estate', 'property', 'nhà ở', 'chung cư', 'mặt bằng', 'đất nền', 'biệt thự', 'nhà phố', 'apartment', 'house', 'land'],
+        subcategories: [
+            { key: 'NHÀ_Ở', icon: '🏘️', name: 'NHÀ Ở', keywords: ['nhà riêng', 'nhà phố', 'biệt thự', 'nhà cấp 4', 'house', 'villa', 'townhouse', 'detached house'] },
+            { key: 'CHUNG_CƯ', icon: '🏢', name: 'CHUNG CƯ', keywords: ['căn hộ', 'penthouse', 'duplex', 'apartment', 'condo', 'studio', 'loft'] },
+            { key: 'MẶT_BẰNG', icon: '🏪', name: 'MẶT BẰNG', keywords: ['mặt bằng kinh doanh', 'văn phòng', 'kho bãi', 'shop', 'office', 'warehouse', 'commercial'] },
+            { key: 'ĐẤT_NỀN', icon: '🌾', name: 'ĐẤT NỀN', keywords: ['đất thổ cư', 'đất nông nghiệp', 'đất dự án', 'land', 'plot', 'agricultural land', 'residential land'] }
+        ]
     },
     'Ô TÔ': {
-        'SEDAN': ['Honda City', 'Toyota Vios', 'Hyundai Accent', 'Kia Cerato'],
-        'SUV': ['Honda CR-V', 'Toyota Fortuner', 'Mazda CX-5', 'Hyundai Tucson'],
-        'HATCHBACK': ['Honda Jazz', 'Toyota Yaris', 'Ford Fiesta', 'Hyundai i10'],
-        'PICKUP': ['Ford Ranger', 'Toyota Hilux', 'Isuzu D-Max', 'Mitsubishi Triton']
+        icon: '🚗',
+        name: 'Ô TÔ',
+        keywords: ['xe hơi', 'ô tô', 'car', 'automobile', 'vehicle', 'xe', 'honda', 'toyota', 'hyundai', 'kia', 'mazda', 'ford', 'chevrolet', 'nissan', 'mitsubishi'],
+        subcategories: [
+            { key: 'SEDAN', icon: '🚙', name: 'SEDAN', keywords: ['honda city', 'toyota vios', 'hyundai accent', 'kia cerato', 'sedan', 'xe sedan', '4 cửa'] },
+            { key: 'SUV', icon: '🚐', name: 'SUV', keywords: ['honda cr-v', 'toyota fortuner', 'mazda cx-5', 'hyundai tucson', 'suv', 'xe suv', '7 chỗ', '5 chỗ'] },
+            { key: 'HATCHBACK', icon: '🚗', name: 'HATCHBACK', keywords: ['honda jazz', 'toyota yaris', 'ford fiesta', 'hyundai i10', 'hatchback', 'xe hatchback', 'xe nhỏ'] },
+            { key: 'PICKUP', icon: '🛻', name: 'PICKUP', keywords: ['ford ranger', 'toyota hilux', 'isuzu d-max', 'mitsubishi triton', 'pickup', 'xe bán tải', 'xe tải nhỏ'] }
+        ]
     },
     'ĐIỆN TỬ': {
-        'ĐIỆN THOẠI': ['iPhone', 'Samsung Galaxy', 'Xiaomi', 'Oppo', 'Vivo'],
-        'LAPTOP': ['MacBook', 'Dell', 'HP', 'Asus', 'Lenovo'],
-        'TABLET': ['iPad', 'Samsung Tab', 'Huawei', 'Xiaomi'],
-        'PHỤ KIỆN': ['Tai nghe', 'Sạc', 'Ốp lưng', 'Cáp']
+        icon: '📱',
+        name: 'ĐIỆN TỬ',
+        keywords: ['điện tử', 'điện thoại', 'laptop', 'máy tính', 'tablet', 'phụ kiện', 'electronics', 'phone', 'computer', 'accessories', 'iphone', 'samsung', 'xiaomi', 'oppo', 'vivo'],
+        subcategories: [
+            { key: 'ĐIỆN_THOẠI', icon: '📱', name: 'ĐIỆN THOẠI', keywords: ['iphone', 'samsung galaxy', 'xiaomi', 'oppo', 'vivo', 'điện thoại', 'smartphone', 'mobile phone', 'cell phone'] },
+            { key: 'LAPTOP', icon: '💻', name: 'LAPTOP', keywords: ['macbook', 'dell', 'hp', 'asus', 'lenovo', 'laptop', 'máy tính xách tay', 'notebook', 'computer'] },
+            { key: 'TABLET', icon: '📱', name: 'TABLET', keywords: ['ipad', 'samsung tab', 'huawei', 'xiaomi', 'tablet', 'máy tính bảng', 'ipad pro', 'galaxy tab'] },
+            { key: 'PHỤ_KIỆN', icon: '🎧', name: 'PHỤ KIỆN', keywords: ['tai nghe', 'sạc', 'ốp lưng', 'cáp', 'headphone', 'charger', 'case', 'cable', 'accessories', 'phụ kiện'] }
+        ]
     },
     'THỜI TRANG': {
-        'QUẦN ÁO NAM': ['Áo sơ mi', 'Quần âu', 'Áo thun', 'Quần jean'],
-        'QUẦN ÁO NỮ': ['Váy', 'Đầm', 'Áo blouse', 'Quần short'],
-        'GIÀY DÉP': ['Giày thể thao', 'Giày tây', 'Dép', 'Sandal'],
-        'PHỤ KIỆN': ['Túi xách', 'Ví', 'Đồng hồ', 'Trang sức']
+        icon: '👕',
+        name: 'THỜI TRANG',
+        keywords: ['thời trang', 'quần áo', 'giày dép', 'phụ kiện', 'fashion', 'clothing', 'shoes', 'accessories', 'quần', 'áo', 'váy', 'đầm', 'giày', 'dép'],
+        subcategories: [
+            { key: 'QUẦN_ÁO_NAM', icon: '👔', name: 'QUẦN ÁO NAM', keywords: ['áo sơ mi', 'quần âu', 'áo thun', 'quần jean', 'áo polo', 'quần short', 'áo khoác', 'men clothing', 'nam'] },
+            { key: 'QUẦN_ÁO_NỮ', icon: '👗', name: 'QUẦN ÁO NỮ', keywords: ['váy', 'đầm', 'áo blouse', 'quần short', 'áo thun nữ', 'quần jean nữ', 'áo khoác nữ', 'women clothing', 'nữ'] },
+            { key: 'GIÀY_DÉP', icon: '👟', name: 'GIÀY DÉP', keywords: ['giày thể thao', 'giày tây', 'dép', 'sandal', 'boots', 'sneakers', 'shoes', 'footwear'] },
+            { key: 'PHỤ_KIỆN', icon: '👜', name: 'PHỤ KIỆN', keywords: ['túi xách', 'ví', 'đồng hồ', 'trang sức', 'bag', 'wallet', 'watch', 'jewelry', 'accessories'] }
+        ]
     },
     'ẨM THỰC': {
-        'MÓN ĂN': ['Cơm', 'Phở', 'Bún', 'Chả cá'],
-        'ĐỒ UỐNG': ['Cà phê', 'Trà sữa', 'Nước ép', 'Sinh tố'],
-        'BÁNH KẸO': ['Bánh ngọt', 'Kẹo', 'Bánh mì', 'Bánh tráng'],
-        'NGUYÊN LIỆU': ['Gạo', 'Thịt', 'Rau củ', 'Gia vị']
+        icon: '🍽️',
+        name: 'ẨM THỰC',
+        keywords: ['ẩm thực', 'đồ ăn', 'thức uống', 'bánh kẹo', 'nguyên liệu', 'food', 'beverage', 'cooking', 'restaurant', 'cafe', 'món ăn', 'nước uống'],
+        subcategories: [
+            { key: 'MÓN_ĂN', icon: '🍜', name: 'MÓN ĂN', keywords: ['cơm', 'phở', 'bún', 'chả cá', 'bánh mì', 'bún bò', 'phở bò', 'cơm tấm', 'bún chả', 'food', 'món ăn'] },
+            { key: 'ĐỒ_UỐNG', icon: '☕', name: 'ĐỒ UỐNG', keywords: ['cà phê', 'trà sữa', 'nước ép', 'sinh tố', 'nước ngọt', 'bia', 'rượu', 'coffee', 'tea', 'juice', 'smoothie'] },
+            { key: 'BÁNH_KẸO', icon: '🍰', name: 'BÁNH KẸO', keywords: ['bánh ngọt', 'kẹo', 'bánh mì', 'bánh tráng', 'bánh kem', 'bánh quy', 'chocolate', 'candy', 'cake', 'cookie'] },
+            { key: 'NGUYÊN_LIỆU', icon: '🥬', name: 'NGUYÊN LIỆU', keywords: ['gạo', 'thịt', 'rau củ', 'gia vị', 'hải sản', 'trái cây', 'ingredients', 'spices', 'vegetables', 'meat', 'seafood'] }
+        ]
     },
     'DỊCH VỤ': {
-        'GIÁO DỤC': ['Gia sư', 'Dạy kèm', 'Luyện thi', 'Ngoại ngữ'],
-        'SỨC KHỎE': ['Massage', 'Yoga', 'Gym', 'Spa'],
-        'VẬN CHUYỂN': ['Giao hàng', 'Chuyển nhà', 'Taxi', 'Xe máy'],
-        'SỬA CHỮA': ['Điện tử', 'Xe máy', 'Điện lạnh', 'Nội thất']
+        icon: '🔧',
+        name: 'DỊCH VỤ',
+        keywords: ['dịch vụ', 'service', 'gia sư', 'massage', 'giao hàng', 'sửa chữa', 'công nghệ', 'tài chính', 'pháp lý', 'bất động sản', 'du lịch', 'ẩm thực', 'thời trang', 'giải trí', 'nông nghiệp', 'xây dựng', 'vệ sinh', 'bảo vệ'],
+        subcategories: [
+            { key: 'GIÁO_DỤC', icon: '📚', name: 'GIÁO DỤC', keywords: ['gia sư', 'dạy kèm', 'luyện thi', 'ngoại ngữ', 'toán', 'lý', 'hóa', 'văn', 'anh văn', 'tiếng anh', 'tiếng nhật', 'tiếng hàn', 'tiếng trung', 'ielts', 'toeic', 'tutoring', 'teacher'] },
+            { key: 'SỨC_KHỎE', icon: '💪', name: 'SỨC KHỎE', keywords: ['massage', 'yoga', 'gym', 'spa', 'fitness', 'thể dục', 'thể hình', 'massage', 'xông hơi', 'chăm sóc da', 'làm đẹp', 'nails', 'tóc', 'skincare'] },
+            { key: 'VẬN_CHUYỂN', icon: '🚚', name: 'VẬN CHUYỂN', keywords: ['giao hàng', 'chuyển nhà', 'taxi', 'xe máy', 'shipping', 'logistics', 'vận chuyển', 'giao đồ ăn', 'grab', 'uber', 'be', 'gojek'] },
+            { key: 'SỬA_CHỮA', icon: '🔧', name: 'SỬA CHỮA', keywords: ['sửa chữa', 'điện tử', 'xe máy', 'điện lạnh', 'nội thất', 'máy tính', 'điện thoại', 'tủ lạnh', 'máy giặt', 'điều hòa', 'repair', 'maintenance'] },
+            { key: 'CÔNG_NGHỆ', icon: '💻', name: 'CÔNG NGHỆ', keywords: ['lập trình', 'website', 'app', 'software', 'IT', 'công nghệ thông tin', 'phần mềm', 'thiết kế', 'design', 'marketing', 'seo', 'facebook ads'] },
+            { key: 'TÀI_CHÍNH', icon: '💰', name: 'TÀI CHÍNH', keywords: ['kế toán', 'thuế', 'bảo hiểm', 'ngân hàng', 'đầu tư', 'chứng khoán', 'tài chính', 'kế toán', 'bookkeeping', 'tax', 'insurance'] },
+            { key: 'PHÁP_LÝ', icon: '⚖️', name: 'PHÁP LÝ', keywords: ['luật sư', 'pháp lý', 'tư vấn pháp luật', 'giấy tờ', 'thủ tục', 'hành chính', 'lawyer', 'legal', 'consultation', 'documentation'] },
+            { key: 'BẤT_ĐỘNG_SẢN', icon: '🏠', name: 'BẤT ĐỘNG SẢN', keywords: ['môi giới', 'bất động sản', 'nhà đất', 'cho thuê', 'bán nhà', 'real estate', 'broker', 'rent', 'sale', 'property'] },
+            { key: 'DU_LỊCH', icon: '✈️', name: 'DU LỊCH', keywords: ['du lịch', 'tour', 'khách sạn', 'vé máy bay', 'booking', 'travel', 'tourism', 'hotel', 'flight', 'ticket'] },
+            { key: 'ẨM_THỰC', icon: '🍽️', name: 'ẨM THỰC', keywords: ['nấu ăn', 'catering', 'tiệc', 'đồ ăn', 'thức uống', 'cooking', 'catering', 'party', 'food', 'beverage'] },
+            { key: 'THỜI_TRANG', icon: '👗', name: 'THỜI TRANG', keywords: ['may đo', 'thiết kế', 'thời trang', 'quần áo', 'giày dép', 'fashion', 'tailor', 'design', 'clothing', 'shoes'] },
+            { key: 'GIẢI_TRÍ', icon: '🎭', name: 'GIẢI TRÍ', keywords: ['sự kiện', 'tổ chức', 'party', 'ca nhạc', 'khiêu vũ', 'entertainment', 'event', 'music', 'dance', 'celebration'] },
+            { key: 'NÔNG_NGHIỆP', icon: '🌾', name: 'NÔNG NGHIỆP', keywords: ['nông nghiệp', 'chăn nuôi', 'trồng trọt', 'thủy sản', 'agriculture', 'farming', 'livestock', 'fishing', 'aquaculture'] },
+            { key: 'XÂY_DỰNG', icon: '🏗️', name: 'XÂY DỰNG', keywords: ['xây dựng', 'sửa chữa nhà', 'nội thất', 'kiến trúc', 'construction', 'renovation', 'interior', 'architecture', 'building'] },
+            { key: 'VỆ_SINH', icon: '🧹', name: 'VỆ SINH', keywords: ['vệ sinh', 'dọn dẹp', 'giặt ủi', 'cleaning', 'laundry', 'housekeeping', 'maintenance', 'hygiene'] },
+            { key: 'BẢO_VỆ', icon: '🛡️', name: 'BẢO VỆ', keywords: ['bảo vệ', 'an ninh', 'security', 'guard', 'safety', 'protection', 'surveillance'] },
+            { key: 'KHÁC', icon: '🔧', name: 'DỊCH VỤ KHÁC', keywords: ['dịch vụ khác', 'other services', 'miscellaneous', 'tùy chỉnh', 'custom'] }
+        ]
     }
 } as const
 
-// Locations
+// Simplified locations - Main provinces and cities only
 export const LOCATIONS = [
-    'HÀ NỘI', 'TP.HCM', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ',
-    'AN GIANG', 'BẠC LIÊU', 'BẮC GIANG', 'BẮC KẠN', 'BẮC NINH',
-    'BẾN TRE', 'BÌNH DƯƠNG', 'BÌNH PHƯỚC', 'BÌNH THUẬN',
-    'CÀ MAU', 'CAO BẰNG', 'ĐẮK LẮK', 'ĐẮK NÔNG', 'ĐIỆN BIÊN',
-    'ĐỒNG NAI', 'ĐỒNG THÁP', 'GIA LAI', 'HÀ GIANG', 'HÀ NAM',
-    'HÀ TĨNH', 'HẢI DƯƠNG', 'HẬU GIANG', 'HÒA BÌNH', 'HƯNG YÊN',
-    'KHÁNH HÒA', 'KIÊN GIANG', 'KONTUM', 'LAI CHÂU', 'LÂM ĐỒNG',
-    'LẠNG SƠN', 'LÀO CAI', 'LONG AN', 'NAM ĐỊNH', 'NGHỆ AN',
-    'NINH BÌNH', 'NINH THUẬN', 'PHÚ THỌ', 'PHÚ YÊN', 'QUẢNG BÌNH',
-    'QUẢNG NAM', 'QUẢNG NGÃI', 'QUẢNG NINH', 'QUẢNG TRỊ', 'SÓC TRĂNG',
-    'SƠN LA', 'TAY NINH', 'THÁI BÌNH', 'THÁI NGUYÊN', 'THANH HÓA',
-    'THỪA THIÊN HUẾ', 'TIỀN GIANG', 'TRÀ VINH', 'TUYÊN QUANG',
-    'VĨNH LONG', 'VĨNH PHÚC', 'YÊN BÁI'
+    // Major cities (Thành phố lớn)
+    'HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ',
+
+    // Northern provinces (Miền Bắc)
+    'BẮC GIANG', 'BẮC KẠN', 'BẮC NINH', 'CAO BẰNG', 'ĐIỆN BIÊN',
+    'HÀ GIANG', 'HÀ NAM', 'HÀ TĨNH', 'HẢI DƯƠNG', 'HÒA BÌNH',
+    'HƯNG YÊN', 'LẠNG SƠN', 'LÀO CAI', 'NAM ĐỊNH', 'NGHỆ AN',
+    'NINH BÌNH', 'PHÚ THỌ', 'QUẢNG NINH', 'SƠN LA', 'THÁI BÌNH',
+    'THÁI NGUYÊN', 'THANH HÓA', 'TUYÊN QUANG', 'VĨNH PHÚC', 'YÊN BÁI',
+
+    // Central provinces (Miền Trung)
+    'BÌNH THUẬN', 'KHÁNH HÒA', 'KONTUM', 'LÂM ĐỒNG', 'NINH THUẬN',
+    'PHÚ YÊN', 'QUẢNG BÌNH', 'QUẢNG NAM', 'QUẢNG NGÃI', 'QUẢNG TRỊ',
+    'THỪA THIÊN HUẾ',
+
+    // Southern provinces (Miền Nam)
+    'AN GIANG', 'BẠC LIÊU', 'BẾN TRE', 'BÌNH DƯƠNG', 'BÌNH PHƯỚC',
+    'CÀ MAU', 'ĐẮK LẮK', 'ĐẮK NÔNG', 'ĐỒNG NAI', 'ĐỒNG THÁP',
+    'GIA LAI', 'HẬU GIANG', 'KIÊN GIANG', 'LONG AN', 'SÓC TRĂNG',
+    'TÂY NINH', 'TIỀN GIANG', 'TRÀ VINH', 'VĨNH LONG'
 ] as const
 
-// Districts for major cities
+// Districts and cities for major provinces
 export const DISTRICTS = {
     'HÀ NỘI': [
         'QUẬN BA ĐÌNH', 'QUẬN HOÀN KIẾM', 'QUẬN TÂY HỒ', 'QUẬN LONG BIÊN',
         'QUẬN CẦU GIẤY', 'QUẬN ĐỐNG ĐA', 'QUẬN HAI BÀ TRƯNG', 'QUẬN HOÀNG MAI',
-        'QUẬN THANH XUÂN', 'QUẬN HÀ ĐÔNG', 'QUẬN NAM TỪ LIÊM', 'QUẬN BẮC TỪ LIÊM'
+        'QUẬN THANH XUÂN', 'QUẬN HÀ ĐÔNG', 'QUẬN NAM TỪ LIÊM', 'QUẬN BẮC TỪ LIÊM',
+        'HUYỆN SÓC SƠN', 'HUYỆN ĐÔNG ANH', 'HUYỆN GIA LÂM', 'HUYỆN NAM TỪ LIÊM',
+        'HUYỆN THANH TRÌ', 'HUYỆN BẮC TỪ LIÊM', 'HUYỆN MÊ LINH', 'HUYỆN HÀ ĐÔNG',
+        'HUYỆN SƠN TÂY', 'HUYỆN BA VÌ', 'HUYỆN PHÚC THỌ', 'HUYỆN ĐAN PHƯỢNG',
+        'HUYỆN HOÀI ĐỨC', 'HUYỆN QUỐC OAI', 'HUYỆN THẠCH THẤT', 'HUYỆN CHƯƠNG MỸ',
+        'HUYỆN THANH OAI', 'HUYỆN THƯỜNG TÍN', 'HUYỆN PHÚ XUYÊN', 'HUYỆN ỨNG HÒA',
+        'HUYỆN MỸ ĐỨC'
     ],
-    'TP.HCM': [
+    'TP.HỒ CHÍ MINH': [
         'QUẬN 1', 'QUẬN 2', 'QUẬN 3', 'QUẬN 4', 'QUẬN 5', 'QUẬN 6',
         'QUẬN 7', 'QUẬN 8', 'QUẬN 9', 'QUẬN 10', 'QUẬN 11', 'QUẬN 12',
         'QUẬN THỦ ĐỨC', 'QUẬN BÌNH THẠNH', 'QUẬN GÒ VẤP', 'QUẬN TÂN BÌNH',
@@ -80,7 +136,46 @@ export const DISTRICTS = {
     ],
     'ĐÀ NẴNG': [
         'QUẬN HẢI CHÂU', 'QUẬN THANH KHÊ', 'QUẬN SƠN TRÀ', 'QUẬN NGŨ HÀNH SƠN',
-        'QUẬN LIÊN CHIỂU', 'QUẬN CẨM LỆ', 'QUẬN HÒA VANG', 'QUẬN HOÀNG SA'
+        'QUẬN LIÊN CHIỂU', 'QUẬN CẨM LỆ', 'HUYỆN HÒA VANG', 'HUYỆN HOÀNG SA'
+    ],
+    'HẢI PHÒNG': [
+        'QUẬN HỒNG BÀNG', 'QUẬN NGÔ QUYỀN', 'QUẬN LÊ CHÂN', 'QUẬN HẢI AN',
+        'QUẬN KIẾN AN', 'QUẬN ĐỒ SƠN', 'QUẬN DƯƠNG KINH', 'HUYỆN THUỶ NGUYÊN',
+        'HUYỆN AN DƯƠNG', 'HUYỆN AN LÃO', 'HUYỆN KIẾN THUỴ', 'HUYỆN TIÊN LÃNG',
+        'HUYỆN VĨNH BẢO', 'HUYỆN CÁT HẢI', 'HUYỆN BẠCH LONG VĨ'
+    ],
+    'CẦN THƠ': [
+        'QUẬN NINH KIỀU', 'QUẬN Ô MÔN', 'QUẬN BÌNH THỦY', 'QUẬN CÁI RĂNG',
+        'QUẬN THỐT NỐT', 'HUYỆN VĨNH THẠNH', 'HUYỆN CỜ ĐỎ', 'HUYỆN PHONG ĐIỀN',
+        'HUYỆN THỚI LAI'
+    ],
+    'BÌNH DƯƠNG': [
+        'THÀNH PHỐ THỦ DẦU MỘT', 'THÀNH PHỐ DĨ AN', 'THÀNH PHỐ THUẬN AN',
+        'THÀNH PHỐ TÂN UYÊN', 'THÀNH PHỐ BẾN CÁT', 'HUYỆN BẮC TÂN UYÊN',
+        'HUYỆN BÀU BÀNG', 'HUYỆN DẦU TIẾNG', 'HUYỆN PHÚ GIÁO'
+    ],
+    'ĐỒNG NAI': [
+        'THÀNH PHỐ BIÊN HÒA', 'THÀNH PHỐ LONG KHÁNH', 'HUYỆN TÂN PHÚ',
+        'HUYỆN VĨNH CỬU', 'HUYỆN ĐỊNH QUÁN', 'HUYỆN TRẢNG BOM',
+        'HUYỆN THỐNG NHẤT', 'HUYỆN CẨM MỸ', 'HUYỆN LONG THÀNH',
+        'HUYỆN XUÂN LỘC', 'HUYỆN NHƠN TRẠCH'
+    ],
+    'KHÁNH HÒA': [
+        'THÀNH PHỐ NHA TRANG', 'THÀNH PHỐ CAM RANH', 'THÀNH PHỐ CAM LÂM',
+        'HUYỆN CAM LÂM', 'HUYỆN VẠN NINH', 'HUYỆN NINH HÒA',
+        'HUYỆN KHÁNH VĨNH', 'HUYỆN DIÊN KHÁNH', 'HUYỆN KHÁNH SƠN',
+        'HUYỆN TRƯỜNG SA'
+    ],
+    'LÂM ĐỒNG': [
+        'THÀNH PHỐ ĐÀ LẠT', 'THÀNH PHỐ BẢO LỘC', 'HUYỆN ĐAM RÔNG',
+        'HUYỆN LẠC DƯƠNG', 'HUYỆN LÂM HÀ', 'HUYỆN ĐỨC TRỌNG',
+        'HUYỆN ĐƠN DƯƠNG', 'HUYỆN ĐỨC LINH', 'HUYỆN BẢO LÂM',
+        'HUYỆN CÁT TIÊN', 'HUYỆN DI LINH'
+    ],
+    'THỪA THIÊN HUẾ': [
+        'THÀNH PHỐ HUẾ', 'THỊ XÃ HƯƠNG THỦY', 'THỊ XÃ HƯƠNG TRÀ',
+        'HUYỆN PHONG ĐIỀN', 'HUYỆN QUẢNG ĐIỀN', 'HUYỆN PHÚ VANG',
+        'HUYỆN PHÚ LỘC', 'HUYỆN A LƯỚI', 'HUYỆN NAM ĐÔNG'
     ]
 } as const
 
@@ -152,4 +247,138 @@ export const USER_LEVELS = {
     SILVER: { min: 200, max: 500, name: 'Bạc' },
     GOLD: { min: 500, max: 1000, name: 'Vàng' },
     PLATINUM: { min: 1000, max: Infinity, name: 'Bạch kim' }
+} as const
+
+// Simple Search Helper Functions (No AI - Cost Effective)
+export const SEARCH_HELPERS = {
+    // Find category by keyword (simple string matching)
+    findCategoryByKeyword: (keyword: string): string | null => {
+        const normalizedKeyword = keyword.toLowerCase().trim()
+
+        for (const [categoryKey, category] of Object.entries(CATEGORIES)) {
+            // Check main category keywords
+            if (category.keywords?.some(k => k.toLowerCase().includes(normalizedKeyword))) {
+                return categoryKey
+            }
+
+            // Check subcategory keywords
+            for (const subcategory of category.subcategories) {
+                if (subcategory.keywords?.some(k => k.toLowerCase().includes(normalizedKeyword))) {
+                    return categoryKey
+                }
+            }
+        }
+        return null
+    },
+
+    // Find subcategory by keyword
+    findSubcategoryByKeyword: (keyword: string): { category: string; subcategory: string } | null => {
+        const normalizedKeyword = keyword.toLowerCase().trim()
+
+        for (const [categoryKey, category] of Object.entries(CATEGORIES)) {
+            for (const subcategory of category.subcategories) {
+                if (subcategory.keywords?.some(k => k.toLowerCase().includes(normalizedKeyword))) {
+                    return { category: categoryKey, subcategory: subcategory.key }
+                }
+            }
+        }
+        return null
+    },
+
+    // Find location by keyword (simple string matching)
+    findLocationByKeyword: (keyword: string): string | null => {
+        const normalizedKeyword = keyword.toLowerCase().trim()
+        return LOCATIONS.find(location =>
+            location.toLowerCase().includes(normalizedKeyword)
+        ) || null
+    },
+
+    // Get districts for a province
+    getDistrictsForProvince: (province: string): string[] => {
+        return [...(DISTRICTS[province as keyof typeof DISTRICTS] || [])]
+    },
+
+    // Check if location is a major city
+    isMajorCity: (location: string): boolean => {
+        const majorCities = ['HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ']
+        return majorCities.includes(location)
+    },
+
+    // Generate simple search suggestions
+    generateSearchSuggestions: (query: string): string[] => {
+        const normalizedQuery = query.toLowerCase().trim()
+        const suggestions: string[] = []
+
+        // Add category suggestions
+        for (const [categoryKey, category] of Object.entries(CATEGORIES)) {
+            if (category.name.toLowerCase().includes(normalizedQuery)) {
+                suggestions.push(category.name)
+            }
+            if (category.keywords?.some(k => k.toLowerCase().includes(normalizedQuery))) {
+                suggestions.push(category.name)
+            }
+        }
+
+        // Add location suggestions
+        for (const location of LOCATIONS) {
+            if (location.toLowerCase().includes(normalizedQuery)) {
+                suggestions.push(location)
+            }
+        }
+
+        return Array.from(new Set(suggestions)).slice(0, 8) // Remove duplicates and limit to 8
+    },
+
+    // Simple search relevance score (no AI)
+    calculateRelevanceScore: (item: any, query: string): number => {
+        const normalizedQuery = query.toLowerCase().trim()
+        let score = 0
+
+        // Check title match (highest priority)
+        if (item.title?.toLowerCase().includes(normalizedQuery)) {
+            score += 10
+        }
+
+        // Check description match
+        if (item.description?.toLowerCase().includes(normalizedQuery)) {
+            score += 5
+        }
+
+        // Check category match
+        if (item.category) {
+            const category = CATEGORIES[item.category as keyof typeof CATEGORIES]
+            if (category?.keywords?.some(k => k.toLowerCase().includes(normalizedQuery))) {
+                score += 3
+            }
+        }
+
+        // Check location match
+        if (item.location?.toLowerCase().includes(normalizedQuery)) {
+            score += 2
+        }
+
+        return score
+    },
+
+    // Simple search function
+    searchListings: (listings: any[], query: string): any[] => {
+        if (!query.trim()) return listings
+
+        const scoredListings = listings.map(item => ({
+            ...item,
+            relevanceScore: SEARCH_HELPERS.calculateRelevanceScore(item, query)
+        }))
+
+        return scoredListings
+            .filter(item => item.relevanceScore > 0)
+            .sort((a, b) => b.relevanceScore - a.relevanceScore)
+    },
+
+    // Get popular search terms (for future AI upgrade)
+    getPopularSearchTerms: (): string[] => {
+        return [
+            'nhà', 'xe', 'điện thoại', 'laptop', 'gia sư', 'massage',
+            'hà nội', 'tp.hồ chí minh', 'đà nẵng', 'bình dương', 'đồng nai'
+        ]
+    }
 } as const

@@ -180,7 +180,7 @@ async function handleTextMessage(user: any, text: string) {
     // Check if user is admin
     if (text === '/admin' && user.facebook_id === 'admin') {
         try {
-            await handleAdminCommand(user)
+            await handleAdminCommand(user, text)
         } catch (error) {
             console.error('Error handling admin command:', error)
         }
@@ -410,9 +410,9 @@ async function handlePostback(user: any, payload: string) {
     await handlePostback(user, payload)
 }
 
-async function handleAdminCommand(user: any) {
+async function handleAdminCommand(user: any, command: string) {
     const { handleAdminCommand } = await import('@/lib/bot-handlers')
-    await handleAdminCommand(user)
+    await handleAdminCommand(user, command)
 }
 
 async function handlePaymentReceipt(user: any, imageUrl: string) {
