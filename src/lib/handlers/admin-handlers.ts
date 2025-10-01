@@ -9,6 +9,18 @@ import {
 } from '../facebook-api'
 import { formatCurrency, formatNumber } from '../utils'
 
+// Helper function to update bot session
+async function updateBotSession(userId: string, sessionData: any) {
+    const { supabaseAdmin } = await import('../supabase')
+    await supabaseAdmin
+        .from('bot_sessions')
+        .upsert({
+            user_id: userId,
+            session_data: sessionData,
+            updated_at: new Date().toISOString()
+        })
+}
+
 // Get admin IDs from environment variables
 function getAdminIds(): string[] {
     const adminIds = process.env.ADMIN_IDS || ''
@@ -57,7 +69,17 @@ export async function handleAdminCommand(user: any) {
         [
             createPostbackButton('📊 THỐNG KÊ', 'ADMIN_STATS'),
             createPostbackButton('🔔 THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
-            createPostbackButton('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS')
+            createPostbackButton('📤 GỬI LINK ĐĂNG KÝ', 'ADMIN_SEND_REGISTRATION')
+        ]
+    )
+
+    // Third set of admin functions
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm:',
+        [
+            createPostbackButton('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS'),
+            createPostbackButton('❌ THOÁT', 'MAIN_MENU')
         ]
     )
 }
@@ -485,6 +507,86 @@ export async function handleAdminExport(user: any) {
             createPostbackButton('🛒 BÁO CÁO TIN ĐĂNG', 'ADMIN_EXPORT_LISTINGS'),
             createPostbackButton('💰 BÁO CÁO THANH TOÁN', 'ADMIN_EXPORT_PAYMENTS'),
             createPostbackButton('📅 THEO NGÀY', 'ADMIN_EXPORT_BY_DATE'),
+            createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+        ]
+    )
+}
+
+// Handle admin send registration link
+export async function handleAdminSendRegistration(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📤 GỬI LINK ĐĂNG KÝ',
+        'Gửi link đăng ký cho người dùng mới'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Chọn cách gửi:',
+        [
+            createPostbackButton('📱 GỬI CHO USER CỤ THỂ', 'ADMIN_SEND_TO_USER'),
+            createPostbackButton('📢 GỬI CHO TẤT CẢ', 'ADMIN_SEND_TO_ALL'),
+            createPostbackButton('🔗 TẠO LINK CHIA SẺ', 'ADMIN_CREATE_SHARE_LINK')
+        ]
+    )
+}
+
+// Handle admin send to specific user
+export async function handleAdminSendToUser(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📱 GỬI CHO USER CỤ THỂ',
+        'Nhập Facebook ID của user muốn gửi link đăng ký:',
+        'VD: 1234567890123456'
+    ])
+
+    // Set session to wait for user input
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'admin',
+        step: 'send_registration_user',
+        data: {}
+    })
+}
+
+// Handle admin send to all users
+export async function handleAdminSendToAll(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📢 GỬI CHO TẤT CẢ',
+        'Bạn có chắc chắn muốn gửi link đăng ký cho tất cả user?'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Xác nhận:',
+        [
+            createPostbackButton('✅ CÓ, GỬI NGAY', 'ADMIN_CONFIRM_SEND_ALL'),
+            createPostbackButton('❌ HỦY', 'ADMIN_SEND_REGISTRATION')
+        ]
+    )
+}
+
+// Handle admin create share link
+export async function handleAdminCreateShareLink(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    const shareLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com'}/register`
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🔗 LINK CHIA SẺ ĐĂNG KÝ',
+        `Link: ${shareLink}`,
+        'Bạn có thể copy link này để chia sẻ!'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tùy chọn:',
+        [
+            createPostbackButton('📋 COPY LINK', 'ADMIN_COPY_LINK'),
+            createPostbackButton('📤 GỬI LẠI', 'ADMIN_SEND_REGISTRATION'),
             createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
         ]
     )

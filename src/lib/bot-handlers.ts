@@ -14,6 +14,7 @@ import * as MarketplaceHandlers from './handlers/marketplace-handlers'
 import * as CommunityHandlers from './handlers/community-handlers'
 import * as PaymentHandlers from './handlers/payment-handlers'
 import * as AdminHandlers from './handlers/admin-handlers'
+import * as AdminExtra from './handlers/admin-extra'
 import * as UtilityHandlers from './handlers/utility-handlers'
 
 // Main message handler
@@ -124,6 +125,11 @@ export async function handlePostback(user: any, postback: string) {
                 break
             case 'INFO':
                 await AuthHandlers.handleInfo(user)
+                break
+            case 'CONTACT':
+                if (params[0] === 'ADMIN') {
+                    await handleContactAdmin(user)
+                }
                 break
 
             // Marketplace handlers
@@ -312,6 +318,26 @@ export async function handlePostback(user: any, postback: string) {
                     await AdminHandlers.handleAdminApprovePayment(user, params[2])
                 } else if (params[0] === 'REJECT' && params[1] === 'PAYMENT') {
                     await AdminHandlers.handleAdminRejectPayment(user, params[2])
+                } else if (params[0] === 'SEND') {
+                    if (params[1] === 'REGISTRATION') {
+                        await AdminHandlers.handleAdminSendRegistration(user)
+                    } else if (params[1] === 'TO_USER') {
+                        await AdminHandlers.handleAdminSendToUser(user)
+                    } else if (params[1] === 'TO_ALL') {
+                        await AdminHandlers.handleAdminSendToAll(user)
+                    }
+                } else if (params[0] === 'CREATE') {
+                    if (params[1] === 'SHARE_LINK') {
+                        await AdminHandlers.handleAdminCreateShareLink(user)
+                    }
+                } else if (params[0] === 'CONFIRM') {
+                    if (params[1] === 'SEND_ALL') {
+                        await AdminExtra.handleAdminConfirmSendAll(user)
+                    }
+                } else if (params[0] === 'COPY') {
+                    if (params[1] === 'LINK') {
+                        await AdminExtra.handleAdminCopyLink(user)
+                    }
                 } else {
                     await AdminHandlers.handleAdminCommand(user)
                 }
@@ -380,6 +406,11 @@ export async function handlePostback(user: any, postback: string) {
                     await showMainMenu(user)
                 }
                 break
+            case 'EXIT':
+                if (params[0] === 'BOT') {
+                    await handleExitBot(user)
+                }
+                break
             default:
                 // Check if user is registered
                 if (user.status === 'registered' || user.status === 'trial') {
@@ -410,18 +441,36 @@ async function showMainMenu(user: any) {
         'Chọn chức năng:'
     ])
 
+    // First set of main functions
     await sendButtonTemplate(
         user.facebook_id,
         'Chức năng chính:',
         [
             createPostbackButton('🛒 NIÊM YẾT', 'LISTING'),
             createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('💬 KẾT NỐI', 'CONNECT'),
+            createPostbackButton('💬 KẾT NỐI', 'CONNECT')
+        ]
+    )
+
+    // Second set of main functions
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tiếp tục:',
+        [
             createPostbackButton('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
             createPostbackButton('💰 THANH TOÁN', 'PAYMENT'),
-            createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS'),
+            createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS')
+        ]
+    )
+
+    // Third set of main functions
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm:',
+        [
             createPostbackButton('🔮 TỬ VI', 'HOROSCOPE'),
-            createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS')
+            createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS'),
+            createPostbackButton('❌ THOÁT', 'EXIT_BOT')
         ]
     )
 
@@ -509,4 +558,45 @@ export async function handlePaymentReceipt(user: any, imageUrl: string) {
 
 export async function handleListingImages(user: any, imageUrl?: string) {
     await MarketplaceHandlers.handleListingImages(user, imageUrl)
+}
+
+// Handle contact admin
+export async function handleContactAdmin(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        '💬 LIÊN HỆ ADMIN',
+        'Bạn cần hỗ trợ gì? Admin sẽ phản hồi sớm nhất có thể!'
+    ])
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Chọn loại hỗ trợ:',
+        [
+            createPostbackButton('📝 HƯỚNG DẪN ĐĂNG KÝ', 'ADMIN_HELP_REGISTER'),
+            createPostbackButton('❓ CÂU HỎI KHÁC', 'ADMIN_HELP_GENERAL'),
+            createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Handle exit bot
+export async function handleExitBot(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+    
+    await sendMessagesWithTyping(user.facebook_id, [
+        '👋 TẠM BIỆT!',
+        'Cảm ơn bạn đã sử dụng Bot Tân Dậu 1981!',
+        'Hẹn gặp lại bạn sau! 😊'
+    ])
+    
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Bạn có muốn:',
+        [
+            createPostbackButton('🏠 VÀO LẠI', 'MAIN_MENU'),
+            createPostbackButton('📝 ĐĂNG KÝ', 'REGISTER'),
+            createPostbackButton('ℹ️ TÌM HIỂU', 'INFO')
+        ]
+    )
 }

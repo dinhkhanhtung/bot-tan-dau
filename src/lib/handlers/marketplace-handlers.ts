@@ -152,11 +152,11 @@ async function handleListingDescriptionInput(user: any, text: string, data: any)
 
     // Show location buttons - only major cities first
     const majorCities = ['HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ']
-    
+
     await sendButtonTemplate(
         user.facebook_id,
         'Chọn thành phố:',
-        majorCities.map(city => 
+        majorCities.map(city =>
             createPostbackButton(`🏙️ ${city}`, `LISTING_CITY_${city}`)
         )
     )
@@ -179,7 +179,7 @@ export async function handleListingCity(user: any, city: string) {
 
     // Show districts for selected city
     const districts = DISTRICTS[city as keyof typeof DISTRICTS] || []
-    
+
     if (districts.length === 0) {
         // No districts, use city as location
         data.location = city
@@ -194,7 +194,7 @@ export async function handleListingCity(user: any, city: string) {
     await sendButtonTemplate(
         user.facebook_id,
         `Chọn quận/huyện tại ${city}:`,
-        firstDistricts.map(district => 
+        firstDistricts.map(district =>
             createPostbackButton(`🏠 ${district}`, `LISTING_LOCATION_${district}`)
         )
     )
