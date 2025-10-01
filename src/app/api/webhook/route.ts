@@ -204,7 +204,8 @@ async function handleTextMessage(user: any, text: string) {
     // Check if user is admin
     if (text === '/admin') {
         try {
-            await handleAdminCommand(user, text)
+            const { handleAdminCommand } = await import('@/lib/handlers/admin-handlers')
+            await handleAdminCommand(user)
         } catch (error) {
             console.error('Error handling admin command:', error)
         }
