@@ -292,6 +292,9 @@ export async function handlePostback(user: any, payload: string) {
             case 'SUPPORT':
                 await handleSupport(user)
                 break
+            case 'INFO':
+                await handleInfo(user)
+                break
             case 'MAIN_MENU':
                 await showMainMenu(user)
                 break
@@ -3901,7 +3904,7 @@ async function handlePointsRewardsDiscount(user: any) {
 
             for (let i = 0; i < discounts.length; i++) {
                 const discount = discounts[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${discount.name}\n💰 Giá: ${discount.points_required} điểm\n📝 Mô tả: ${discount.description}`,
@@ -3949,7 +3952,7 @@ async function handlePointsRewardsBadges(user: any) {
 
             for (let i = 0; i < badges.length; i++) {
                 const badge = badges[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${badge.name}\n💰 Giá: ${badge.points_required} điểm\n📝 Mô tả: ${badge.description}`,
@@ -3997,7 +4000,7 @@ async function handlePointsRewardsGifts(user: any) {
 
             for (let i = 0; i < gifts.length; i++) {
                 const gift = gifts[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${gift.name}\n💰 Giá: ${gift.points_required} điểm\n📝 Mô tả: ${gift.description}`,
@@ -4045,7 +4048,7 @@ async function handlePointsRewardsGames(user: any) {
 
             for (let i = 0; i < games.length; i++) {
                 const game = games[i]
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${game.name}\n💰 Giá: ${game.points_required} điểm\n📝 Mô tả: ${game.description}`,
@@ -4094,7 +4097,7 @@ async function handlePointsHistory(user: any) {
             for (let i = 0; i < transactions.length; i++) {
                 const transaction = transactions[i]
                 const sign = transaction.points > 0 ? '+' : ''
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${transaction.type}\n${sign}${transaction.points} điểm\n📅 ${new Date(transaction.created_at).toLocaleDateString('vi-VN')}\n⏰ ${new Date(transaction.created_at).toLocaleTimeString('vi-VN')}`,
@@ -4143,7 +4146,7 @@ async function handlePointsAchievements(user: any) {
                 const achievement = achievements[i]
                 const isUnlocked = user.points >= achievement.points_required
                 const status = isUnlocked ? '✅' : '🔒'
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${status} ${achievement.name}\n💰 Yêu cầu: ${achievement.points_required} điểm\n📝 Mô tả: ${achievement.description}`,
@@ -4192,7 +4195,7 @@ async function handlePointsLeaderboard(user: any) {
                 const member = leaderboard[i]
                 const rank = i + 1
                 const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏆'
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${medal} ${rank}. ${member.name}\n⭐ ${member.points || 0} điểm\n📱 ${member.phone}`,
@@ -4242,7 +4245,7 @@ async function handlePointsRedeem(user: any) {
                 const reward = rewards[i]
                 const canAfford = user.points >= reward.points_required
                 const status = canAfford ? '✅' : '❌'
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${status} ${reward.name}\n💰 Giá: ${reward.points_required} điểm\n📝 Mô tả: ${reward.description}`,
@@ -4388,17 +4391,48 @@ async function handleSupport(user: any) {
 // Handle default message for new users
 async function handleDefaultMessage(user: any) {
     await sendMessagesWithTyping(user.facebook_id, [
-        '👋 Chào bạn! Hôm nay bạn muốn...',
-        'Tôi có thể giúp bạn:\n• Tìm kiếm sản phẩm/dịch vụ\n• Mua bán an toàn\n• Kết nối cộng đồng Tân Dậu 1981'
+        '🎉 CHÀO MỪNG ĐẾN VỚI BOT TÂN DẬU 1981! 🎉',
+        '👋 Xin chào! Tôi là bot hỗ trợ cộng đồng Tân Dậu 1981.',
+        'Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên trước.'
     ])
 
     await sendButtonTemplate(
         user.facebook_id,
-        'Chọn chức năng bạn muốn:',
+        'Bạn muốn:',
         [
-            createPostbackButton('🛒 MUA BÁN & TÌM KIẾM', 'BUY_SELL'),
-            createPostbackButton('📝 ĐĂNG KÝ VÀ CẬP NHẬT', 'REGISTER'),
+            createPostbackButton('📝 ĐĂNG KÝ NGAY', 'REGISTER'),
+            createPostbackButton('ℹ️ TÌM HIỂU THÊM', 'INFO'),
             createPostbackButton('👨‍💼 CHAT VỚI ADMIN', 'SUPPORT_ADMIN')
+        ]
+    )
+}
+
+// Handle info for new users
+async function handleInfo(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        'ℹ️ THÔNG TIN VỀ BOT TÂN DẬU 1981',
+        '🤖 Bot này được thiết kế đặc biệt cho cộng đồng Tân Dậu 1981',
+        '📋 Các tính năng chính:'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🛒 MUA BÁN & TÌM KIẾM\n• Đăng tin sản phẩm/dịch vụ\n• Tìm kiếm theo danh mục\n• Kết nối trực tiếp với người bán',
+        '👥 CỘNG ĐỒNG\n• Top seller uy tín\n• Thông báo sinh nhật\n• Hỗ trợ lẫn nhau',
+        '🔮 TỬ VI HÀNG NGÀY\n• Dành riêng cho Tân Dậu 1981\n• Lời khuyên tài lộc, tình cảm, sức khỏe'
+    ])
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '⭐ HỆ THỐNG ĐIỂM THƯỞNG\n• Tích điểm khi sử dụng\n• Đổi quà tặng hấp dẫn\n• Bảng xếp hạng cộng đồng',
+        '💳 THANH TOÁN\n• Gói 1 tuần: 50K\n• Gói 1 tháng: 200K\n• Gói 3 tháng: 500K (tiết kiệm 100K)'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Bạn muốn:',
+        [
+            createPostbackButton('📝 ĐĂNG KÝ NGAY', 'REGISTER'),
+            createPostbackButton('👨‍💼 CHAT VỚI ADMIN', 'SUPPORT_ADMIN'),
+            createPostbackButton('🔙 VỀ TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
