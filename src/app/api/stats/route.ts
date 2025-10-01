@@ -62,7 +62,7 @@ async function getUserStats(userId: string) {
             .select('rating')
             .eq('reviewee_id', userId)
 
-        const averageRating = ratings?.length > 0
+        const averageRating = ratings && ratings.length > 0
             ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
             : 0
 

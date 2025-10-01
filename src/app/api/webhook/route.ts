@@ -132,7 +132,7 @@ async function handleTextMessage(user: any, text: string) {
     }
 
     // Handle regular user messages
-    await handleMessage(user, text)
+    await handleUserMessage(user, text)
 }
 
 // Handle attachment messages
@@ -219,7 +219,7 @@ async function updateBotSession(userId: string, sessionData: any) {
 }
 
 // Import bot handlers
-async function handleMessage(user: any, text: string) {
+async function handleUserMessage(user: any, text: string) {
     const { handleMessage } = await import('@/lib/bot-handlers')
     await handleMessage(user, text)
 }

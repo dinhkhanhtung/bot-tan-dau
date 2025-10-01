@@ -51,7 +51,7 @@ export default function Home() {
                         <div className="mt-8 p-4 bg-blue-50 rounded-lg">
                             <p className="text-sm text-blue-800">
                                 <strong>Lưu ý:</strong> Bot chỉ hoạt động trên Facebook Messenger.
-                                Vui lòng tìm kiếm "BOT TÂN DẬU 1981" trên Facebook để bắt đầu sử dụng.
+                                Vui lòng tìm kiếm &quot;BOT TÂN DẬU 1981&quot; trên Facebook để bắt đầu sử dụng.
                             </p>
                         </div>
                     </div>
