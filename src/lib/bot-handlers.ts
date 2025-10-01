@@ -340,6 +340,8 @@ export async function handlePostback(user: any, payload: string) {
             case 'SUPPORT':
                 if (params[0] === 'ADMIN') {
                     await handleSupportAdmin(user)
+                } else if (params[0] === 'BOT') {
+                    await handleSupportBot(user)
                 }
                 break
             case 'ADMIN':
@@ -415,8 +417,8 @@ export async function handlePostback(user: any, payload: string) {
 // Handle admin commands
 export async function handleAdminCommand(user: any) {
     // Check if user is admin (you can add admin check here)
-    // For now, we'll allow any registered user to access admin
-    if (!user || user.status === 'expired') {
+    // For now, we'll allow any user to access admin for testing
+    if (!user) {
         await sendMessage(user.facebook_id, 'Bạn cần đăng ký để sử dụng chức năng admin!')
         return
     }
@@ -4395,6 +4397,33 @@ async function handleSupport(user: any) {
         [
             createPostbackButton('🤖 CHAT BOT', 'SUPPORT_BOT'),
             createPostbackButton('👨‍💼 CHAT ADMIN', 'SUPPORT_ADMIN')
+        ]
+    )
+}
+
+// Handle support bot
+async function handleSupportBot(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🤖 Tôi đã sẵn sàng hỗ trợ bạn!',
+        'Bạn có thể hỏi tôi về:\n• Tìm kiếm sản phẩm/dịch vụ\n• Hướng dẫn sử dụng\n• Thông tin cộng đồng\n• Tử vi hàng ngày'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Chọn chức năng bạn muốn sử dụng:',
+        [
+            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
+            createPostbackButton('💬 HỖ TRỢ', 'SUPPORT_ADMIN'),
+            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Thêm tùy chọn:',
+        [
+            createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
