@@ -211,11 +211,13 @@ async function handleMessageEvent(event: any) {
                             await sendMessage(senderId, 'Để đăng ký, bạn cần cung cấp thông tin cá nhân. Hãy bắt đầu bằng cách gửi họ tên của bạn.')
                             // Start registration flow
                             const { updateBotSession } = await import('@/lib/utils')
-                            await updateBotSession(senderId, {
+                            const sessionData = {
                                 current_flow: 'registration',
                                 step: 'name',
                                 data: {}
-                            })
+                            }
+                            console.log('Creating registration session:', JSON.stringify(sessionData, null, 2))
+                            await updateBotSession(senderId, sessionData)
                             break
                         case 'INFO':
                             await sendMessage(senderId, 'ℹ️ THÔNG TIN BOT TÂN DẬU 1981')
@@ -255,7 +257,9 @@ async function handleMessageEvent(event: any) {
 
             // Check if user is in registration flow session first
             const sessionData = await getBotSession(senderId)
+            console.log('Session data for unregistered user:', JSON.stringify(sessionData, null, 2))
             if (sessionData && sessionData.session_data?.current_flow === 'registration') {
+                console.log('User is in registration flow, processing text input:', message.text)
                 // User is in registration flow, handle the text input
                 const { handleRegistrationStep } = await import('@/lib/handlers/auth-handlers')
                 await handleRegistrationStep({ facebook_id: senderId }, message.text || '', sessionData.session_data)
