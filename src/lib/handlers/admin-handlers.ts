@@ -61,38 +61,23 @@ export async function handleAdminCommand(user: any) {
         'Bạn muốn quản lý gì?'
     ])
 
-    // First set of admin functions
-    await sendButtonTemplate(
+    // Admin functions with Quick Reply
+    await sendQuickReply(
         user.facebook_id,
         'Chức năng admin:',
         [
-            createPostbackButton('💰 THANH TOÁN', 'ADMIN_PAYMENTS'),
-            createPostbackButton('👥 USER', 'ADMIN_USERS'),
-            createPostbackButton('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS')
+            createQuickReply('💰 THANH TOÁN', 'ADMIN_PAYMENTS'),
+            createQuickReply('👥 NGƯỜI DÙNG', 'ADMIN_USERS'),
+            createQuickReply('🛒 NIÊM YẾT', 'ADMIN_LISTINGS'),
+            createQuickReply('📊 THỐNG KÊ', 'ADMIN_STATS'),
+            createQuickReply('🔔 THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
+            createQuickReply('📤 GỬI LINK ĐĂNG KÝ', 'ADMIN_SEND_REGISTRATION'),
+            createQuickReply('⚙️ QUẢN LÝ ADMIN', 'ADMIN_MANAGE_ADMINS'),
+            createQuickReply('🚫 SPAM LOGS', 'ADMIN_SPAM_LOGS'),
+            createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 
-    // Second set of admin functions
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Tiếp tục:',
-        [
-            createPostbackButton('📊 THỐNG KÊ', 'ADMIN_STATS'),
-            createPostbackButton('🔔 THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
-            createPostbackButton('📤 GỬI LINK ĐĂNG KÝ', 'ADMIN_SEND_REGISTRATION')
-        ]
-    )
-
-    // Third set of admin functions
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Thêm:',
-        [
-            createPostbackButton('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS'),
-            createPostbackButton('🛑 TẮT BOT', 'ADMIN_STOP_BOT'),
-            createPostbackButton('❌ THOÁT', 'MAIN_MENU')
-        ]
-    )
 }
 
 // Handle admin payments
