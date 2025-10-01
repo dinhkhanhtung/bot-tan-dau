@@ -12,37 +12,39 @@ import { formatCurrency, formatNumber, updateBotSession } from '../utils'
 
 // Check if user is admin
 export async function isAdmin(facebookId: string): Promise<boolean> {
+    // First check environment variables (priority)
+    const adminIds = process.env.ADMIN_IDS || ''
+    const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
+    
+    if (envAdmins.includes(facebookId)) {
+        console.log(`✅ Admin found in environment: ${facebookId}`)
+        return true
+    }
+
+    // Then check database as fallback
     try {
         const { data, error } = await supabaseAdmin
             .from('admin_users')
             .select('is_active')
             .eq('facebook_id', facebookId)
             .eq('is_active', true)
-            .maybeSingle() // Use maybeSingle instead of single to avoid error when no rows
+            .maybeSingle()
 
         if (error) {
-            console.error('Error checking admin status:', error)
-            // Fallback: check environment variable if table doesn't exist
-            const adminIds = process.env.ADMIN_IDS || ''
-            const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
-            return envAdmins.includes(facebookId)
+            console.error('Error checking admin status in database:', error)
+            return false
         }
 
         // If data exists and is_active is true
         if (data && data.is_active) {
+            console.log(`✅ Admin found in database: ${facebookId}`)
             return true
         }
 
-        // Fallback: check environment variable
-        const adminIds = process.env.ADMIN_IDS || ''
-        const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
-        return envAdmins.includes(facebookId)
+        return false
     } catch (error) {
         console.error('Error in isAdmin function:', error)
-        // Fallback: check environment variable
-        const adminIds = process.env.ADMIN_IDS || ''
-        const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
-        return envAdmins.includes(facebookId)
+        return false
     }
 }
 
