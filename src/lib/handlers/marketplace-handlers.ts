@@ -7,6 +7,7 @@ import {
     sendGenericTemplate,
     sendCarouselTemplate,
     createPostbackButton,
+    createQuickReply,
     createGenericElement,
     sendMessagesWithTyping
 } from '../facebook-api'
@@ -23,25 +24,17 @@ export async function handleListing(user: any) {
         '📋 Thông tin cần cung cấp:\n• Tên sản phẩm/dịch vụ\n• Mô tả chi tiết\n• Giá bán\n• Vị trí cụ thể\n• Hình ảnh minh họa'
     ])
 
-    // Send first set of categories
-    await sendButtonTemplate(
+    // Send all categories as quick replies
+    await sendQuickReply(
         user.facebook_id,
         'Chọn danh mục:',
         [
-            createPostbackButton('🏠 BẤT ĐỘNG SẢN', 'LISTING_CATEGORY_REAL_ESTATE'),
-            createPostbackButton('🚗 Ô TÔ', 'LISTING_CATEGORY_CAR'),
-            createPostbackButton('📱 ĐIỆN TỬ', 'LISTING_CATEGORY_ELECTRONICS')
-        ]
-    )
-
-    // Send second set of categories
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Tiếp tục chọn:',
-        [
-            createPostbackButton('👕 THỜI TRANG', 'LISTING_CATEGORY_FASHION'),
-            createPostbackButton('🍽️ ẨM THỰC', 'LISTING_CATEGORY_FOOD'),
-            createPostbackButton('🔧 DỊCH VỤ', 'LISTING_CATEGORY_SERVICE')
+            createQuickReply('🏠 BẤT ĐỘNG SẢN', 'LISTING_CATEGORY_REAL_ESTATE'),
+            createQuickReply('🚗 Ô TÔ', 'LISTING_CATEGORY_CAR'),
+            createQuickReply('📱 ĐIỆN TỬ', 'LISTING_CATEGORY_ELECTRONICS'),
+            createQuickReply('👕 THỜI TRANG', 'LISTING_CATEGORY_FASHION'),
+            createQuickReply('🍽️ ẨM THỰC', 'LISTING_CATEGORY_FOOD'),
+            createQuickReply('🔧 DỊCH VỤ', 'LISTING_CATEGORY_SERVICE')
         ]
     )
 }
@@ -347,18 +340,18 @@ export async function handleSearch(user: any) {
         '💡 Bạn có thể tìm theo:\n• Danh mục sản phẩm\n• Từ khóa\n• Vị trí\n• Giá cả\n• Hashtag'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Chọn danh mục:',
         [
-            createPostbackButton('🏠 BẤT ĐỘNG SẢN', 'SEARCH_CATEGORY_REAL_ESTATE'),
-            createPostbackButton('🚗 Ô TÔ', 'SEARCH_CATEGORY_CAR'),
-            createPostbackButton('📱 ĐIỆN TỬ', 'SEARCH_CATEGORY_ELECTRONICS'),
-            createPostbackButton('👕 THỜI TRANG', 'SEARCH_CATEGORY_FASHION'),
-            createPostbackButton('🍽️ ẨM THỰC', 'SEARCH_CATEGORY_FOOD'),
-            createPostbackButton('🔧 DỊCH VỤ', 'SEARCH_CATEGORY_SERVICE'),
-            createPostbackButton('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
-            createPostbackButton('🔍 TÌM THEO TỪ KHÓA', 'SEARCH_KEYWORD')
+            createQuickReply('🏠 BẤT ĐỘNG SẢN', 'SEARCH_CATEGORY_REAL_ESTATE'),
+            createQuickReply('🚗 Ô TÔ', 'SEARCH_CATEGORY_CAR'),
+            createQuickReply('📱 ĐIỆN TỬ', 'SEARCH_CATEGORY_ELECTRONICS'),
+            createQuickReply('👕 THỜI TRANG', 'SEARCH_CATEGORY_FASHION'),
+            createQuickReply('🍽️ ẨM THỰC', 'SEARCH_CATEGORY_FOOD'),
+            createQuickReply('🔧 DỊCH VỤ', 'SEARCH_CATEGORY_SERVICE'),
+            createQuickReply('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
+            createQuickReply('🔍 TÌM THEO TỪ KHÓA', 'SEARCH_KEYWORD')
         ]
     )
 }
