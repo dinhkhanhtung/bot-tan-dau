@@ -11,7 +11,7 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(20) UNIQUE NOT NULL,
     location VARCHAR(100) NOT NULL,
-    birthday INTEGER NOT NULL,
+    birthday DATE NOT NULL,
     status VARCHAR(20) DEFAULT 'trial' CHECK (status IN ('trial', 'active', 'expired', 'suspended')),
     membership_expires_at TIMESTAMP WITH TIME ZONE,
     rating DECIMAL(3,2) DEFAULT 0.00,
