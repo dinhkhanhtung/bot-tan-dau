@@ -152,7 +152,7 @@ export async function handlePostback(user: any, payload: string) {
                 } else if (params[0] === 'KEYWORD') {
                     await handleSearchKeyword(user)
                 } else {
-                await handleSearch(user)
+                    await handleSearch(user)
                 }
                 break
             case 'LISTING':
@@ -227,7 +227,7 @@ export async function handlePostback(user: any, payload: string) {
                 } else if (params[0] === 'EVENTS') {
                     await handleCommunityEvents(user)
                 } else {
-                await handleCommunity(user)
+                    await handleCommunity(user)
                 }
                 break
             case 'PAYMENT':
@@ -249,7 +249,7 @@ export async function handlePostback(user: any, payload: string) {
                 } else if (params[0] === 'UPLOAD' && params[1] === 'RECEIPT') {
                     await handlePaymentUploadReceipt(user)
                 } else {
-                await handlePayment(user)
+                    await handlePayment(user)
                 }
                 break
             case 'HOROSCOPE':
@@ -262,7 +262,7 @@ export async function handlePostback(user: any, payload: string) {
                 } else if (params[0] === 'TOMORROW') {
                     await handleHoroscopeTomorrow(user)
                 } else {
-                await handleHoroscope(user)
+                    await handleHoroscope(user)
                 }
                 break
             case 'POINTS':
@@ -285,7 +285,7 @@ export async function handlePostback(user: any, payload: string) {
                 } else if (params[0] === 'REDEEM') {
                     await handlePointsRedeem(user)
                 } else {
-                await handlePoints(user)
+                    await handlePoints(user)
                 }
                 break
             case 'SETTINGS':
@@ -4439,7 +4439,7 @@ async function handlePoints(user: any) {
         const nextLevelPoints = getNextLevelPoints(parseInt(userLevel.toString()))
         const pointsToNext = nextLevelPoints - userPoints
 
-    await sendMessagesWithTyping(user.facebook_id, [
+        await sendMessagesWithTyping(user.facebook_id, [
             '⭐ HỆ THỐNG ĐIỂM THƯỞNG\n\n🏆 Level hiện tại: ' + userLevel + ' (' + userPoints + '/' + nextLevelPoints + ' điểm)\n⭐ Tổng điểm: ' + userPoints + ' điểm\n🎯 Streak: 7 ngày liên tiếp'
         ])
 
@@ -4678,7 +4678,7 @@ async function sendTrialExpiringMessage(facebookId: string, daysLeft: number) {
 async function handleAdminManageAdmins(user: any) {
     await sendTypingIndicator(user.facebook_id)
     const adminIds = getAdminIds()
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         '👑 QUẢN LÝ ADMIN\n\nDanh sách admin hiện tại:',
         adminIds.map((id, index) => `${index + 1}. ${id}`).join('\n'),
@@ -4707,7 +4707,7 @@ async function handleAdminManageAdmins(user: any) {
 // Admin: Settings
 async function handleAdminSettings(user: any) {
     await sendTypingIndicator(user.facebook_id)
-    
+
     await sendMessagesWithTyping(user.facebook_id, [
         '⚙️ CÀI ĐẶT HỆ THỐNG\n\nCấu hình bot:',
         `• Phí hàng ngày: ${process.env.BOT_DAILY_FEE || '1000'}đ`,
