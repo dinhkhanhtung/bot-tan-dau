@@ -25,12 +25,14 @@ export async function handleRegistration(user: any) {
             'Bạn có quyền truy cập đầy đủ mà không cần đăng ký.'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Chọn chức năng:',
             [
-                createPostbackButton('🔧 ADMIN PANEL', 'ADMIN'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
+                createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
+                createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
             ]
         )
         return
@@ -43,13 +45,13 @@ export async function handleRegistration(user: any) {
             'Sử dụng menu bên dưới để truy cập các tính năng.'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Chọn chức năng:',
             [
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU'),
-                createPostbackButton('🛒 NIÊM YẾT', 'LISTING'),
-                createPostbackButton('🔍 TÌM KIẾM', 'SEARCH')
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
+                createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
+                createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
             ]
         )
         return
@@ -221,12 +223,12 @@ export async function handleBirthdayRejection(user: any) {
     // Clear session
     await updateBotSession(user.facebook_id, null)
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Lựa chọn:',
         [
-            createPostbackButton('🔄 ĐĂNG KÝ LẠI', 'REGISTER'),
-            createPostbackButton('ℹ️ THÔNG TIN', 'INFO')
+            createQuickReply('🔄 ĐĂNG KÝ LẠI', 'REGISTER'),
+            createQuickReply('ℹ️ THÔNG TIN', 'INFO')
         ]
     )
 }
@@ -240,13 +242,13 @@ export async function handleDefaultMessage(user: any) {
         'Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên trước.'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Bạn muốn:',
         [
-            createPostbackButton('📝 ĐĂNG KÝ', 'REGISTER'),
-            createPostbackButton('ℹ️ THÔNG TIN', 'INFO'),
-            createPostbackButton('💬 HỖ TRỢ', 'SUPPORT')
+            createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+            createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
+            createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
         ]
     )
 }
@@ -262,13 +264,13 @@ export async function handleInfo(user: any) {
         '🔒 Bảo mật:\n• Chỉ dành cho Tân Dậu 1981\n• Thông tin được mã hóa bảo mật\n• Lưu trữ để tìm kiếm & kết nối hiệu quả'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Bạn muốn:',
         [
-            createPostbackButton('📝 ĐĂNG KÝ', 'REGISTER'),
-            createPostbackButton('💬 HỖ TRỢ', 'SUPPORT_ADMIN'),
-            createPostbackButton('🔙 TRANG CHỦ', 'MAIN_MENU')
+            createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+            createQuickReply('💬 HỖ TRỢ', 'SUPPORT_ADMIN'),
+            createQuickReply('🔙 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -282,13 +284,13 @@ export async function sendExpiredMessage(facebookId: string) {
         '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         facebookId,
         'Gia hạn tài khoản:',
         [
-            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT'),
-            createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
-            createPostbackButton('❌ HỦY', 'MAIN_MENU')
+            createQuickReply('💰 THANH TOÁN NGAY', 'PAYMENT'),
+            createQuickReply('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
+            createQuickReply('❌ HỦY', 'MAIN_MENU')
         ]
     )
 }
@@ -311,13 +313,13 @@ export async function sendTrialExpiringMessage(facebookId: string, daysLeft: num
         ])
     }
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         facebookId,
         'Gia hạn tài khoản:',
         [
-            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT'),
-            createPostbackButton('⏰ NHẮC LẠI SAU', 'MAIN_MENU'),
-            createPostbackButton('ℹ️ TÌM HIỂU', 'INFO')
+            createQuickReply('💰 THANH TOÁN NGAY', 'PAYMENT'),
+            createQuickReply('⏰ NHẮC LẠI SAU', 'MAIN_MENU'),
+            createQuickReply('ℹ️ TÌM HIỂU', 'INFO')
         ]
     )
 }
@@ -382,12 +384,12 @@ export async function handleRegistrationBirthday(user: any, text: string, data: 
         `❓ Bạn có phải sinh năm ${data.birth_year} không?`
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Xác nhận tuổi:',
         [
-            createPostbackButton(`✅ CÓ - TÔI SINH NĂM ${data.birth_year}`, 'REG_BIRTHDAY_YES'),
-            createPostbackButton('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REG_BIRTHDAY_NO')
+            createQuickReply(`✅ CÓ - TÔI SINH NĂM ${data.birth_year}`, 'REG_BIRTHDAY_YES'),
+            createQuickReply('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REG_BIRTHDAY_NO')
         ]
     )
 
@@ -439,14 +441,14 @@ async function completeRegistration(user: any, data: any) {
             'Sau đó cần nâng cấp để tiếp tục sử dụng.'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Chào mừng bạn đến với cộng đồng Tân Dậu 1981!',
             [
-                createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-                createPostbackButton('🛒 TẠO TIN', 'LISTING'),
-                createPostbackButton('👥 CỘNG ĐỒNG', 'COMMUNITY'),
-                createPostbackButton('💳 NÂNG CẤP', 'PAYMENT')
+                createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+                createQuickReply('🛒 TẠO TIN', 'LISTING'),
+                createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
+                createQuickReply('💳 NÂNG CẤP', 'PAYMENT')
             ]
         )
 
