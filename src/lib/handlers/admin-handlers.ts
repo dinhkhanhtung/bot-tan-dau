@@ -15,7 +15,7 @@ export async function isAdmin(facebookId: string): Promise<boolean> {
     // First check environment variables (priority)
     const adminIds = process.env.ADMIN_IDS || ''
     const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
-    
+
     if (envAdmins.includes(facebookId)) {
         console.log(`✅ Admin found in environment: ${facebookId}`)
         return true
