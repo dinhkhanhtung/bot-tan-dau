@@ -17,7 +17,7 @@ export async function handleRegistration(user: any) {
     // Check if user is admin first
     const { isAdmin } = await import('./admin-handlers')
     const userIsAdmin = await isAdmin(user.facebook_id)
-    
+
     if (userIsAdmin) {
         await sendMessagesWithTyping(user.facebook_id, [
             '🔧 ADMIN DASHBOARD',
@@ -30,9 +30,7 @@ export async function handleRegistration(user: any) {
             'Chọn chức năng:',
             [
                 createPostbackButton('🔧 ADMIN PANEL', 'ADMIN'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU'),
-                createPostbackButton('🛒 NIÊM YẾT', 'LISTING'),
-                createPostbackButton('🔍 TÌM KIẾM', 'SEARCH')
+                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
         return

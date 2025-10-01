@@ -165,45 +165,38 @@ async function handleMessageEvent(event: any) {
         if (!user) {
             console.log('User not found for facebook_id:', senderId)
 
-            // Check if it's an admin first
-            try {
-                const { isAdmin } = await import('@/lib/handlers/admin-handlers')
-                const isAdminUser = await isAdmin(senderId)
-                if (isAdminUser) {
-                    console.log('Admin user detected:', senderId)
-                    // Create a temporary user object for admin
-                    const adminUser = {
-                        facebook_id: senderId,
-                        status: 'admin',
-                        name: 'Admin',
-                        membership_expires_at: null
-                    }
-
-                    // Handle admin command or regular message
-                    if (message.text === '/admin') {
-                        const { handleAdminCommand } = await import('@/lib/handlers/admin-handlers')
-                        await handleAdminCommand(adminUser)
-                    } else {
-                        // Handle regular message for admin
-                        const { handleMessage } = await import('@/lib/bot-handlers')
-                        await handleMessage(adminUser, message.text || '')
-                    }
-                    return
-                }
-            } catch (error) {
-                console.error('Error checking admin status:', error)
-            }
-
             // Check if it's an admin command first
             if (message.text === '/admin') {
                 try {
-                    const { handleAdminCommand } = await import('@/lib/handlers/admin-handlers')
-                    await handleAdminCommand({ facebook_id: senderId })
+                    const { isAdmin } = await import('@/lib/handlers/admin-handlers')
+                    const isAdminUser = await isAdmin(senderId)
+                    if (isAdminUser) {
+                        console.log('Admin user detected:', senderId)
+                        // Create a temporary user object for admin
+                        const adminUser = {
+                            facebook_id: senderId,
+                            status: 'admin',
+                            name: 'Admin',
+                            membership_expires_at: null
+                        }
+                        
+                        const { handleAdminCommand } = await import('@/lib/handlers/admin-handlers')
+                        await handleAdminCommand(adminUser)
+                        return
+                    } else {
+                        // Not admin, send access denied
+                        const { sendMessage } = await import('@/lib/facebook-api')
+                        await sendMessage(senderId, '❌ Bạn không có quyền truy cập!')
+                        return
+                    }
                 } catch (error) {
-                    console.error('Error handling admin command:', error)
+                    console.error('Error checking admin status:', error)
+                    const { sendMessage } = await import('@/lib/facebook-api')
+                    await sendMessage(senderId, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+                    return
                 }
-                return
             }
+
 
             // Handle Quick Reply for unregistered users
             if (message.quick_reply?.payload) {
