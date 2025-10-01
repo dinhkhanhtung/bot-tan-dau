@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Navigation } from '@/components/Navigation'
 import { 
   ShoppingBag, 
   MessageCircle, 
@@ -12,7 +14,8 @@ import {
   Calendar,
   Shield,
   Zap,
-  Heart
+  Heart,
+  ArrowRight
 } from 'lucide-react'
 
 export default function HomePage() {
@@ -20,24 +23,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-yellow-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">TD</span>
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-yellow-500 bg-clip-text text-transparent">
-                BOT TÂN DẬU 1981
-              </span>
-            </div>
-            <Badge variant="tan" className="text-sm">
-              🐓 Chỉ dành cho Tân Dậu 1981
-            </Badge>
-          </div>
-        </div>
-      </header>
+      <Navigation />
 
       {/* Hero Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
@@ -61,13 +47,16 @@ export default function HomePage() {
             >
               🚀 Bắt đầu ngay - Trial 3 ngày
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="text-lg px-8 py-4"
-            >
-              📖 Tìm hiểu thêm
-            </Button>
+            <Link href="/marketplace">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="text-lg px-8 py-4"
+              >
+                🛒 Khám phá Marketplace
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
           </div>
 
           {/* Features Grid */}
