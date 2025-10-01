@@ -212,7 +212,21 @@ export async function handlePostback(user: any, payload: string) {
                 }
                 break
             case 'COMMUNITY':
-                await handleCommunity(user)
+                if (params[0] === 'BIRTHDAY') {
+                    await handleCommunityBirthday(user)
+                } else if (params[0] === 'TOP' && params[1] === 'SELLER') {
+                    await handleCommunityTopSeller(user)
+                } else if (params[0] === 'RANKING') {
+                    await handleCommunityRanking(user)
+                } else if (params[0] === 'SUPPORT') {
+                    await handleCommunitySupport(user)
+                } else if (params[0] === 'ANNOUNCEMENTS') {
+                    await handleCommunityAnnouncements(user)
+                } else if (params[0] === 'EVENTS') {
+                    await handleCommunityEvents(user)
+                } else {
+                    await handleCommunity(user)
+                }
                 break
             case 'PAYMENT':
                 if (params[0] === 'CONFIRM') {
@@ -761,7 +775,7 @@ async function handleRegistration(user: any) {
     if (user.status !== 'trial' && user.status !== 'active') {
         await sendMessagesWithTyping(user.facebook_id, [
             '📝 ĐĂNG KÝ THÀNH VIÊN\n\nChào bạn! Tôi sẽ hướng dẫn bạn đăng ký từng bước.',
-            'Bước 1/4: Họ tên\n👤 Vui lòng nhập họ tên đầy đủ của bạn:\n\nVD: Nguyễn Văn Minh'
+            'Bước 1/4: Họ tên\n👤 Vui lòng nhập họ tên đầy đủ của bạn:\n\nVD: Đinh Khánh Tùng'
         ])
 
         await sendButtonTemplate(
@@ -3173,7 +3187,7 @@ async function handlePaymentHistory(user: any) {
             for (let i = 0; i < payments.length; i++) {
                 const payment = payments[i]
                 const status = payment.status === 'approved' ? '✅' : payment.status === 'rejected' ? '❌' : '⏳'
-                
+
                 await sendButtonTemplate(
                     user.facebook_id,
                     `${i + 1}️⃣ ${status} ${formatCurrency(payment.amount)}\n📅 ${new Date(payment.created_at).toLocaleDateString('vi-VN')}\n⏰ ${new Date(payment.created_at).toLocaleTimeString('vi-VN')}`,
@@ -3233,7 +3247,7 @@ async function handlePaymentGuide(user: any) {
 // Handle payment package selection
 async function handlePaymentPackage(user: any, packageType: string) {
     let packageInfo: { name: string; price: number; days: number } = { name: '', price: 0, days: 0 }
-    
+
     switch (packageType) {
         case '1_WEEK':
             packageInfo = { name: 'Gói 1 tuần', price: 50000, days: 7 }
@@ -3307,25 +3321,313 @@ async function handlePaymentUploadReceipt(user: any) {
     })
 }
 
-// Handle community
-async function handleCommunity(user: any) {
+// Handle community birthday
+async function handleCommunityBirthday(user: any) {
+    try {
+        // Get users with birthday today
+        const today = new Date()
+        const month = today.getMonth() + 1
+        const day = today.getDate()
+        
+        const { data: birthdayUsers, error } = await supabaseAdmin
+            .from('users')
+            .select('name, phone, location')
+            .eq('status', 'active')
+            .limit(10)
+
+        if (error) throw error
+
+        if (birthdayUsers && birthdayUsers.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🎂 SINH NHẬT HÔM NAY\n\nChúc mừng sinh nhật các thành viên Tân Dậu 1981:'
+            ])
+
+            for (let i = 0; i < birthdayUsers.length; i++) {
+                const birthdayUser = birthdayUsers[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `🎉 ${birthdayUser.name}\n📱 ${birthdayUser.phone}\n📍 ${birthdayUser.location}`,
+                    [
+                        createPostbackButton('🎂 CHÚC MỪNG', `BIRTHDAY_WISH_${birthdayUser.phone}`),
+                        createPostbackButton('💬 NHẮN TIN', `MESSAGE_${birthdayUser.phone}`),
+                        createPostbackButton('🎁 TẶNG QUÀ', `GIFT_${birthdayUser.phone}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🎂 SINH NHẬT HÔM NAY\n\n❌ Không có ai sinh nhật hôm nay!',
+                '💡 Hãy quay lại vào ngày khác nhé!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔄 LÀM MỚI', 'COMMUNITY_BIRTHDAY'),
+                createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling community birthday:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải danh sách sinh nhật!')
+    }
+}
+
+// Handle community top seller
+async function handleCommunityTopSeller(user: any) {
+    try {
+        const { data: topSellers, error } = await supabaseAdmin
+            .from('users')
+            .select('name, phone, location, rating, created_at')
+            .eq('status', 'active')
+            .order('rating', { ascending: false })
+            .limit(10)
+
+        if (error) throw error
+
+        if (topSellers && topSellers.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '⭐ TOP SELLER TÂN DẬU 1981\n\nDanh sách người bán uy tín nhất:'
+            ])
+
+            for (let i = 0; i < topSellers.length; i++) {
+                const seller = topSellers[i]
+                const rank = i + 1
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '⭐'
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${medal} ${rank}. ${seller.name}\n⭐ ${seller.rating || 0}/5 sao\n📍 ${seller.location}\n📱 ${seller.phone}`,
+                    [
+                        createPostbackButton('👀 XEM PROFILE', `PROFILE_${seller.phone}`),
+                        createPostbackButton('💬 LIÊN HỆ', `CONTACT_${seller.phone}`),
+                        createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_${seller.phone}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '⭐ TOP SELLER TÂN DẬU 1981\n\n❌ Chưa có dữ liệu người bán!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔄 LÀM MỚI', 'COMMUNITY_TOP_SELLER'),
+                createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling community top seller:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải danh sách top seller!')
+    }
+}
+
+// Handle community ranking
+async function handleCommunityRanking(user: any) {
+    try {
+        const { data: rankings, error } = await supabaseAdmin
+            .from('users')
+            .select('name, phone, location, rating, created_at')
+            .eq('status', 'active')
+            .order('rating', { ascending: false })
+            .limit(20)
+
+        if (error) throw error
+
+        if (rankings && rankings.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🏆 BẢNG XẾP HẠNG CỘNG ĐỒNG\n\nTop 20 thành viên tích cực nhất:'
+            ])
+
+            for (let i = 0; i < rankings.length; i++) {
+                const member = rankings[i]
+                const rank = i + 1
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏆'
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${medal} ${rank}. ${member.name}\n⭐ ${member.rating || 0}/5 sao\n📍 ${member.location}`,
+                    [
+                        createPostbackButton('👀 XEM PROFILE', `PROFILE_${member.phone}`),
+                        createPostbackButton('💬 LIÊN HỆ', `CONTACT_${member.phone}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🏆 BẢNG XẾP HẠNG CỘNG ĐỒNG\n\n❌ Chưa có dữ liệu xếp hạng!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔄 LÀM MỚI', 'COMMUNITY_RANKING'),
+                createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling community ranking:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải bảng xếp hạng!')
+    }
+}
+
+// Handle community support
+async function handleCommunitySupport(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '🤝 HỖ TRỢ LẪN NHAU\n\nCộng đồng Tân Dậu 1981 luôn sẵn sàng hỗ trợ nhau!'
+    ])
+
     await sendButtonTemplate(
         user.facebook_id,
-        '👥 CỘNG ĐỒNG TÂN DẬU - HỖ TRỢ CHÉO',
+        'Loại hỗ trợ:',
         [
-            createPostbackButton('🎂 SINH NHẬT', 'COMMUNITY_BIRTHDAY'),
-            createPostbackButton('🏆 TOP SELLER', 'COMMUNITY_TOP_SELLER'),
-            createPostbackButton('📖 KỶ NIỆM', 'COMMUNITY_MEMORIES')
+            createPostbackButton('💼 CÔNG VIỆC', 'SUPPORT_JOB'),
+            createPostbackButton('🏠 BẤT ĐỘNG SẢN', 'SUPPORT_REAL_ESTATE'),
+            createPostbackButton('🚗 Ô TÔ', 'SUPPORT_CAR')
         ]
     )
 
     await sendButtonTemplate(
         user.facebook_id,
-        'Thêm hoạt động cộng đồng:',
+        'Tùy chọn:',
         [
-            createPostbackButton('🎪 SỰ KIỆN', 'COMMUNITY_EVENTS'),
-            createPostbackButton('⭐ THÀNH TÍCH', 'COMMUNITY_ACHIEVEMENTS'),
-            createPostbackButton('🔮 TỬ VI', 'COMMUNITY_HOROSCOPE')
+            createPostbackButton('📝 ĐĂNG YÊU CẦU', 'SUPPORT_POST_REQUEST'),
+            createPostbackButton('🔍 TÌM HỖ TRỢ', 'SUPPORT_SEARCH'),
+            createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+        ]
+    )
+}
+
+// Handle community announcements
+async function handleCommunityAnnouncements(user: any) {
+    try {
+        const { data: announcements, error } = await supabaseAdmin
+            .from('notifications')
+            .select('*')
+            .eq('type', 'community')
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+        if (error) throw error
+
+        if (announcements && announcements.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📢 THÔNG BÁO CỘNG ĐỒNG\n\nTin tức mới nhất:'
+            ])
+
+            for (let i = 0; i < announcements.length; i++) {
+                const announcement = announcements[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${announcement.title}\n📅 ${new Date(announcement.created_at).toLocaleDateString('vi-VN')}\n⏰ ${new Date(announcement.created_at).toLocaleTimeString('vi-VN')}`,
+                    [
+                        createPostbackButton('👀 XEM CHI TIẾT', `ANNOUNCEMENT_${announcement.id}`),
+                        createPostbackButton('📤 CHIA SẺ', `SHARE_${announcement.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📢 THÔNG BÁO CỘNG ĐỒNG\n\n❌ Chưa có thông báo nào!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('🔄 LÀM MỚI', 'COMMUNITY_ANNOUNCEMENTS'),
+                createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling community announcements:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải thông báo!')
+    }
+}
+
+// Handle community events
+async function handleCommunityEvents(user: any) {
+    try {
+        const { data: events, error } = await supabaseAdmin
+            .from('events')
+            .select('*')
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+        if (error) throw error
+
+        if (events && events.length > 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🎉 SỰ KIỆN CỘNG ĐỒNG\n\nCác sự kiện sắp tới:'
+            ])
+
+            for (let i = 0; i < events.length; i++) {
+                const event = events[i]
+                
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `${i + 1}️⃣ ${event.title}\n📅 ${new Date(event.event_date).toLocaleDateString('vi-VN')}\n📍 ${event.location}\n👥 ${event.participants || 0} người tham gia`,
+                    [
+                        createPostbackButton('👀 XEM CHI TIẾT', `EVENT_${event.id}`),
+                        createPostbackButton('📝 ĐĂNG KÝ', `EVENT_REGISTER_${event.id}`)
+                    ]
+                )
+            }
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🎉 SỰ KIỆN CỘNG ĐỒNG\n\n❌ Chưa có sự kiện nào!'
+            ])
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('➕ TẠO SỰ KIỆN', 'EVENT_CREATE'),
+                createPostbackButton('🔄 LÀM MỚI', 'COMMUNITY_EVENTS'),
+                createPostbackButton('🔙 VỀ CỘNG ĐỒNG', 'COMMUNITY')
+            ]
+        )
+    } catch (error) {
+        console.error('Error handling community events:', error)
+        await sendMessage(user.facebook_id, 'Có lỗi xảy ra khi tải sự kiện!')
+    }
+}
+
+// Handle community
+async function handleCommunity(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '👥 CỘNG ĐỒNG TÂN DẬU - HỖ TRỢ CHÉO\n\nChào mừng bạn đến với cộng đồng Tân Dậu 1981!'
+    ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tính năng cộng đồng:',
+        [
+            createPostbackButton('🎂 SINH NHẬT', 'COMMUNITY_BIRTHDAY'),
+            createPostbackButton('⭐ TOP SELLER', 'COMMUNITY_TOP_SELLER'),
+            createPostbackButton('🏆 XẾP HẠNG', 'COMMUNITY_RANKING')
+        ]
+    )
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Hỗ trợ chéo:',
+        [
+            createPostbackButton('🤝 HỖ TRỢ LẪN NHAU', 'COMMUNITY_SUPPORT'),
+            createPostbackButton('📢 THÔNG BÁO CỘNG ĐỒNG', 'COMMUNITY_ANNOUNCEMENTS'),
+            createPostbackButton('🎉 SỰ KIỆN', 'COMMUNITY_EVENTS')
         ]
     )
 
