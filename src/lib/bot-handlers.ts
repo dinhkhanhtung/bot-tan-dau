@@ -306,6 +306,8 @@ export async function handlePostback(user: any, postback: string) {
                     await AdminHandlers.handleAdminListings(user)
                 } else if (params[0] === 'STATS') {
                     await AdminHandlers.handleAdminStats(user)
+                } else if (params[0] === 'SPAM' && params[1] === 'LOGS') {
+                    await AdminHandlers.handleAdminSpamLogs(user)
                 } else if (params[0] === 'EXPORT') {
                     await AdminHandlers.handleAdminExport(user)
                 } else if (params[0] === 'NOTIFICATIONS') {

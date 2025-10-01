@@ -5,6 +5,7 @@ import {
     sendQuickReply,
     sendButtonTemplate,
     createPostbackButton,
+    createQuickReply,
     sendMessagesWithTyping
 } from '../facebook-api'
 import { formatCurrency, formatNumber, updateBotSession } from '../utils'
@@ -706,5 +707,48 @@ export async function handleAdminStartBot(user: any) {
     } catch (error) {
         console.error('Error in admin start bot:', error)
         await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi bật bot!')
+    }
+}
+
+// Handle admin spam logs
+export async function handleAdminSpamLogs(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        const { getSpamStats } = await import('@/lib/anti-spam')
+        const spamStats = await getSpamStats()
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🛡️ SPAM LOGS & BẢO MẬT',
+            `🚫 Tổng lần chặn spam: ${formatNumber(spamStats.totalBlocks)}`,
+            `⏸️ Đang bị chặn: ${formatNumber(spamStats.activeBlocks)}`,
+            '',
+            '📋 LỊCH SỬ SPAM GẦN ĐÂY:'
+        ])
+
+        if (spamStats.recentSpam.length === 0) {
+            await sendMessage(user.facebook_id, '✅ Không có spam nào trong thời gian gần đây!')
+        } else {
+            const spamText = spamStats.recentSpam.slice(0, 5).map((log, index) => {
+                const date = new Date(log.blocked_at).toLocaleString('vi-VN')
+                return `${index + 1}. User: ${log.user_id}\n   Lý do: ${log.reason}\n   Thời gian: ${date}`
+            }).join('\n\n')
+
+            await sendMessage(user.facebook_id, spamText)
+        }
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createQuickReply('🔄 LÀM MỚI', 'ADMIN_SPAM_LOGS'),
+                createQuickReply('📊 THỐNG KÊ', 'ADMIN_STATS'),
+                createQuickReply('🔙 QUAY LẠI', 'ADMIN_MENU')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error in admin spam logs:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải spam logs!')
     }
 }

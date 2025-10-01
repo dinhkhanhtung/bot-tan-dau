@@ -112,6 +112,35 @@ async function handleMessageEvent(event: any) {
             return
         }
 
+        // Check for spam before processing
+        const { checkSpam, isUserBlocked, sendSpamWarning, sendSpamBlockMessage } = await import('@/lib/anti-spam')
+        
+        // Check if user is currently blocked
+        if (isUserBlocked(senderId)) {
+            await sendSpamBlockMessage(senderId)
+            return
+        }
+
+        // Check for spam
+        const spamCheck = await checkSpam(senderId, message.text || '')
+        
+        if (spamCheck.shouldBlock) {
+            await sendSpamBlockMessage(senderId)
+            return
+        }
+
+        if (spamCheck.warningCount > 0) {
+            await sendSpamWarning(senderId, spamCheck.warningCount)
+            // Continue processing but with warning
+        }
+
+        // Log message to database for spam tracking
+        try {
+            await logMessage(senderId, message.text || '', message.mid || '')
+        } catch (error) {
+            console.error('Error logging message:', error)
+        }
+
         // Get user (don't auto-create)
         const user = await getUserByFacebookId(senderId)
         if (!user) {
@@ -440,4 +469,21 @@ async function handleListingImages(user: any, imageUrl: string) {
 async function sendMessageToUser(recipientId: string, message: string) {
     const { sendMessage } = await import('@/lib/facebook-api')
     await sendMessage(recipientId, message)
+}
+
+// Helper function to log message to database
+async function logMessage(facebookId: string, content: string, messageId: string) {
+    try {
+        const { supabaseAdmin } = await import('@/lib/supabase')
+        await supabaseAdmin
+            .from('messages')
+            .insert({
+                user_id: facebookId,
+                content: content,
+                message_id: messageId,
+                created_at: new Date().toISOString()
+            })
+    } catch (error) {
+        console.error('Error logging message to database:', error)
+    }
 }
