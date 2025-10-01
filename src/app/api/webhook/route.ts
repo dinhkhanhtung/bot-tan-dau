@@ -112,6 +112,21 @@ async function handleMessageEvent(event: any) {
             return
         }
 
+        // Check for duplicate message processing
+        const messageId = message.mid || `${senderId}_${Date.now()}`
+        if (processedMessages.has(messageId)) {
+            console.log('Skipping duplicate message:', messageId)
+            return
+        }
+        processedMessages.add(messageId)
+        
+        // Clean up old entries (keep only last 1000)
+        if (processedMessages.size > 1000) {
+            const entries = Array.from(processedMessages)
+            processedMessages.clear()
+            entries.slice(-500).forEach(entry => processedMessages.add(entry))
+        }
+
         // Get user first to check if they exist
         const user = await getUserByFacebookId(senderId)
         
@@ -228,7 +243,7 @@ async function handleMessageEvent(event: any) {
                 return
             }
             
-            // Send welcome message for new users (only if not Quick Reply)
+            // Send welcome message for new users (only if not Quick Reply and not admin command)
             try {
                 const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
                 await sendMessage(senderId, '👋 Chào mừng bạn đến với Bot Tân Dậu 1981!')
@@ -279,6 +294,7 @@ async function handleMessageEvent(event: any) {
 
 // Cache to prevent duplicate postback processing
 const processedPostbacks = new Set<string>()
+const processedMessages = new Set<string>()
 
 // Handle postback events (button clicks)
 async function handlePostbackEvent(event: any) {
