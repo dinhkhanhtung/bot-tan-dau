@@ -11,7 +11,7 @@ import {
 import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from '../utils'
 
 
-// Handle registration flow - IMPROVED WITH PROGRESS BAR
+// Handle registration flow - OPTIMIZED VERSION
 export async function handleRegistration(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
@@ -20,11 +20,7 @@ export async function handleRegistration(user: any) {
     const userIsAdmin = await isAdmin(user.facebook_id)
 
     if (userIsAdmin) {
-        await sendMessagesWithTyping(user.facebook_id, [
-            '🔧 ADMIN DASHBOARD',
-            'Chào admin! 👋',
-            'Bạn có quyền truy cập đầy đủ mà không cần đăng ký.'
-        ])
+        await sendMessage(user.facebook_id, '🔧 ADMIN DASHBOARD\nChào admin! 👋\nBạn có quyền truy cập đầy đủ mà không cần đăng ký.')
 
         await sendQuickReply(
             user.facebook_id,
@@ -42,10 +38,7 @@ export async function handleRegistration(user: any) {
     // Check if user is already registered (exclude temp users)
     if ((user.status === 'registered' || user.status === 'trial') &&
         user.name !== 'User' && !user.phone?.startsWith('temp_')) {
-        await sendMessagesWithTyping(user.facebook_id, [
-            '✅ Bạn đã đăng ký rồi!',
-            'Sử dụng menu bên dưới để truy cập các tính năng.'
-        ])
+        await sendMessage(user.facebook_id, '✅ Bạn đã đăng ký rồi!\nSử dụng menu bên dưới để truy cập các tính năng.')
 
         await sendQuickReply(
             user.facebook_id,
@@ -59,35 +52,12 @@ export async function handleRegistration(user: any) {
         return
     }
 
-    // Start registration flow with progress bar - ENHANCED
-    await sendMessagesWithTyping(user.facebook_id, [
-        '📝 ĐĂNG KÝ THÀNH VIÊN Tân Dậu - Hỗ Trợ Chéo',
-        '🎯 Dành riêng cho người sinh năm 1981 (Tân Dậu)',
-        '━━━━━━━━━━━━━━━━━━━━',
-        '📋 THÔNG TIN CẦN THIẾT:',
-        '• Họ tên đầy đủ',
-        '• Số điện thoại',
-        '• Tỉnh/thành sinh sống',
-        '• Ngày sinh',
-        '• Xác nhận năm sinh 1981',
-        '• Từ khóa tìm kiếm (tùy chọn)',
-        '• Sản phẩm/dịch vụ (tùy chọn)',
-        '━━━━━━━━━━━━━━━━━━━━',
-        '🎁 QUYỀN LỢI THÀNH VIÊN:',
-        '✅ Trial 7 ngày miễn phí',
-        '✅ Tìm kiếm sản phẩm không giới hạn',
-        '✅ Niêm yết sản phẩm/dịch vụ',
-        '✅ Tham gia cộng đồng Tân Dậu',
-        '✅ Nhận tử vi hàng ngày',
-        '✅ Tích điểm thưởng',
-        '✅ Hỗ trợ 24/7',
-        '━━━━━━━━━━━━━━━━━━━━',
-        '💰 PHÍ SỬ DỤNG:',
-        '• 2,000đ/ngày (rất rẻ!)',
-        '• Tối thiểu 7 ngày = 14,000đ',
-        '• Có thể thanh toán theo tháng',
-        '━━━━━━━━━━━━━━━━━━━━'
-    ])
+    // OPTIMIZED: Single screen with essential info first
+    await sendMessage(user.facebook_id, '🚀 ĐĂNG KÝ NHANH - Tân Dậu Hỗ Trợ Chéo')
+
+    await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
+
+    await sendMessage(user.facebook_id, '🎁 QUYỀN LỢI: Trial 7 ngày miễn phí\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━')
 
     // Create session for registration flow
     await updateBotSession(user.facebook_id, {
@@ -97,20 +67,8 @@ export async function handleRegistration(user: any) {
         started_at: new Date().toISOString()
     })
 
-    // Start with first step - ENHANCED UX
-    await sendMessagesWithTyping(user.facebook_id, [
-        '📝 ĐĂNG KÝ THÀNH VIÊN (Bước 1/6)',
-        '━━━━━━━━━━━━━━━━━━━━',
-        '👤 HỌ TÊN ĐẦY ĐỦ',
-        'Vui lòng nhập họ tên đầy đủ của bạn:',
-        '━━━━━━━━━━━━━━━━━━━━',
-        '💡 Ví dụ: Nguyễn Văn Minh',
-        '📝 Nhập họ tên để tiếp tục:',
-        '',
-        '🎯 Mẹo: Tên chính xác giúp tăng độ tin cậy!',
-        '━━━━━━━━━━━━━━━━━━━━',
-        '💡 GỠI Ý: Bạn có thể nhập "hủy" bất cứ lúc nào để thoát khỏi quy trình đăng ký'
-    ])
+    // Start with first step - SIMPLIFIED
+    await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/4)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Nguyễn Văn Minh\n📝 Nhập họ tên để tiếp tục:')
 }
 
 // Handle registration step
@@ -168,10 +126,7 @@ async function handleRegistrationName(user: any, text: string, data: any) {
 
     data.name = text.trim()
 
-    await sendMessagesWithTyping(user.facebook_id, [
-        `✅ Họ tên: ${data.name}`,
-        'Bước 2/6: Số điện thoại\n📱 Vui lòng nhập số điện thoại của bạn:'
-    ])
+    await sendMessage(user.facebook_id, `✅ Họ tên: ${data.name}\n📝 Bước 2/4: Số điện thoại\n📱 Vui lòng nhập số điện thoại của bạn:`)
 
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
@@ -203,10 +158,7 @@ async function handleRegistrationPhone(user: any, text: string, data: any) {
 
     data.phone = phone
 
-    await sendMessagesWithTyping(user.facebook_id, [
-        `✅ SĐT: ${phone}`,
-        'Bước 3/6: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:'
-    ])
+    await sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n📝 Bước 3/4: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:`)
 
     await sendQuickReply(
         user.facebook_id,
@@ -237,17 +189,20 @@ export async function handleRegistrationLocationPostback(user: any, location: st
     const data = session.data
     data.location = location
 
-    await sendMessagesWithTyping(user.facebook_id, [
-        `✅ Vị trí: ${location}`,
-        'Bước 4/6: Từ khóa tìm kiếm\n🔍 Để tìm kiếm dễ dàng hơn, bạn có muốn thêm từ khóa tìm kiếm?',
-        'VD: nhà đất, xe honda, điện thoại, thời trang, ẩm thực...',
-        '💡 Từ khóa này sẽ giúp bạn tìm thấy sản phẩm phù hợp hơn!',
-        '📝 Nhập từ khóa tìm kiếm (hoặc "bỏ qua" nếu không muốn):'
-    ])
+    await sendMessage(user.facebook_id, `✅ Vị trí: ${location}\n📝 Bước 4/4: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!\n❓ Bạn có phải sinh năm 1981 (Tân Dậu) không?`)
+
+    await sendQuickReply(
+        user.facebook_id,
+        'Xác nhận tuổi:',
+        [
+            createQuickReply('✅ CÓ - TÔI SINH NĂM 1981', 'REG_BIRTHDAY_YES'),
+            createQuickReply('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REG_BIRTHDAY_NO')
+        ]
+    )
 
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
-        step: 'keywords',
+        step: 'birthday_confirm',
         data: data
     })
 }
@@ -259,13 +214,7 @@ export async function handleBirthdayVerification(user: any) {
 
     const data = session.data
 
-    await sendMessagesWithTyping(user.facebook_id, [
-        '✅ Xác nhận tuổi thành công!',
-        'Bước 5/6: Từ khóa tìm kiếm\n🔍 Để tìm kiếm dễ dàng hơn, bạn có muốn thêm từ khóa tìm kiếm?',
-        'VD: nhà đất, xe honda, điện thoại, thời trang, ẩm thực...',
-        '💡 Từ khóa này sẽ giúp bạn tìm thấy sản phẩm phù hợp hơn!',
-        '📝 Nhập từ khóa tìm kiếm (hoặc "bỏ qua" nếu không muốn):'
-    ])
+    await sendMessage(user.facebook_id, '✅ Xác nhận tuổi thành công!\n📝 Thông tin tùy chọn (có thể bỏ qua)\n━━━━━━━━━━━━━━━━━━━━\n🔍 Từ khóa tìm kiếm:\nVD: nhà đất, xe honda, điện thoại...\n━━━━━━━━━━━━━━━━━━━━\n🛒 Sản phẩm/Dịch vụ:\nVD: Nhà đất, xe cộ, điện tử...\n━━━━━━━━━━━━━━━━━━━━\n💡 Nhập: "Từ khóa, sản phẩm" hoặc "bỏ qua"')
 
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
@@ -344,29 +293,25 @@ export async function handleRegistrationTimeout(user: any) {
 
 // Handle keywords input for better search
 async function handleRegistrationKeywords(user: any, text: string, data: any) {
-    if (text.length < 3) {
-        await sendMessage(user.facebook_id, '❌ Từ khóa quá ngắn. Vui lòng nhập từ khóa tìm kiếm (ít nhất 3 ký tự) hoặc "bỏ qua":')
-        return
-    }
-
     if (text.toLowerCase().includes('bỏ qua') || text.toLowerCase().includes('không')) {
         data.keywords = null
+        data.product_service = null
     } else {
-        data.keywords = text.trim()
+        // Try to parse combined input: "keywords, product_service"
+        const parts = text.split(',').map(part => part.trim())
+        if (parts.length >= 1) {
+            data.keywords = parts[0] || null
+            data.product_service = parts[1] || null
+        } else {
+            data.keywords = text
+            data.product_service = null
+        }
     }
 
-    await sendMessagesWithTyping(user.facebook_id, [
-        data.keywords ? `✅ Từ khóa tìm kiếm: ${data.keywords}` : '✅ Bỏ qua từ khóa tìm kiếm',
-        'Bước 6/6: Sản phẩm/Dịch vụ\n🛒 Bạn có sản phẩm hoặc dịch vụ gì muốn chia sẻ với cộng đồng Tân Dậu - Hỗ Trợ Chéo?',
-        'VD: Nhà đất, xe cộ, điện tử, thời trang, ẩm thực, dịch vụ tư vấn...',
-        '📝 Vui lòng mô tả ngắn gọn (có thể để trống nếu chưa có):'
-    ])
+    await sendMessage(user.facebook_id, data.keywords ? `✅ Từ khóa: ${data.keywords}` : '✅ Bỏ qua thông tin tùy chọn')
 
-    await updateBotSession(user.facebook_id, {
-        current_flow: 'registration',
-        step: 'product_service',
-        data: data
-    })
+    // Complete registration
+    await completeRegistration(user, data)
 }
 
 // Handle default message for new users
@@ -621,18 +566,8 @@ async function completeRegistration(user: any, data: any) {
         // Clear session
         await updateBotSession(user.facebook_id, null)
 
-        // Send success message
-        await sendMessagesWithTyping(user.facebook_id, [
-            '🎉 ĐĂNG KÝ THÀNH CÔNG!',
-            `✅ Họ tên: ${data.name}`,
-            `✅ SĐT: ${data.phone}`,
-            `✅ Địa điểm: ${data.location}`,
-            `✅ Ngày sinh: ${new Date(data.birthday).toLocaleDateString('vi-VN')}`,
-            data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ',
-            '',
-            '🎁 Bạn được dùng thử miễn phí 7 ngày!',
-            'Sau đó cần nâng cấp để tiếp tục sử dụng.'
-        ])
+        // Send success message - SIMPLIFIED
+        await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 7 ngày!\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━`)
 
         await sendQuickReply(
             user.facebook_id,
