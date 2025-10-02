@@ -721,6 +721,116 @@ export async function handleAdminStartBot(user: any) {
     }
 }
 
+// Handle admin take chat
+export async function handleAdminTakeChat(user: any, sessionId: string) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        const { adminTakeOverChat, getActiveAdminChatSession } = await import('../admin-chat')
+        const success = await adminTakeOverChat(sessionId, user.facebook_id)
+
+        if (success) {
+            // Get session details
+            const { data: session } = await supabaseAdmin
+                .from('admin_chat_sessions')
+                .select('*')
+                .eq('id', sessionId)
+                .single()
+
+            if (session) {
+                // Get user info
+                const { data: chatUser } = await supabaseAdmin
+                    .from('users')
+                    .select('name, phone')
+                    .eq('facebook_id', session.user_id)
+                    .single()
+
+                await sendMessagesWithTyping(user.facebook_id, [
+                    '✅ ĐÃ NHẬN CHAT!',
+                    `👤 User: ${chatUser?.name || 'Unknown'}`,
+                    `📱 Phone: ${chatUser?.phone || 'Unknown'}`,
+                    `🆔 Session: ${sessionId.slice(-8)}`,
+                    '',
+                    '💬 Bạn có thể trả lời user ngay bây giờ.',
+                    '📝 Gửi tin nhắn để trả lời user.'
+                ])
+
+                // Notify user that admin has joined
+                await sendMessage(session.user_id, '✅ Admin đã vào chat! Bạn có thể bắt đầu trò chuyện.')
+
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    'Quản lý chat:',
+                    [
+                        createPostbackButton('❌ KẾT THÚC CHAT', `ADMIN_END_CHAT_${sessionId}`),
+                        createPostbackButton('👀 XEM LỊCH SỬ', `ADMIN_CHAT_HISTORY_${sessionId}`),
+                        createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+                    ]
+                )
+            }
+        } else {
+            await sendMessage(user.facebook_id, '❌ Không thể nhận chat. Session có thể đã được admin khác nhận.')
+        }
+    } catch (error) {
+        console.error('Error taking chat:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi nhận chat!')
+    }
+}
+
+// Handle admin end chat
+export async function handleAdminEndChat(user: any, sessionId: string) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        const { data: session } = await supabaseAdmin
+            .from('admin_chat_sessions')
+            .select('*')
+            .eq('id', sessionId)
+            .eq('admin_id', user.facebook_id)
+            .single()
+
+        if (!session) {
+            await sendMessage(user.facebook_id, '❌ Session không tồn tại hoặc bạn không có quyền!')
+            return
+        }
+
+        // End the session
+        const { error } = await supabaseAdmin
+            .from('admin_chat_sessions')
+            .update({
+                status: 'closed',
+                ended_at: new Date().toISOString()
+            })
+            .eq('id', sessionId)
+
+        if (!error) {
+            await sendMessage(user.facebook_id, '✅ Đã kết thúc chat với user!')
+
+            // Notify user
+            await sendMessagesWithTyping(session.user_id, [
+                '👨‍💼 Admin đã kết thúc chat.',
+                'Cảm ơn bạn đã sử dụng dịch vụ hỗ trợ!',
+                'Bot sẽ tiếp tục hỗ trợ bạn như bình thường.'
+            ])
+
+            await sendButtonTemplate(
+                session.user_id,
+                'Bạn muốn:',
+                [
+                    createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
+                    createPostbackButton('🛒 TẠO TIN', 'LISTING'),
+                    createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                ]
+            )
+        } else {
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi kết thúc chat!')
+        }
+    } catch (error) {
+        console.error('Error ending chat:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra!')
+    }
+}
+
 // Handle admin spam logs
 export async function handleAdminSpamLogs(user: any) {
     await sendTypingIndicator(user.facebook_id)

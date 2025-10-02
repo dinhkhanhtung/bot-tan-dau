@@ -327,20 +327,63 @@ export async function handleSupportAdmin(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '👨‍💼 CHAT VỚI ADMIN',
-        'Admin sẽ hỗ trợ bạn trong thời gian sớm nhất!',
-        'Trong khi chờ đợi, bạn có thể:'
+        'Bạn muốn chat trực tiếp với admin?',
+        '⚠️ Lưu ý: Bot sẽ tạm dừng để admin có thể trả lời bạn trực tiếp.'
     ])
 
     await sendButtonTemplate(
         user.facebook_id,
-        'Tùy chọn:',
+        'Chọn hành động:',
         [
-            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('📱 TIN ĐĂNG CỦA TÔI', 'MY_LISTINGS'),
-            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE'),
+            createPostbackButton('💬 BẮT ĐẦU CHAT', 'START_ADMIN_CHAT'),
+            createPostbackButton('🤖 CHAT BOT', 'SUPPORT_BOT'),
+            createPostbackButton('❓ FAQ', 'SUPPORT_FAQ'),
             createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
         ]
     )
+}
+
+// Handle start admin chat
+export async function handleStartAdminChat(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        const { startAdminChatSession } = await import('../admin-chat')
+        const result = await startAdminChatSession(user.facebook_id)
+
+        if (result.success) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '✅ ĐÃ KẾT NỐI VỚI ADMIN!',
+                '👨‍💼 Yêu cầu chat đã được gửi đến admin.',
+                '⏳ Vui lòng chờ admin phản hồi...',
+                '',
+                '💬 Bạn có thể gửi tin nhắn ngay bây giờ.',
+                '🤖 Bot sẽ tạm dừng cho đến khi admin trả lời.'
+            ])
+
+            await sendButtonTemplate(
+                user.facebook_id,
+                'Trong khi chờ đợi:',
+                [
+                    createPostbackButton('❌ HỦY CHAT', 'CANCEL_ADMIN_CHAT'),
+                    createPostbackButton('🔄 QUAY LẠI BOT', 'EXIT_ADMIN_CHAT')
+                ]
+            )
+        } else {
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi kết nối với admin. Vui lòng thử lại sau!')
+            await sendButtonTemplate(
+                user.facebook_id,
+                'Tùy chọn khác:',
+                [
+                    createPostbackButton('🤖 CHAT BOT', 'SUPPORT_BOT'),
+                    createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                ]
+            )
+        }
+    } catch (error) {
+        console.error('Error starting admin chat:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+    }
 }
 
 // Handle referral program

@@ -32,27 +32,44 @@ export async function handleMessage(user: any, text: string) {
             return
         }
 
-        // Check if bot is stopped for this user
-        const { isBotStoppedForUser, trackNonButtonMessage, sendBotStoppedMessage, sendNonButtonWarning } = await import('./anti-spam')
-        if (isBotStoppedForUser(user.facebook_id)) {
-            await sendBotStoppedMessage(user.facebook_id, 'Bot temporarily stopped for spam prevention')
-            return
-        }
-
-        // Track non-button messages for spam prevention
-        const nonButtonResult = await trackNonButtonMessage(user.facebook_id, text)
-        if (nonButtonResult.shouldStopBot) {
-            await sendBotStoppedMessage(user.facebook_id, nonButtonResult.reason || 'Too many non-button messages')
-            return
-        } else if (nonButtonResult.warningCount > 0) {
-            await sendNonButtonWarning(user.facebook_id, nonButtonResult.warningCount)
-        }
-
-        // Check if user is admin - skip membership checks
+        // Check if user is admin first - skip all restrictions for admin
         const { isAdmin } = await import('./handlers/admin-handlers')
         const userIsAdmin = await isAdmin(user.facebook_id)
 
+        // If admin is in an active chat session, handle message to user
+        if (userIsAdmin) {
+            const { data: adminSession } = await supabaseAdmin
+                .from('admin_chat_sessions')
+                .select('*')
+                .eq('admin_id', user.facebook_id)
+                .eq('status', 'active')
+                .single()
+
+            if (adminSession) {
+                // Admin is in active chat, forward message to user
+                const { handleAdminMessageToUser } = await import('./admin-chat')
+                await handleAdminMessageToUser(user.facebook_id, adminSession.id, text)
+                return
+            }
+        }
+
         if (!userIsAdmin) {
+            // Check if bot is stopped for this user (only for non-admin)
+            const { isBotStoppedForUser, trackNonButtonMessage, sendBotStoppedMessage, sendNonButtonWarning } = await import('./anti-spam')
+            if (await isBotStoppedForUser(user.facebook_id)) {
+                await sendBotStoppedMessage(user.facebook_id, 'Bot temporarily stopped for spam prevention')
+                return
+            }
+
+            // Track non-button messages for spam prevention (only for non-admin)
+            const nonButtonResult = await trackNonButtonMessage(user.facebook_id, text)
+            if (nonButtonResult.shouldStopBot) {
+                await sendBotStoppedMessage(user.facebook_id, nonButtonResult.reason || 'Too many non-button messages')
+                return
+            } else if (nonButtonResult.warningCount > 0) {
+                await sendNonButtonWarning(user.facebook_id, nonButtonResult.warningCount)
+            }
+
             // Check if user is expired
             if (isExpiredUser(user.membership_expires_at)) {
                 await PaymentHandlers.sendExpiredMessage(user.facebook_id)
@@ -66,6 +83,13 @@ export async function handleMessage(user: any, text: string) {
                     await PaymentHandlers.sendTrialExpiringMessage(user.facebook_id, daysLeft)
                 }
             }
+        }
+
+        // Check if user is in admin chat mode
+        const { isUserInAdminChat, handleUserMessageInAdminChat } = await import('./admin-chat')
+        if (await isUserInAdminChat(user.facebook_id)) {
+            await handleUserMessageInAdminChat(user.facebook_id, text)
+            return
         }
 
         // Check if user is in registration flow
@@ -109,8 +133,10 @@ export async function handleMessage(user: any, text: string) {
         } else if (text === '/admin') {
             await AdminHandlers.handleAdminCommand(user)
         } else {
-            // Check if user is registered
-            if (user.status === 'registered' || user.status === 'trial') {
+            // Check if user is admin first
+            if (userIsAdmin) {
+                await AdminHandlers.handleAdminCommand(user)
+            } else if (user.status === 'registered' || user.status === 'trial') {
                 await UtilityHandlers.handleDefaultMessageRegistered(user)
             } else {
                 await AuthHandlers.handleDefaultMessage(user)
@@ -127,9 +153,15 @@ export async function handleMessage(user: any, text: string) {
 // Handle postback (button clicks)
 export async function handlePostback(user: any, postback: string) {
     try {
-        // Reset non-button tracking when user clicks a button
-        const { resetNonButtonTracking } = await import('./anti-spam')
-        resetNonButtonTracking(user.facebook_id)
+        // Check if user is admin first
+        const { isAdmin } = await import('./handlers/admin-handlers')
+        const userIsAdmin = await isAdmin(user.facebook_id)
+
+        // Reset non-button tracking when user clicks a button (only for non-admin)
+        if (!userIsAdmin) {
+            const { resetNonButtonTracking } = await import('./anti-spam')
+            resetNonButtonTracking(user.facebook_id)
+        }
 
         const [action, ...params] = postback.split('_')
 
@@ -415,6 +447,14 @@ export async function handlePostback(user: any, postback: string) {
                     if (params[1] === 'BOT') {
                         await AdminHandlers.handleAdminStartBot(user)
                     }
+                } else if (params[0] === 'TAKE') {
+                    if (params[1] === 'CHAT') {
+                        await AdminHandlers.handleAdminTakeChat(user, params[2])
+                    }
+                } else if (params[0] === 'END') {
+                    if (params[1] === 'CHAT') {
+                        await AdminHandlers.handleAdminEndChat(user, params[2])
+                    }
                 } else {
                     await AdminHandlers.handleAdminCommand(user)
                 }
@@ -476,6 +516,21 @@ export async function handlePostback(user: any, postback: string) {
                     await UtilityHandlers.handleSupportAdmin(user)
                 } else {
                     await UtilityHandlers.handleSupport(user)
+                }
+                break
+            case 'START':
+                if (params[0] === 'ADMIN' && params[1] === 'CHAT') {
+                    await UtilityHandlers.handleStartAdminChat(user)
+                }
+                break
+            case 'CANCEL':
+                if (params[0] === 'ADMIN' && params[1] === 'CHAT') {
+                    await handleCancelAdminChat(user)
+                }
+                break
+            case 'EXIT':
+                if (params[0] === 'ADMIN' && params[1] === 'CHAT') {
+                    await handleExitAdminChat(user)
                 }
                 break
             case 'MAIN':
@@ -628,6 +683,71 @@ export async function handleContactAdmin(user: any) {
             createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
         ]
     )
+}
+
+// Handle cancel admin chat
+export async function handleCancelAdminChat(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        const { endAdminChatSession } = await import('./admin-chat')
+        const success = await endAdminChatSession(user.facebook_id)
+
+        if (success) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '❌ ĐÃ HỦY CHAT VỚI ADMIN',
+                'Yêu cầu chat đã được hủy.',
+                'Bạn có thể quay lại sử dụng bot bình thường.'
+            ])
+        } else {
+            await sendMessage(user.facebook_id, '⚠️ Không thể hủy chat. Có thể bạn không có session nào đang hoạt động.')
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Bạn muốn:',
+            [
+                createPostbackButton('🤖 CHAT BOT', 'SUPPORT_BOT'),
+                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+    } catch (error) {
+        console.error('Error canceling admin chat:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle exit admin chat
+export async function handleExitAdminChat(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        const { endAdminChatSession } = await import('./admin-chat')
+        const success = await endAdminChatSession(user.facebook_id)
+
+        if (success) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🔄 ĐÃ QUAY LẠI CHẾ ĐỘ BOT',
+                'Bạn đã thoát khỏi chế độ chat với admin.',
+                'Bot sẽ tiếp tục hỗ trợ bạn như bình thường.'
+            ])
+        } else {
+            await sendMessage(user.facebook_id, '⚠️ Không thể thoát chat. Có thể bạn không có session nào đang hoạt động.')
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Bạn muốn:',
+            [
+                createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
+                createPostbackButton('🛒 TẠO TIN', 'LISTING'),
+                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+    } catch (error) {
+        console.error('Error exiting admin chat:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+    }
 }
 
 // Handle exit bot

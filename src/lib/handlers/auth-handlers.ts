@@ -237,6 +237,31 @@ export async function handleBirthdayRejection(user: any) {
 // Handle default message for new users
 export async function handleDefaultMessage(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Check if user is admin first
+    const { isAdmin } = await import('./admin-handlers')
+    const userIsAdmin = await isAdmin(user.facebook_id)
+
+    if (userIsAdmin) {
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🔧 ADMIN DASHBOARD',
+            'Chào admin! 👋',
+            'Bạn có quyền truy cập đầy đủ.'
+        ])
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Chọn chức năng:',
+            [
+                createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
+                createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
+                createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
+            ]
+        )
+        return
+    }
+
     await sendMessagesWithTyping(user.facebook_id, [
         '🎉 CHÀO MỪNG ĐẾN VỚI BOT TÂN DẬU 1981! 🎉',
         '👋 Xin chào! Tôi là bot hỗ trợ cộng đồng Tân Dậu 1981.',
@@ -404,21 +429,53 @@ export async function handleRegistrationBirthday(user: any, text: string, data: 
 // Complete registration process
 async function completeRegistration(user: any, data: any) {
     try {
-        // Create user record
-        const { error: userError } = await supabaseAdmin
+        // Check if user already exists (from welcome message tracking)
+        const { data: existingUser } = await supabaseAdmin
             .from('users')
-            .insert({
-                id: generateId(),
-                facebook_id: user.facebook_id,
-                name: data.name,
-                phone: data.phone,
-                location: data.location,
-                birthday: data.birthday,
-                product_service: data.product_service || null,
-                status: 'trial',
-                membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days trial
-                created_at: new Date().toISOString()
-            })
+            .select('*')
+            .eq('facebook_id', user.facebook_id)
+            .single()
+
+        let userError = null
+
+        if (existingUser) {
+            // Update existing user record
+            const { error } = await supabaseAdmin
+                .from('users')
+                .update({
+                    name: data.name,
+                    phone: data.phone,
+                    location: data.location,
+                    birthday: data.birth_year || 1981,
+                    product_service: data.product_service || null,
+                    status: 'trial',
+                    membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
+                    welcome_message_sent: true,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('facebook_id', user.facebook_id)
+            userError = error
+        } else {
+            // Create new user record
+            const { error } = await supabaseAdmin
+                .from('users')
+                .insert({
+                    id: generateId(),
+                    facebook_id: user.facebook_id,
+                    name: data.name,
+                    phone: data.phone,
+                    location: data.location,
+                    birthday: data.birth_year || 1981,
+                    product_service: data.product_service || null,
+                    status: 'trial',
+                    membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
+                    welcome_message_sent: true,
+                    created_at: new Date().toISOString()
+                })
+            userError = error
+        }
 
         if (userError) {
             console.error('Error creating user:', userError)

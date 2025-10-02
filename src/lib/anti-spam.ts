@@ -32,6 +32,18 @@ export async function checkSpam(facebookId: string, message: string): Promise<{
     shouldBlock: boolean,
     warningCount: number
 }> {
+    // Check if user is admin - skip all spam checks for admin
+    const { isAdmin } = await import('./handlers/admin-handlers')
+    const userIsAdmin = await isAdmin(facebookId)
+
+    if (userIsAdmin) {
+        return {
+            isSpam: false,
+            shouldBlock: false,
+            warningCount: 0
+        }
+    }
+
     const now = Date.now()
     const minute = Math.floor(now / 60000) // Current minute
     const hour = Math.floor(now / 3600000) // Current hour
@@ -262,6 +274,17 @@ export async function trackNonButtonMessage(facebookId: string, message: string)
     warningCount: number,
     reason?: string
 }> {
+    // Check if user is admin - skip tracking for admin
+    const { isAdmin } = await import('./handlers/admin-handlers')
+    const userIsAdmin = await isAdmin(facebookId)
+
+    if (userIsAdmin) {
+        return {
+            shouldStopBot: false,
+            warningCount: 0
+        }
+    }
+
     const now = Date.now()
     const windowMs = SPAM_CONFIG.NON_BUTTON_WINDOW_MINUTES * 60 * 1000
 
@@ -347,7 +370,19 @@ async function stopBotForUser(facebookId: string, reason: string): Promise<void>
 }
 
 // Check if bot is stopped for user
-export function isBotStoppedForUser(facebookId: string): boolean {
+export async function isBotStoppedForUser(facebookId: string): Promise<boolean> {
+    // Check if user is admin - never stop bot for admin
+    try {
+        const { isAdmin } = await import('./handlers/admin-handlers')
+        const userIsAdmin = await isAdmin(facebookId)
+
+        if (userIsAdmin) {
+            return false
+        }
+    } catch (error) {
+        console.error('Error checking admin status in isBotStoppedForUser:', error)
+    }
+
     const stopInfo = userBotStops.get(facebookId)
     if (!stopInfo) return false
 

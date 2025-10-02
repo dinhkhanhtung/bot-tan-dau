@@ -271,23 +271,70 @@ async function handleMessageEvent(event: any) {
                 return
             }
 
-            // Send welcome message for new users (only if not Quick Reply and not admin command)
-            try {
-                const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
-                await sendMessage(senderId, '👋 Chào mừng bạn đến với Bot Tân Dậu 1981!')
-                await sendMessage(senderId, 'Để sử dụng bot, bạn cần đăng ký tài khoản trước.')
+            // Check if welcome message was already sent
+            const { data: existingUser } = await supabaseAdmin
+                .from('users')
+                .select('welcome_message_sent')
+                .eq('facebook_id', senderId)
+                .single()
 
-                await sendQuickReply(
-                    senderId,
-                    'Bạn muốn:',
-                    [
-                        createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
-                        createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
-                        createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
-                    ]
-                )
-            } catch (error) {
-                console.error('Error sending welcome message:', error)
+            // Send welcome message only if not sent before
+            if (!existingUser || !existingUser.welcome_message_sent) {
+                try {
+                    const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
+                    await sendMessage(senderId, '👋 Chào mừng bạn đến với Bot Tân Dậu 1981!')
+                    await sendMessage(senderId, 'Để sử dụng bot, bạn cần đăng ký tài khoản trước.')
+
+                    await sendQuickReply(
+                        senderId,
+                        'Bạn muốn:',
+                        [
+                            createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+                            createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
+                            createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
+                        ]
+                    )
+
+                    // Mark welcome message as sent
+                    if (existingUser) {
+                        await supabaseAdmin
+                            .from('users')
+                            .update({ welcome_message_sent: true })
+                            .eq('facebook_id', senderId)
+                    } else {
+                        // Create a basic user record to track welcome message
+                        await supabaseAdmin
+                            .from('users')
+                            .insert({
+                                facebook_id: senderId,
+                                name: 'User',
+                                phone: `temp_${senderId.slice(-10)}`, // Use unique temp phone
+                                location: 'Unknown',
+                                birthday: 1981,
+                                referral_code: `TD1981-${senderId.slice(-6)}`,
+                                welcome_message_sent: true
+                            })
+                    }
+                } catch (error) {
+                    console.error('Error sending welcome message:', error)
+                }
+            } else {
+                // User already received welcome message, send a brief response
+                try {
+                    const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
+                    await sendMessage(senderId, 'Bạn cần hỗ trợ gì?')
+                    await sendQuickReply(
+                        senderId,
+                        'Bạn muốn:',
+                        [
+                            createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+                            createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
+                            createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
+                        ]
+                    )
+                } catch (error) {
+                    console.error('Error sending brief response:', error)
+                }
             }
             return
         }
