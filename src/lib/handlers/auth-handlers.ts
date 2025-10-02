@@ -60,7 +60,7 @@ export async function handleRegistration(user: any) {
 
     // Start registration flow with progress bar - ENHANCED
     await sendMessagesWithTyping(user.facebook_id, [
-        '📝 ĐĂNG KÝ THÀNH VIÊN TÂN DẬU 1981',
+        '📝 ĐĂNG KÝ THÀNH VIÊN Tân Dậu - Hỗ Trợ Chéo',
         '🎯 Dành riêng cho người sinh năm 1981 (Tân Dậu)',
         '━━━━━━━━━━━━━━━━━━━━',
         '📋 THÔNG TIN CẦN THIẾT:',
@@ -81,8 +81,8 @@ export async function handleRegistration(user: any) {
         '✅ Hỗ trợ 24/7',
         '━━━━━━━━━━━━━━━━━━━━',
         '💰 PHÍ SỬ DỤNG:',
-        '• 1,000đ/ngày (rất rẻ!)',
-        '• Tối thiểu 7 ngày = 7,000đ',
+        '• 2,000đ/ngày (rất rẻ!)',
+        '• Tối thiểu 7 ngày = 14,000đ',
         '• Có thể thanh toán theo tháng',
         '━━━━━━━━━━━━━━━━━━━━'
     ])
@@ -212,7 +212,7 @@ export async function handleRegistrationLocationPostback(user: any, location: st
 
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Vị trí: ${location}`,
-        'Bước 4/5: Sản phẩm/Dịch vụ\n🛒 Bạn có sản phẩm hoặc dịch vụ gì muốn chia sẻ với cộng đồng Tân Dậu 1981?',
+        'Bước 4/5: Sản phẩm/Dịch vụ\n🛒 Bạn có sản phẩm hoặc dịch vụ gì muốn chia sẻ với cộng đồng Tân Dậu - Hỗ Trợ Chéo?',
         'VD: Nhà đất, xe cộ, điện tử, thời trang, ẩm thực, dịch vụ tư vấn...',
         '📝 Vui lòng mô tả ngắn gọn (có thể để trống nếu chưa có):'
     ])
@@ -233,7 +233,7 @@ export async function handleBirthdayVerification(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '✅ Xác nhận tuổi thành công!',
-        'Bước 6/6: Sản phẩm/Dịch vụ\n🛒 Bạn có sản phẩm hoặc dịch vụ gì muốn chia sẻ với cộng đồng Tân Dậu 1981?',
+        'Bước 6/6: Sản phẩm/Dịch vụ\n🛒 Bạn có sản phẩm hoặc dịch vụ gì muốn chia sẻ với cộng đồng Tân Dậu - Hỗ Trợ Chéo?',
         'VD: Nhà đất, xe cộ, điện tử, thời trang, ẩm thực, dịch vụ tư vấn...',
         '📝 Vui lòng mô tả ngắn gọn (có thể để trống nếu chưa có):'
     ])
@@ -249,9 +249,9 @@ export async function handleBirthdayVerification(user: any) {
 export async function handleBirthdayRejection(user: any) {
     await sendMessagesWithTyping(user.facebook_id, [
         '⚠️ THÔNG BÁO QUAN TRỌNG',
-        'Bot Tân Dậu 1981 được tạo ra dành riêng cho cộng đồng Tân Dậu 1981.',
+        'Bot Tân Dậu - Hỗ Trợ Chéo được tạo ra dành riêng cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
         '🎯 Mục đích:\n• Kết nối mua bán trong cộng đồng cùng tuổi\n• Chia sẻ kinh nghiệm và kỷ niệm\n• Hỗ trợ lẫn nhau trong cuộc sống',
-        '💡 Nếu bạn không phải Tân Dậu 1981:\n• Có thể sử dụng các platform khác\n• Hoặc giới thiệu cho bạn bè Tân Dậu 1981',
+        '💡 Nếu bạn không phải Tân Dậu - Hỗ Trợ Chéo:\n• Có thể sử dụng các platform khác\n• Hoặc giới thiệu cho bạn bè Tân Dậu - Hỗ Trợ Chéo',
         '❌ Đăng ký đã bị hủy do không đúng đối tượng mục tiêu.'
     ])
 
@@ -297,8 +297,8 @@ export async function handleDefaultMessage(user: any) {
     }
 
     await sendMessagesWithTyping(user.facebook_id, [
-        '🎉 CHÀO MỪNG ĐẾN VỚI BOT TÂN DẬU 1981! 🎉',
-        '👋 Xin chào! Tôi là bot hỗ trợ cộng đồng Tân Dậu 1981.',
+        '🎉 CHÀO MỪNG ĐẾN VỚI BOT Tân Dậu - Hỗ Trợ Chéo! 🎉',
+        '👋 Xin chào! Tôi là bot hỗ trợ cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
         'Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên trước.'
     ])
 
@@ -317,11 +317,11 @@ export async function handleDefaultMessage(user: any) {
 export async function handleInfo(user: any) {
     await sendTypingIndicator(user.facebook_id)
     await sendMessagesWithTyping(user.facebook_id, [
-        'ℹ️ THÔNG TIN VỀ BOT TÂN DẬU 1981',
-        '🤖 Bot này được thiết kế đặc biệt cho cộng đồng Tân Dậu 1981',
+        'ℹ️ THÔNG TIN VỀ BOT Tân Dậu - Hỗ Trợ Chéo',
+        '🤖 Bot này được thiết kế đặc biệt cho cộng đồng Tân Dậu - Hỗ Trợ Chéo',
         '🎯 Chức năng chính:\n• Niêm yết sản phẩm/dịch vụ\n• Tìm kiếm & kết nối mua bán\n• Cộng đồng Tân Dậu - hỗ trợ chéo\n• Tử vi hàng ngày\n• Điểm thưởng & quà tặng',
-        '💰 Phí sử dụng:\n• Trial 3 ngày miễn phí\n• Phí duy trì: 1,000đ/ngày\n• Gói tối thiểu: 7 ngày = 7,000đ',
-        '🔒 Bảo mật:\n• Chỉ dành cho Tân Dậu 1981\n• Thông tin được mã hóa bảo mật\n• Lưu trữ để tìm kiếm & kết nối hiệu quả'
+        '💰 Phí sử dụng:\n• Trial 3 ngày miễn phí\n• Phí duy trì: 2,000đ/ngày\n• Gói tối thiểu: 7 ngày = 14,000đ',
+        '🔒 Bảo mật:\n• Chỉ dành cho Tân Dậu - Hỗ Trợ Chéo\n• Thông tin được mã hóa bảo mật\n• Lưu trữ để tìm kiếm & kết nối hiệu quả'
     ])
 
     await sendQuickReply(
@@ -341,7 +341,7 @@ export async function sendExpiredMessage(facebookId: string) {
     await sendMessagesWithTyping(facebookId, [
         '⏰ TÀI KHOẢN ĐÃ HẾT HẠN!',
         'Tài khoản của bạn đã hết hạn sử dụng.',
-        '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
     ])
 
     await sendQuickReply(
@@ -363,13 +363,13 @@ export async function sendTrialExpiringMessage(facebookId: string, daysLeft: num
         await sendMessagesWithTyping(facebookId, [
             '🚨 CẢNH BÁO TRIAL SẮP HẾT!',
             'Trial của bạn còn 24 giờ!',
-            '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
         ])
     } else {
         await sendMessagesWithTyping(facebookId, [
             '⏰ THÔNG BÁO QUAN TRỌNG',
             `Trial của bạn còn ${daysLeft} ngày!`,
-            '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
         ])
     }
 
@@ -440,7 +440,7 @@ export async function handleRegistrationBirthday(user: any, text: string, data: 
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Ngày sinh: ${birthday.toLocaleDateString('vi-VN')}`,
         'Bước 5/6: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!',
-        'Bot Tân Dậu 1981 được tạo ra dành riêng cho cộng đồng Tân Dậu 1981.',
+        'Bot Tân Dậu - Hỗ Trợ Chéo được tạo ra dành riêng cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
         `❓ Bạn có phải sinh năm ${data.birth_year} không?`
     ])
 
@@ -535,7 +535,7 @@ async function completeRegistration(user: any, data: any) {
 
         await sendQuickReply(
             user.facebook_id,
-            'Chào mừng bạn đến với cộng đồng Tân Dậu 1981!',
+            'Chào mừng bạn đến với cộng đồng Tân Dậu - Hỗ Trợ Chéo!',
             [
                 createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
                 createQuickReply('🛒 TẠO TIN', 'LISTING'),

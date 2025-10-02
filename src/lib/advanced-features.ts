@@ -1,4 +1,4 @@
-// Advanced Features for Bot Tân Dậu 1981
+// Advanced Features for Bot Tân Dậu - Hỗ Trợ Chéo
 
 import { supabaseAdmin } from './supabase'
 import {

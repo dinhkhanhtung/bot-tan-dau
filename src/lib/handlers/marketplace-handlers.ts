@@ -388,7 +388,7 @@ export async function handleSearch(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🔍 TÌM KIẾM SẢN PHẨM/DỊCH VỤ',
-        'Tìm kiếm trong cộng đồng Tân Dậu 1981:',
+        'Tìm kiếm trong cộng đồng Tân Dậu - Hỗ Trợ Chéo:',
         '💡 Bạn có thể tìm theo:\n• Danh mục sản phẩm\n• Từ khóa\n• Vị trí\n• Giá cả\n• Hashtag'
     ])
 
@@ -1063,7 +1063,7 @@ export async function handleBuySell(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🛒 MUA BÁN & TÌM KIẾM',
-        'Chào mừng bạn đến với cộng đồng Tân Dậu 1981!',
+        'Chào mừng bạn đến với cộng đồng Tân Dậu - Hỗ Trợ Chéo!',
         'Để sử dụng đầy đủ tính năng mua bán, bạn cần đăng ký thành viên trước.'
     ])
 
@@ -1455,7 +1455,7 @@ export async function handleRateSubmission(user: any, sellerId: string, rating: 
         await sendMessagesWithTyping(user.facebook_id, [
             '✅ CẢM ƠN BẠN ĐÃ ĐÁNH GIÁ!',
             `⭐ Đánh giá ${rating} sao đã được ghi nhận`,
-            '🎯 Giúp cộng đồng Tân Dậu 1981 tin tưởng hơn'
+            '🎯 Giúp cộng đồng Tân Dậu - Hỗ Trợ Chéo tin tưởng hơn'
         ])
 
         await sendButtonTemplate(

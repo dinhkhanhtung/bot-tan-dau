@@ -1,4 +1,4 @@
-# 🚀 HƯỚNG DẪN SETUP CRON JOBS - BOT TÂN DẬU 1981
+# 🚀 HƯỚNG DẪN SETUP CRON JOBS - BOT Tân Dậu - Hỗ Trợ Chéo
 
 ## 📋 TỔNG QUAN CÁC CẢI TIẾN ĐÃ HOÀN THÀNH
 
@@ -206,4 +206,4 @@ Nếu gặp vấn đề:
 
 ---
 
-**🎉 Chúc mừng! Bot Tân Dậu 1981 đã được cải thiện toàn diện và sẵn sàng phục vụ cộng đồng!**
+**🎉 Chúc mừng! Bot Tân Dậu - Hỗ Trợ Chéo đã được cải thiện toàn diện và sẵn sàng phục vụ cộng đồng!**

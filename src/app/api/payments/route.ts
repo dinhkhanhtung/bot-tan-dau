@@ -253,7 +253,7 @@ async function extendUserMembership(userId: string, amount: number) {
                 user_id: userId,
                 type: 'payment',
                 title: 'Thanh toán đã được duyệt',
-                message: `Tài khoản của bạn đã được gia hạn thêm ${daysToExtend} ngày. Cảm ơn bạn đã tin tưởng BOT TÂN DẬU 1981!`
+                message: `Tài khoản của bạn đã được gia hạn thêm ${daysToExtend} ngày. Cảm ơn bạn đã tin tưởng BOT Tân Dậu - Hỗ Trợ Chéo!`
             })
 
     } catch (error) {

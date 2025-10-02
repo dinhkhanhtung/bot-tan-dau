@@ -1,8 +1,8 @@
-// Integration Layer - Kết nối tất cả hệ thống Bot Tân Dậu 1981
+// Integration Layer - Kết nối tất cả hệ thống Bot Tân Dậu - Hỗ Trợ Chéo
 
 // Initialize all systems
 export async function initializeBotSystems() {
-    console.log('🚀 Initializing Bot Tân Dậu 1981 systems...')
+    console.log('🚀 Initializing Bot Tân Dậu - Hỗ Trợ Chéo systems...')
 
     try {
         // Setup cache maintenance
@@ -38,7 +38,7 @@ async function notifyAdminsSystemReady() {
 
             const readyMessage = `🟢 SYSTEM READY
 ⏰ ${new Date().toLocaleString('vi-VN')}
-✅ Bot Tân Dậu 1981 đã sẵn sàng phục vụ!
+✅ Bot Tân Dậu - Hỗ Trợ Chéo đã sẵn sàng phục vụ!
 
 🚀 Các tính năng mới:
 • Enhanced Admin Dashboard

@@ -1,5 +1,5 @@
 -- ========================================
--- BOT TÂN DẬU 1981 - COMPLETE DATABASE
+-- BOT Tân Dậu - Hỗ Trợ Chéo - COMPLETE DATABASE
 -- ========================================
 -- Chạy file này 1 lần duy nhất trong Supabase SQL Editor
 -- https://supabase.com/dashboard/project/oxornnooldwivlexsnkf/sql/44e6e180-2d37-4ab8-96ec-14407de7e662

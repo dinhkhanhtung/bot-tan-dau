@@ -1,11 +1,11 @@
-# **BOT TÂN DẬU 1981 - MÔ TẢ CHI TIẾT HOÀN CHỈNH**
+# **BOT Tân Dậu - Hỗ Trợ Chéo - MÔ TẢ CHI TIẾT HOÀN CHỈNH**
 
 ## **🎯 MỤC ĐÍCH CHÍNH**
 - **Platform kết nối mua bán** cho thành viên sinh năm 1981
 - **Chỉ thu phí niêm yết**: 1,000đ/ngày, tối thiểu 7 ngày
 - **Bot chỉ kết nối, không tham gia giao dịch**
 - **Trial 3 ngày miễn phí** → yêu cầu thanh toán sau
-- **Xác nhận tuổi Tân Dậu 1981 dựa trên tin tưởng**
+- **Xác nhận tuổi Tân Dậu - Hỗ Trợ Chéo dựa trên tin tưởng**
 
 ## **📱 PLATFORM ARCHITECTURE**
 - **100% Facebook Messenger Bot** - Không có web app cho user
@@ -18,7 +18,7 @@
 
 ### **Bước 1: Welcome Message**
 ```
-🤖 Chào mừng bạn đến với BOT TÂN DẬU 1981! 🐓
+🤖 Chào mừng bạn đến với BOT Tân Dậu - Hỗ Trợ Chéo! 🐓
 
 Tôi là Thích Tân Dậu - trợ lý mua bán thông minh của cộng đồng Tân Dậu - hỗ trợ chéo.
 
@@ -97,7 +97,7 @@ Bot gửi:
 Bước 4/4: Xác nhận tuổi
 🎂 Đây là bước quan trọng nhất!
 
-Bot Tân Dậu 1981 được tạo ra dành riêng cho cộng đồng Tân Dậu 1981.
+Bot Tân Dậu - Hỗ Trợ Chéo được tạo ra dành riêng cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.
 
 ❓ Bạn có phải sinh năm 1981 không?
 
@@ -114,7 +114,7 @@ Bot gửi:
 
 "🎉 XÁC NHẬN THÀNH CÔNG!
 
-✅ Chào mừng anh/chị Tân Dậu 1981!
+✅ Chào mừng anh/chị Tân Dậu - Hỗ Trợ Chéo!
 👥 Bạn đã gia nhập cộng đồng Tân Dậu - hỗ trợ chéo
 
 📱 Thông tin tài khoản:
@@ -140,16 +140,16 @@ Bot gửi:
 
 "⚠️ THÔNG BÁO QUAN TRỌNG
 
-Bot Tân Dậu 1981 được tạo ra dành riêng cho cộng đồng Tân Dậu 1981.
+Bot Tân Dậu - Hỗ Trợ Chéo được tạo ra dành riêng cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.
 
 🎯 Mục đích:
 • Kết nối mua bán trong cộng đồng cùng tuổi
 • Chia sẻ kinh nghiệm và kỷ niệm
 • Hỗ trợ lẫn nhau trong cuộc sống
 
-💡 Nếu bạn không phải Tân Dậu 1981:
+💡 Nếu bạn không phải Tân Dậu - Hỗ Trợ Chéo:
 • Có thể sử dụng các platform khác
-• Hoặc giới thiệu cho bạn bè Tân Dậu 1981
+• Hoặc giới thiệu cho bạn bè Tân Dậu - Hỗ Trợ Chéo
 
 [🔄 CHỌN LẠI 1981] [❌ THOÁT]"
 ```
@@ -331,7 +331,7 @@ Bot gửi:
 
 "✅ ĐĂNG TIN THÀNH CÔNG!
 
-🎉 Tin đăng của bạn đã được hiển thị cho cộng đồng Tân Dậu 1981
+🎉 Tin đăng của bạn đã được hiển thị cho cộng đồng Tân Dậu - Hỗ Trợ Chéo
 
 📋 Thông tin tin đăng:
 • ID: #TD1981-001
@@ -509,7 +509,7 @@ Bot gửi:
 "👨‍💼 Đang kết nối với admin...
 
 ✅ Đã kết nối với admin!
-👋 Chào bạn! Tôi là admin của BOT TÂN DẬU 1981
+👋 Chào bạn! Tôi là admin của BOT Tân Dậu - Hỗ Trợ Chéo
 
 Tôi có thể giúp bạn:
 • Tư vấn cá nhân hóa
@@ -636,7 +636,7 @@ Bot gửi thông báo cho user:
 • Gói dịch vụ: 7 ngày
 
 🎉 Tài khoản của bạn đã được gia hạn đến 22/01/2024
-🎯 Cảm ơn bạn đã tin tưởng BOT TÂN DẬU 1981!
+🎯 Cảm ơn bạn đã tin tưởng BOT Tân Dậu - Hỗ Trợ Chéo!
 
 [🏠 VỀ TRANG CHỦ] [💬 HỖ TRỢ]"
 ```
@@ -754,7 +754,7 @@ Bot gửi:
 "✅ CẢM ƠN BẠN ĐÃ ĐÁNH GIÁ!
 
 ⭐ Đánh giá của bạn đã được ghi nhận
-🎯 Giúp cộng đồng Tân Dậu 1981 tin tưởng hơn
+🎯 Giúp cộng đồng Tân Dậu - Hỗ Trợ Chéo tin tưởng hơn
 
 [🏠 VỀ TRANG CHỦ] [👥 XEM CỘNG ĐỒNG]"
 ```
@@ -1093,7 +1093,7 @@ Chọn cách chia sẻ:
 [📱 Facebook] [💬 Messenger] [📧 Email] [📋 Sao chép]
 
 Nội dung chia sẻ:
-'Chào bạn! Tôi đang sử dụng BOT TÂN DẬU 1981 - nơi kết nối mua bán cho cộng đồng Tân Dậu 1981. Bạn có muốn tham gia không? Mã giới thiệu: TD1981-{USER_ID}'"
+'Chào bạn! Tôi đang sử dụng BOT Tân Dậu - Hỗ Trợ Chéo - nơi kết nối mua bán cho cộng đồng Tân Dậu - Hỗ Trợ Chéo. Bạn có muốn tham gia không? Mã giới thiệu: TD1981-{USER_ID}'"
 ```
 
 ### **Bước 3: Xác nhận referral**
@@ -1570,7 +1570,7 @@ Bot gửi:
 
 "📅 SỰ KIỆN SẮP TỚI
 
-1️⃣ 🎉 Gặp mặt Tân Dậu 1981
+1️⃣ 🎉 Gặp mặt Tân Dậu - Hỗ Trợ Chéo
    📅 20/01/2024 - 19:00
    📍 Quán cà phê ABC, Q1, TP.HCM
    👥 25/50 người đăng ký
@@ -1601,7 +1601,7 @@ Bot gửi:
 
 "✅ ĐĂNG KÝ THÀNH CÔNG!
 
-🎉 Gặp mặt Tân Dậu 1981
+🎉 Gặp mặt Tân Dậu - Hỗ Trợ Chéo
 📅 20/01/2024 - 19:00
 📍 Quán cà phê ABC, Q1, TP.HCM
 

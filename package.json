@@ -1,7 +1,7 @@
 {
     "name": "bot-tan-dau-1981",
     "version": "1.0.0",
-    "description": "Facebook Messenger Bot cho cộng đồng Tân Dậu 1981",
+    "description": "Facebook Messenger Bot cho cộng đồng Tân Dậu - Hỗ Trợ Chéo",
     "private": true,
     "scripts": {
         "dev": "next dev",

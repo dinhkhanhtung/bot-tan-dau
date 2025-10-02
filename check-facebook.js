@@ -1,4 +1,4 @@
-// Facebook API check script for BOT TÂN DẬU 1981
+// Facebook API check script for BOT Tân Dậu - Hỗ Trợ Chéo
 // Run with: node check-facebook.js
 
 const axios = require('axios');
@@ -60,7 +60,7 @@ async function checkFacebookAPI() {
         console.log('\n💬 Testing message sending...');
         const testMessage = {
             recipient: { id: 'test_user_123' },
-            message: { text: 'Test message from BOT TÂN DẬU 1981' }
+            message: { text: 'Test message from BOT Tân Dậu - Hỗ Trợ Chéo' }
         };
 
         try {

@@ -548,7 +548,7 @@ export async function handleAdminApprovePayment(user: any, paymentId: string) {
             '✅ THANH TOÁN ĐÃ ĐƯỢC DUYỆT!',
             `💰 Thông tin thanh toán:\n• Số tiền: ${formatCurrency(payment.amount)}\n• Thời gian duyệt: ${new Date().toLocaleString('vi-VN')}\n• Gói dịch vụ: ${payment.package_days} ngày`,
             `🎉 Tài khoản của bạn đã được gia hạn đến ${newExpiryDate.toLocaleDateString('vi-VN')}`,
-            '🎯 Cảm ơn bạn đã tin tưởng BOT TÂN DẬU 1981!'
+            '🎯 Cảm ơn bạn đã tin tưởng BOT Tân Dậu - Hỗ Trợ Chéo!'
         ])
 
         await sendButtonTemplate(
@@ -1161,7 +1161,7 @@ async function executeBulkApproval(user: any, payments: any[], filterType: strin
                 '✅ THANH TOÁN ĐÃ ĐƯỢC DUYỆT!',
                 `💰 Thông tin thanh toán:\n• Số tiền: ${formatCurrency(payment.amount)}\n• Thời gian duyệt: ${new Date().toLocaleString('vi-VN')}\n• Gói dịch vụ: 7 ngày`,
                 `🎉 Tài khoản của bạn đã được gia hạn đến ${newExpiryDate.toLocaleDateString('vi-VN')}`,
-                '🎯 Cảm ơn bạn đã tin tưởng BOT TÂN DẬU 1981!'
+                '🎯 Cảm ơn bạn đã tin tưởng BOT Tân Dậu - Hỗ Trợ Chéo!'
             ])
 
         } catch (error) {

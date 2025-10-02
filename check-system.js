@@ -1,11 +1,11 @@
-// System check script for BOT TÂN DẬU 1981
+// System check script for BOT Tân Dậu - Hỗ Trợ Chéo
 // Run with: node check-system.js
 
 const fs = require('fs');
 const path = require('path');
 
 function checkSystem() {
-    console.log('🔍 Checking BOT TÂN DẬU 1981 System...\n');
+    console.log('🔍 Checking BOT Tân Dậu - Hỗ Trợ Chéo System...\n');
 
     // Check required files
     const requiredFiles = [

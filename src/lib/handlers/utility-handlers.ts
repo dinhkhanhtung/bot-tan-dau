@@ -69,13 +69,13 @@ export async function handleHoroscopeDetail(user: any) {
         `• Mua sắm, đầu tư, gặp gỡ bạn bè`
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
-            createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
-            createPostbackButton('🔙 QUAY LẠI', 'HOROSCOPE')
+            createQuickReply('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
+            createQuickReply('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
+            createQuickReply('🔙 QUAY LẠI', 'HOROSCOPE')
         ]
     )
 }
@@ -105,13 +105,13 @@ export async function handleHoroscopeWeek(user: any) {
         '• Gặp gỡ bạn bè cũ'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
-            createPostbackButton('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
-            createPostbackButton('🔙 QUAY LẠI', 'HOROSCOPE')
+            createQuickReply('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
+            createQuickReply('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
+            createQuickReply('🔙 QUAY LẠI', 'HOROSCOPE')
         ]
     )
 }
@@ -423,7 +423,7 @@ export async function handleReferralShare(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
     const referralCode = user.referral_code || `TD1981-${user.facebook_id.slice(-6)}`
-    const shareMessage = `Chào bạn! Tôi đang sử dụng BOT TÂN DẬU 1981 - nơi kết nối mua bán cho cộng đồng Tân Dậu 1981. Bạn có muốn tham gia không? Mã giới thiệu: ${referralCode}`
+    const shareMessage = `Chào bạn! Tôi đang sử dụng BOT Tân Dậu - Hỗ Trợ Chéo - nơi kết nối mua bán cho cộng đồng Tân Dậu - Hỗ Trợ Chéo. Bạn có muốn tham gia không? Mã giới thiệu: ${referralCode}`
 
     await sendMessagesWithTyping(user.facebook_id, [
         '📤 CHIA SẺ MÃ GIỚI THIỆU',

@@ -26,19 +26,20 @@ export async function handlePayment(user: any) {
     }
 
     // Regular payment flow
-    await sendMessagesWithTyping(user.facebook_id, [
-        '💰 THANH TOÁN',
-        'Chọn gói dịch vụ bạn muốn:'
-    ])
+        await sendMessagesWithTyping(user.facebook_id, [
+            '💰 THANH TOÁN',
+            'Chọn gói thanh toán phù hợp với bạn:',
+            '💡 Với số tiền này bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu!'
+        ])
 
     await sendButtonTemplate(
         user.facebook_id,
         'Gói dịch vụ:',
         [
-            createPostbackButton('📅 7 NGÀY - 7,000đ', 'PAYMENT_PACKAGE_7'),
-            createPostbackButton('📅 15 NGÀY - 15,000đ', 'PAYMENT_PACKAGE_15'),
-            createPostbackButton('📅 30 NGÀY - 30,000đ', 'PAYMENT_PACKAGE_30'),
-            createPostbackButton('📅 90 NGÀY - 90,000đ', 'PAYMENT_PACKAGE_90'),
+            createPostbackButton('📅 7 NGÀY - ₫7,000', 'PAYMENT_PACKAGE_7'),
+            createPostbackButton('📅 15 NGÀY - ₫15,000', 'PAYMENT_PACKAGE_15'),
+            createPostbackButton('📅 30 NGÀY - ₫30,000', 'PAYMENT_PACKAGE_30'),
+            createPostbackButton('📅 90 NGÀY - ₫90,000', 'PAYMENT_PACKAGE_90'),
             createPostbackButton('📊 LỊCH SỬ THANH TOÁN', 'PAYMENT_HISTORY'),
             createPostbackButton('ℹ️ HƯỚNG DẪN', 'PAYMENT_GUIDE')
         ]
@@ -50,7 +51,7 @@ async function sendExpiredPaymentMessage(user: any) {
     await sendMessagesWithTyping(user.facebook_id, [
         '⏰ TÀI KHOẢN ĐÃ HẾT HẠN!',
         'Tài khoản của bạn đã hết hạn sử dụng.',
-        '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
     ])
 
     await sendButtonTemplate(
@@ -70,13 +71,13 @@ async function sendTrialPaymentMessage(user: any, daysLeft: number) {
         await sendMessagesWithTyping(user.facebook_id, [
             '🚨 CẢNH BÁO TRIAL SẮP HẾT!',
             'Trial của bạn còn 24 giờ!',
-            '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
         ])
     } else {
         await sendMessagesWithTyping(user.facebook_id, [
             '⏰ THÔNG BÁO QUAN TRỌNG',
             `Trial của bạn còn ${daysLeft} ngày!`,
-            '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
         ])
     }
 
@@ -111,8 +112,8 @@ export async function handlePaymentPackage(user: any, packageType: string) {
     await sendMessagesWithTyping(user.facebook_id, [
         '💰 THANH TOÁN',
         `📋 Thông tin gói:\n• Loại: ${pkg.name}\n• Giá: ${formatCurrency(pkg.price)}\n• Thời gian: ${pkg.days} ngày`,
-        '🏦 THÔNG TIN CHUYỂN KHOẢN:\n• STK: 0123456789\n• Ngân hàng: Vietcombank\n• Chủ TK: BOT TÂN DẬU',
-        `• Nội dung: TANDẬU ${user.phone || user.facebook_id.slice(-6)}`
+        '🏦 THÔNG TIN CHUYỂN KHOẢN:\n• STK: 0982581222\n• Ngân hàng: BIDV\n• Chủ TK: Đinh Khánh Tùng',
+        `• Nội dung: TD-HTC ${user.phone || user.facebook_id.slice(-6)}`
     ])
 
     await sendButtonTemplate(
@@ -410,8 +411,9 @@ export async function handlePaymentNotifications(user: any) {
         }
 
         await sendMessagesWithTyping(user.facebook_id, [
-            '🔔 THÔNG BÁO THANH TOÁN',
-            'Cài đặt thông báo thanh toán:'
+            '💰 THANH TOÁN',
+            'Chọn gói thanh toán phù hợp với bạn:',
+            '💡 Với số tiền này bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu!'
         ])
 
         // Current status
@@ -510,9 +512,9 @@ export async function handleAdvertisingPackage(user: any, packageType: string) {
         `• Tổng: ${formatCurrency(pkg.price * 7)}`,
         '',
         '🏦 THÔNG TIN CHUYỂN KHOẢN:',
-        '• STK: 0123456789',
-        '• Ngân hàng: Vietcombank',
-        '• Chủ TK: BOT TÂN DẬU',
+        '• STK: 0982581222',
+        '• Ngân hàng: BIDV',
+        '• Chủ TK: Đinh Khánh Tùng',
         '• Nội dung: QUANGCAO [SĐT_CỦA_BẠN]'
     ])
 
@@ -655,7 +657,7 @@ export async function handlePaymentGuide(user: any) {
     await sendMessagesWithTyping(user.facebook_id, [
         'ℹ️ HƯỚNG DẪN THANH TOÁN',
         '📋 Các bước thanh toán:\n1. Chọn gói dịch vụ phù hợp\n2. Chuyển khoản theo thông tin\n3. Upload biên lai chuyển khoản\n4. Chờ admin duyệt (2-4 giờ)',
-        '🏦 THÔNG TIN CHUYỂN KHOẢN:\n• STK: 0123456789\n• Ngân hàng: Vietcombank\n• Chủ TK: BOT TÂN DẬU',
+        '🏦 THÔNG TIN CHUYỂN KHOẢN:\n• STK: 0982581222\n• Ngân hàng: BIDV\n• Chủ TK: Đinh Khánh Tùng',
         '💡 LƯU Ý:\n• Nội dung chuyển khoản phải chính xác\n• Biên lai phải rõ nét, đọc được\n• Liên hệ admin nếu có vấn đề',
         '❓ CÂU HỎI THƯỜNG GẶP:\n• Q: Khi nào tài khoản được gia hạn?\nA: Ngay sau khi admin duyệt\n• Q: Có thể hủy giao dịch không?\nA: Có, liên hệ admin trong 24h'
     ])
@@ -699,7 +701,7 @@ export async function sendExpiredMessage(facebookId: string) {
     await sendMessagesWithTyping(facebookId, [
         '⏰ TÀI KHOẢN ĐÃ HẾT HẠN!',
         'Tài khoản của bạn đã hết hạn sử dụng.',
-        '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
     ])
 
     await sendButtonTemplate(
@@ -721,13 +723,13 @@ export async function sendTrialExpiringMessage(facebookId: string, daysLeft: num
         await sendMessagesWithTyping(facebookId, [
             '🚨 CẢNH BÁO TRIAL SẮP HẾT!',
             'Trial của bạn còn 24 giờ!',
-            '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
         ])
     } else {
         await sendMessagesWithTyping(facebookId, [
             '⏰ THÔNG BÁO QUAN TRỌNG',
             `Trial của bạn còn ${daysLeft} ngày!`,
-            '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
         ])
     }
 

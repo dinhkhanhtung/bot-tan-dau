@@ -1,6 +1,6 @@
-# BOT TÂN DẬU 1981
+# BOT Tân Dậu - Hỗ Trợ Chéo
 
-Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu 1981.
+Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.
 
 ## 🎯 Mục đích
 
@@ -8,7 +8,7 @@ Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu 1981.
 - **Chỉ thu phí niêm yết**: 1,000đ/ngày, tối thiểu 7 ngày
 - **Bot chỉ kết nối, không tham gia giao dịch**
 - **Trial 3 ngày miễn phí** → yêu cầu thanh toán sau
-- **Xác nhận tuổi Tân Dậu 1981 dựa trên tin tưởng**
+- **Xác nhận tuổi Tân Dậu - Hỗ Trợ Chéo dựa trên tin tưởng**
 
 ## 📱 Platform Architecture
 
@@ -179,7 +179,7 @@ vercel --prod
 - **Quảng cáo**: Homepage Banner, Search Boost, Cross-sell Spot, Featured Listing
 - **Dịch vụ tìm kiếm hộ**: 5,000đ/lần
 - **Referral**: Mã giới thiệu TD1981-{USER_ID}, thưởng 10,000đ
-- **Tử vi**: Tử vi hàng ngày cho Tân Dậu 1981
+- **Tử vi**: Tử vi hàng ngày cho Tân Dậu - Hỗ Trợ Chéo
 - **Điểm thưởng**: Hệ thống điểm và level
 - **Admin**: Quản lý qua chat với duyệt thanh toán và thống kê
 

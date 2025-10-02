@@ -225,8 +225,8 @@ async function handleMessageEvent(event: any) {
                             }
                             break
                         case 'INFO':
-                            await sendMessage(senderId, 'ℹ️ THÔNG TIN BOT TÂN DẬU 1981')
-                            await sendMessage(senderId, 'Bot Tân Dậu 1981 là nền tảng kết nối cộng đồng sinh năm 1981. Chúng tôi cung cấp:')
+                            await sendMessage(senderId, 'ℹ️ THÔNG TIN BOT Tân Dậu - Hỗ Trợ Chéo')
+                            await sendMessage(senderId, 'Bot Tân Dậu - Hỗ Trợ Chéo là nền tảng kết nối cộng đồng sinh năm 1981. Chúng tôi cung cấp:')
                             await sendMessage(senderId, '• 🛒 Niêm yết sản phẩm/dịch vụ\n• 🔍 Tìm kiếm và kết nối\n• 👥 Cộng đồng Tân Dậu\n• 💰 Thanh toán an toàn\n• ⭐ Hệ thống đánh giá')
                             await sendQuickReply(
                                 senderId,
@@ -282,7 +282,7 @@ async function handleMessageEvent(event: any) {
             if (!existingUser || !existingUser.welcome_message_sent) {
                 try {
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
-                    await sendMessage(senderId, '👋 Chào mừng bạn đến với Bot Tân Dậu 1981!')
+                    await sendMessage(senderId, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
                     await sendMessage(senderId, 'Để sử dụng bot, bạn cần đăng ký tài khoản trước.')
 
                     await sendQuickReply(

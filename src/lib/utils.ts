@@ -31,12 +31,30 @@ export function calculateUserLevel(points: number): string {
     return 'Đồng'
 }
 
-// Calculate days until expiry
+// Calculate days until expiry - FIXED: Handle timezone and date parsing properly
 export function daysUntilExpiry(expiryDate: string): number {
-    const now = new Date()
-    const expiry = new Date(expiryDate)
-    const diffTime = expiry.getTime() - now.getTime()
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    try {
+        const now = new Date()
+        const expiry = new Date(expiryDate)
+
+        // Ensure both dates are valid
+        if (isNaN(expiry.getTime()) || isNaN(now.getTime())) {
+            console.error('Invalid date format:', { expiryDate, now: now.toISOString() })
+            return 0
+        }
+
+        // Calculate difference in milliseconds
+        const diffTime = expiry.getTime() - now.getTime()
+
+        // Convert to days and round up
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+        // Ensure we don't return negative days for expired accounts
+        return Math.max(diffDays, 0)
+    } catch (error) {
+        console.error('Error calculating days until expiry:', error)
+        return 0
+    }
 }
 
 // Check if user is in trial
@@ -224,5 +242,26 @@ export async function retry<T>(
             return retry(fn, retries - 1, delay * 2)
         }
         throw error
+    }
+}
+
+// Get Facebook display name from Facebook API
+export async function getFacebookDisplayName(facebookId: string): Promise<string | null> {
+    try {
+        const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN!
+        const response = await fetch(
+            `https://graph.facebook.com/v18.0/${facebookId}?fields=first_name,last_name,name&access_token=${FACEBOOK_ACCESS_TOKEN}`
+        )
+
+        if (response.ok) {
+            const data = await response.json()
+            return data.name || data.first_name + ' ' + data.last_name || null
+        }
+
+        console.error('Error fetching Facebook profile:', response.statusText)
+        return null
+    } catch (error) {
+        console.error('Error getting Facebook display name:', error)
+        return null
     }
 }

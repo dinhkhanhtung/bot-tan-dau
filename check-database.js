@@ -1,4 +1,4 @@
-// Database check script for BOT TÂN DẬU 1981
+// Database check script for BOT Tân Dậu - Hỗ Trợ Chéo
 // Run with: node check-database.js
 
 const { createClient } = require('@supabase/supabase-js');
@@ -10,7 +10,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'your_service_role_
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function checkDatabase() {
-    console.log('🗄️ Checking BOT TÂN DẬU 1981 Database...\n');
+    console.log('🗄️ Checking BOT Tân Dậu - Hỗ Trợ Chéo Database...\n');
 
     try {
         // Check if tables exist

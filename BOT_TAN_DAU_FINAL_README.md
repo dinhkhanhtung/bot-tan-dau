@@ -1,4 +1,4 @@
-# 🎉 **BOT TÂN DẬU 1981 - PHIÊN BẢN HOÀN HẢO**
+# 🎉 **BOT Tân Dậu - Hỗ Trợ Chéo - PHIÊN BẢN HOÀN HẢO**
 
 ## 📊 **TỔNG KẾT CÁC CẢI THIỆN**
 
@@ -115,7 +115,7 @@ NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    BOT TÂN DẬU 1981                     │
+│                    BOT Tân Dậu - Hỗ Trợ Chéo                     │
 ├─────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐      │
 │  │   Admin     │  │    User     │  │  Automated  │      │
@@ -138,7 +138,7 @@ NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
 
 ## 🎖️ **ĐÁNH GIÁ CHUNG**
 
-### **⭐ Bot Tân Dậu 1981 hiện tại:**
+### **⭐ Bot Tân Dậu - Hỗ Trợ Chéo hiện tại:**
 - **🏆 Enterprise-grade** error handling và retry logic
 - **🤖 AI-powered** search với relevance scoring
 - **⚡ Real-time** notifications và monitoring
@@ -154,7 +154,7 @@ NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
 
 ## 🎯 **KẾT LUẬN**
 
-**🎉 CHÚC MỪNG! Bot Tân Dậu 1981 đã trở thành một trong những chatbot Facebook Messenger HOÀN HẢO NHẤT với:**
+**🎉 CHÚC MỪNG! Bot Tân Dậu - Hỗ Trợ Chéo đã trở thành một trong những chatbot Facebook Messenger HOÀN HẢO NHẤT với:**
 
 ✅ **Đầy đủ tính năng enterprise-grade**
 ✅ **UX tối ưu cho cả admin và user**
@@ -168,7 +168,7 @@ NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
 
 ---
 
-## 🚀 **SẴN SÀNG PHỤC VỤ CỘNG ĐỒNG TÂN DẬU 1981**
+## 🚀 **SẴN SÀNG PHỤC VỤ CỘNG ĐỒNG Tân Dậu - Hỗ Trợ Chéo**
 
 **🎯 Với trải nghiệm tốt nhất có thể!**
 
@@ -184,6 +184,6 @@ Nếu cần hỗ trợ:
 3. Kiểm tra environment variables
 4. Setup cron jobs theo hướng dẫn
 
-**🎊 Cảm ơn bạn đã tin tưởng và sử dụng Bot Tân Dậu 1981!**
+**🎊 Cảm ơn bạn đã tin tưởng và sử dụng Bot Tân Dậu - Hỗ Trợ Chéo!**
 
-**🌟 Chúc cộng đồng Tân Dậu 1981 ngày càng phát triển và thịnh vượng!**
+**🌟 Chúc cộng đồng Tân Dậu - Hỗ Trợ Chéo ngày càng phát triển và thịnh vượng!**

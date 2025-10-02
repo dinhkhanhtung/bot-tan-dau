@@ -1,6 +1,6 @@
-// Bot Configuration
+// Bot Configuration - UPDATED PRICING
 export const BOT_CONFIG = {
-    DAILY_FEE: 1000,
+    DAILY_FEE: 2000, // Tăng từ 1000 lên 2000đ/ngày
     MINIMUM_DAYS: 7,
     TRIAL_DAYS: 3,
     REFERRAL_REWARD: 10000,
@@ -87,10 +87,54 @@ export const CATEGORIES = {
             { key: 'BẢO_VỆ', icon: '🛡️', name: 'BẢO VỆ', keywords: ['bảo vệ', 'an ninh', 'security', 'guard', 'safety', 'protection', 'surveillance'] },
             { key: 'KHÁC', icon: '🔧', name: 'DỊCH VỤ KHÁC', keywords: ['dịch vụ khác', 'other services', 'miscellaneous', 'tùy chỉnh', 'custom'] }
         ]
+    },
+    'ĐỒ GIA DỤNG': {
+        icon: '🏠',
+        name: 'ĐỒ GIA DỤNG',
+        keywords: ['đồ gia dụng', 'thiết bị gia đình', 'nội thất', 'đồ dùng nhà bếp', 'đồ điện gia dụng', 'furniture', 'home appliances', 'kitchen', 'household'],
+        subcategories: [
+            { key: 'NỘI_THẤT', icon: '🛏️', name: 'NỘI THẤT', keywords: ['sofa', 'bàn ghế', 'tủ', 'kệ', 'giường', 'tủ lạnh', 'máy giặt', 'điều hòa', 'furniture', 'sofa', 'bed', 'wardrobe'] },
+            { key: 'ĐIỆN_GIA_DỤNG', icon: '🔌', name: 'ĐIỆN GIA DỤNG', keywords: ['tủ lạnh', 'máy giặt', 'điều hòa', 'lò vi sóng', 'máy hút bụi', 'quạt', 'bếp điện', 'refrigerator', 'washing machine', 'air conditioner'] },
+            { key: 'NHÀ_BẾP', icon: '🍳', name: 'NHÀ BẾP', keywords: ['nồi', 'chảo', 'bát', 'đĩa', 'dao', 'thớt', 'ấm', 'ly', 'kitchen', 'cookware', 'utensils', 'pots', 'pans'] },
+            { key: 'TRANG_TRÍ', icon: '🖼️', name: 'TRANG TRÍ', keywords: ['tranh', 'đồng hồ', 'gương', 'thảm', 'rèm', 'đèn', 'decoration', 'painting', 'mirror', 'carpet', 'curtain'] }
+        ]
+    },
+    'THỂ THAO': {
+        icon: '⚽',
+        name: 'THỂ THAO',
+        keywords: ['thể thao', 'thể dục', 'gym', 'fitness', 'bóng đá', 'cầu lông', 'tennis', 'bơi lội', 'yoga', 'sports', 'exercise', 'football', 'badminton'],
+        subcategories: [
+            { key: 'THỂ_DỤC', icon: '💪', name: 'THỂ DỤC', keywords: ['gym', 'fitness', 'tập gym', 'máy tập', 'tạ', 'yoga', 'aerobics', 'cardio', 'strength training'] },
+            { key: 'BÓNG_ĐÁ', icon: '⚽', name: 'BÓNG ĐÁ', keywords: ['bóng đá', 'quả bóng', 'giày đá bóng', 'áo bóng đá', 'football', 'soccer', 'ball', 'cleats'] },
+            { key: 'CẦU_LÔNG', icon: '🏸', name: 'CẦU LÔNG', keywords: ['cầu lông', 'vợt', 'giày cầu lông', 'áo cầu lông', 'badminton', 'racket', 'shuttlecock'] },
+            { key: 'BƠI_LỘI', icon: '🏊', name: 'BƠI LỘI', keywords: ['áo bơi', 'kính bơi', 'mũ bơi', 'phụ kiện bơi', 'swimming', 'swimwear', 'goggles'] }
+        ]
+    },
+    'SÁCH': {
+        icon: '📚',
+        name: 'SÁCH',
+        keywords: ['sách', 'truyện', 'tài liệu', 'giáo trình', 'sách giáo khoa', 'tiểu thuyết', 'sách kinh tế', 'books', 'novels', 'textbooks', 'documents'],
+        subcategories: [
+            { key: 'GIÁO_TRÌNH', icon: '📖', name: 'GIÁO TRÌNH', keywords: ['giáo trình', 'sách giáo khoa', 'tài liệu học tập', 'textbook', 'curriculum', 'study materials'] },
+            { key: 'TIỂU_THUYẾT', icon: '📕', name: 'TIỂU THUYẾT', keywords: ['tiểu thuyết', 'truyện dài', 'novel', 'fiction', 'literature'] },
+            { key: 'SÁCH_KINH_TẾ', icon: '💼', name: 'SÁCH KINH TẾ', keywords: ['sách kinh tế', 'kinh doanh', 'marketing', 'business', 'economics', 'management'] },
+            { key: 'SÁCH_THIẾU_NHI', icon: '🧸', name: 'SÁCH THIẾU NHI', keywords: ['truyện thiếu nhi', 'sách trẻ em', 'children books', 'kids', 'fairy tales'] }
+        ]
+    },
+    'ĐỒ CHƠI': {
+        icon: '🧸',
+        name: 'ĐỒ CHƠI',
+        keywords: ['đồ chơi', 'trò chơi', 'games', 'toys', 'puzzle', 'board games', 'video games', 'lego', 'xếp hình'],
+        subcategories: [
+            { key: 'ĐỒ_CHƠI_TRẺ_EM', icon: '🧸', name: 'ĐỒ CHƠI TRẺ EM', keywords: ['đồ chơi trẻ em', 'xe đồ chơi', 'búp bê', 'kids toys', 'children toys'] },
+            { key: 'GAME', icon: '🎮', name: 'GAME', keywords: ['game', 'trò chơi điện tử', 'video games', 'mobile games', 'board games'] },
+            { key: 'XẾP_HÌNH', icon: '🧩', name: 'XẾP HÌNH', keywords: ['xếp hình', 'puzzle', 'lego', 'rubik', 'jigsaw'] },
+            { key: 'ĐỒ_CHƠI_GIÁO_DỤC', icon: '🎓', name: 'ĐỒ CHƠI GIÁO DỤC', keywords: ['đồ chơi giáo dục', 'flashcard', 'educational toys', 'learning toys'] }
+        ]
     }
 } as const
 
-// Simplified locations - Main provinces and cities only
+// Complete locations - All provinces and cities in Vietnam
 export const LOCATIONS = [
     // Major cities (Thành phố lớn)
     'HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ',
@@ -103,7 +147,7 @@ export const LOCATIONS = [
     'THÁI NGUYÊN', 'THANH HÓA', 'TUYÊN QUANG', 'VĨNH PHÚC', 'YÊN BÁI',
 
     // Central provinces (Miền Trung)
-    'BÌNH THUẬN', 'KHÁNH HÒA', 'KONTUM', 'LÂM ĐỒNG', 'NINH THUẬN',
+    'BÌNH ĐỊNH', 'BÌNH THUẬN', 'KHÁNH HÒA', 'KONTUM', 'LÂM ĐỒNG', 'NINH THUẬN',
     'PHÚ YÊN', 'QUẢNG BÌNH', 'QUẢNG NAM', 'QUẢNG NGÃI', 'QUẢNG TRỊ',
     'THỪA THIÊN HUẾ',
 
@@ -213,7 +257,7 @@ export const AD_PACKAGES = {
     }
 } as const
 
-// Horoscope data for Tân Dậu 1981
+// Horoscope data for Tân Dậu - Hỗ Trợ Chéo
 export const HOROSCOPE_DATA = {
     general: {
         element: 'Kim',

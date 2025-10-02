@@ -100,8 +100,8 @@ export async function POST(request: NextRequest) {
             .insert({
                 user_id: user.id,
                 type: 'listing',
-                title: 'Chào mừng đến với BOT TÂN DẬU 1981!',
-                message: 'Bạn đã đăng ký thành công. Chúc mừng bạn đã gia nhập cộng đồng Tân Dậu 1981!'
+                title: 'Chào mừng đến với BOT Tân Dậu - Hỗ Trợ Chéo!',
+                message: 'Bạn đã đăng ký thành công. Chúc mừng bạn đã gia nhập cộng đồng Tân Dậu - Hỗ Trợ Chéo!'
             })
 
         return NextResponse.json({

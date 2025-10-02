@@ -5,10 +5,10 @@ export default function Home() {
                 <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
                     <div className="text-center">
                         <h1 className="text-4xl font-bold text-center mb-8">
-                            🤖 BOT TÂN DẬU 1981
+                            🤖 BOT Tân Dậu - Hỗ Trợ Chéo
                         </h1>
                         <p className="text-lg text-center mb-8">
-                            Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu 1981
+                            Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu - Hỗ Trợ Chéo
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
                             <div className="p-4 border rounded-lg">
@@ -26,7 +26,7 @@ export default function Home() {
                             <div className="p-4 border rounded-lg">
                                 <h3 className="font-semibold mb-2">👥 Cộng đồng</h3>
                                 <p className="text-sm text-gray-600">
-                                    Kết nối với cộng đồng Tân Dậu 1981
+                                    Kết nối với cộng đồng Tân Dậu - Hỗ Trợ Chéo
                                 </p>
                             </div>
                             <div className="p-4 border rounded-lg">
@@ -38,7 +38,7 @@ export default function Home() {
                             <div className="p-4 border rounded-lg">
                                 <h3 className="font-semibold mb-2">🔮 Tử vi</h3>
                                 <p className="text-sm text-gray-600">
-                                    Tử vi hàng ngày cho Tân Dậu 1981
+                                    Tử vi hàng ngày cho Tân Dậu - Hỗ Trợ Chéo
                                 </p>
                             </div>
                             <div className="p-4 border rounded-lg">
@@ -51,7 +51,7 @@ export default function Home() {
                         <div className="mt-8 p-4 bg-blue-50 rounded-lg">
                             <p className="text-sm text-blue-800">
                                 <strong>Lưu ý:</strong> Bot chỉ hoạt động trên Facebook Messenger.
-                                Vui lòng tìm kiếm &quot;BOT TÂN DẬU 1981&quot; trên Facebook để bắt đầu sử dụng.
+                                Vui lòng tìm kiếm &quot;BOT Tân Dậu - Hỗ Trợ Chéo&quot; trên Facebook để bắt đầu sử dụng.
                             </p>
                         </div>
                     </div>

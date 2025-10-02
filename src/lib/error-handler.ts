@@ -1,4 +1,4 @@
-// Enhanced Error Handling & Retry Logic for Bot Tân Dậu 1981
+// Enhanced Error Handling & Retry Logic for Bot Tân Dậu - Hỗ Trợ Chéo
 
 export interface RetryOptions {
     maxRetries: number

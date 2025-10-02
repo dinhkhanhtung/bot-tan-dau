@@ -18,7 +18,7 @@ export async function handleCommunity(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '👥 CỘNG ĐỒNG TÂN DẬU - HỖ TRỢ CHÉO',
-        'Chào mừng bạn đến với cộng đồng Tân Dậu 1981!',
+        'Chào mừng bạn đến với cộng đồng Tân Dậu - Hỗ Trợ Chéo!',
         '🤝 Cùng nhau hỗ trợ, chia sẻ và kết nối trong cộng đồng!'
     ])
 
@@ -63,7 +63,7 @@ export async function handleCommunityBirthday(user: any) {
         if (!birthdays || birthdays.length === 0) {
             await sendMessagesWithTyping(user.facebook_id, [
                 '🎂 SINH NHẬT HÔM NAY',
-                'Hôm nay không có ai sinh nhật trong cộng đồng Tân Dậu 1981.',
+                'Hôm nay không có ai sinh nhật trong cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
                 'Hãy quay lại vào ngày khác!'
             ])
         } else {
@@ -296,7 +296,7 @@ export async function handleCommunitySupport(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🤝 HỖ TRỢ CHÉO CỘNG ĐỒNG TÂN DẬU',
-        'Cộng đồng Tân Dậu 1981 luôn sẵn sàng hỗ trợ lẫn nhau!'
+        'Cộng đồng Tân Dậu - Hỗ Trợ Chéo luôn sẵn sàng hỗ trợ lẫn nhau!'
     ])
 
     await sendButtonTemplate(
@@ -330,7 +330,7 @@ export async function handleCommunityMemories(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '📖 KỶ NIỆM CỘNG ĐỒNG TÂN DẬU',
-        'Chia sẻ và xem lại những kỷ niệm đẹp của cộng đồng Tân Dậu 1981!'
+        'Chia sẻ và xem lại những kỷ niệm đẹp của cộng đồng Tân Dậu - Hỗ Trợ Chéo!'
     ])
 
     await sendButtonTemplate(

@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-    title: 'BOT TÂN DẬU 1981',
-    description: 'Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu 1981',
+    title: 'BOT Tân Dậu - Hỗ Trợ Chéo',
+    description: 'Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu - Hỗ Trợ Chéo',
 }
 
 export default function RootLayout({

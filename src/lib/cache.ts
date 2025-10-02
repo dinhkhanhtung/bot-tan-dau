@@ -1,4 +1,4 @@
-// Performance Optimization - Caching System for Bot Tân Dậu 1981
+// Performance Optimization - Caching System for Bot Tân Dậu - Hỗ Trợ Chéo
 
 interface CacheEntry<T> {
     data: T

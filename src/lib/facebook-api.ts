@@ -109,9 +109,17 @@ export async function sendGenericTemplate(recipientId: string, elements: any[]) 
     }
 }
 
-// Send button template
+// Send button template - FIXED: Limit buttons to 3 max to avoid "too many elements" error
 export async function sendButtonTemplate(recipientId: string, text: string, buttons: any[]) {
     try {
+        // Facebook allows maximum 3 buttons per template
+        const maxButtons = 3
+        const limitedButtons = buttons.slice(0, maxButtons)
+
+        if (buttons.length > maxButtons) {
+            console.warn(`Button template limited to ${maxButtons} buttons. Original had ${buttons.length} buttons.`)
+        }
+
         const response = await axios.post(
             `${FACEBOOK_API_URL}/me/messages`,
             {
@@ -122,7 +130,7 @@ export async function sendButtonTemplate(recipientId: string, text: string, butt
                         payload: {
                             template_type: 'button',
                             text: text,
-                            buttons: buttons
+                            buttons: limitedButtons
                         }
                     }
                 }

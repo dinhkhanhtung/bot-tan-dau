@@ -67,13 +67,13 @@ async function sendTrialExpiringReminder(facebookId: string, hoursLeft: number) 
             await sendMessagesWithTyping(facebookId, [
                 '⏰ THÔNG BÁO QUAN TRỌNG',
                 'Trial của bạn còn 48 giờ!',
-                '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
             ])
         } else if (hoursLeft === 24) {
             await sendMessagesWithTyping(facebookId, [
                 '🚨 CẢNH BÁO TRIAL SẮP HẾT!',
                 'Trial của bạn còn 24 giờ!',
-                '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+                '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
             ])
         }
 
@@ -102,7 +102,7 @@ async function sendTrialExpiredNotification(facebookId: string) {
         await sendMessagesWithTyping(facebookId, [
             '⏰ TRIAL ĐÃ HẾT HẠN!',
             'Trial của bạn đã hết hạn!',
-            '💳 Phí duy trì: 1,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 7,000đ'
+            '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
         ])
 
         await sendButtonTemplate(

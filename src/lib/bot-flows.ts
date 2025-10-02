@@ -61,7 +61,7 @@ export async function handleRegistrationStep(user: any, step: number, input: str
             await sendMessagesWithTyping(user.facebook_id, [
                 `✅ Vị trí: ${input}`,
                 'Bước 4/4: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!',
-                'Bot Tân Dậu 1981 được tạo ra dành riêng cho cộng đồng Tân Dậu 1981.',
+                'Bot Tân Dậu - Hỗ Trợ Chéo được tạo ra dành riêng cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
                 '❓ Bạn có phải sinh năm 1981 không?'
             ])
 

@@ -4,9 +4,11 @@ import {
     sendTypingIndicator,
     sendMessagesWithTyping,
     sendButtonTemplate,
-    createPostbackButton
+    sendQuickReply,
+    createPostbackButton,
+    createQuickReply
 } from './facebook-api'
-import { isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from './utils'
+import { isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession, getFacebookDisplayName } from './utils'
 import * as AdminHandlers from './handlers/admin-handlers'
 
 // Import handlers from modules
@@ -580,7 +582,7 @@ export async function handlePostback(user: any, postback: string) {
     }
 }
 
-// Show main menu - ENHANCED WITH BETTER UX
+// Show main menu - ENHANCED WITH QUICK REPLY FOR BETTER UX
 async function showMainMenu(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
@@ -588,52 +590,34 @@ async function showMainMenu(user: any) {
         ? `📅 Trial còn ${daysUntilExpiry(user.membership_expires_at!)} ngày`
         : '✅ Đã thanh toán'
 
+    // Get Facebook name if available, fallback to user.name or default
+    const displayName = await getFacebookDisplayName(user.facebook_id) || user.name || 'bạn'
+
     await sendMessagesWithTyping(user.facebook_id, [
-        '🏠 TRANG CHỦ TÂN DẬU 1981',
-        `👋 Chào mừng ${user.name || 'bạn'}!`,
+        '🏠 TRANG CHỦ Tân Dậu - Hỗ Trợ Chéo',
+        `👋 Chào mừng ${displayName}!`,
         `📊 Trạng thái: ${statusText}`,
         '━━━━━━━━━━━━━━━━━━━━',
         '🎯 Chọn chức năng bạn muốn sử dụng:'
     ])
 
-    // Main functions with better organization
-    await sendButtonTemplate(
+    // Use Quick Reply instead of Button Template for better UX
+    await sendQuickReply(
         user.facebook_id,
         '🛒 MUA BÁN & KINH DOANH:',
         [
-            createPostbackButton('🛒 NIÊM YẾT SẢN PHẨM', 'LISTING'),
-            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('💬 KẾT NỐI BÁN HÀNG', 'CONTACT_SELLER')
-        ]
-    )
-
-    await sendButtonTemplate(
-        user.facebook_id,
-        '👥 CỘNG ĐỒNG & HỖ TRỢ:',
-        [
-            createPostbackButton('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
-            createPostbackButton('🎁 GIỚI THIỆU BẠN BÈ', 'REFERRAL'),
-            createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS')
-        ]
-    )
-
-    await sendButtonTemplate(
-        user.facebook_id,
-        '💰 TÀI CHÍNH & QUẢN LÝ:',
-        [
-            createPostbackButton('💰 THANH TOÁN', 'PAYMENT'),
-            createPostbackButton('📊 THỐNG KÊ CÁ NHÂN', 'PERSONAL_STATS'),
-            createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS')
-        ]
-    )
-
-    await sendButtonTemplate(
-        user.facebook_id,
-        '🔮 GIẢI TRÍ & TƯ VẤN:',
-        [
-            createPostbackButton('🔮 TỬ VI HÀNG NGÀY', 'HOROSCOPE'),
-            createPostbackButton('❓ HỖ TRỢ', 'SUPPORT'),
-            createPostbackButton('📱 LIÊN HỆ ADMIN', 'CONTACT_ADMIN')
+            createQuickReply('🛒 NIÊM YẾT SẢN PHẨM', 'LISTING'),
+            createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+            createQuickReply('💬 KẾT NỐI BÁN HÀNG', 'CONTACT_SELLER'),
+            createQuickReply('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
+            createQuickReply('🎁 GIỚI THIỆU BẠN BÈ', 'REFERRAL'),
+            createQuickReply('⭐ ĐIỂM THƯỞNG', 'POINTS'),
+            createQuickReply('💰 THANH TOÁN', 'PAYMENT'),
+            createQuickReply('📊 THỐNG KÊ CÁ NHÂN', 'PERSONAL_STATS'),
+            createQuickReply('⚙️ CÀI ĐẶT', 'SETTINGS'),
+            createQuickReply('🔮 TỬ VI HÀNG NGÀY', 'HOROSCOPE'),
+            createQuickReply('❓ HỖ TRỢ', 'SUPPORT'),
+            createQuickReply('📱 LIÊN HỆ ADMIN', 'CONTACT_ADMIN')
         ]
     )
 }
@@ -778,7 +762,7 @@ export async function handleExitBot(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '👋 TẠM BIỆT!',
-        'Cảm ơn bạn đã sử dụng Bot Tân Dậu 1981!',
+        'Cảm ơn bạn đã sử dụng Bot Tân Dậu - Hỗ Trợ Chéo!',
         'Hẹn gặp lại bạn sau! 😊'
     ])
 

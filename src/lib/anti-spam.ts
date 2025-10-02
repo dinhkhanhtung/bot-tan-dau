@@ -1,21 +1,21 @@
 import { supabaseAdmin } from './supabase'
 
-// Spam detection configuration
+// Spam detection configuration - IMPROVED: More user-friendly limits
 const SPAM_CONFIG = {
-    // Max messages per minute
-    MAX_MESSAGES_PER_MINUTE: 10,
-    // Max messages per hour
-    MAX_MESSAGES_PER_HOUR: 50,
-    // Max identical messages in a row
-    MAX_IDENTICAL_MESSAGES: 3,
-    // Cooldown period after spam detection (minutes)
-    SPAM_COOLDOWN_MINUTES: 30,
-    // Max consecutive identical messages before warning
-    WARNING_THRESHOLD: 2,
-    // Max consecutive non-button messages before bot stops
-    MAX_NON_BUTTON_MESSAGES: 3,
-    // Time window for non-button message tracking (minutes)
-    NON_BUTTON_WINDOW_MINUTES: 10
+    // Max messages per minute (increased for better UX)
+    MAX_MESSAGES_PER_MINUTE: 20,
+    // Max messages per hour (increased for better UX)
+    MAX_MESSAGES_PER_HOUR: 100,
+    // Max identical messages in a row (reduced for better UX)
+    MAX_IDENTICAL_MESSAGES: 2,
+    // Cooldown period after spam detection (reduced for better UX)
+    SPAM_COOLDOWN_MINUTES: 15,
+    // Max consecutive identical messages before warning (reduced)
+    WARNING_THRESHOLD: 1,
+    // Max consecutive non-button messages before bot stops (increased)
+    MAX_NON_BUTTON_MESSAGES: 5,
+    // Time window for non-button message tracking (increased)
+    NON_BUTTON_WINDOW_MINUTES: 15
 }
 
 // In-memory store for rate limiting (in production, use Redis)

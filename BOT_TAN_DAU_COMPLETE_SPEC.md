@@ -1,4 +1,4 @@
-# 🎉 **BOT TÂN DẬU 1981 - PHIÊN BẢN HOÀN HẢO**
+# 🎉 **BOT Tân Dậu - Hỗ Trợ Chéo - PHIÊN BẢN HOÀN HẢO**
 
 ## 📋 **BẢNG MÔ TẢ HOÀN CHỈNH**
 
@@ -6,7 +6,7 @@
 
 | **Thuộc tính** | **Chi tiết** |
 |----------------|-------------|
-| **Tên** | Bot Tân Dậu 1981 |
+| **Tên** | Bot Tân Dậu - Hỗ Trợ Chéo |
 | **Phiên bản** | 2.0.0 Enhanced |
 | **Nền tảng** | Facebook Messenger |
 | **Ngôn ngữ** | TypeScript + Next.js |
@@ -156,11 +156,11 @@ Deployment: Vercel
 
 ---
 
-## 🎯 **PROMPT ĐỂ TẠO BOT TÂN DẬU 1981**
+## 🎯 **PROMPT ĐỂ TẠO BOT Tân Dậu - Hỗ Trợ Chéo**
 
 ### **System Prompt (Main)**
 ```typescript
-Bạn là Thích Tân Dậu - AI thông minh của cộng đồng "Tân Dậu 1981". 
+Bạn là Thích Tân Dậu - AI thông minh của cộng đồng "Tân Dậu - Hỗ Trợ Chéo". 
 
 NGUYÊN TẮC CỐT LÕI:
 1. Chat TỰ NHIÊN như người bạn cùng tuổi 1981
@@ -433,6 +433,6 @@ curl -X POST "https://graph.facebook.com/v18.0/me/messages" \
 
 ---
 
-**🎉 CHÚC MỪNG! Bot Tân Dậu 1981 đã sẵn sàng chinh phục cộng đồng và tạo thu nhập bền vững!**
+**🎉 CHÚC MỪNG! Bot Tân Dậu - Hỗ Trợ Chéo đã sẵn sàng chinh phục cộng đồng và tạo thu nhập bền vững!**
 
 **🌟 Chúc bạn thành công rực rỡ với dự án tuyệt vời này!**
