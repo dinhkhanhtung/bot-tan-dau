@@ -94,10 +94,9 @@ export async function handleMessage(user: any, text: string) {
             return
         }
 
-        // Check if user is in any active flow
+        // Check if user is in any active flow - OPTIMIZED for faster response
         const sessionData = await getBotSession(user.facebook_id)
         const currentFlow = sessionData?.session_data?.current_flow
-        const currentStep = sessionData?.session_data?.step
 
         if (currentFlow) {
             // User is in an active flow - check if they want to quit current flow
@@ -109,9 +108,8 @@ export async function handleMessage(user: any, text: string) {
                 return
             }
 
-            // Process current flow
+            // Process current flow - optimized processing
             if (currentFlow === 'registration') {
-                console.log('User in registration flow, processing step:', currentStep)
                 await AuthHandlers.handleRegistrationStep(user, text, sessionData.session_data)
                 return
             } else if (currentFlow === 'listing') {
@@ -630,7 +628,8 @@ export async function handlePostback(user: any, postback: string) {
 
 // Show main menu - ENHANCED WITH QUICK REPLY FOR BETTER UX
 async function showMainMenu(user: any) {
-    await sendTypingIndicator(user.facebook_id)
+    // Send typing indicator immediately for faster response
+    sendTypingIndicator(user.facebook_id).catch(err => console.error('Typing indicator error:', err))
 
     const statusText = isTrialUser(user.membership_expires_at)
         ? `📅 Trial còn ${daysUntilExpiry(user.membership_expires_at!)} ngày`
@@ -639,13 +638,11 @@ async function showMainMenu(user: any) {
     // Get Facebook name if available, fallback to user.name or default
     const displayName = await getFacebookDisplayName(user.facebook_id) || user.name || 'bạn'
 
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🏠 TRANG CHỦ Tân Dậu - Hỗ Trợ Chéo',
-        `👋 Chào mừng ${displayName}!`,
-        `📊 Trạng thái: ${statusText}`,
-        '━━━━━━━━━━━━━━━━━━━━',
-        '🎯 Chọn chức năng bạn muốn sử dụng:'
-    ])
+    await sendMessage(user.facebook_id, '🏠 TRANG CHỦ Tân Dậu - Hỗ Trợ Chéo')
+    await sendMessage(user.facebook_id, `👋 Chào mừng ${displayName}!`)
+    await sendMessage(user.facebook_id, `📊 Trạng thái: ${statusText}`)
+    await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+    await sendMessage(user.facebook_id, '🎯 Chọn chức năng bạn muốn sử dụng:')
 
     // Use Quick Reply instead of Button Template for better UX
     await sendQuickReply(

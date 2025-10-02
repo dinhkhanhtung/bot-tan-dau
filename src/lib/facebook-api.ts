@@ -50,7 +50,27 @@ export async function sendTypingIndicator(recipientId: string) {
         return response.data
     } catch (error) {
         console.error('Error sending typing indicator:', error)
-        throw error
+        // Don't throw error for typing indicator to avoid breaking main flow
+        return null
+    }
+}
+
+// Send typing indicator immediately (fire and forget for faster response)
+export function sendTypingIndicatorInstant(recipientId: string) {
+    try {
+        axios.post(
+            `${FACEBOOK_API_URL}/me/messages`,
+            {
+                recipient: { id: recipientId },
+                sender_action: 'typing_on'
+            },
+            {
+                params: { access_token: FACEBOOK_ACCESS_TOKEN },
+                headers: { 'Content-Type': 'application/json' }
+            }
+        ).catch(err => console.error('Typing indicator error:', err))
+    } catch (error) {
+        console.error('Error sending instant typing indicator:', error)
     }
 }
 
@@ -243,7 +263,7 @@ export async function sendImage(recipientId: string, imageUrl: string) {
     }
 }
 
-// Send multiple messages with typing indicator
+// Send multiple messages with typing indicator - OPTIMIZED for faster response
 export async function sendMessagesWithTyping(recipientId: string, messages: string[]) {
     for (let i = 0; i < messages.length; i++) {
         // Skip empty messages
@@ -252,11 +272,11 @@ export async function sendMessagesWithTyping(recipientId: string, messages: stri
             continue
         }
 
-        // Send typing indicator
-        await sendTypingIndicator(recipientId)
+        // Send typing indicator (don't await to speed up)
+        sendTypingIndicator(recipientId).catch(err => console.error('Typing indicator error:', err))
 
-        // Wait 2-3 seconds
-        await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 1000))
+        // Wait 1-1.5 seconds (reduced from 2-3 seconds)
+        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 500))
 
         // Send message
         await sendMessage(recipientId, messages[i])
