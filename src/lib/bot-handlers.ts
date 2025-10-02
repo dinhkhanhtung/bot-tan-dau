@@ -71,20 +71,6 @@ export async function handleMessage(user: any, text: string) {
             } else if (nonButtonResult.warningCount > 0) {
                 await sendNonButtonWarning(user.facebook_id, nonButtonResult.warningCount)
             }
-
-            // Check if user is expired
-            if (isExpiredUser(user.membership_expires_at)) {
-                await PaymentHandlers.sendExpiredMessage(user.facebook_id)
-                return
-            }
-
-            // Check if user is in trial and about to expire
-            if (isTrialUser(user.membership_expires_at)) {
-                const daysLeft = daysUntilExpiry(user.membership_expires_at!)
-                if (daysLeft <= 2) {
-                    await PaymentHandlers.sendTrialExpiringMessage(user.facebook_id, daysLeft)
-                }
-            }
         }
 
         // Check if user is in admin chat mode - PRIORITY: Admin chat takes precedence over everything
@@ -119,6 +105,23 @@ export async function handleMessage(user: any, text: string) {
             } else if (currentFlow === 'search') {
                 await MarketplaceHandlers.handleSearchStep(user, text, sessionData.session_data)
                 return
+            }
+        } else {
+            // User is NOT in active flow - check trial/expiration status
+            if (!userIsAdmin) {
+                // Check if user is expired
+                if (isExpiredUser(user.membership_expires_at)) {
+                    await PaymentHandlers.sendExpiredMessage(user.facebook_id)
+                    return
+                }
+
+                // Check if user is in trial and about to expire
+                if (isTrialUser(user.membership_expires_at)) {
+                    const daysLeft = daysUntilExpiry(user.membership_expires_at!)
+                    if (daysLeft <= 2) {
+                        await PaymentHandlers.sendTrialExpiringMessage(user.facebook_id, daysLeft)
+                    }
+                }
             }
         }
 
