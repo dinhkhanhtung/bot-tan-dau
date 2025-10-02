@@ -6,7 +6,8 @@ import {
     sendButtonTemplate,
     sendQuickReply,
     createPostbackButton,
-    createQuickReply
+    createQuickReply,
+    hideButtons
 } from './facebook-api'
 import { isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession, getFacebookDisplayName } from './utils'
 import * as AdminHandlers from './handlers/admin-handlers'
@@ -635,6 +636,9 @@ async function showMainMenu(user: any) {
     // Send typing indicator immediately for faster response
     sendTypingIndicator(user.facebook_id).catch(err => console.error('Typing indicator error:', err))
 
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
+
     const statusText = isTrialUser(user.membership_expires_at)
         ? `📅 Trial còn ${daysUntilExpiry(user.membership_expires_at!)} ngày`
         : '✅ Đã thanh toán'
@@ -676,6 +680,9 @@ async function showMainMenu(user: any) {
 export async function handleDefaultMessage(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
+
     await sendMessage(user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
 
     await sendButtonTemplate(
@@ -691,6 +698,9 @@ export async function handleDefaultMessage(user: any) {
 
 export async function handleDefaultMessageRegistered(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
 
     await sendMessage(user.facebook_id, '👋 Chào mừng bạn trở lại!')
 

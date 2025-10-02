@@ -12,10 +12,12 @@ const SPAM_CONFIG = {
     SPAM_COOLDOWN_MINUTES: 15,
     // Max consecutive identical messages before warning (reduced)
     WARNING_THRESHOLD: 1,
-    // Max consecutive non-button messages before bot stops (increased)
-    MAX_NON_BUTTON_MESSAGES: 5,
+    // Max consecutive non-button messages before bot stops (significantly increased for better UX)
+    MAX_NON_BUTTON_MESSAGES: 20,
     // Time window for non-button message tracking (increased)
-    NON_BUTTON_WINDOW_MINUTES: 15
+    NON_BUTTON_WINDOW_MINUTES: 45,
+    // Warning threshold for non-button messages (increased)
+    NON_BUTTON_WARNING_THRESHOLD: 8
 }
 
 // In-memory store for rate limiting (in production, use Redis)
@@ -393,8 +395,8 @@ export async function trackNonButtonMessage(facebookId: string, message: string)
         }
     }
 
-    // Check if should warn
-    if (nonButtonData.count >= SPAM_CONFIG.WARNING_THRESHOLD) {
+    // Check if should warn (use the new threshold)
+    if (nonButtonData.count >= SPAM_CONFIG.NON_BUTTON_WARNING_THRESHOLD) {
         return {
             shouldStopBot: false,
             warningCount: nonButtonData.count
