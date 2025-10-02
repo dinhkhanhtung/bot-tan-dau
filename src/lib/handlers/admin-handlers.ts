@@ -6,9 +6,10 @@ import {
     sendButtonTemplate,
     createPostbackButton,
     createQuickReply,
-    sendMessagesWithTyping
+    sendMessagesWithTyping,
+    sendImage
 } from '../facebook-api'
-import { formatCurrency, formatNumber, updateBotSession } from '../utils'
+import { formatCurrency, formatNumber, updateBotSession, daysUntilExpiry } from '../utils'
 
 // Check if user is admin
 export async function isAdmin(facebookId: string): Promise<boolean> {
@@ -90,15 +91,26 @@ export async function handleAdminCommand(user: any) {
 
 }
 
-// Handle admin payments
+// Handle admin payments - ENHANCED VERSION WITH PRIORITY
 export async function handleAdminPayments(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
     try {
-        // Get pending payments
+        // Get pending payments with enhanced user info
         const { data: payments, error } = await supabaseAdmin
             .from('payments')
-            .select('*')
+            .select(`
+                *,
+                users!payments_user_id_fkey (
+                    name,
+                    phone,
+                    location,
+                    rating,
+                    total_transactions,
+                    status,
+                    membership_expires_at
+                )
+            `)
             .eq('status', 'pending')
             .order('created_at', { ascending: false })
             .limit(10)
@@ -112,33 +124,114 @@ export async function handleAdminPayments(user: any) {
         if (!payments || payments.length === 0) {
             await sendMessagesWithTyping(user.facebook_id, [
                 '💰 THANH TOÁN CHỜ DUYỆT',
-                'Không có thanh toán nào chờ duyệt.'
+                '━━━━━━━━━━━━━━━━━━━━',
+                '✅ Không có thanh toán nào chờ duyệt.',
+                '🎉 Tất cả thanh toán đã được xử lý!',
+                '━━━━━━━━━━━━━━━━━━━━',
+                '💡 Bạn có thể:',
+                '• Kiểm tra các thanh toán đã duyệt',
+                '• Xem thống kê doanh thu',
+                '• Quản lý người dùng'
             ])
         } else {
             await sendMessagesWithTyping(user.facebook_id, [
                 '💰 THANH TOÁN CHỜ DUYỆT',
-                `Có ${payments.length} thanh toán chờ duyệt:`
+                '━━━━━━━━━━━━━━━━━━━━',
+                `📋 Có ${payments.length} thanh toán cần xử lý:`,
+                '━━━━━━━━━━━━━━━━━━━━'
             ])
 
-            const paymentText = payments.map((payment, index) => {
+            // Sort payments by priority (higher amount first, then by user rating)
+            const sortedPayments = payments.sort((a, b) => {
+                const aUser = a.users
+                const bUser = b.users
+
+                // Priority 1: Higher amount first
+                if (a.amount !== b.amount) {
+                    return b.amount - a.amount
+                }
+
+                // Priority 2: Users with higher rating first
+                const aRating = aUser?.rating || 0
+                const bRating = bUser?.rating || 0
+                return bRating - aRating
+            })
+
+            // Send each payment as enhanced card
+            for (const payment of sortedPayments) {
+                const paymentUser = payment.users
                 const date = new Date(payment.created_at).toLocaleDateString('vi-VN')
                 const time = new Date(payment.created_at).toLocaleTimeString('vi-VN')
-                return `${index + 1}️⃣ ${payment.user_id.slice(-6)} - ${formatCurrency(payment.amount)} - ${date} ${time}`
-            }).join('\n')
+                const days = Math.floor(payment.amount / 1000)
+                const hoursAgo = Math.floor((Date.now() - new Date(payment.created_at).getTime()) / (1000 * 60 * 60))
 
-            await sendMessage(user.facebook_id, paymentText)
+                // Priority indicator
+                let priorityIcon = '🟢'
+                if (payment.amount >= 50000) priorityIcon = '🔴' // High value payment
+                else if (paymentUser?.rating >= 4.5) priorityIcon = '🟡' // Trusted user
+                else if (hoursAgo > 24) priorityIcon = '🟠' // Old payment
+
+                // Create enhanced payment card
+                const paymentCard = `${priorityIcon} THANH TOÁN #${payment.id.slice(-8)}
+
+👤 ${paymentUser?.name || 'Unknown'}
+📱 ${paymentUser?.phone || 'N/A'}
+📍 ${paymentUser?.location || 'N/A'}
+
+💰 Số tiền: ${formatCurrency(payment.amount)} (${days} ngày)
+📅 Thời gian: ${date} ${time} (${hoursAgo}h trước)
+
+⭐ Đáng tin cậy: ${paymentUser?.rating ? `${paymentUser.rating}⭐ (${paymentUser.total_transactions} giao dịch)` : 'Chưa có đánh giá'}
+
+${payment.receipt_image ? '📸 Đã có biên lai' : '⚠️ Chưa có biên lai'}`
+
+                await sendMessage(user.facebook_id, paymentCard)
+
+                // Enhanced action buttons
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `⚡ Xử lý nhanh #${payment.id.slice(-8)}:`,
+                    [
+                        createPostbackButton('✅ DUYỆT NHANH', `ADMIN_APPROVE_PAYMENT_${payment.id}`),
+                        createPostbackButton('❌ TỪ CHỐI', `ADMIN_REJECT_PAYMENT_${payment.id}`),
+                        createPostbackButton('👀 XEM BIÊN LAI', `ADMIN_VIEW_RECEIPT_${payment.id}`),
+                        createPostbackButton('👤 XEM USER', `ADMIN_VIEW_USER_${payment.user_id}`)
+                    ]
+                )
+            }
+
+            // Enhanced summary with insights
+            const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0)
+            const highValuePayments = payments.filter(p => p.amount >= 50000).length
+            const trustedUserPayments = payments.filter(p => p.users?.rating >= 4.5).length
+
+            await sendMessagesWithTyping(user.facebook_id, [
+                '━━━━━━━━━━━━━━━━━━━━',
+                '📊 PHÂN TÍCH THANH TOÁN:',
+                `💰 Tổng tiền: ${formatCurrency(totalAmount)}`,
+                `🔴 Thanh toán giá trị cao: ${highValuePayments}/${payments.length}`,
+                `⭐ Từ user uy tín: ${trustedUserPayments}/${payments.length}`,
+                `📈 Trung bình: ${formatCurrency(Math.round(totalAmount / payments.length))}/thanh toán`,
+                '━━━━━━━━━━━━━━━━━━━━',
+                '💡 KHUYẾN NGHỊ:',
+                `${highValuePayments > 0 ? '🔴 Ưu tiên duyệt thanh toán giá trị cao' : '✅ Tất cả thanh toán đều ở mức bình thường'}`,
+                `${trustedUserPayments > payments.length * 0.7 ? '⭐ Hầu hết từ user uy tín, có thể duyệt nhanh' : '⚠️ Cần kiểm tra kỹ user mới'}`,
+                '━━━━━━━━━━━━━━━━━━━━'
+            ])
+
+            await sendButtonTemplate(
+                user.facebook_id,
+                '⚡ QUICK ACTIONS:',
+                [
+                    createPostbackButton('⚡ DUYỆT TẤT CẢ', 'ADMIN_BULK_APPROVE'),
+                    createPostbackButton('✅ DUYỆT UY TÍN', 'ADMIN_APPROVE_TRUSTED'),
+                    createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
+                    createPostbackButton('🔍 TÌM KIẾM', 'ADMIN_SEARCH_PAYMENT'),
+                    createPostbackButton('🔄 LÀM MỚI', 'ADMIN_PAYMENTS'),
+                    createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+                ]
+            )
         }
-
-        await sendQuickReply(
-            user.facebook_id,
-            'Tùy chọn:',
-            [
-                createQuickReply('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
-                createQuickReply('🔍 TÌM KIẾM', 'ADMIN_SEARCH_PAYMENT'),
-                createQuickReply('🔄 LÀM MỚI', 'ADMIN_PAYMENTS'),
-                createQuickReply('🔙 QUAY LẠI', 'ADMIN')
-            ]
-        )
 
     } catch (error) {
         console.error('Error in admin payments:', error)
@@ -871,6 +964,514 @@ export async function handleAdminSpamLogs(user: any) {
     } catch (error) {
         console.error('Error in admin spam logs:', error)
         await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải spam logs!')
+    }
+}
+
+// Handle bulk approve payments - ENHANCED WITH SMART FILTERING
+export async function handleAdminBulkApprove(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        // Get all pending payments with enhanced filtering
+        const { data: payments, error } = await supabaseAdmin
+            .from('payments')
+            .select(`
+                *,
+                users!payments_user_id_fkey (
+                    name,
+                    phone,
+                    location,
+                    rating,
+                    total_transactions,
+                    status,
+                    membership_expires_at
+                )
+            `)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+
+        if (error || !payments || payments.length === 0) {
+            await sendMessage(user.facebook_id, '❌ Không có thanh toán nào để duyệt hàng loạt!')
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '⚡ DUYỆT HÀNG LOẠT THÔNG MINH',
+            `📋 Tổng cộng: ${payments.length} thanh toán chờ duyệt`,
+            '━━━━━━━━━━━━━━━━━━━━',
+            '🎯 TÙY CHỌN DUYỆT THÔNG MINH:'
+        ])
+
+        // Smart filtering options
+        const highValuePayments = payments.filter(p => p.amount >= 50000)
+        const trustedUserPayments = payments.filter(p => p.users?.rating >= 4.5)
+        const oldPayments = payments.filter(p => {
+            const hoursAgo = (Date.now() - new Date(p.created_at).getTime()) / (1000 * 60 * 60)
+            return hoursAgo > 24
+        })
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            '🏆 DUYỆT THEO ƯU TIÊN:',
+            [
+                createPostbackButton(`💰 DUYỆT CAO GIÁ (${highValuePayments.length})`, 'ADMIN_BULK_HIGH_VALUE'),
+                createPostbackButton(`⭐ DUYỆT UY TÍN (${trustedUserPayments.length})`, 'ADMIN_BULK_TRUSTED'),
+                createPostbackButton(`⚡ DUYỆT TẤT CẢ (${payments.length})`, 'ADMIN_BULK_ALL'),
+                createPostbackButton(`🕐 DUYỆT CŨ (${oldPayments.length})`, 'ADMIN_BULK_OLD')
+            ]
+        )
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            '📊 THÔNG TIN CHI TIẾT:',
+            [
+                createPostbackButton('📋 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
+                createPostbackButton('🔍 TÌM KIẾM', 'ADMIN_SEARCH_PAYMENT'),
+                createPostbackButton('🔙 QUAY LẠI', 'ADMIN_PAYMENTS')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error in bulk approve:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi duyệt hàng loạt!')
+    }
+}
+
+// Handle bulk approve trusted users
+export async function handleAdminBulkApproveTrusted(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        // Get only trusted user payments
+        const { data: payments, error } = await supabaseAdmin
+            .from('payments')
+            .select(`
+                *,
+                users!payments_user_id_fkey (
+                    name,
+                    phone,
+                    location,
+                    rating,
+                    total_transactions
+                )
+            `)
+            .eq('status', 'pending')
+            .gte('users.rating', 4.5)
+            .order('created_at', { ascending: false })
+
+        if (error || !payments || payments.length === 0) {
+            await sendMessage(user.facebook_id, '❌ Không có thanh toán từ user uy tín để duyệt!')
+            return
+        }
+
+        await executeBulkApproval(user, payments, 'UY TÍN')
+
+    } catch (error) {
+        console.error('Error in bulk approve trusted:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra!')
+    }
+}
+
+// Handle bulk approve high value payments
+export async function handleAdminBulkApproveHighValue(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        // Get only high value payments
+        const { data: payments, error } = await supabaseAdmin
+            .from('payments')
+            .select(`
+                *,
+                users!payments_user_id_fkey (
+                    name,
+                    phone,
+                    location,
+                    rating,
+                    total_transactions
+                )
+            `)
+            .eq('status', 'pending')
+            .gte('amount', 50000)
+            .order('amount', { ascending: false })
+
+        if (error || !payments || payments.length === 0) {
+            await sendMessage(user.facebook_id, '❌ Không có thanh toán giá trị cao để duyệt!')
+            return
+        }
+
+        await executeBulkApproval(user, payments, 'GIÁ TRỊ CAO')
+
+    } catch (error) {
+        console.error('Error in bulk approve high value:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra!')
+    }
+}
+
+// Execute bulk approval with enhanced reporting
+async function executeBulkApproval(user: any, payments: any[], filterType: string) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        `⚡ DUYỆT HÀNG LOẠT (${filterType})`,
+        `📋 Sẽ duyệt ${payments.length} thanh toán:`,
+        '━━━━━━━━━━━━━━━━━━━━'
+    ])
+
+    let approvedCount = 0
+    let failedCount = 0
+    let totalAmount = 0
+
+    for (const payment of payments) {
+        try {
+            // Update payment status
+            const { error: updateError } = await supabaseAdmin
+                .from('payments')
+                .update({
+                    status: 'approved',
+                    approved_at: new Date().toISOString(),
+                    approved_by: user.facebook_id
+                })
+                .eq('id', payment.id)
+
+            if (updateError) {
+                console.error(`Error approving payment ${payment.id}:`, updateError)
+                failedCount++
+                continue
+            }
+
+            // Update user membership
+            const newExpiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            const { error: userError } = await supabaseAdmin
+                .from('users')
+                .update({
+                    membership_expires_at: newExpiryDate.toISOString(),
+                    status: 'registered'
+                })
+                .eq('facebook_id', payment.user_id)
+
+            if (userError) {
+                console.error(`Error updating user ${payment.user_id}:`, userError)
+                failedCount++
+                continue
+            }
+
+            approvedCount++
+            totalAmount += payment.amount
+
+            // Notify user
+            await sendMessagesWithTyping(payment.user_id, [
+                '✅ THANH TOÁN ĐÃ ĐƯỢC DUYỆT!',
+                `💰 Thông tin thanh toán:\n• Số tiền: ${formatCurrency(payment.amount)}\n• Thời gian duyệt: ${new Date().toLocaleString('vi-VN')}\n• Gói dịch vụ: 7 ngày`,
+                `🎉 Tài khoản của bạn đã được gia hạn đến ${newExpiryDate.toLocaleDateString('vi-VN')}`,
+                '🎯 Cảm ơn bạn đã tin tưởng BOT TÂN DẬU 1981!'
+            ])
+
+        } catch (error) {
+            console.error(`Error processing payment ${payment.id}:`, error)
+            failedCount++
+        }
+    }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '━━━━━━━━━━━━━━━━━━━━',
+            '📊 KẾT QUẢ DUYỆT HÀNG LOẠT:',
+            `✅ Duyệt thành công: ${approvedCount}`,
+            `❌ Duyệt thất bại: ${failedCount}`,
+            `💰 Tổng tiền: ${formatCurrency(totalAmount)}`,
+            `🎯 Loại: ${filterType}`,
+            '━━━━━━━━━━━━━━━━━━━━',
+            '💡 THÀNH CÔNG: Đã xử lý nhanh các thanh toán ưu tiên!'
+        ])
+
+    await sendButtonTemplate(
+        user.facebook_id,
+        'Tiếp theo:',
+        [
+            createPostbackButton('📊 XEM THANH TOÁN', 'ADMIN_PAYMENTS'),
+            createPostbackButton('🏠 VỀ DASHBOARD', 'ADMIN')
+        ]
+    )
+}
+
+// Handle view receipt
+export async function handleAdminViewReceipt(user: any, paymentId: string) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        const { data: payment, error } = await supabaseAdmin
+            .from('payments')
+            .select('receipt_image, amount, created_at, users!payments_user_id_fkey(name, phone)')
+            .eq('id', paymentId)
+            .single()
+
+        if (error || !payment) {
+            await sendMessage(user.facebook_id, '❌ Không tìm thấy thông tin biên lai!')
+            return
+        }
+
+        if (!payment.receipt_image) {
+            await sendMessage(user.facebook_id, '⚠️ Thanh toán này chưa có biên lai được upload!')
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '📸 XEM BIÊN LAI',
+            `💰 Số tiền: ${formatCurrency(payment.amount)}`,
+            `👤 User: ${(payment.users as any)?.name || 'Unknown'}`,
+            `📱 Phone: ${(payment.users as any)?.phone || 'N/A'}`,
+            `📅 Ngày: ${new Date(payment.created_at).toLocaleDateString('vi-VN')}`
+        ])
+
+        // Send image
+        await sendImage(user.facebook_id, payment.receipt_image)
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Xử lý biên lai:',
+            [
+                createPostbackButton('✅ DUYỆT', `ADMIN_APPROVE_PAYMENT_${paymentId}`),
+                createPostbackButton('❌ TỪ CHỐI', `ADMIN_REJECT_PAYMENT_${paymentId}`),
+                createPostbackButton('🔙 QUAY LẠI', 'ADMIN_PAYMENTS')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error viewing receipt:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi xem biên lai!')
+    }
+}
+
+// Handle view user details
+export async function handleAdminViewUser(user: any, facebookId: string) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        const { data: userData, error } = await supabaseAdmin
+            .from('users')
+            .select(`
+                *,
+                payments!payments_user_id_fkey (
+                    id,
+                    amount,
+                    status,
+                    created_at
+                ),
+                listings!listings_user_id_fkey (
+                    id,
+                    title,
+                    status,
+                    created_at
+                ),
+                ratings!ratings_reviewee_id_fkey (
+                    rating,
+                    comment,
+                    created_at
+                )
+            `)
+            .eq('facebook_id', facebookId)
+            .single()
+
+        if (error || !userData) {
+            await sendMessage(user.facebook_id, '❌ Không tìm thấy thông tin user!')
+            return
+        }
+
+        const payments = userData.payments || []
+        const listings = userData.listings || []
+        const ratings = userData.ratings || []
+
+        const approvedPayments = payments.filter((p: any) => p.status === 'approved')
+        const totalSpent = approvedPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '👤 THÔNG TIN USER CHI TIẾT',
+            '━━━━━━━━━━━━━━━━━━━━',
+            `👤 Tên: ${userData.name}`,
+            `📱 SĐT: ${userData.phone}`,
+            `📍 Địa chỉ: ${userData.location}`,
+            `🎂 Năm sinh: ${userData.birthday}`,
+            `⭐ Rating: ${userData.rating || 'Chưa có'}`,
+            `💰 Tổng chi tiêu: ${formatCurrency(totalSpent)}`,
+            `📊 Trạng thái: ${userData.status}`,
+            `⏰ Hạn sử dụng: ${userData.membership_expires_at ? new Date(userData.membership_expires_at).toLocaleDateString('vi-VN') : 'N/A'}`,
+            `🛒 Số tin đăng: ${listings.length}`,
+            `💳 Số thanh toán: ${payments.length}`,
+            `⭐ Số đánh giá: ${ratings.length}`,
+            `📅 Ngày tham gia: ${new Date(userData.created_at).toLocaleDateString('vi-VN')}`
+        ])
+
+        // Recent activity
+        if (payments.length > 0) {
+            await sendMessage(user.facebook_id, '💳 LỊCH SỬ THANH TOÁN GẦN ĐÂY:')
+            const recentPayments = payments.slice(0, 3)
+            for (const payment of recentPayments) {
+                const status = payment.status === 'approved' ? '✅' : payment.status === 'rejected' ? '❌' : '⏳'
+                await sendMessage(user.facebook_id, `${status} ${formatCurrency(payment.amount)} - ${new Date(payment.created_at).toLocaleDateString('vi-VN')}`)
+            }
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('💰 XEM THANH TOÁN', `ADMIN_USER_PAYMENTS_${facebookId}`),
+                createPostbackButton('🛒 XEM TIN ĐĂNG', `ADMIN_USER_LISTINGS_${facebookId}`),
+                createPostbackButton('⭐ XEM ĐÁNH GIÁ', `ADMIN_USER_RATINGS_${facebookId}`),
+                createPostbackButton('🔙 QUAY LẠI', 'ADMIN_PAYMENTS')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error viewing user:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi xem thông tin user!')
+    }
+}
+
+// Handle admin dashboard overview - ENHANCED VERSION
+export async function handleAdminDashboard(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        // Get comprehensive overview stats with optimized queries
+        const [usersResult, paymentsResult, listingsResult, spamResult, notificationsResult] = await Promise.all([
+            supabaseAdmin.from('users').select('status, created_at, membership_expires_at'),
+            supabaseAdmin.from('payments').select('status, amount, created_at, approved_at'),
+            supabaseAdmin.from('listings').select('status, created_at, views, category'),
+            supabaseAdmin.from('spam_logs').select('id, created_at, reason'),
+            supabaseAdmin.from('notifications').select('id, created_at, is_read')
+        ])
+
+        if (usersResult.error || paymentsResult.error || listingsResult.error || spamResult.error || notificationsResult.error) {
+            console.error('Error fetching dashboard stats')
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải dashboard!')
+            return
+        }
+
+        const users = usersResult.data || []
+        const payments = paymentsResult.data || []
+        const listings = listingsResult.data || []
+        const spamLogs = spamResult.data || []
+        const notifications = notificationsResult.data || []
+
+        // Calculate comprehensive stats
+        const today = new Date().toISOString().split('T')[0]
+        const todayUsers = users.filter(u => u.created_at?.startsWith(today)).length
+        const todayPayments = payments.filter(p => p.created_at?.startsWith(today)).length
+        const todayListings = listings.filter(l => l.created_at?.startsWith(today)).length
+
+        // User status breakdown
+        const activeUsers = users.filter(u => u.status === 'registered').length
+        const trialUsers = users.filter(u => u.status === 'trial').length
+        const expiredUsers = users.filter(u => u.status === 'expired').length
+
+        // Payment stats
+        const pendingPayments = payments.filter(p => p.status === 'pending').length
+        const approvedPayments = payments.filter(p => p.status === 'approved')
+        const totalRevenue = approvedPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+        const todayRevenue = payments.filter(p => p.created_at?.startsWith(today) && p.status === 'approved')
+            .reduce((sum, p) => sum + (p.amount || 0), 0)
+
+        // Listing stats
+        const activeListings = listings.filter(l => l.status === 'active').length
+        const featuredListings = listings.filter(l => l.status === 'featured').length
+        const totalViews = listings.reduce((sum, l) => sum + (l.views || 0), 0)
+
+        // Spam stats
+        const todaySpam = spamLogs.filter(log => log.created_at?.startsWith(today)).length
+        const weekSpam = spamLogs.filter(log => {
+            const logDate = new Date(log.created_at)
+            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+            return logDate > weekAgo
+        }).length
+
+        // Trial expiry warnings
+        const expiringToday = users.filter(u =>
+            u.status === 'trial' &&
+            u.membership_expires_at &&
+            daysUntilExpiry(u.membership_expires_at) === 0
+        ).length
+
+        const expiringSoon = users.filter(u =>
+            u.status === 'trial' &&
+            u.membership_expires_at &&
+            daysUntilExpiry(u.membership_expires_at) <= 2 &&
+            daysUntilExpiry(u.membership_expires_at) > 0
+        ).length
+
+        // Enhanced dashboard display
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🔧 ADMIN DASHBOARD - ENHANCED',
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+            '📊 TODAY STATS (HÔM NAY):',
+            `👥 New Users: ${todayUsers} users`,
+            `💰 Revenue: ${formatCurrency(todayRevenue)}`,
+            `🛒 New Listings: ${todayListings} posts`,
+            `🚫 Spam Blocks: ${todaySpam} cases`,
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+            '⚠️ URGENT ATTENTION:',
+            `• ${pendingPayments} payments pending approval`,
+            `• ${expiringToday} trials expiring today`,
+            `• ${expiringSoon} trials expiring soon`,
+            `• ${weekSpam} spam cases this week`,
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+            '📈 OVERALL STATS:',
+            `👥 Total Users: ${users.length} (${activeUsers} active, ${trialUsers} trial)`,
+            `💰 Total Revenue: ${formatCurrency(totalRevenue)}`,
+            `🛒 Total Listings: ${listings.length} (${activeListings} active, ${featuredListings} featured)`,
+            `👁️ Total Views: ${formatNumber(totalViews)}`,
+            `📱 Unread Notifications: ${notifications.filter(n => !n.is_read).length}`,
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+        ])
+
+        // Quick action buttons with priority
+        await sendButtonTemplate(
+            user.facebook_id,
+            '🚨 PRIORITY ACTIONS:',
+            [
+                createPostbackButton('💰 DUYỆT THANH TOÁN', 'ADMIN_PAYMENTS'),
+                createPostbackButton('👥 QUẢN LÝ USER', 'ADMIN_USERS'),
+                createPostbackButton('📊 CHI TIẾT THỐNG KÊ', 'ADMIN_STATS'),
+                createPostbackButton('🚫 SPAM MANAGEMENT', 'ADMIN_SPAM_LOGS')
+            ]
+        )
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            '📋 OTHER FUNCTIONS:',
+            [
+                createPostbackButton('🔔 QUẢN LÝ THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
+                createPostbackButton('⚙️ CẤU HÌNH HỆ THỐNG', 'ADMIN_SETTINGS'),
+                createPostbackButton('👨‍💼 QUẢN LÝ ADMIN', 'ADMIN_MANAGE_ADMINS'),
+                createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT')
+            ]
+        )
+
+        // System health indicators
+        const systemHealth = await checkSystemHealth()
+        if (systemHealth.issues.length > 0) {
+            await sendMessage(user.facebook_id, `⚠️ SYSTEM ISSUES: ${systemHealth.issues.join(', ')}`)
+        }
+
+    } catch (error) {
+        console.error('Error in admin dashboard:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải dashboard!')
+    }
+}
+
+// System health check function
+async function checkSystemHealth() {
+    const issues: string[] = []
+    const checks = []
+
+    try {
+        // Check database connectivity
+        const { error: dbError } = await supabaseAdmin.from('users').select('id').limit(1)
+        if (dbError) issues.push('Database connection issue')
+
+        // Check Facebook API
+        // Add more health checks as needed
+
+        return { healthy: issues.length === 0, issues }
+    } catch (error) {
+        return { healthy: false, issues: ['Health check failed'] }
     }
 }
 

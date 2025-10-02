@@ -237,7 +237,7 @@ export async function handleListingLocation(user: any, location: string) {
     })
 }
 
-// Handle listing confirmation
+// Handle listing confirmation - IMPROVED WITH PREVIEW
 export async function handleListingConfirm(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
@@ -247,23 +247,75 @@ export async function handleListingConfirm(user: any) {
     const data = session.data
 
     await sendMessagesWithTyping(user.facebook_id, [
-        '📋 XÁC NHẬN THÔNG TIN',
-        `🏠 Tiêu đề: ${data.title}`,
-        `💰 Giá: ${formatCurrency(data.price)}`,
-        `📍 Vị trí: ${data.location}`,
-        `📝 Mô tả: ${data.description}`,
-        `📸 Hình ảnh: ${data.images?.length || 0} ảnh`
+        '📋 XEM TRƯỚC TIN ĐĂNG',
+        '━━━━━━━━━━━━━━━━━━━━',
+        'Đây là cách tin đăng của bạn sẽ hiển thị cho cộng đồng:',
+        '━━━━━━━━━━━━━━━━━━━━'
+    ])
+
+    // Create preview card
+    const previewCard = `🏠 ${data.title}
+━━━━━━━━━━━━━━━━━━━━
+💰 ${formatCurrency(data.price)}
+📍 ${data.location}
+📅 ${new Date().toLocaleDateString('vi-VN')}
+
+📝 ${data.description}
+
+👤 Người đăng: ${user.name || 'Bạn'}
+⭐ Đánh giá: Chưa có đánh giá
+📱 Liên hệ: ${user.phone || 'Qua chat'}
+
+${data.images && data.images.length > 0 ? `📸 ${data.images.length} hình ảnh` : '📷 Chưa có hình ảnh'}`
+
+    await sendMessage(user.facebook_id, previewCard)
+
+    // Show image previews if available
+    if (data.images && data.images.length > 0) {
+        await sendMessage(user.facebook_id, '🖼️ HÌNH ẢNH SẼ HIỂN THỊ:')
+        for (let i = 0; i < Math.min(data.images.length, 3); i++) {
+            await sendMessage(user.facebook_id, `📸 Ảnh ${i + 1}: ${data.images[i]}`)
+        }
+        if (data.images.length > 3) {
+            await sendMessage(user.facebook_id, `... và ${data.images.length - 3} ảnh khác`)
+        }
+    }
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '━━━━━━━━━━━━━━━━━━━━',
+        '💡 MẸO ĐỂ BÁN TỐT HƠN:',
+        '• Tiêu đề hấp dẫn, ngắn gọn',
+        '• Mô tả chi tiết, trung thực',
+        '• Hình ảnh rõ nét, nhiều góc',
+        '• Giá cả hợp lý',
+        '• Phản hồi nhanh chóng',
+        '━━━━━━━━━━━━━━━━━━━━',
+        '📊 TIN ĐĂNG CỦA BẠN SẼ:',
+        '✅ Hiển thị cho cộng đồng Tân Dậu',
+        '✅ Xuất hiện trong kết quả tìm kiếm',
+        '✅ Có thể được gợi ý cho người khác',
+        '✅ Nhận đánh giá từ người mua',
+        '━━━━━━━━━━━━━━━━━━━━'
     ])
 
     await sendButtonTemplate(
         user.facebook_id,
-        'Xác nhận đăng tin:',
+        'Bạn muốn:',
         [
-            createPostbackButton('✅ ĐĂNG TIN', 'LISTING_SUBMIT'),
+            createPostbackButton('✅ ĐĂNG TIN NGAY', 'LISTING_SUBMIT'),
             createPostbackButton('✏️ CHỈNH SỬA', 'LISTING_EDIT'),
-            createPostbackButton('❌ HỦY', 'MAIN_MENU')
+            createPostbackButton('📝 THÊM HÌNH ẢNH', 'LISTING_IMAGES'),
+            createPostbackButton('❌ HỦY ĐĂNG TIN', 'MAIN_MENU')
         ]
     )
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '💬 Sau khi đăng tin:',
+        '• Bạn sẽ nhận thông báo khi có người quan tâm',
+        '• Có thể chỉnh sửa hoặc xóa tin bất cứ lúc nào',
+        '• Nhận đánh giá sau giao dịch thành công',
+        '• Tích lũy điểm thưởng và uy tín'
+    ])
 }
 
 // Handle listing submission
@@ -356,15 +408,23 @@ export async function handleSearch(user: any) {
     )
 }
 
-// Handle search category
+// Handle search category - ENHANCED VISUAL VERSION WITH AI INSIGHTS
 export async function handleSearchCategory(user: any, category: string) {
     await sendTypingIndicator(user.facebook_id)
 
     try {
-        // Get listings by category
+        // Get listings by category with enhanced details
         const { data: listings, error } = await supabaseAdmin
             .from('listings')
-            .select('*')
+            .select(`
+                *,
+                users!listings_user_id_fkey (
+                    name,
+                    rating,
+                    total_transactions,
+                    location
+                )
+            `)
             .eq('category', category)
             .eq('status', 'active')
             .order('created_at', { ascending: false })
@@ -380,7 +440,10 @@ export async function handleSearchCategory(user: any, category: string) {
             await sendMessagesWithTyping(user.facebook_id, [
                 '🔍 Đang tìm kiếm...',
                 '❌ Không tìm thấy sản phẩm nào phù hợp!',
-                'Hãy thử tìm kiếm với từ khóa khác hoặc danh mục khác.'
+                '💡 Hãy thử tìm kiếm với từ khóa khác hoặc danh mục khác.',
+                '🎯 Ví dụ: "nhà ở hà nội", "xe honda", "điện thoại samsung"',
+                '',
+                '🤖 Mẹo: Sử dụng tìm kiếm nâng cao để có kết quả tốt hơn!'
             ])
 
             await sendButtonTemplate(
@@ -397,31 +460,70 @@ export async function handleSearchCategory(user: any, category: string) {
 
         await sendMessagesWithTyping(user.facebook_id, [
             '🔍 Đang tìm kiếm...',
-            `Tìm thấy ${listings.length} tin phù hợp:`
+            `✅ Tìm thấy ${listings.length} tin phù hợp:`,
+            '━━━━━━━━━━━━━━━━━━━━'
         ])
 
-        // Create carousel elements
-        const elements = listings.slice(0, 10).map((listing: any, index: number) =>
-            createGenericElement(
-                `${index + 1}️⃣ ${listing.title}`,
-                `📍 ${listing.location} | 👤 ${listing.user_id.slice(-6)}\n💰 ${formatCurrency(listing.price)}`,
+        // Create enhanced carousel elements with AI insights
+        const elements = listings.slice(0, 10).map((listing: any, index: number) => {
+            const seller = listing.users
+            const rating = seller?.rating ? `${seller.rating}⭐` : 'Chưa đánh giá'
+            const transactions = seller?.total_transactions ? `(${seller.total_transactions} giao dịch)` : ''
+            const daysSincePosted = Math.floor((Date.now() - new Date(listing.created_at).getTime()) / (1000 * 60 * 60 * 24))
+
+            // Calculate relevance score
+            let relevanceScore = 70 // Base score
+            if (daysSincePosted < 7) relevanceScore += 15 // New listings
+            if (seller?.rating && seller.rating >= 4.5) relevanceScore += 10 // High rated sellers
+            if (seller?.total_transactions && seller.total_transactions >= 5) relevanceScore += 5 // Experienced sellers
+
+            return createGenericElement(
+                `🏆 ${listing.title}`,
+                `💰 ${formatCurrency(listing.price)}\n📍 ${listing.location}\n👤 ${seller?.name || 'N/A'}\n⭐ ${rating} ${transactions}\n🎯 Độ phù hợp: ${relevanceScore}%`,
                 listing.images?.[0] || '',
                 [
                     createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
-                    createPostbackButton('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`)
+                    createPostbackButton('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`),
+                    createPostbackButton('❤️ LƯU TIN', `SAVE_LISTING_${listing.id}`)
                 ]
             )
-        )
+        })
 
         await sendCarouselTemplate(user.facebook_id, elements)
 
+        // Enhanced summary with AI insights
+        const avgPrice = listings.reduce((sum: number, l: any) => sum + l.price, 0) / listings.length
+        const locations = Array.from(new Set(listings.map((l: any) => l.location)))
+        const highRatedListings = listings.filter((l: any) => l.users?.rating >= 4.5).length
+        const newListings = listings.filter((l: any) => {
+            const daysSincePosted = (Date.now() - new Date(l.created_at).getTime()) / (1000 * 60 * 60 * 24)
+            return daysSincePosted < 7
+        }).length
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '━━━━━━━━━━━━━━━━━━━━',
+            '📊 THỐNG KÊ THÔNG MINH:',
+            `💰 Giá trung bình: ${formatCurrency(Math.round(avgPrice))}`,
+            `📍 Khu vực: ${locations.slice(0, 3).join(', ')}${locations.length > 3 ? '...' : ''}`,
+            `⭐ Tin chất lượng cao: ${highRatedListings}/${listings.length}`,
+            `🆕 Tin mới (7 ngày): ${newListings}/${listings.length}`,
+            `📈 Tổng kết quả: ${listings.length} tin đăng`,
+            '━━━━━━━━━━━━━━━━━━━━',
+            '🧠 AI INSIGHTS:',
+            `• ${highRatedListings > listings.length * 0.6 ? 'Chất lượng tin đăng rất tốt!' : 'Có một số tin đăng chất lượng cao'}`,
+            `• ${newListings > listings.length * 0.5 ? 'Nhiều tin đăng mới, thị trường sôi động!' : 'Thị trường ổn định'}`
+        ])
+
         await sendButtonTemplate(
             user.facebook_id,
-            'Tùy chọn:',
+            '🔍 TÙY CHỌN TÌM KIẾM THÔNG MINH:',
             [
+                createPostbackButton('💰 THEO GIÁ', 'SEARCH_PRICE'),
+                createPostbackButton('📍 THEO VỊ TRÍ', 'SEARCH_LOCATION'),
+                createPostbackButton('⭐ CHỈ HIỂN THỊ CHẤT LƯỢNG', 'SEARCH_HIGH_QUALITY'),
+                createPostbackButton('🆕 CHỈ HIỂN THỊ TIN MỚI', 'SEARCH_RECENT'),
                 createPostbackButton('🔄 TÌM KIẾM KHÁC', 'SEARCH'),
-                createPostbackButton('🎯 BỘ LỌC NÂNG CAO', 'SEARCH_ADVANCED'),
-                createPostbackButton('📱 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 

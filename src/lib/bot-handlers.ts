@@ -329,6 +329,16 @@ export async function handlePostback(user: any, postback: string) {
                     await PaymentHandlers.handlePaymentGuide(user)
                 } else if (params[0] === 'EXTEND') {
                     await PaymentHandlers.handlePaymentExtend(user)
+                } else if (params[0] === 'STATUS') {
+                    await PaymentHandlers.handlePaymentStatus(user, params[1])
+                } else if (params[0] === 'NOTIF' && params[1] === 'ON') {
+                    await PaymentHandlers.handlePaymentNotifications(user)
+                } else if (params[0] === 'NOTIF' && params[1] === 'OFF') {
+                    await PaymentHandlers.handlePaymentNotifications(user)
+                } else if (params[0] === 'REMIND' && params[1] === '3') {
+                    await PaymentHandlers.handlePaymentNotifications(user)
+                } else if (params[0] === 'REMIND' && params[1] === '1') {
+                    await PaymentHandlers.handlePaymentNotifications(user)
                 } else {
                     await PaymentHandlers.handlePayment(user)
                 }
@@ -392,6 +402,7 @@ export async function handlePostback(user: any, postback: string) {
                 break
 
             // Admin handlers
+            // Admin handlers - ENHANCED WITH NEW FEATURES
             case 'ADMIN':
                 if (params[0] === 'PAYMENTS') {
                     await AdminHandlers.handleAdminPayments(user)
@@ -415,6 +426,16 @@ export async function handlePostback(user: any, postback: string) {
                     await AdminHandlers.handleAdminApprovePayment(user, params[2])
                 } else if (params[0] === 'REJECT' && params[1] === 'PAYMENT') {
                     await AdminHandlers.handleAdminRejectPayment(user, params[2])
+                } else if (params[0] === 'BULK' && params[1] === 'APPROVE') {
+                    await AdminHandlers.handleAdminBulkApprove(user)
+                } else if (params[0] === 'BULK' && params[1] === 'HIGH_VALUE') {
+                    await AdminHandlers.handleAdminBulkApproveHighValue(user)
+                } else if (params[0] === 'BULK' && params[1] === 'TRUSTED') {
+                    await AdminHandlers.handleAdminBulkApproveTrusted(user)
+                } else if (params[0] === 'VIEW' && params[1] === 'RECEIPT') {
+                    await AdminHandlers.handleAdminViewReceipt(user, params[2])
+                } else if (params[0] === 'VIEW' && params[1] === 'USER') {
+                    await AdminHandlers.handleAdminViewUser(user, params[2])
                 } else if (params[0] === 'SEND') {
                     if (params[1] === 'REGISTRATION') {
                         await AdminHandlers.handleAdminSendRegistration(user)
@@ -559,59 +580,60 @@ export async function handlePostback(user: any, postback: string) {
     }
 }
 
-// Show main menu
+// Show main menu - ENHANCED WITH BETTER UX
 async function showMainMenu(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
     const statusText = isTrialUser(user.membership_expires_at)
-        ? `Trial ${daysUntilExpiry(user.membership_expires_at!)} ngày`
-        : 'Đã thanh toán'
+        ? `📅 Trial còn ${daysUntilExpiry(user.membership_expires_at!)} ngày`
+        : '✅ Đã thanh toán'
 
     await sendMessagesWithTyping(user.facebook_id, [
-        '🏠 TRANG CHỦ TÂN DẬU',
-        `Chào anh/chị ${user.name}! 👋`,
-        'Chọn chức năng:'
+        '🏠 TRANG CHỦ TÂN DẬU 1981',
+        `👋 Chào mừng ${user.name || 'bạn'}!`,
+        `📊 Trạng thái: ${statusText}`,
+        '━━━━━━━━━━━━━━━━━━━━',
+        '🎯 Chọn chức năng bạn muốn sử dụng:'
     ])
 
-    // First set of main functions
+    // Main functions with better organization
     await sendButtonTemplate(
         user.facebook_id,
-        'Chức năng chính:',
+        '🛒 MUA BÁN & KINH DOANH:',
         [
-            createPostbackButton('🛒 NIÊM YẾT', 'LISTING'),
+            createPostbackButton('🛒 NIÊM YẾT SẢN PHẨM', 'LISTING'),
             createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('💬 KẾT NỐI', 'CONNECT')
+            createPostbackButton('💬 KẾT NỐI BÁN HÀNG', 'CONTACT_SELLER')
         ]
     )
 
-    // Second set of main functions
     await sendButtonTemplate(
         user.facebook_id,
-        'Tiếp tục:',
+        '👥 CỘNG ĐỒNG & HỖ TRỢ:',
         [
             createPostbackButton('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
-            createPostbackButton('💰 THANH TOÁN', 'PAYMENT'),
+            createPostbackButton('🎁 GIỚI THIỆU BẠN BÈ', 'REFERRAL'),
             createPostbackButton('⭐ ĐIỂM THƯỞNG', 'POINTS')
         ]
     )
 
-    // Third set of main functions
     await sendButtonTemplate(
         user.facebook_id,
-        'Thêm:',
+        '💰 TÀI CHÍNH & QUẢN LÝ:',
         [
-            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE'),
-            createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS'),
-            createPostbackButton('❌ THOÁT', 'EXIT_BOT')
+            createPostbackButton('💰 THANH TOÁN', 'PAYMENT'),
+            createPostbackButton('📊 THỐNG KÊ CÁ NHÂN', 'PERSONAL_STATS'),
+            createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS')
         ]
     )
 
     await sendButtonTemplate(
         user.facebook_id,
-        'Tùy chọn khác:',
+        '🔮 GIẢI TRÍ & TƯ VẤN:',
         [
-            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE'),
-            createPostbackButton('🎁 GIỚI THIỆU', 'REFERRAL'),
-            createPostbackButton('⚙️ CÀI ĐẶT', 'SETTINGS')
+            createPostbackButton('🔮 TỬ VI HÀNG NGÀY', 'HOROSCOPE'),
+            createPostbackButton('❓ HỖ TRỢ', 'SUPPORT'),
+            createPostbackButton('📱 LIÊN HỆ ADMIN', 'CONTACT_ADMIN')
         ]
     )
 }

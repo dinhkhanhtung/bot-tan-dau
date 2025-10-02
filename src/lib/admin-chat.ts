@@ -164,7 +164,7 @@ async function notifyAdminsNewChatRequest(userId: string, sessionId: string): Pr
             .eq('status', 'active')
 
         const allAdmins = [...envAdmins, ...(dbAdmins?.map(a => a.facebook_id) || [])]
-        const uniqueAdmins = [...new Set(allAdmins)]
+        const uniqueAdmins = Array.from(new Set(allAdmins))
 
         // Send notification to all admins
         for (const adminId of uniqueAdmins) {

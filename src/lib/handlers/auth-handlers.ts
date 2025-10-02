@@ -11,7 +11,7 @@ import {
 import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from '../utils'
 
 
-// Handle registration flow
+// Handle registration flow - IMPROVED WITH PROGRESS BAR
 export async function handleRegistration(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
@@ -58,12 +58,33 @@ export async function handleRegistration(user: any) {
         return
     }
 
-    // Start registration flow
+    // Start registration flow with progress bar - ENHANCED
     await sendMessagesWithTyping(user.facebook_id, [
-        '📝 ĐĂNG KÝ THÀNH VIÊN',
-        'Chào bạn! Tôi sẽ hướng dẫn bạn đăng ký từng bước.',
-        '📋 Thông tin cần thiết:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Ngày sinh\n• Xác nhận năm sinh 1981\n• Sản phẩm/dịch vụ bạn muốn chia sẻ',
-        'Bước 1/6: Họ tên\n👤 Vui lòng nhập họ tên đầy đủ của bạn:'
+        '📝 ĐĂNG KÝ THÀNH VIÊN TÂN DẬU 1981',
+        '🎯 Dành riêng cho người sinh năm 1981 (Tân Dậu)',
+        '━━━━━━━━━━━━━━━━━━━━',
+        '📋 THÔNG TIN CẦN THIẾT:',
+        '• Họ tên đầy đủ',
+        '• Số điện thoại',
+        '• Tỉnh/thành sinh sống',
+        '• Ngày sinh',
+        '• Xác nhận năm sinh 1981',
+        '• Sản phẩm/dịch vụ (tùy chọn)',
+        '━━━━━━━━━━━━━━━━━━━━',
+        '🎁 QUYỀN LỢI THÀNH VIÊN:',
+        '✅ Trial 7 ngày miễn phí',
+        '✅ Tìm kiếm sản phẩm không giới hạn',
+        '✅ Niêm yết sản phẩm/dịch vụ',
+        '✅ Tham gia cộng đồng Tân Dậu',
+        '✅ Nhận tử vi hàng ngày',
+        '✅ Tích điểm thưởng',
+        '✅ Hỗ trợ 24/7',
+        '━━━━━━━━━━━━━━━━━━━━',
+        '💰 PHÍ SỬ DỤNG:',
+        '• 1,000đ/ngày (rất rẻ!)',
+        '• Tối thiểu 7 ngày = 7,000đ',
+        '• Có thể thanh toán theo tháng',
+        '━━━━━━━━━━━━━━━━━━━━'
     ])
 
     // Create session for registration flow
@@ -72,6 +93,19 @@ export async function handleRegistration(user: any) {
         step: 'name',
         data: {}
     })
+
+    // Start with first step - ENHANCED UX
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📝 ĐĂNG KÝ THÀNH VIÊN (Bước 1/5)',
+        '━━━━━━━━━━━━━━━━━━━━',
+        '👤 HỌ TÊN ĐẦY ĐỦ',
+        'Vui lòng nhập họ tên đầy đủ của bạn:',
+        '━━━━━━━━━━━━━━━━━━━━',
+        '💡 Ví dụ: Nguyễn Văn Minh',
+        '📝 Nhập họ tên để tiếp tục:',
+        '',
+        '🎯 Mẹo: Tên chính xác giúp tăng độ tin cậy!'
+    ])
 }
 
 // Handle registration step

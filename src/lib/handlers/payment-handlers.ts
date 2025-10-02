@@ -167,12 +167,12 @@ export async function handlePaymentConfirm(user: any) {
     )
 }
 
-// Handle payment history
+// Handle payment history - IMPROVED VERSION
 export async function handlePaymentHistory(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
     try {
-        // Get payment history
+        // Get payment history with more details
         const { data: payments, error } = await supabaseAdmin
             .from('payments')
             .select('*')
@@ -189,22 +189,66 @@ export async function handlePaymentHistory(user: any) {
         if (!payments || payments.length === 0) {
             await sendMessagesWithTyping(user.facebook_id, [
                 '📊 LỊCH SỬ THANH TOÁN',
-                'Bạn chưa có giao dịch nào.',
-                'Hãy thanh toán để sử dụng dịch vụ!'
+                '📭 Bạn chưa có giao dịch nào.',
+                '💡 Hãy thanh toán để sử dụng dịch vụ!',
+                '🎯 Gói tối thiểu: 7 ngày = 7,000đ'
             ])
         } else {
             await sendMessagesWithTyping(user.facebook_id, [
                 '📊 LỊCH SỬ THANH TOÁN',
-                `Tổng cộng: ${payments.length} giao dịch`
+                `📋 Tổng cộng: ${payments.length} giao dịch`,
+                '━━━━━━━━━━━━━━━━━━━━'
             ])
 
-            const paymentText = payments.map((payment, index) => {
-                const status = payment.status === 'approved' ? '✅' : payment.status === 'pending' ? '⏳' : '❌'
-                const date = new Date(payment.created_at).toLocaleDateString('vi-VN')
-                return `${index + 1}. ${status} ${date} - ${formatCurrency(payment.amount)} - ${payment.package_type}`
-            }).join('\n')
+            // Group payments by status for better organization
+            const pendingPayments = payments.filter(p => p.status === 'pending')
+            const approvedPayments = payments.filter(p => p.status === 'approved')
+            const rejectedPayments = payments.filter(p => p.status === 'rejected')
 
-            await sendMessage(user.facebook_id, paymentText)
+            // Show pending payments first (most important)
+            if (pendingPayments.length > 0) {
+                await sendMessage(user.facebook_id, '⏳ THANH TOÁN ĐANG CHỜ DUYỆT:')
+                for (const payment of pendingPayments) {
+                    const date = new Date(payment.created_at).toLocaleDateString('vi-VN')
+                    const time = new Date(payment.created_at).toLocaleTimeString('vi-VN')
+                    const days = Math.floor(payment.amount / 1000)
+
+                    await sendMessage(user.facebook_id, `📋 #${payment.id.slice(-8)}\n💰 ${formatCurrency(payment.amount)} (${days} ngày)\n📅 ${date} ${time}\n⏱️ Đang xử lý...`)
+
+                    // Show receipt if available
+                    if (payment.receipt_image) {
+                        await sendMessage(user.facebook_id, '📸 Đã upload biên lai')
+                    }
+                }
+                await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+            }
+
+            // Show recent approved payments
+            if (approvedPayments.length > 0) {
+                await sendMessage(user.facebook_id, '✅ THANH TOÁN ĐÃ DUYỆT:')
+                const recentApproved = approvedPayments.slice(0, 3)
+                for (const payment of recentApproved) {
+                    const date = new Date(payment.created_at).toLocaleDateString('vi-VN')
+                    const approvedDate = payment.approved_at ? new Date(payment.approved_at).toLocaleDateString('vi-VN') : 'N/A'
+                    const days = Math.floor(payment.amount / 1000)
+
+                    await sendMessage(user.facebook_id, `📋 #${payment.id.slice(-8)}\n💰 ${formatCurrency(payment.amount)} (${days} ngày)\n📅 Tạo: ${date}\n✅ Duyệt: ${approvedDate}`)
+                }
+                await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+            }
+
+            // Summary stats
+            const totalSpent = approvedPayments.reduce((sum, p) => sum + p.amount, 0)
+            const totalDays = approvedPayments.reduce((sum, p) => sum + Math.floor(p.amount / 1000), 0)
+
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📈 THỐNG KÊ THANH TOÁN:',
+                `💰 Tổng chi tiêu: ${formatCurrency(totalSpent)}`,
+                `📅 Tổng thời gian: ${totalDays} ngày`,
+                `✅ Đã duyệt: ${approvedPayments.length}`,
+                `⏳ Chờ duyệt: ${pendingPayments.length}`,
+                `❌ Từ chối: ${rejectedPayments.length}`
+            ])
         }
 
         await sendButtonTemplate(
@@ -213,12 +257,189 @@ export async function handlePaymentHistory(user: any) {
             [
                 createPostbackButton('💰 THANH TOÁN MỚI', 'PAYMENT'),
                 createPostbackButton('📤 XUẤT BÁO CÁO', 'PAYMENT_EXPORT'),
+                createPostbackButton('🔄 LÀM MỚI', 'PAYMENT_HISTORY'),
                 createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
             ]
         )
 
     } catch (error) {
         console.error('Error in payment history:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle payment status tracking - NEW FEATURE
+export async function handlePaymentStatus(user: any, paymentId?: string) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        let payments
+
+        if (paymentId) {
+            // Get specific payment
+            const { data: payment, error } = await supabaseAdmin
+                .from('payments')
+                .select('*')
+                .eq('id', paymentId)
+                .eq('user_id', user.facebook_id)
+                .single()
+
+            if (error || !payment) {
+                await sendMessage(user.facebook_id, '❌ Không tìm thấy thanh toán này!')
+                return
+            }
+            payments = [payment]
+        } else {
+            // Get recent payments
+            const { data: recentPayments, error } = await supabaseAdmin
+                .from('payments')
+                .select('*')
+                .eq('user_id', user.facebook_id)
+                .order('created_at', { ascending: false })
+                .limit(5)
+
+            if (error) {
+                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải trạng thái thanh toán.')
+                return
+            }
+            payments = recentPayments || []
+        }
+
+        if (payments.length === 0) {
+            await sendMessage(user.facebook_id, '📭 Bạn chưa có thanh toán nào để theo dõi!')
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '💰 TRẠNG THÁI THANH TOÁN',
+            `📋 Theo dõi ${payments.length} thanh toán gần nhất:`,
+            '━━━━━━━━━━━━━━━━━━━━'
+        ])
+
+        for (const payment of payments) {
+            const createdDate = new Date(payment.created_at).toLocaleDateString('vi-VN')
+            const createdTime = new Date(payment.created_at).toLocaleTimeString('vi-VN')
+            const days = Math.floor(payment.amount / 1000)
+
+            let statusInfo = ''
+            let statusIcon = ''
+
+            switch (payment.status) {
+                case 'pending':
+                    statusIcon = '⏳'
+                    statusInfo = 'Đang chờ admin duyệt\n⏱️ Thời gian xử lý: 2-4 giờ'
+                    break
+                case 'approved':
+                    statusIcon = '✅'
+                    statusInfo = `Đã duyệt\n⏰ ${payment.approved_at ? new Date(payment.approved_at).toLocaleDateString('vi-VN') : 'N/A'}`
+                    break
+                case 'rejected':
+                    statusIcon = '❌'
+                    statusInfo = `Đã từ chối\n⏰ ${payment.rejected_at ? new Date(payment.rejected_at).toLocaleDateString('vi-VN') : 'N/A'}`
+                    break
+                default:
+                    statusIcon = '❓'
+                    statusInfo = 'Trạng thái không xác định'
+            }
+
+            const paymentCard = `💳 THANH TOÁN #${payment.id.slice(-8)}
+━━━━━━━━━━━━━━━━━━━━
+💰 Số tiền: ${formatCurrency(payment.amount)} (${days} ngày)
+📅 Tạo: ${createdDate} ${createdTime}
+📊 Trạng thái: ${statusIcon} ${payment.status.toUpperCase()}
+📝 Chi tiết: ${statusInfo}
+
+${payment.receipt_image ? '📸 Đã upload biên lai' : '⚠️ Chưa có biên lai'}`
+
+            await sendMessage(user.facebook_id, paymentCard)
+
+            // Add action buttons based on status
+            if (payment.status === 'pending') {
+                await sendButtonTemplate(
+                    user.facebook_id,
+                    `Thanh toán #${payment.id.slice(-8)}:`,
+                    [
+                        createPostbackButton('🔄 KIỂM TRA LẠI', `PAYMENT_STATUS_${payment.id}`),
+                        createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
+                        createPostbackButton('📋 XEM TẤT CẢ', 'PAYMENT_HISTORY')
+                    ]
+                )
+            }
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '━━━━━━━━━━━━━━━━━━━━',
+            '💡 MẸO:',
+            '• Thanh toán pending sẽ được xử lý trong 2-4 giờ',
+            '• Nếu quá 24h vẫn chưa duyệt, hãy liên hệ admin',
+            '• Giữ lại biên lai để đối chiếu khi cần thiết'
+        ])
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createPostbackButton('💰 THANH TOÁN MỚI', 'PAYMENT'),
+                createPostbackButton('📊 XEM TẤT CẢ', 'PAYMENT_HISTORY'),
+                createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error in payment status:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle payment notifications - NEW FEATURE
+export async function handlePaymentNotifications(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    try {
+        // Get user's current status
+        const { data: userData, error: userError } = await supabaseAdmin
+            .from('users')
+            .select('membership_expires_at, status')
+            .eq('facebook_id', user.facebook_id)
+            .single()
+
+        if (userError) {
+            console.error('Error fetching user data:', userError)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải thông tin tài khoản.')
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🔔 THÔNG BÁO THANH TOÁN',
+            'Cài đặt thông báo thanh toán:'
+        ])
+
+        // Current status
+        if (userData?.status === 'trial') {
+            const daysLeft = daysUntilExpiry(userData.membership_expires_at)
+            await sendMessage(user.facebook_id, `📊 Trạng thái hiện tại: Trial (còn ${daysLeft} ngày)`)
+        } else if (userData?.status === 'registered') {
+            const expiryDate = new Date(userData.membership_expires_at).toLocaleDateString('vi-VN')
+            await sendMessage(user.facebook_id, `📊 Trạng thái hiện tại: Đã thanh toán (hết hạn: ${expiryDate})`)
+        } else {
+            await sendMessage(user.facebook_id, '📊 Trạng thái hiện tại: Chưa thanh toán')
+        }
+
+        await sendButtonTemplate(
+            user.facebook_id,
+            'Cài đặt thông báo:',
+            [
+                createPostbackButton('🔔 BẬT NHẮC THANH TOÁN', 'PAYMENT_NOTIF_ON'),
+                createPostbackButton('🔕 TẮT NHẮC THANH TOÁN', 'PAYMENT_NOTIF_OFF'),
+                createPostbackButton('📅 NHẮC TRƯỚC 3 NGÀY', 'PAYMENT_REMIND_3'),
+                createPostbackButton('📅 NHẮC TRƯỚC 1 NGÀY', 'PAYMENT_REMIND_1'),
+                createPostbackButton('📊 XEM LỊCH SỬ', 'PAYMENT_HISTORY'),
+                createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error in payment notifications:', error)
         await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
     }
 }
