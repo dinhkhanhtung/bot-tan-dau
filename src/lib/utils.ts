@@ -248,17 +248,57 @@ export async function retry<T>(
 // Get Facebook display name from Facebook API
 export async function getFacebookDisplayName(facebookId: string): Promise<string | null> {
     try {
-        const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN!
+        const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN
+
+        // Check if access token exists
+        if (!FACEBOOK_ACCESS_TOKEN) {
+            console.log('Facebook access token not configured')
+            return null
+        }
+
+        console.log('Fetching Facebook profile for user:', facebookId)
+
         const response = await fetch(
             `https://graph.facebook.com/v18.0/${facebookId}?fields=first_name,last_name,name&access_token=${FACEBOOK_ACCESS_TOKEN}`
         )
 
+        console.log('Facebook API response status:', response.status)
+
         if (response.ok) {
             const data = await response.json()
-            return data.name || data.first_name + ' ' + data.last_name || null
+            console.log('Facebook profile data:', JSON.stringify(data, null, 2))
+
+            const displayName = data.name || `${data.first_name || ''} ${data.last_name || ''}`.trim()
+            if (displayName) {
+                console.log('Successfully got Facebook name:', displayName)
+                return displayName
+            } else {
+                console.log('No name found in Facebook profile data')
+                return null
+            }
         }
 
-        console.error('Error fetching Facebook profile:', response.statusText)
+        // Handle specific error codes
+        if (response.status === 400) {
+            console.error('Bad Request - Check if Facebook ID is valid:', facebookId)
+        } else if (response.status === 401) {
+            console.error('Unauthorized - Check if access token is valid and has required permissions')
+        } else if (response.status === 403) {
+            console.error('Forbidden - Access token may not have permission to access user profile')
+        } else if (response.status === 404) {
+            console.error('User not found - Facebook ID may be invalid:', facebookId)
+        } else {
+            console.error('Facebook API error:', response.status, response.statusText)
+        }
+
+        // Try to get error details
+        try {
+            const errorData = await response.json()
+            console.error('Facebook API error details:', JSON.stringify(errorData, null, 2))
+        } catch (parseError) {
+            console.error('Could not parse error response')
+        }
+
         return null
     } catch (error) {
         console.error('Error getting Facebook display name:', error)
