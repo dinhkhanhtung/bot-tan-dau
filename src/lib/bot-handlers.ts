@@ -97,6 +97,7 @@ export async function handleMessage(user: any, text: string) {
         // Check if user is in registration flow
         const sessionData = await getBotSession(user.facebook_id)
         if (sessionData && sessionData.session_data?.current_flow === 'registration') {
+            console.log('User in registration flow, processing step:', sessionData.session_data.step)
             await AuthHandlers.handleRegistrationStep(user, text, sessionData.session_data)
             return
         }

@@ -69,6 +69,7 @@ export async function handleRegistration(user: any) {
         '• Tỉnh/thành sinh sống',
         '• Ngày sinh',
         '• Xác nhận năm sinh 1981',
+        '• Từ khóa tìm kiếm (tùy chọn)',
         '• Sản phẩm/dịch vụ (tùy chọn)',
         '━━━━━━━━━━━━━━━━━━━━',
         '🎁 QUYỀN LỢI THÀNH VIÊN:',
@@ -91,12 +92,13 @@ export async function handleRegistration(user: any) {
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
         step: 'name',
-        data: {}
+        data: {},
+        started_at: new Date().toISOString()
     })
 
     // Start with first step - ENHANCED UX
     await sendMessagesWithTyping(user.facebook_id, [
-        '📝 ĐĂNG KÝ THÀNH VIÊN (Bước 1/5)',
+        '📝 ĐĂNG KÝ THÀNH VIÊN (Bước 1/6)',
         '━━━━━━━━━━━━━━━━━━━━',
         '👤 HỌ TÊN ĐẦY ĐỦ',
         'Vui lòng nhập họ tên đầy đủ của bạn:',
@@ -104,12 +106,29 @@ export async function handleRegistration(user: any) {
         '💡 Ví dụ: Nguyễn Văn Minh',
         '📝 Nhập họ tên để tiếp tục:',
         '',
-        '🎯 Mẹo: Tên chính xác giúp tăng độ tin cậy!'
+        '🎯 Mẹo: Tên chính xác giúp tăng độ tin cậy!',
+        '━━━━━━━━━━━━━━━━━━━━',
+        '💡 GỠI Ý: Bạn có thể nhập "hủy" bất cứ lúc nào để thoát khỏi quy trình đăng ký'
     ])
 }
 
 // Handle registration step
 export async function handleRegistrationStep(user: any, text: string, session: any) {
+    // Check for exit commands
+    if (text.toLowerCase().includes('hủy') || text.toLowerCase().includes('thoát') || text.toLowerCase().includes('cancel')) {
+        await handleRegistrationCancel(user)
+        return
+    }
+
+    // Check if session is too old (more than 30 minutes)
+    if (session.started_at) {
+        const sessionAge = Date.now() - new Date(session.started_at).getTime()
+        if (sessionAge > 30 * 60 * 1000) { // 30 minutes
+            await handleRegistrationTimeout(user)
+            return
+        }
+    }
+
     switch (session.step) {
         case 'name':
             await handleRegistrationName(user, text, session.data)
@@ -125,10 +144,17 @@ export async function handleRegistrationStep(user: any, text: string, session: a
             break
         case 'birthday_confirm':
             // This step is handled by postback buttons, not text input
+            await sendMessage(user.facebook_id, '❌ Vui lòng chọn nút xác nhận bên dưới để tiếp tục!')
+            break
+        case 'keywords':
+            await handleRegistrationKeywords(user, text, session.data)
             break
         case 'product_service':
             await handleRegistrationProductService(user, text, session.data)
             break
+        default:
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng bắt đầu đăng ký lại!')
+            await updateBotSession(user.facebook_id, null)
     }
 }
 
@@ -212,14 +238,15 @@ export async function handleRegistrationLocationPostback(user: any, location: st
 
     await sendMessagesWithTyping(user.facebook_id, [
         `✅ Vị trí: ${location}`,
-        'Bước 4/5: Sản phẩm/Dịch vụ\n🛒 Bạn có sản phẩm hoặc dịch vụ gì muốn chia sẻ với cộng đồng Tân Dậu - Hỗ Trợ Chéo?',
-        'VD: Nhà đất, xe cộ, điện tử, thời trang, ẩm thực, dịch vụ tư vấn...',
-        '📝 Vui lòng mô tả ngắn gọn (có thể để trống nếu chưa có):'
+        'Bước 4/6: Từ khóa tìm kiếm\n🔍 Để tìm kiếm dễ dàng hơn, bạn có muốn thêm từ khóa tìm kiếm?',
+        'VD: nhà đất, xe honda, điện thoại, thời trang, ẩm thực...',
+        '💡 Từ khóa này sẽ giúp bạn tìm thấy sản phẩm phù hợp hơn!',
+        '📝 Nhập từ khóa tìm kiếm (hoặc "bỏ qua" nếu không muốn):'
     ])
 
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
-        step: 'product_service',
+        step: 'keywords',
         data: data
     })
 }
@@ -233,14 +260,15 @@ export async function handleBirthdayVerification(user: any) {
 
     await sendMessagesWithTyping(user.facebook_id, [
         '✅ Xác nhận tuổi thành công!',
-        'Bước 6/6: Sản phẩm/Dịch vụ\n🛒 Bạn có sản phẩm hoặc dịch vụ gì muốn chia sẻ với cộng đồng Tân Dậu - Hỗ Trợ Chéo?',
-        'VD: Nhà đất, xe cộ, điện tử, thời trang, ẩm thực, dịch vụ tư vấn...',
-        '📝 Vui lòng mô tả ngắn gọn (có thể để trống nếu chưa có):'
+        'Bước 5/6: Từ khóa tìm kiếm\n🔍 Để tìm kiếm dễ dàng hơn, bạn có muốn thêm từ khóa tìm kiếm?',
+        'VD: nhà đất, xe honda, điện thoại, thời trang, ẩm thực...',
+        '💡 Từ khóa này sẽ giúp bạn tìm thấy sản phẩm phù hợp hơn!',
+        '📝 Nhập từ khóa tìm kiếm (hoặc "bỏ qua" nếu không muốn):'
     ])
 
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
-        step: 'product_service',
+        step: 'keywords',
         data: data
     })
 }
@@ -266,6 +294,78 @@ export async function handleBirthdayRejection(user: any) {
             createQuickReply('ℹ️ THÔNG TIN', 'INFO')
         ]
     )
+}
+
+// Handle registration cancellation
+export async function handleRegistrationCancel(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '❌ ĐÃ HỦY ĐĂNG KÝ',
+        'Quy trình đăng ký đã được hủy bỏ.',
+        'Bạn có thể đăng ký lại bất cứ lúc nào!'
+    ])
+
+    // Clear session
+    await updateBotSession(user.facebook_id, null)
+
+    await sendQuickReply(
+        user.facebook_id,
+        'Bạn muốn:',
+        [
+            createQuickReply('🔄 ĐĂNG KÝ LẠI', 'REGISTER'),
+            createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
+            createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Handle registration timeout
+export async function handleRegistrationTimeout(user: any) {
+    await sendMessagesWithTyping(user.facebook_id, [
+        '⏰ PHIÊN ĐĂNG KÝ ĐÃ HẾT HẠN',
+        'Quy trình đăng ký đã quá 30 phút và được tự động hủy.',
+        'Điều này giúp tránh thông tin cũ không chính xác.',
+        '💡 Bạn có thể bắt đầu đăng ký lại!'
+    ])
+
+    // Clear session
+    await updateBotSession(user.facebook_id, null)
+
+    await sendQuickReply(
+        user.facebook_id,
+        'Bạn muốn:',
+        [
+            createQuickReply('🔄 ĐĂNG KÝ LẠI', 'REGISTER'),
+            createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
+            createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Handle keywords input for better search
+async function handleRegistrationKeywords(user: any, text: string, data: any) {
+    if (text.length < 3) {
+        await sendMessage(user.facebook_id, '❌ Từ khóa quá ngắn. Vui lòng nhập từ khóa tìm kiếm (ít nhất 3 ký tự) hoặc "bỏ qua":')
+        return
+    }
+
+    if (text.toLowerCase().includes('bỏ qua') || text.toLowerCase().includes('không')) {
+        data.keywords = null
+    } else {
+        data.keywords = text.trim()
+    }
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        data.keywords ? `✅ Từ khóa tìm kiếm: ${data.keywords}` : '✅ Bỏ qua từ khóa tìm kiếm',
+        'Bước 6/6: Sản phẩm/Dịch vụ\n🛒 Bạn có sản phẩm hoặc dịch vụ gì muốn chia sẻ với cộng đồng Tân Dậu - Hỗ Trợ Chéo?',
+        'VD: Nhà đất, xe cộ, điện tử, thời trang, ẩm thực, dịch vụ tư vấn...',
+        '📝 Vui lòng mô tả ngắn gọn (có thể để trống nếu chưa có):'
+    ])
+
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'registration',
+        step: 'product_service',
+        data: data
+    })
 }
 
 // Handle default message for new users

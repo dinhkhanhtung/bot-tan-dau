@@ -339,19 +339,29 @@ async function handleMessageEvent(event: any) {
             return
         }
 
-        // Handle different message types
+        // Handle different message types with better logic
         if (message.text) {
-            // Check if it's a quick reply
+            // Check if it's a quick reply first
             if (message.quick_reply && message.quick_reply.payload) {
+                console.log('Handling Quick Reply:', message.quick_reply.payload)
                 await handlePostbackEvent({
                     sender: { id: senderId },
                     postback: { payload: message.quick_reply.payload }
                 })
             } else {
+                // Handle regular text message
+                console.log('Handling regular text message:', message.text)
                 await handleTextMessage(user, message.text)
             }
         } else if (message.attachments) {
+            console.log('Handling attachment message')
             await handleAttachmentMessage(user, message.attachments)
+        } else {
+            // Handle other message types or empty messages
+            console.log('Handling other message type or empty message')
+            if (user) {
+                await handleTextMessage(user, 'Xin chào')
+            }
         }
     } catch (error) {
         console.error('Error handling message event:', error)

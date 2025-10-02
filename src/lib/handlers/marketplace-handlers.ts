@@ -43,9 +43,14 @@ export async function handleListing(user: any) {
 export async function handleListingCategory(user: any, category: string) {
     await sendTypingIndicator(user.facebook_id)
 
-    const categoryInfo = CATEGORIES[category as keyof typeof CATEGORIES]
+    // Normalize category key
+    const normalizedCategory = category.toUpperCase().replace(/[^A-Z_]/g, '')
+
+    const categoryInfo = CATEGORIES[normalizedCategory as keyof typeof CATEGORIES]
     if (!categoryInfo) {
-        await sendMessage(user.facebook_id, '❌ Danh mục không hợp lệ!')
+        console.log('Invalid category:', category, 'normalized:', normalizedCategory)
+        await sendMessage(user.facebook_id, '❌ Danh mục không hợp lệ! Vui lòng chọn lại.')
+        await handleListing(user) // Show categories again
         return
     }
 
