@@ -44,13 +44,21 @@ export async function handleListingCategory(user: any, category: string) {
     await sendTypingIndicator(user.facebook_id)
 
     // Map payload to actual category names
+    // Handle both full payload and short form
     const categoryMapping: { [key: string]: string } = {
         'LISTING_CATEGORY_REAL_ESTATE': 'BẤT ĐỘNG SẢN',
         'LISTING_CATEGORY_CAR': 'Ô TÔ',
         'LISTING_CATEGORY_ELECTRONICS': 'ĐIỆN TỬ',
         'LISTING_CATEGORY_FASHION': 'THỜI TRANG',
         'LISTING_CATEGORY_FOOD': 'ẨM THỰC',
-        'LISTING_CATEGORY_SERVICE': 'DỊCH VỤ'
+        'LISTING_CATEGORY_SERVICE': 'DỊCH VỤ',
+        // Also handle short forms that come from postback parsing
+        'REAL_ESTATE': 'BẤT ĐỘNG SẢN',
+        'CAR': 'Ô TÔ',
+        'ELECTRONICS': 'ĐIỆN TỬ',
+        'FASHION': 'THỜI TRANG',
+        'FOOD': 'ẨM THỰC',
+        'SERVICE': 'DỊCH VỤ'
     }
 
     const categoryName = categoryMapping[category]

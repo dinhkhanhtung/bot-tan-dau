@@ -39,8 +39,9 @@ export async function handleRegistration(user: any) {
         return
     }
 
-    // Check if user is already registered
-    if (user.status === 'registered' || user.status === 'trial') {
+    // Check if user is already registered (exclude temp users)
+    if ((user.status === 'registered' || user.status === 'trial') &&
+        user.name !== 'User' && !user.phone?.startsWith('temp_')) {
         await sendMessagesWithTyping(user.facebook_id, [
             '✅ Bạn đã đăng ký rồi!',
             'Sử dụng menu bên dưới để truy cập các tính năng.'

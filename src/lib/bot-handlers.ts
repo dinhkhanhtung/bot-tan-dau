@@ -139,7 +139,8 @@ export async function handleMessage(user: any, text: string) {
             // Check if user is admin first
             if (userIsAdmin) {
                 await AdminHandlers.handleAdminCommand(user)
-            } else if (user.status === 'registered' || user.status === 'trial') {
+            } else if ((user.status === 'registered' || user.status === 'trial') &&
+                      user.name !== 'User' && !user.phone?.startsWith('temp_')) {
                 await UtilityHandlers.handleDefaultMessageRegistered(user)
             } else {
                 await AuthHandlers.handleDefaultMessage(user)
@@ -568,8 +569,9 @@ export async function handlePostback(user: any, postback: string) {
                 }
                 break
             default:
-                // Check if user is registered
-                if (user.status === 'registered' || user.status === 'trial') {
+                // Check if user is registered (exclude temp users)
+                if ((user.status === 'registered' || user.status === 'trial') &&
+                    user.name !== 'User' && !user.phone?.startsWith('temp_')) {
                     await UtilityHandlers.handleDefaultMessageRegistered(user)
                 } else {
                     await AuthHandlers.handleDefaultMessage(user)
