@@ -94,24 +94,33 @@ export async function handleMessage(user: any, text: string) {
             return
         }
 
-        // Check if user is in registration flow
+        // Check if user is in any active flow
         const sessionData = await getBotSession(user.facebook_id)
-        if (sessionData && sessionData.session_data?.current_flow === 'registration') {
-            console.log('User in registration flow, processing step:', sessionData.session_data.step)
-            await AuthHandlers.handleRegistrationStep(user, text, sessionData.session_data)
-            return
-        }
+        const currentFlow = sessionData?.session_data?.current_flow
+        const currentStep = sessionData?.session_data?.step
 
-        // Check if user is in listing flow
-        if (sessionData && sessionData.session_data?.current_flow === 'listing') {
-            await MarketplaceHandlers.handleListingStep(user, text, sessionData.session_data)
-            return
-        }
+        if (currentFlow) {
+            // User is in an active flow - check if they want to quit current flow
+            if (text.toLowerCase().includes('hủy') || text.toLowerCase().includes('thoát') ||
+                text.toLowerCase().includes('cancel') || text.toLowerCase().includes('quit')) {
+                await sendMessage(user.facebook_id, `❌ Đã hủy quy trình ${currentFlow === 'registration' ? 'đăng ký' : currentFlow === 'listing' ? 'niêm yết' : 'tìm kiếm'} hiện tại.`)
+                await updateBotSession(user.facebook_id, null)
+                await sendMessage(user.facebook_id, 'Bạn có thể bắt đầu quy trình mới.')
+                return
+            }
 
-        // Check if user is in search flow
-        if (sessionData && sessionData.session_data?.current_flow === 'search') {
-            await MarketplaceHandlers.handleSearchStep(user, text, sessionData.session_data)
-            return
+            // Process current flow
+            if (currentFlow === 'registration') {
+                console.log('User in registration flow, processing step:', currentStep)
+                await AuthHandlers.handleRegistrationStep(user, text, sessionData.session_data)
+                return
+            } else if (currentFlow === 'listing') {
+                await MarketplaceHandlers.handleListingStep(user, text, sessionData.session_data)
+                return
+            } else if (currentFlow === 'search') {
+                await MarketplaceHandlers.handleSearchStep(user, text, sessionData.session_data)
+                return
+            }
         }
 
         // Handle different message types
@@ -165,6 +174,40 @@ export async function handlePostback(user: any, postback: string) {
         if (!userIsAdmin) {
             const { resetNonButtonTracking } = await import('./anti-spam')
             resetNonButtonTracking(user.facebook_id)
+        }
+
+        // Check if user is in any active flow (only for non-admin)
+        if (!userIsAdmin) {
+            const sessionData = await getBotSession(user.facebook_id)
+            const currentFlow = sessionData?.session_data?.current_flow
+
+            if (currentFlow) {
+                // Allow only flow-related actions or quit commands
+                const [action, ...params] = postback.split('_')
+
+                // Allow quit commands
+                if (action === 'MAIN' && params[0] === 'MENU') {
+                    await sendMessage(user.facebook_id, `❌ Bạn đang ở giữa quy trình ${currentFlow === 'registration' ? 'đăng ký' : currentFlow === 'listing' ? 'niêm yết' : 'tìm kiếm'}.`)
+                    await sendMessage(user.facebook_id, 'Vui lòng hoàn thành hoặc hủy quy trình hiện tại trước khi về trang chủ.')
+                    await sendMessage(user.facebook_id, '💡 Gửi "hủy" để thoát khỏi quy trình hiện tại.')
+                    return
+                }
+
+                // Allow flow-specific actions
+                if (currentFlow === 'registration' && (action === 'REG' || action === 'REGISTER')) {
+                    // Continue with registration flow
+                } else if (currentFlow === 'listing' && (action === 'LISTING' || action.startsWith('LISTING_'))) {
+                    // Continue with listing flow
+                } else if (currentFlow === 'search' && (action === 'SEARCH' || action.startsWith('SEARCH_'))) {
+                    // Continue with search flow
+                } else {
+                    // Block other actions
+                    await sendMessage(user.facebook_id, `❌ Bạn đang ở giữa quy trình ${currentFlow === 'registration' ? 'đăng ký' : currentFlow === 'listing' ? 'niêm yết' : 'tìm kiếm'}.`)
+                    await sendMessage(user.facebook_id, 'Vui lòng hoàn thành hoặc hủy quy trình hiện tại trước khi thực hiện hành động khác.')
+                    await sendMessage(user.facebook_id, '💡 Gửi "hủy" để thoát khỏi quy trình hiện tại.')
+                    return
+                }
+            }
         }
 
         const [action, ...params] = postback.split('_')

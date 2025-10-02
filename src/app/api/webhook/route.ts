@@ -135,7 +135,7 @@ async function handleMessageEvent(event: any) {
             const { checkSpam, isUserBlocked, sendSpamWarning, sendSpamBlockMessage } = await import('@/lib/anti-spam')
 
             // Check if user is currently blocked
-            if (isUserBlocked(senderId)) {
+            if (await isUserBlocked(senderId)) {
                 await sendSpamBlockMessage(senderId)
                 return
             }

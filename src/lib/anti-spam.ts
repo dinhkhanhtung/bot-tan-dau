@@ -44,6 +44,21 @@ export async function checkSpam(facebookId: string, message: string): Promise<{
         }
     }
 
+    // Check if user is in any active flow - skip spam checks for legitimate input
+    const { getBotSession } = await import('./utils')
+    const sessionData = await getBotSession(facebookId)
+    const currentFlow = sessionData?.session_data?.current_flow
+
+    if (currentFlow) {
+        // Don't apply spam checks during active flows
+        // as users need to type their information (registration, listing, search)
+        return {
+            isSpam: false,
+            shouldBlock: false,
+            warningCount: 0
+        }
+    }
+
     const now = Date.now()
     const minute = Math.floor(now / 60000) // Current minute
     const hour = Math.floor(now / 3600000) // Current hour
@@ -215,7 +230,33 @@ export async function sendSpamBlockMessage(facebookId: string): Promise<void> {
 }
 
 // Check if user is currently blocked
-export function isUserBlocked(facebookId: string): boolean {
+export async function isUserBlocked(facebookId: string): Promise<boolean> {
+    // Check if user is admin - never block admin
+    try {
+        const { isAdmin } = await import('./handlers/admin-handlers')
+        const userIsAdmin = await isAdmin(facebookId)
+
+        if (userIsAdmin) {
+            return false
+        }
+    } catch (error) {
+        console.error('Error checking admin status in isUserBlocked:', error)
+    }
+
+    // Check if user is in any active flow - don't block during legitimate flows
+    try {
+        const { getBotSession } = await import('./utils')
+        const sessionData = await getBotSession(facebookId)
+        const currentFlow = sessionData?.session_data?.current_flow
+
+        if (currentFlow) {
+            // Don't block users during active flows as they need to type information
+            return false
+        }
+    } catch (error) {
+        console.error('Error checking session in isUserBlocked:', error)
+    }
+
     const blockInfo = userSpamBlocks.get(facebookId)
     if (!blockInfo) return false
 
@@ -279,6 +320,20 @@ export async function trackNonButtonMessage(facebookId: string, message: string)
     const userIsAdmin = await isAdmin(facebookId)
 
     if (userIsAdmin) {
+        return {
+            shouldStopBot: false,
+            warningCount: 0
+        }
+    }
+
+    // Check if user is in any active flow - skip tracking for legitimate input
+    const { getBotSession } = await import('./utils')
+    const sessionData = await getBotSession(facebookId)
+    const currentFlow = sessionData?.session_data?.current_flow
+
+    if (currentFlow) {
+        // Don't track non-button messages during active flows
+        // as users need to type their information (registration, listing, search)
         return {
             shouldStopBot: false,
             warningCount: 0
@@ -381,6 +436,20 @@ export async function isBotStoppedForUser(facebookId: string): Promise<boolean> 
         }
     } catch (error) {
         console.error('Error checking admin status in isBotStoppedForUser:', error)
+    }
+
+    // Check if user is in any active flow - don't stop bot during legitimate flows
+    try {
+        const { getBotSession } = await import('./utils')
+        const sessionData = await getBotSession(facebookId)
+        const currentFlow = sessionData?.session_data?.current_flow
+
+        if (currentFlow) {
+            // Don't stop bot during active flows as users need to type information
+            return false
+        }
+    } catch (error) {
+        console.error('Error checking session in isBotStoppedForUser:', error)
     }
 
     const stopInfo = userBotStops.get(facebookId)
