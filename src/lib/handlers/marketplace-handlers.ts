@@ -9,7 +9,8 @@ import {
     createPostbackButton,
     createQuickReply,
     createGenericElement,
-    sendMessagesWithTyping
+    sendMessagesWithTyping,
+    hideButtons
 } from '../facebook-api'
 import { formatCurrency, formatNumber, generateId, updateBotSession, getBotSession } from '../utils'
 import { CATEGORIES, LOCATIONS, DISTRICTS, PRICE_RANGES, SEARCH_HELPERS, HASHTAG_MAPPING, POPULAR_HASHTAGS } from '../constants'
@@ -17,6 +18,9 @@ import { CATEGORIES, LOCATIONS, DISTRICTS, PRICE_RANGES, SEARCH_HELPERS, HASHTAG
 // Handle listing flow
 export async function handleListing(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🛒 NIÊM YẾT SẢN PHẨM/DỊCH VỤ',
@@ -42,6 +46,9 @@ export async function handleListing(user: any) {
 // Handle listing category selection
 export async function handleListingCategory(user: any, category: string) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
 
     // Map payload to actual category names
     // Handle both full payload and short form
@@ -414,6 +421,9 @@ export async function handleListingSubmit(user: any) {
 export async function handleSearch(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
+
     await sendMessagesWithTyping(user.facebook_id, [
         '🔍 TÌM KIẾM SẢN PHẨM/DỊCH VỤ',
         'Tìm kiếm trong cộng đồng Tân Dậu - Hỗ Trợ Chéo:',
@@ -679,6 +689,9 @@ export async function handleContactSeller(user: any, sellerId: string) {
 // Handle search advanced
 export async function handleSearchAdvanced(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🎯 TÌM KIẾM NÂNG CAO',
@@ -1033,6 +1046,9 @@ async function handleSearchLocationInput(user: any, text: string, data: any) {
 export async function handleMyListings(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
+
     try {
         const { data: listings, error } = await supabaseAdmin
             .from('listings')
@@ -1088,6 +1104,9 @@ export async function handleMyListings(user: any) {
 // Handle buy & sell for new users
 export async function handleBuySell(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🛒 MUA BÁN & TÌM KIẾM',
