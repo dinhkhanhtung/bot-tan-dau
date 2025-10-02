@@ -87,9 +87,10 @@ export async function handleMessage(user: any, text: string) {
             }
         }
 
-        // Check if user is in admin chat mode
+        // Check if user is in admin chat mode - PRIORITY: Admin chat takes precedence over everything
         const { isUserInAdminChat, handleUserMessageInAdminChat } = await import('./admin-chat')
         if (await isUserInAdminChat(user.facebook_id)) {
+            console.log('User is in admin chat mode, forwarding message to admin')
             await handleUserMessageInAdminChat(user.facebook_id, text)
             return
         }
@@ -716,22 +717,37 @@ export async function handleListingImages(user: any, imageUrl?: string) {
 
 // Handle contact admin
 export async function handleContactAdmin(user: any) {
-    await sendTypingIndicator(user.facebook_id)
+    try {
+        // Start admin chat session
+        const { startAdminChatSession } = await import('./admin-chat')
+        const result = await startAdminChatSession(user.facebook_id)
 
-    await sendMessagesWithTyping(user.facebook_id, [
-        '💬 LIÊN HỆ ADMIN',
-        'Bạn cần hỗ trợ gì? Admin sẽ phản hồi sớm nhất có thể!'
-    ])
+        if (result.success) {
+            await sendTypingIndicator(user.facebook_id)
 
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Chọn loại hỗ trợ:',
-        [
-            createPostbackButton('📝 HƯỚNG DẪN ĐĂNG KÝ', 'ADMIN_HELP_REGISTER'),
-            createPostbackButton('❓ CÂU HỎI KHÁC', 'ADMIN_HELP_GENERAL'),
-            createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
-        ]
-    )
+            await sendMessagesWithTyping(user.facebook_id, [
+                '💬 LIÊN HỆ ADMIN',
+                'Yêu cầu chat của bạn đã được gửi đến admin.',
+                '⏳ Bạn sẽ nhận được phản hồi sớm nhất có thể!',
+                '📱 Trong thời gian chờ, bạn có thể gửi tin nhắn và admin sẽ trả lời.'
+            ])
+
+            await sendButtonTemplate(
+                user.facebook_id,
+                'Tùy chọn:',
+                [
+                    createPostbackButton('❌ HỦY CHAT', 'CANCEL_ADMIN_CHAT'),
+                    createPostbackButton('🔄 QUAY LẠI BOT', 'EXIT_ADMIN_CHAT'),
+                    createPostbackButton('📝 HƯỚNG DẪN', 'ADMIN_HELP_GENERAL')
+                ]
+            )
+        } else {
+            await sendMessage(user.facebook_id, '❌ Không thể tạo yêu cầu chat. Vui lòng thử lại sau!')
+        }
+    } catch (error) {
+        console.error('Error in handleContactAdmin:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+    }
 }
 
 // Handle cancel admin chat
