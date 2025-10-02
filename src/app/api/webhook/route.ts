@@ -339,6 +339,12 @@ async function handleMessageEvent(event: any) {
             return
         }
 
+        // Check if this is a reaction (like, love, etc.) - skip processing
+        if (message.reaction || message.reactions) {
+            console.log('Skipping reaction message:', message.reaction || message.reactions)
+            return
+        }
+
         // Handle different message types with better logic
         if (message.text) {
             // Check if it's a quick reply first
@@ -353,15 +359,16 @@ async function handleMessageEvent(event: any) {
                 console.log('Handling regular text message:', message.text)
                 await handleTextMessage(user, message.text)
             }
-        } else if (message.attachments) {
-            console.log('Handling attachment message')
+        } else if (message.attachments && message.attachments.length > 0) {
+            console.log('Handling attachment message:', message.attachments.length, 'attachments')
             await handleAttachmentMessage(user, message.attachments)
+        } else if (message.sticker_id) {
+            console.log('Handling sticker message')
+            // Handle sticker if needed
         } else {
             // Handle other message types or empty messages
-            console.log('Handling other message type or empty message')
-            if (user) {
-                await handleTextMessage(user, 'Xin chào')
-            }
+            console.log('Handling other message type or empty message - message structure:', JSON.stringify(message, null, 2))
+            // Don't send default message for empty/reaction messages
         }
     } catch (error) {
         console.error('Error handling message event:', error)
