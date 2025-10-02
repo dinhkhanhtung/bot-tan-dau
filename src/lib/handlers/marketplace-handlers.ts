@@ -43,12 +43,27 @@ export async function handleListing(user: any) {
 export async function handleListingCategory(user: any, category: string) {
     await sendTypingIndicator(user.facebook_id)
 
-    // Normalize category key
-    const normalizedCategory = category.toUpperCase().replace(/[^A-Z_]/g, '')
+    // Map payload to actual category names
+    const categoryMapping: { [key: string]: string } = {
+        'LISTING_CATEGORY_REAL_ESTATE': 'BẤT ĐỘNG SẢN',
+        'LISTING_CATEGORY_CAR': 'Ô TÔ',
+        'LISTING_CATEGORY_ELECTRONICS': 'ĐIỆN TỬ',
+        'LISTING_CATEGORY_FASHION': 'THỜI TRANG',
+        'LISTING_CATEGORY_FOOD': 'ẨM THỰC',
+        'LISTING_CATEGORY_SERVICE': 'DỊCH VỤ'
+    }
 
-    const categoryInfo = CATEGORIES[normalizedCategory as keyof typeof CATEGORIES]
+    const categoryName = categoryMapping[category]
+    if (!categoryName) {
+        console.log('Invalid category payload:', category)
+        await sendMessage(user.facebook_id, '❌ Danh mục không hợp lệ! Vui lòng chọn lại.')
+        await handleListing(user) // Show categories again
+        return
+    }
+
+    const categoryInfo = CATEGORIES[categoryName as keyof typeof CATEGORIES]
     if (!categoryInfo) {
-        console.log('Invalid category:', category, 'normalized:', normalizedCategory)
+        console.log('Category not found in CATEGORIES:', categoryName)
         await sendMessage(user.facebook_id, '❌ Danh mục không hợp lệ! Vui lòng chọn lại.')
         await handleListing(user) // Show categories again
         return
