@@ -116,11 +116,12 @@ export async function handleMessage(user: any, text: string) {
                     return
                 }
 
-                // Check if user is in trial and about to expire
+                // Check if user is in trial and about to expire (only if not already handled by registration)
                 if (isTrialUser(user.membership_expires_at)) {
                     const daysLeft = daysUntilExpiry(user.membership_expires_at!)
                     if (daysLeft <= 2) {
                         await PaymentHandlers.sendTrialExpiringMessage(user.facebook_id, daysLeft)
+                        return // Exit early to prevent further processing
                     }
                 }
             }

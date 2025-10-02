@@ -38,7 +38,18 @@ export async function handleRegistration(user: any) {
     // Check if user is already registered (exclude temp users)
     if ((user.status === 'registered' || user.status === 'trial') &&
         user.name !== 'User' && !user.phone?.startsWith('temp_')) {
-        await sendMessage(user.facebook_id, '✅ Bạn đã đăng ký rồi!\nSử dụng menu bên dưới để truy cập các tính năng.')
+
+        // Check if trial is about to expire (within 2 days)
+        if (user.status === 'trial' && user.membership_expires_at) {
+            const daysLeft = daysUntilExpiry(user.membership_expires_at)
+            if (daysLeft <= 2) {
+                await sendMessage(user.facebook_id, `✅ Bạn đã đăng ký rồi!\n📅 Trial còn ${daysLeft} ngày\n💡 Hãy thanh toán để tiếp tục sử dụng.`)
+            } else {
+                await sendMessage(user.facebook_id, `✅ Bạn đã đăng ký rồi!\n📅 Trial còn ${daysLeft} ngày\nSử dụng menu bên dưới để truy cập các tính năng.`)
+            }
+        } else {
+            await sendMessage(user.facebook_id, '✅ Bạn đã đăng ký rồi!\nSử dụng menu bên dưới để truy cập các tính năng.')
+        }
 
         await sendQuickReply(
             user.facebook_id,
@@ -46,7 +57,8 @@ export async function handleRegistration(user: any) {
             [
                 createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
                 createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
-                createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
+                createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+                createQuickReply('💰 THANH TOÁN', 'PAYMENT')
             ]
         )
         return
