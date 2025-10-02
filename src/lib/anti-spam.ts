@@ -247,7 +247,9 @@ export async function isUserBlocked(facebookId: string): Promise<boolean> {
     try {
         const { getBotSession } = await import('./utils')
         const sessionData = await getBotSession(facebookId)
-        const currentFlow = sessionData?.session_data?.current_flow
+
+        // Handle both possible session data structures
+        const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow
 
         if (currentFlow) {
             // Don't block users during active flows as they need to type information
@@ -329,11 +331,16 @@ export async function trackNonButtonMessage(facebookId: string, message: string)
     // Check if user is in any active flow - skip tracking for legitimate input
     const { getBotSession } = await import('./utils')
     const sessionData = await getBotSession(facebookId)
-    const currentFlow = sessionData?.session_data?.current_flow
+
+    // Handle both possible session data structures
+    const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow
+
+    console.log('Anti-spam check for user:', facebookId, 'Flow:', currentFlow, 'Session:', sessionData)
 
     if (currentFlow) {
         // Don't track non-button messages during active flows
         // as users need to type their information (registration, listing, search)
+        console.log('Skipping anti-spam for user in flow:', currentFlow)
         return {
             shouldStopBot: false,
             warningCount: 0
@@ -442,7 +449,9 @@ export async function isBotStoppedForUser(facebookId: string): Promise<boolean> 
     try {
         const { getBotSession } = await import('./utils')
         const sessionData = await getBotSession(facebookId)
-        const currentFlow = sessionData?.session_data?.current_flow
+
+        // Handle both possible session data structures
+        const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow
 
         if (currentFlow) {
             // Don't stop bot during active flows as users need to type information
