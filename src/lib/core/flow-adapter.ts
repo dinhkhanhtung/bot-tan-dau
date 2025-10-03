@@ -1,140 +1,160 @@
-import { messageRouter, MessageContext } from './message-router'
-import { handleMessage as oldHandleMessage, handlePostback as oldHandlePostback } from '../bot-handlers'
+import { sendMessage, sendTypingIndicator, sendQuickReply, createQuickReply } from '../facebook-api'
+import { SmartContextManager, UserContext, UserType, UserState } from './smart-context-manager'
+import { UnifiedEntryPoint } from './unified-entry-point'
+import { updateBotSession, getBotSession } from '../utils'
 
-/**
- * Flow Adapter - Tích hợp hệ thống mới với hệ thống cũ
- * Cho phép chuyển đổi dần dần mà không làm mất chức năng
- */
+// Flow Adapter - Cầu nối giữa hệ thống cũ và mới
 export class FlowAdapter {
-    private useNewSystem: boolean = false
-    private fallbackToOld: boolean = true
-
-    constructor(useNewSystem: boolean = false) {
-        this.useNewSystem = useNewSystem
-    }
 
     /**
-     * Enable new system
+     * Adapter để tích hợp Smart Router vào bot-handlers hiện tại
+     * Không làm break hệ thống cũ, chỉ thêm tính năng mới
      */
-    enableNewSystem(): void {
-        this.useNewSystem = true
-        console.log('✅ New flow system enabled')
-    }
-
-    /**
-     * Disable fallback to old system
-     */
-    disableFallback(): void {
-        this.fallbackToOld = false
-        console.log('⚠️ Fallback to old system disabled')
-    }
-
-    /**
-     * Handle message with smart routing
-     */
-    async handleMessage(user: any, text: string): Promise<void> {
+    static async adaptMessageHandling(user: any, text: string): Promise<boolean> {
         try {
-            if (this.useNewSystem) {
-                // Use new system
-                const context: MessageContext = {
-                    user,
-                    text,
-                    isPostback: false,
-                    session: null // Will be fetched inside router
-                }
+            // Bước 1: Kiểm tra xem có nên sử dụng Smart Router không
+            const shouldUseSmartRouter = await this.shouldUseSmartRouter(user, text)
 
-                await messageRouter.routeMessage(context)
-            } else {
-                // Use old system
-                await oldHandleMessage(user, text)
+            if (shouldUseSmartRouter) {
+                // Bước 2: Sử dụng Smart Router
+                await UnifiedEntryPoint.handleInitialMessage(user, text)
+                return true // Đã xử lý bởi Smart Router
             }
+
+            // Bước 3: Fallback về hệ thống cũ nếu cần
+            return false // Chưa xử lý, để hệ thống cũ xử lý
+
         } catch (error) {
-            console.error('Error in new message handler:', error)
-
-            if (this.fallbackToOld) {
-                console.log('🔄 Falling back to old system...')
-                try {
-                    await oldHandleMessage(user, text)
-                } catch (fallbackError) {
-                    console.error('Error in fallback system:', fallbackError)
-                }
-            }
+            console.error('Error in flow adapter:', error)
+            return false // Fallback về hệ thống cũ
         }
     }
 
     /**
-     * Handle postback with smart routing
+     * Adapter cho postback handling
      */
-    async handlePostback(user: any, postback: string): Promise<void> {
+    static async adaptPostbackHandling(user: any, postback: string): Promise<boolean> {
         try {
-            if (this.useNewSystem) {
-                // Use new system
-                const context: MessageContext = {
-                    user,
-                    text: '',
-                    isPostback: true,
-                    postback,
-                    session: null // Will be fetched inside router
-                }
-
-                await messageRouter.routeMessage(context)
-            } else {
-                // Use old system
-                await oldHandlePostback(user, postback)
+            // Kiểm tra xem postback có phải từ Smart Router không
+            if (this.isSmartRouterAction(postback)) {
+                const success = await UnifiedEntryPoint.handleMenuSelection(user, postback)
+                return success
             }
+
+            return false // Để hệ thống cũ xử lý
+
         } catch (error) {
-            console.error('Error in new postback handler:', error)
-
-            if (this.fallbackToOld) {
-                console.log('🔄 Falling back to old system...')
-                try {
-                    await oldHandlePostback(user, postback)
-                } catch (fallbackError) {
-                    console.error('Error in fallback system:', fallbackError)
-                }
-            }
-        }
-    }
-
-    /**
-     * Get system status
-     */
-    getStatus(): { newSystem: boolean, fallback: boolean } {
-        return {
-            newSystem: this.useNewSystem,
-            fallback: this.fallbackToOld
-        }
-    }
-
-    /**
-     * Test new system with sample data
-     */
-    async testNewSystem(user: any, text: string): Promise<boolean> {
-        try {
-            const context: MessageContext = {
-                user,
-                text,
-                isPostback: false,
-                session: null
-            }
-
-            await messageRouter.routeMessage(context)
-            return true
-        } catch (error) {
-            console.error('Test failed:', error)
+            console.error('Error in postback adapter:', error)
             return false
         }
     }
-}
 
-// Export singleton instance
-export const flowAdapter = new FlowAdapter()
+    /**
+     * Kiểm tra xem có nên sử dụng Smart Router không
+     * Điều kiện: tin nhắn đầu tiên hoặc các từ khóa đặc biệt
+     */
+    private static async shouldUseSmartRouter(user: any, text: string): Promise<boolean> {
+        // Luôn sử dụng Smart Router cho các trường hợp sau:
+        // 1. Tin nhắn bắt đầu bằng "chào", "hi", "hello"
+        // 2. Tin nhắn là "start", "menu", "home"
+        // 3. Tin nhắn là các từ khóa phổ biến
+        // 4. User mới hoàn toàn (chưa có session)
 
-// Export functions for easy integration
-export async function handleMessage(user: any, text: string): Promise<void> {
-    await flowAdapter.handleMessage(user, text)
-}
+        const smartKeywords = [
+            'chào', 'hi', 'hello', 'xin chào',
+            'start', 'menu', 'home', 'trang chủ',
+            'bắt đầu', 'khởi động', 'bắt đầu lại',
+            'giúp tôi', 'hỗ trợ', 'tư vấn',
+            'tôi muốn', 'tôi cần', 'bạn ơi'
+        ]
 
-export async function handlePostback(user: any, postback: string): Promise<void> {
-    await flowAdapter.handlePostback(user, postback)
+        const lowerText = text.toLowerCase()
+
+        // Kiểm tra từ khóa thông minh
+        const hasSmartKeyword = smartKeywords.some(keyword => lowerText.includes(keyword))
+
+        if (hasSmartKeyword) {
+            return true
+        }
+
+        // Kiểm tra user mới hoàn toàn
+        const context = await SmartContextManager.analyzeUserContext(user)
+        if (context.userType === UserType.NEW_USER && context.userState === UserState.IDLE) {
+            return true
+        }
+
+        // Kiểm tra session rỗng
+        const session = await getBotSession(user.facebook_id)
+        if (!session) {
+            return true
+        }
+
+        return false
+    }
+
+    /**
+     * Kiểm tra xem action có phải từ Smart Router không
+     */
+    private static isSmartRouterAction(action: string): boolean {
+        const smartActions = [
+            // Admin actions
+            'ADMIN_PAYMENTS', 'ADMIN_USERS', 'ADMIN_LISTINGS', 'ADMIN_STATS',
+            'ADMIN_NOTIFICATIONS', 'ADMIN_SETTINGS',
+            // User actions
+            'MAIN_MENU', 'LISTING', 'SEARCH', 'COMMUNITY', 'PAYMENT', 'POINTS', 'SETTINGS',
+            // New user actions
+            'REGISTER', 'INFO', 'SUPPORT',
+            // Flow actions
+            'CONTINUE_REGISTRATION', 'CANCEL_REGISTRATION',
+            'CONTINUE_LISTING', 'CANCEL_LISTING',
+            'CONTINUE_SEARCH', 'CANCEL_SEARCH'
+        ]
+
+        return smartActions.includes(action)
+    }
+
+    /**
+     * Migrate từ hệ thống cũ sang Smart Router một cách an toàn
+     */
+    static async migrateToSmartRouter(user: any): Promise<void> {
+        try {
+            // Clear session cũ để bắt đầu fresh với Smart Router
+            await updateBotSession(user.facebook_id, null)
+
+            // Gửi welcome message từ Smart Router
+            await UnifiedEntryPoint.handleInitialMessage(user)
+
+        } catch (error) {
+            console.error('Error migrating to Smart Router:', error)
+            // Fallback: gửi welcome message cơ bản
+            await sendTypingIndicator(user.facebook_id)
+            await sendMessage(user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
+        }
+    }
+
+    /**
+     * Fallback handler khi Smart Router gặp lỗi
+     */
+    static async handleFallback(user: any, error: any): Promise<void> {
+        console.error('Smart Router error, falling back to legacy system:', error)
+
+        try {
+            // Fallback về welcome message cơ bản
+            await sendTypingIndicator(user.facebook_id)
+            await sendMessage(user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Bạn muốn:',
+                [
+                    createQuickReply('🚀 ĐĂNG KÝ', 'REGISTER'),
+                    createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
+                    createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
+                ]
+            )
+
+        } catch (fallbackError) {
+            console.error('Fallback handler also failed:', fallbackError)
+        }
+    }
 }
