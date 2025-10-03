@@ -6,7 +6,19 @@ import {
     createQuickReply,
     sendMessagesWithTyping
 } from '../facebook-api'
-import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from '../utils'
+import {
+    formatCurrency,
+    generateReferralCode,
+    isTrialUser,
+    isExpiredUser,
+    daysUntilExpiry,
+    generateId,
+    updateBotSession,
+    getBotSession,
+    getUserStatusInfo,
+    shouldSendTrialNotification,
+    getTrialNotificationMessage
+} from '../utils'
 
 
 // Handle registration flow - OPTIMIZED VERSION
@@ -33,21 +45,16 @@ export async function handleRegistration(user: any) {
         return
     }
 
-    // Check if user is already registered (exclude temp users)
-    if ((user.status === 'registered' || user.status === 'trial') &&
-        user.name !== 'User' && !user.phone?.startsWith('temp_')) {
+    // Use smart user status checking
+    const userStatusInfo = getUserStatusInfo(user)
 
-        // Check if trial is about to expire (within 2 days)
-        if (user.status === 'trial' && user.membership_expires_at) {
-            const daysLeft = daysUntilExpiry(user.membership_expires_at)
-            if (daysLeft <= 2) {
-                await sendMessage(user.facebook_id, `✅ Bạn đã đăng ký rồi!\n📅 Trial còn ${daysLeft} ngày\n💡 Hãy thanh toán để tiếp tục sử dụng.`)
-            } else {
-                await sendMessage(user.facebook_id, `✅ Bạn đã đăng ký rồi!\n📅 Trial còn ${daysLeft} ngày\nSử dụng menu bên dưới để truy cập các tính năng.`)
-            }
-        } else {
-            await sendMessage(user.facebook_id, '✅ Bạn đã đăng ký rồi!\nSử dụng menu bên dưới để truy cập các tính năng.')
-        }
+    // Handle different user categories
+    if (userStatusInfo.category === 'guest') {
+        // User chưa đăng ký - không có thông tin gì
+        // Chuyển thẳng xuống phần đăng ký
+    } else if (userStatusInfo.category === 'trial' && userStatusInfo.canUseBot) {
+        // User đang trong thời gian trial và có thể sử dụng bot
+        await sendMessage(user.facebook_id, `✅ Bạn đã đăng ký rồi!\n📅 Trial còn ${userStatusInfo.daysLeft} ngày\n💡 Hãy thanh toán để tiếp tục sử dụng.`)
 
         await sendQuickReply(
             user.facebook_id,
@@ -59,6 +66,25 @@ export async function handleRegistration(user: any) {
                 createQuickReply('💰 THANH TOÁN', 'PAYMENT')
             ]
         )
+        return
+    } else if (userStatusInfo.category === 'active' && userStatusInfo.canUseBot) {
+        // User đã thanh toán và có thể sử dụng bot
+        await sendMessage(user.facebook_id, '✅ Bạn đã đăng ký rồi!\nSử dụng menu bên dưới để truy cập các tính năng.')
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Chọn chức năng:',
+            [
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
+                createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
+                createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+                createQuickReply('💰 THANH TOÁN', 'PAYMENT')
+            ]
+        )
+        return
+    } else if (userStatusInfo.category === 'expired' || userStatusInfo.category === 'suspended') {
+        // User hết hạn hoặc bị suspend - không thể sử dụng bot
+        await sendExpiredMessage(user.facebook_id)
         return
     }
 
@@ -417,7 +443,7 @@ export async function sendExpiredMessage(facebookId: string) {
     )
 }
 
-// Handle trial expiring message
+// Handle trial expiring message - DEPRECATED: Use smartTrialNotification instead
 export async function sendTrialExpiringMessage(facebookId: string, daysLeft: number) {
     await sendTypingIndicator(facebookId)
 
@@ -444,6 +470,41 @@ export async function sendTrialExpiringMessage(facebookId: string, daysLeft: num
             createQuickReply('ℹ️ TÌM HIỂU', 'INFO')
         ]
     )
+}
+
+// Smart trial notification system
+export async function handleSmartTrialNotification(user: any) {
+    if (!user || !user.facebook_id) return
+
+    const userStatusInfo = getUserStatusInfo(user)
+
+    // Only send notification if user needs it and is eligible
+    if (userStatusInfo.needsTrialNotification) {
+        const shouldSend = await shouldSendTrialNotification(user.facebook_id, userStatusInfo)
+
+        if (shouldSend) {
+            const message = getTrialNotificationMessage(userStatusInfo.daysLeft, userStatusInfo.notificationPriority)
+
+            await sendTypingIndicator(user.facebook_id)
+            await sendMessage(user.facebook_id, message)
+
+            // Log notification for tracking
+            try {
+                const { supabaseAdmin } = await import('../supabase')
+                await supabaseAdmin
+                    .from('notifications')
+                    .insert({
+                        user_id: user.facebook_id,
+                        type: 'trial_reminder',
+                        title: 'Trial Reminder',
+                        message: message,
+                        created_at: new Date().toISOString()
+                    })
+            } catch (error) {
+                console.error('Error logging trial notification:', error)
+            }
+        }
+    }
 }
 
 // Helper functions - getBotSession imported from utils

@@ -109,26 +109,22 @@ export async function handleMessage(user: any, text: string) {
                 return
             }
         } else {
-            // User is NOT in active flow - use smart notification system
+            // User is NOT in active flow - use smart trial notification system
             if (!userIsAdmin) {
-                // Determine user behavior and chat type for smart notifications
-                const userBehavior = determineUserBehavior(user, text)
-                const chatType = determineChatType(user, currentFlow)
+                // Import smart trial notification function
+                const { handleSmartTrialNotification } = await import('./handlers/auth-handlers')
 
-                // Create notification context
-                const notificationContext: NotificationContext = {
-                    user,
-                    currentFlow,
-                    userBehavior,
-                    chatType,
-                    notificationCount: 0 // Will be calculated by notification manager
-                }
+                // Check and send smart trial notification first
+                await handleSmartTrialNotification(user)
 
-                // Check if notification should be shown
-                if (await notificationManager.shouldShowNotification(notificationContext)) {
-                    await notificationManager.showNotification(notificationContext)
-                    return // Exit early to prevent further processing if notification was shown
+                // Then check if user needs default message based on registration status
+                if ((user.status === 'registered' || user.status === 'trial') &&
+                    user.name !== 'User' && !user.phone?.startsWith('temp_')) {
+                    await UtilityHandlers.handleDefaultMessageRegistered(user)
+                } else {
+                    await AuthHandlers.handleDefaultMessage(user)
                 }
+                return
             }
         }
 

@@ -69,6 +69,113 @@ export function isExpiredUser(expiryDate: string | null): boolean {
     return daysUntilExpiry(expiryDate) <= 0
 }
 
+// Enhanced user status checking with smart logic
+export function getUserStatusInfo(user: any) {
+    const now = new Date()
+    const expiryDate = user?.membership_expires_at ? new Date(user.membership_expires_at) : null
+    const daysLeft = expiryDate ? daysUntilExpiry(expiryDate.toISOString()) : 0
+
+    // Determine user category
+    let category = 'guest'
+    let canUseBot = false
+    let needsTrialNotification = false
+    let notificationPriority = 'low'
+
+    if (!user) {
+        category = 'guest'
+        canUseBot = false
+        needsTrialNotification = false
+    } else if (user.status === 'trial' && daysLeft > 0) {
+        category = 'trial'
+        canUseBot = true
+        // Only notify if trial is ending soon (within 3 days)
+        needsTrialNotification = daysLeft <= 3
+        notificationPriority = daysLeft <= 1 ? 'high' : 'medium'
+    } else if (user.status === 'active') {
+        category = 'active'
+        canUseBot = true
+        needsTrialNotification = false
+    } else if (user.status === 'expired' || daysLeft <= 0) {
+        category = 'expired'
+        canUseBot = false
+        needsTrialNotification = false
+    } else if (user.status === 'suspended') {
+        category = 'suspended'
+        canUseBot = false
+        needsTrialNotification = false
+    } else {
+        // Default to guest for unknown status
+        category = 'guest'
+        canUseBot = false
+        needsTrialNotification = false
+    }
+
+    return {
+        category,
+        canUseBot,
+        needsTrialNotification,
+        notificationPriority,
+        daysLeft,
+        expiryDate: expiryDate?.toISOString(),
+        isAdmin: user?.is_admin || false
+    }
+}
+
+// Check if user should receive trial notification (with frequency limiting)
+export async function shouldSendTrialNotification(facebookId: string, userInfo: any): Promise<boolean> {
+    if (!userInfo.needsTrialNotification) return false
+
+    try {
+        const { supabaseAdmin } = await import('./supabase')
+
+        // Check last notification time
+        const { data: lastNotification } = await supabaseAdmin
+            .from('notifications')
+            .select('created_at')
+            .eq('user_id', facebookId)
+            .eq('type', 'trial_reminder')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+        if (lastNotification) {
+            const lastNotificationTime = new Date(lastNotification.created_at)
+            const now = new Date()
+            const hoursSinceLastNotification = (now.getTime() - lastNotificationTime.getTime()) / (1000 * 60 * 60)
+
+            // Don't send notification if less than:
+            // - 24 hours for low priority
+            // - 6 hours for medium priority
+            // - 1 hour for high priority
+            const minHours = {
+                low: 24,
+                medium: 6,
+                high: 1
+            }
+
+            if (hoursSinceLastNotification < minHours[userInfo.notificationPriority as keyof typeof minHours]) {
+                return false
+            }
+        }
+
+        return true
+    } catch (error) {
+        console.error('Error checking trial notification eligibility:', error)
+        return false
+    }
+}
+
+// Get trial notification message based on days left and priority
+export function getTrialNotificationMessage(daysLeft: number, priority: string): string {
+    if (priority === 'high' && daysLeft <= 1) {
+        return `🚨 CẢNH BÁO KHẨN CẤP!\nTrial của bạn hết hạn trong ${daysLeft <= 0 ? 'NGAY HÔM NAY' : '24 GIỜ NỮA'}!\n\n💳 Gia hạn ngay để không gián đoạn:\n• 7 ngày: 14,000đ\n• 15 ngày: 30,000đ\n• 30 ngày: 60,000đ\n\n💰 Thanh toán ngay: PAYMENT`
+    } else if (priority === 'medium' && daysLeft <= 3) {
+        return `⏰ THÔNG BÁO QUAN TRỌNG\nTrial của bạn còn ${daysLeft} ngày!\n\n💡 Hãy gia hạn để tiếp tục sử dụng:\n• Phí: 2,000đ/ngày\n• Gói tối thiểu: 7 ngày = 14,000đ\n\n💳 Chọn PAYMENT để gia hạn`
+    } else {
+        return `📅 THÔNG BÁO\nTrial của bạn còn ${daysLeft} ngày\n\n💰 Gia hạn tài khoản:\n• Thanh toán: PAYMENT\n• Liên hệ admin: SUPPORT_ADMIN`
+    }
+}
+
 // Generate random horoscope
 export function generateHoroscope(): {
     fortune: string
