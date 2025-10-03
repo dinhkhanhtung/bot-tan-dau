@@ -696,10 +696,9 @@ export class UnifiedBotSystem {
                     console.warn('Failed to get Facebook display name, using fallback:', error instanceof Error ? error.message : String(error))
                 }
 
-                await sendMessage(user.facebook_id, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!`)
-                await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
-                await sendMessage(user.facebook_id, '🌟 Có thể bạn cũng muốn tham gia Tân Dậu - Hỗ Trợ Chéo')
-                await sendMessage(user.facebook_id, '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')
+                await sendMessage(user.facebook_id, `Chào mừng ${displayName} ghé thăm Đinh Khánh Tùng:`)
+                await sendMessage(user.facebook_id, 'Hôm nay mình có thể giúp gì cho bạn')
+                await sendMessage(user.facebook_id, 'Có thể bạn cũng muốn tham gia cộng đồng Tân Dậu - Hỗ Trợ Chéo, Nơi Tân Dậu cùng nhau kết nối - cùng nhau thịnh vượng. Bạn có thể...')
 
                 await sendQuickReply(
                     user.facebook_id,
