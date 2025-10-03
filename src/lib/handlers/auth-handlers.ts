@@ -389,10 +389,17 @@ export async function handleDefaultMessage(user: any) {
         .eq('facebook_id', user.facebook_id)
         .single()
 
-    // Nếu đã gửi thông báo chào mừng rồi, chỉ gửi thông báo ngắn gọn
+    // Nếu đã gửi thông báo chào mừng rồi, CHỈ hiển thị menu, KHÔNG gửi thông báo lặp lại
     if (existingUser?.welcome_message_sent) {
-        await sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
-        await sendMessage(user.facebook_id, '💡 Nhập "đăng ký" để bắt đầu hoặc chờ admin hỗ trợ.')
+        await sendQuickReply(
+            user.facebook_id,
+            'Chọn chức năng:',
+            [
+                createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
+                createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
+            ]
+        )
         return
     }
 

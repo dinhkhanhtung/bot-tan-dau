@@ -437,7 +437,7 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý new user text - GIẢM SPAM
+     * Xử lý new user text - CHỈ HIỂN THỊ MENU, KHÔNG TẠO SPAM
      */
     private static async handleNewUserText(user: any, text: string): Promise<void> {
         try {
@@ -448,13 +448,12 @@ export class UnifiedBotSystem {
             } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
                 await this.showSupportInfo(user)
             } else {
-                // Thay vì hiển thị welcome message đầy đủ, chỉ gửi thông báo ngắn gọn
-                await this.sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
-                await this.sendMessage(user.facebook_id, '💡 Nhập "đăng ký" để bắt đầu hoặc chờ admin hỗ trợ.')
+                // CHỈ hiển thị menu, KHÔNG gửi thông báo lặp lại gây spam
+                await this.showWelcomeMessage(user)
             }
         } catch (error) {
             console.error('Error handling new user text:', error)
-            await this.sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
+            await this.showWelcomeMessage(user)
         }
     }
 
@@ -550,10 +549,17 @@ export class UnifiedBotSystem {
                 .eq('facebook_id', user.facebook_id)
                 .single()
 
-            // Nếu đã gửi thông báo chào mừng rồi, chỉ hiển thị thông báo đơn giản
+            // Nếu đã gửi thông báo chào mừng rồi, CHỈ hiển thị menu, KHÔNG gửi thông báo
             if (existingUser?.welcome_message_sent) {
-                await sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
-                await sendMessage(user.facebook_id, '💡 Nhập "đăng ký" để bắt đầu hoặc chờ admin hỗ trợ.')
+                await sendQuickReply(
+                    user.facebook_id,
+                    'Chọn chức năng:',
+                    [
+                        createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                        createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
+                        createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
+                    ]
+                )
                 return
             }
 
@@ -729,7 +735,7 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Handle default message - GIẢM SPAM CHO NEW USER
+     * Handle default message - CHỈ HIỂN THỊ MENU, KHÔNG TẠO SPAM
      */
     private static async handleDefaultMessage(user: any): Promise<void> {
         try {
@@ -751,14 +757,13 @@ export class UnifiedBotSystem {
                     break
                 case UserType.NEW_USER:
                 default:
-                    // Thay vì hiển thị welcome message đầy đủ, chỉ gửi thông báo ngắn gọn
-                    await this.sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
-                    await this.sendMessage(user.facebook_id, '💡 Nhập "đăng ký" để bắt đầu hoặc chờ admin hỗ trợ.')
+                    // CHỈ hiển thị welcome message một lần, không lặp lại thông báo
+                    await this.showWelcomeMessage(user)
                     break
             }
         } catch (error) {
             console.error('Error handling default message:', error)
-            await this.sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
+            await this.showWelcomeMessage(user)
         }
     }
 

@@ -352,17 +352,16 @@ async function handleMessageEvent(event: any) {
                     console.error('Error sending welcome message:', error)
                 }
             } else {
-                // User already received welcome message, send a brief response
+                // User already received welcome message, CHỈ hiển thị menu
                 try {
-                    const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
-                    await sendMessage(senderId, 'Bạn cần hỗ trợ gì?')
+                    const { sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
                     await sendQuickReply(
                         senderId,
-                        'Bạn muốn:',
+                        'Chọn chức năng:',
                         [
-                            createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
-                            createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
-                            createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
+                            createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                            createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
+                            createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
                         ]
                     )
                 } catch (error) {
@@ -493,15 +492,12 @@ async function handlePostbackEvent(event: any) {
     }
 
     if (!user) {
-        // Send registration prompt for unregistered users
+        // Send registration prompt for unregistered users - CHỈ HIỂN THỊ MENU
         try {
-            const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
-            await sendMessage(senderId, '❌ Bạn cần đăng ký trước để sử dụng chức năng này!')
-            await sendMessage(senderId, 'Để sử dụng bot, bạn cần tạo tài khoản trước.')
-
+            const { sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
             await sendQuickReply(
                 senderId,
-                'Bạn muốn:',
+                'Bạn cần đăng ký để sử dụng chức năng này:',
                 [
                     createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
                     createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),

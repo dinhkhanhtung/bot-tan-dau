@@ -255,6 +255,30 @@ CREATE TABLE IF NOT EXISTS spam_logs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- ========================================
+-- BẢNG CHỐNG SPAM THÔNG MINH (MỚI)
+-- ========================================
+
+-- Spam tracking table - Lưu trữ thông tin chống spam thông minh
+CREATE TABLE IF NOT EXISTS spam_tracking (
+    user_id TEXT PRIMARY KEY,
+    message_count INTEGER DEFAULT 0,
+    last_message_time TIMESTAMPTZ DEFAULT NOW(),
+    warning_count INTEGER DEFAULT 0,
+    locked_until TIMESTAMPTZ NULL,
+    current_flow TEXT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Tạo index để tối ưu hiệu suất truy vấn cho spam_tracking
+CREATE INDEX IF NOT EXISTS idx_spam_tracking_user_id ON spam_tracking(user_id);
+CREATE INDEX IF NOT EXISTS idx_spam_tracking_locked_until ON spam_tracking(locked_until) WHERE locked_until IS NOT NULL;
+
+-- Thêm trigger để tự động cập nhật updated_at cho spam_tracking
+CREATE TRIGGER update_spam_tracking_updated_at BEFORE UPDATE ON spam_tracking
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Admin users table
 CREATE TABLE IF NOT EXISTS admin_users (
     id SERIAL PRIMARY KEY,
@@ -502,13 +526,13 @@ $$ language 'plpgsql';
 -- 11. VERIFICATION
 -- ========================================
 
-SELECT 'Database setup hoàn chỉnh với PENDING_USER system!' as status;
+SELECT 'Database setup hoàn chỉnh với PENDING_USER system và ANTI-SPAM thông minh!' as status;
 SELECT COUNT(*) as total_tables FROM information_schema.tables
 WHERE table_schema = 'public'
 AND table_name IN (
     'users', 'listings', 'conversations', 'messages', 'payments', 'ratings',
     'events', 'event_participants', 'notifications', 'ads', 'search_requests',
     'referrals', 'user_points', 'point_transactions', 'bot_sessions',
-    'user_messages', 'spam_logs', 'admin_users', 'admin_chat_sessions',
+    'user_messages', 'spam_logs', 'spam_tracking', 'admin_users', 'admin_chat_sessions',
     'user_activities', 'user_activity_logs', 'system_metrics'
 );
