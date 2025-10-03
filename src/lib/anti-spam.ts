@@ -22,14 +22,33 @@ async function sendWelcomeMessage(userId: string, userStatus: string): Promise<v
             ]
         );
     } else {
-        // User chưa đăng ký - chỉ hiển thị menu
+        // User chưa đăng ký - gửi welcome message đầy đủ
+        const { sendMessage } = await import('./facebook-api');
+        
+        // Get Facebook name for personalized greeting
+        let displayName = 'bạn'
+        try {
+            const { getFacebookDisplayName } = await import('./utils')
+            const facebookName = await getFacebookDisplayName(userId)
+            if (facebookName) {
+                displayName = facebookName
+            }
+        } catch (error) {
+            console.warn('Failed to get Facebook display name, using fallback:', error)
+        }
+
+        await sendMessage(userId, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!`)
+        await sendMessage(userId, '👋 Hôm nay mình có thể giúp gì cho bạn?')
+        await sendMessage(userId, '🌟 Có thể bạn cũng muốn tham gia Tân Dậu - Hỗ Trợ Chéo')
+        await sendMessage(userId, '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')
+
         await sendQuickReply(
             userId,
-            'Chọn chức năng:',
+            'Bạn muốn:',
             [
                 createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
-                createQuickReply('🔍 XEM HÀNG HÓA (Dùng thử)', 'TRIAL_SEARCH'),
-                createQuickReply('ℹ️ HƯỚNG DẪN', 'HELP')
+                createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
+                createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
             ]
         );
     }

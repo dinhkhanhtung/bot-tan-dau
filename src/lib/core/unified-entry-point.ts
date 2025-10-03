@@ -696,10 +696,8 @@ export class UnifiedBotSystem {
                     console.warn('Failed to get Facebook display name, using fallback:', error instanceof Error ? error.message : String(error))
                 }
 
-                await sendMessage(user.facebook_id, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!`)
-                await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
-                await sendMessage(user.facebook_id, '🌟 Có thể bạn cũng muốn tham gia Tân Dậu - Hỗ Trợ Chéo')
-                await sendMessage(user.facebook_id, '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')
+                // DISABLED: Welcome message now handled by anti-spam system
+                console.log('Welcome message handled by anti-spam system')
 
                 await sendQuickReply(
                     user.facebook_id,
