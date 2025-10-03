@@ -428,12 +428,18 @@ export async function getFacebookDisplayName(facebookId: string): Promise<string
 
         console.log('Fetching Facebook profile for user:', facebookId)
 
+        // Create AbortController for timeout functionality
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+
         const response = await fetch(
             `https://graph.facebook.com/v19.0/${facebookId}?fields=first_name,last_name,name&access_token=${FACEBOOK_ACCESS_TOKEN}`,
             {
-                timeout: 5000 // 5 second timeout
+                signal: controller.signal
             }
         )
+
+        clearTimeout(timeoutId)
 
         console.log('Facebook API response status:', response.status)
 
@@ -475,7 +481,7 @@ export async function getFacebookDisplayName(facebookId: string): Promise<string
         return null
     } catch (error) {
         // Handle network errors gracefully
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
             console.warn('Facebook API request timeout for user:', facebookId)
         } else {
             console.warn('Error getting Facebook display name:', error instanceof Error ? error.message : String(error))
