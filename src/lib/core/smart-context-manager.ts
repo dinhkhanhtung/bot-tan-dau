@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '../supabase'
 import { getBotSession } from '../utils'
 
-// Định nghĩa các loại user và trạng thái
+// Định nghĩa các loại user và trạng thái - ĐƠN GIẢN HÓA
 export enum UserType {
     ADMIN = 'admin',
     REGISTERED_USER = 'registered_user',
@@ -28,15 +28,15 @@ export interface UserContext {
     flowType?: string
 }
 
-// Smart Context Manager - Bộ não của hệ thống
+// Simplified Context Manager - ĐƠN GIẢN VÀ RÕ RÀNG
 export class SmartContextManager {
 
     /**
-     * Phân tích ngữ cảnh thông minh của user
+     * Phân tích ngữ cảnh ĐƠN GIẢN và CHÍNH XÁC của user
      */
     static async analyzeUserContext(user: any): Promise<UserContext> {
         try {
-            // Bước 1: Kiểm tra Admin trước (ưu tiên cao nhất)
+            // BƯỚC 1: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất)
             const isAdminUser = await this.detectAdmin(user.facebook_id)
 
             if (isAdminUser) {
@@ -49,22 +49,22 @@ export class SmartContextManager {
                 }
             }
 
-            // Bước 2: Lấy thông tin user từ database
+            // BƯỚC 2: LẤY THÔNG TIN USER TỪ DATABASE
             const { data: userData } = await supabaseAdmin
                 .from('users')
                 .select('*')
                 .eq('facebook_id', user.facebook_id)
                 .single()
 
-            // Bước 3: Kiểm tra session hiện tại
+            // BƯỚC 3: KIỂM TRA SESSION HIỆN TẠI
             const session = await getBotSession(user.facebook_id)
 
-            // Bước 4: Xác định loại user và trạng thái
+            // BƯỚC 4: XÁC ĐỊNH LOẠI USER - RÕ RÀNG
             let userType = UserType.NEW_USER
             let userState = UserState.IDLE
 
             if (userData) {
-                // User tồn tại trong database
+                // User đã tồn tại trong database
                 if (userData.status === 'registered') {
                     userType = UserType.REGISTERED_USER
                 } else if (userData.status === 'trial') {
@@ -73,7 +73,7 @@ export class SmartContextManager {
                     userType = UserType.EXPIRED_USER
                 }
 
-                // Kiểm tra trạng thái hiện tại
+                // KIỂM TRA TRẠNG THÁI FLOW - ĐƠN GIẢN
                 if (session?.current_flow) {
                     switch (session.current_flow) {
                         case 'registration':
@@ -93,7 +93,7 @@ export class SmartContextManager {
                     }
                 }
             } else {
-                // User mới hoàn toàn
+                // User mới hoàn toàn - CHẮC CHẮN
                 userType = UserType.NEW_USER
                 userState = UserState.IDLE
             }
@@ -109,7 +109,7 @@ export class SmartContextManager {
 
         } catch (error) {
             console.error('Error analyzing user context:', error)
-            // Fallback: coi như new user
+            // Fallback ĐƠN GIẢN: coi như new user
             return {
                 userType: UserType.NEW_USER,
                 userState: UserState.IDLE,

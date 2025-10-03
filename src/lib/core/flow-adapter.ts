@@ -1,6 +1,6 @@
 import { sendMessage, sendTypingIndicator, sendQuickReply, createQuickReply } from '../facebook-api'
 import { SmartContextManager, UserContext, UserType, UserState } from './smart-context-manager'
-import { UnifiedEntryPoint } from './unified-entry-point'
+import { UnifiedBotSystem } from './unified-entry-point'
 import { updateBotSession, getBotSession } from '../utils'
 
 // Flow Adapter - Cầu nối giữa hệ thống cũ và mới
@@ -17,7 +17,7 @@ export class FlowAdapter {
 
             if (shouldUseSmartRouter) {
                 // Bước 2: Sử dụng Smart Router
-                await UnifiedEntryPoint.handleInitialMessage(user, text)
+                await UnifiedBotSystem.handleMessage(user, text)
                 return true // Đã xử lý bởi Smart Router
             }
 
@@ -37,8 +37,8 @@ export class FlowAdapter {
         try {
             // Kiểm tra xem postback có phải từ Smart Router không
             if (this.isSmartRouterAction(postback)) {
-                const success = await UnifiedEntryPoint.handleMenuSelection(user, postback)
-                return success
+                await UnifiedBotSystem.handleMessage(user, '', true, postback)
+                return true
             }
 
             return false // Để hệ thống cũ xử lý
@@ -122,7 +122,7 @@ export class FlowAdapter {
             await updateBotSession(user.facebook_id, null)
 
             // Gửi welcome message từ Smart Router
-            await UnifiedEntryPoint.handleInitialMessage(user)
+            await UnifiedBotSystem.handleMessage(user, 'start')
 
         } catch (error) {
             console.error('Error migrating to Smart Router:', error)

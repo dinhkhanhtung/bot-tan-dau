@@ -2,397 +2,665 @@ import { sendMessage, sendTypingIndicator, sendQuickReply, createQuickReply } fr
 import { SmartContextManager, UserContext, UserType, UserState } from './smart-context-manager'
 import { updateBotSession } from '../utils'
 
-// Unified Entry Point - Điểm vào duy nhất cho toàn bộ hệ thống
-export class UnifiedEntryPoint {
+// Unified Bot System - Hệ thống bot thống nhất, thay thế cả Unified Entry Point và Message Router
+export class UnifiedBotSystem {
 
     /**
-     * Xử lý tin nhắn đầu tiên hoặc tin nhắn thường
-     * Đây là điểm vào duy nhất cho toàn bộ hệ thống
+     * Xử lý TẤT CẢ tin nhắn - đây là điểm vào DUY NHẤT
      */
-    static async handleInitialMessage(user: any, text?: string): Promise<void> {
+    static async handleMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
         try {
-            // Bước 1: Phân tích ngữ cảnh thông minh
-            const context = await SmartContextManager.analyzeUserContext(user)
+            // Bước 1: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất)
+            const isAdminUser = await this.checkAdminStatus(user.facebook_id)
 
-            // Bước 2: Lấy welcome message phù hợp
-            const welcomeMessage = SmartContextManager.getContextualWelcomeMessage(context)
+            if (isAdminUser) {
+                await this.handleAdminMessage(user, text, isPostback, postback)
+                return
+            }
 
-            // Bước 3: Lấy menu phù hợp với ngữ cảnh
-            const menuOptions = SmartContextManager.getContextualMenu(context)
+            // Bước 2: KIỂM TRA ADMIN CHAT MODE
+            const isInAdminChat = await this.checkAdminChatMode(user.facebook_id)
+            if (isInAdminChat) {
+                await this.handleAdminChatMessage(user, text)
+                return
+            }
 
-            // Bước 4: Gửi welcome message
-            await sendTypingIndicator(user.facebook_id)
-            await sendMessage(user.facebook_id, welcomeMessage)
-
-            // Bước 5: Gửi menu phù hợp
-            if (menuOptions.length > 0) {
-                // Sắp xếp menu theo priority
-                const sortedMenu = menuOptions.sort((a, b) => (a.priority || 999) - (b.priority || 999))
-
-                // Tạo quick replies từ menu
-                const quickReplies = sortedMenu.map(option => createQuickReply(option.title, option.action))
-
-                // Gửi menu dưới dạng quick reply (tối đa 13 options)
-                if (quickReplies.length <= 13) {
-                    await sendQuickReply(user.facebook_id, 'Chọn chức năng:', quickReplies)
-                } else {
-                    // Nếu quá nhiều options, chia thành 2 nhóm
-                    const firstGroup = quickReplies.slice(0, 11)
-                    const secondGroup = quickReplies.slice(11)
-
-                    await sendQuickReply(user.facebook_id, 'Chọn chức năng (1/2):', firstGroup)
-                    await sendQuickReply(user.facebook_id, 'Chọn chức năng (2/2):', secondGroup)
+            // Bước 3: KIỂM TRA ANTI-SPAM (chỉ cho non-admin, non-flow users)
+            const session = await this.getUserSession(user.facebook_id)
+            if (!session?.current_flow) {
+                const spamCheck = await this.checkSpamStatus(user.facebook_id, text, isPostback)
+                if (spamCheck.shouldStop) {
+                    await this.sendSpamBlockedMessage(user.facebook_id, spamCheck.reason)
+                    return
                 }
             }
 
-            // Bước 6: Log ngữ cảnh để debug
-            console.log('Smart Context Analysis:', {
-                facebook_id: user.facebook_id,
-                userType: context.userType,
-                userState: context.userState,
-                isInFlow: context.isInFlow,
-                flowType: context.flowType
-            })
+            // Bước 4: XỬ LÝ FLOW NẾU USER ĐANG TRONG FLOW
+            if (session?.current_flow) {
+                await this.handleFlowMessage(user, text, session)
+                return
+            }
+
+            // Bước 5: XỬ LÝ TIN NHẮN THƯỜNG
+            if (isPostback && postback) {
+                await this.handlePostbackAction(user, postback)
+            } else if (text) {
+                await this.handleTextMessage(user, text)
+            } else {
+                await this.handleDefaultMessage(user)
+            }
 
         } catch (error) {
-            console.error('Error in unified entry point:', error)
+            console.error('Error in unified bot system:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
 
-            // Fallback: gửi welcome message cơ bản
+    /**
+     * Kiểm tra trạng thái admin
+     */
+    private static async checkAdminStatus(facebookId: string): Promise<boolean> {
+        try {
+            const { isAdmin } = await import('../handlers/admin-handlers')
+            return await isAdmin(facebookId)
+        } catch (error) {
+            console.error('Error checking admin status:', error)
+            return false
+        }
+    }
+
+    /**
+     * Kiểm tra admin chat mode
+     */
+    private static async checkAdminChatMode(facebookId: string): Promise<boolean> {
+        try {
+            const { isUserInAdminChat } = await import('../admin-chat')
+            return await isUserInAdminChat(facebookId)
+        } catch (error) {
+            console.error('Error checking admin chat mode:', error)
+            return false
+        }
+    }
+
+    /**
+     * Lấy user session
+     */
+    private static async getUserSession(facebookId: string): Promise<any> {
+        try {
+            const { getBotSession } = await import('../utils')
+            return await getBotSession(facebookId)
+        } catch (error) {
+            console.error('Error getting user session:', error)
+            return null
+        }
+    }
+
+    /**
+     * Kiểm tra spam status
+     */
+    private static async checkSpamStatus(facebookId: string, text?: string, isPostback: boolean = false): Promise<{ shouldStop: boolean, reason?: string }> {
+        try {
+            const { trackNonButtonMessage } = await import('../anti-spam')
+            if (!isPostback && text) {
+                const result = await trackNonButtonMessage(facebookId, text)
+                if (result.shouldStopBot) {
+                    return { shouldStop: true, reason: result.reason }
+                }
+            }
+            return { shouldStop: false }
+        } catch (error) {
+            console.error('Error checking spam status:', error)
+            return { shouldStop: false }
+        }
+    }
+
+    /**
+     * Xử lý tin nhắn của admin
+     */
+    private static async handleAdminMessage(user: any, text?: string, isPostback: boolean = false, postback?: string): Promise<void> {
+        try {
+            // Admin có toàn quyền, không bị giới hạn gì
+            if (isPostback && postback) {
+                await this.handleAdminPostback(user, postback)
+            } else if (text) {
+                await this.handleAdminTextMessage(user, text)
+            } else {
+                await this.showAdminDashboard(user)
+            }
+        } catch (error) {
+            console.error('Error handling admin message:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Xử lý admin chat message
+     */
+    private static async handleAdminChatMessage(user: any, text?: string): Promise<void> {
+        try {
+            const { handleUserMessageInAdminChat } = await import('../admin-chat')
+            if (text) {
+                await handleUserMessageInAdminChat(user.facebook_id, text)
+            }
+        } catch (error) {
+            console.error('Error handling admin chat message:', error)
+        }
+    }
+
+    /**
+     * Xử lý flow message
+     */
+    private static async handleFlowMessage(user: any, text?: string, session: any): Promise<void> {
+        try {
+            // Xử lý các lệnh thoát flow
+            if (text && this.isExitCommand(text)) {
+                await this.handleFlowExit(user, session.current_flow)
+                return
+            }
+
+            // Route đến flow handler phù hợp
+            switch (session.current_flow) {
+                case 'registration':
+                    const { AuthFlow } = await import('../flows/auth-flow')
+                    const authFlow = new AuthFlow()
+                    await authFlow.handleStep(user, text || '', session)
+                    break
+                case 'listing':
+                    const { MarketplaceFlow } = await import('../flows/marketplace-flow')
+                    const marketplaceFlow = new MarketplaceFlow()
+                    await marketplaceFlow.handleStep(user, text || '', session)
+                    break
+                case 'search':
+                    const { MarketplaceFlow: SearchFlow } = await import('../flows/marketplace-flow')
+                    const searchFlow = new SearchFlow()
+                    await searchFlow.handleSearchStep(user, text || '', session)
+                    break
+                default:
+                    await this.sendErrorMessage(user.facebook_id)
+            }
+        } catch (error) {
+            console.error('Error handling flow message:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Xử lý postback actions
+     */
+    private static async handlePostbackAction(user: any, postback: string): Promise<void> {
+        try {
+            const [action, ...params] = postback.split('_')
+
+            switch (action) {
+                case 'REGISTER':
+                    await this.startRegistration(user)
+                    break
+                case 'MAIN':
+                    if (params[0] === 'MENU') {
+                        await this.showMainMenu(user)
+                    }
+                    break
+                case 'ADMIN':
+                    await this.showAdminDashboard(user)
+                    break
+                default:
+                    await this.routeToHandler(user, postback)
+            }
+        } catch (error) {
+            console.error('Error handling postback action:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Xử lý text message
+     */
+    private static async handleTextMessage(user: any, text: string): Promise<void> {
+        try {
+            // Phân tích ngữ cảnh đơn giản và rõ ràng
+            const context = await this.analyzeUserContext(user)
+
+            switch (context.userType) {
+                case UserType.ADMIN:
+                    await this.handleAdminTextMessage(user, text)
+                    break
+                case UserType.REGISTERED_USER:
+                case UserType.TRIAL_USER:
+                    await this.handleRegisteredUserText(user, text, context)
+                    break
+                case UserType.EXPIRED_USER:
+                    await this.handleExpiredUserText(user, text)
+                    break
+                case UserType.NEW_USER:
+                default:
+                    await this.handleNewUserText(user, text)
+                    break
+            }
+        } catch (error) {
+            console.error('Error handling text message:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Phân tích ngữ cảnh đơn giản và rõ ràng
+     */
+    private static async analyzeUserContext(user: any): Promise<{ userType: UserType, user?: any }> {
+        try {
+            // 1. Kiểm tra Admin trước (ưu tiên cao nhất)
+            const isAdminUser = await this.checkAdminStatus(user.facebook_id)
+            if (isAdminUser) {
+                return { userType: UserType.ADMIN }
+            }
+
+            // 2. Lấy thông tin user từ database
+            const { supabaseAdmin } = await import('../supabase')
+            const { data: userData, error } = await supabaseAdmin
+                .from('users')
+                .select('*')
+                .eq('facebook_id', user.facebook_id)
+                .single()
+
+            // Nếu không tìm thấy user trong database -> NEW USER
+            if (error || !userData) {
+                console.log('No user data found for:', user.facebook_id, 'Error:', error?.message)
+                return { userType: UserType.NEW_USER, user: null }
+            }
+
+            // 3. KIỂM TRA TRẠNG THÁI USER - RÕ RÀNG
+            console.log('User data found:', {
+                facebook_id: userData.facebook_id,
+                status: userData.status,
+                name: userData.name,
+                membership_expires_at: userData.membership_expires_at
+            })
+
+            if (userData.status === 'registered') {
+                return { userType: UserType.REGISTERED_USER, user: userData }
+            } else if (userData.status === 'trial') {
+                // Kiểm tra trial có hết hạn không
+                if (userData.membership_expires_at) {
+                    const expiryDate = new Date(userData.membership_expires_at)
+                    const now = new Date()
+
+                    if (expiryDate <= now) {
+                        console.log('Trial user expired, treating as expired user')
+                        return { userType: UserType.EXPIRED_USER, user: userData }
+                    }
+                }
+                return { userType: UserType.TRIAL_USER, user: userData }
+            } else if (userData.status === 'expired') {
+                return { userType: UserType.EXPIRED_USER, user: userData }
+            }
+
+            // 4. Nếu status không xác định -> coi như NEW USER
+            console.log('Unknown user status:', userData.status, 'treating as new user')
+            return { userType: UserType.NEW_USER, user: null }
+        } catch (error) {
+            console.error('Error analyzing user context:', error)
+            return { userType: UserType.NEW_USER }
+        }
+    }
+
+    /**
+     * Xử lý admin text message
+     */
+    private static async handleAdminTextMessage(user: any, text: string): Promise<void> {
+        try {
+            const { handleAdminCommand } = await import('../handlers/admin-handlers')
+            await handleAdminCommand(user)
+        } catch (error) {
+            console.error('Error handling admin text:', error)
+            await this.showAdminDashboard(user)
+        }
+    }
+
+    /**
+     * Xử lý registered user text
+     */
+    private static async handleRegisteredUserText(user: any, text: string, context: any): Promise<void> {
+        try {
+            // Xử lý các lệnh text đơn giản
+            if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
+                await this.sendMessage(user.facebook_id, '✅ Bạn đã đăng ký rồi!')
+                await this.showMainMenu(user)
+            } else if (text.includes('niêm yết') || text.includes('NIÊM YẾT')) {
+                await this.routeToHandler(user, 'LISTING')
+            } else if (text.includes('tìm kiếm') || text.includes('TÌM KIẾM')) {
+                await this.routeToHandler(user, 'SEARCH')
+            } else {
+                await this.showMainMenu(user)
+            }
+        } catch (error) {
+            console.error('Error handling registered user text:', error)
+            await this.showMainMenu(user)
+        }
+    }
+
+    /**
+     * Xử lý expired user text
+     */
+    private static async handleExpiredUserText(user: any, text: string): Promise<void> {
+        try {
+            if (text.includes('thanh toán') || text.includes('THANH TOÁN')) {
+                await this.routeToHandler(user, 'PAYMENT')
+            } else {
+                await this.sendMessage(user.facebook_id, '⏰ Tài khoản đã hết hạn')
+                await this.sendMessage(user.facebook_id, '💰 Vui lòng thanh toán để tiếp tục sử dụng')
+                await this.routeToHandler(user, 'PAYMENT')
+            }
+        } catch (error) {
+            console.error('Error handling expired user text:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Xử lý new user text
+     */
+    private static async handleNewUserText(user: any, text: string): Promise<void> {
+        try {
+            if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
+                await this.startRegistration(user)
+            } else if (text.includes('thông tin') || text.includes('THÔNG TIN')) {
+                await this.showBotInfo(user)
+            } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
+                await this.showSupportInfo(user)
+            } else {
+                await this.showWelcomeMessage(user)
+            }
+        } catch (error) {
+            console.error('Error handling new user text:', error)
+            await this.showWelcomeMessage(user)
+        }
+    }
+
+    /**
+     * Route to appropriate handler
+     */
+    private static async routeToHandler(user: any, action: string): Promise<void> {
+        try {
+            switch (action) {
+                case 'LISTING':
+                    const { MarketplaceFlow } = await import('../flows/marketplace-flow')
+                    const marketplaceFlow = new MarketplaceFlow()
+                    await marketplaceFlow.handleListing(user)
+                    break
+                case 'SEARCH':
+                    const { MarketplaceFlow: SearchFlow } = await import('../flows/marketplace-flow')
+                    const searchFlow = new SearchFlow()
+                    await searchFlow.handleSearch(user)
+                    break
+                case 'PAYMENT':
+                    const { PaymentFlow } = await import('../flows/payment-flow')
+                    const paymentFlow = new PaymentFlow()
+                    await paymentFlow.handlePayment(user)
+                    break
+                default:
+                    await this.showMainMenu(user)
+            }
+        } catch (error) {
+            console.error('Error routing to handler:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Bắt đầu registration flow
+     */
+    private static async startRegistration(user: any): Promise<void> {
+        try {
+            const { AuthFlow } = await import('../flows/auth-flow')
+            const authFlow = new AuthFlow()
+            await authFlow.handleRegistration(user)
+        } catch (error) {
+            console.error('Error starting registration:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Xử lý flow exit
+     */
+    private static async handleFlowExit(user: any, currentFlow: string): Promise<void> {
+        try {
+            await updateBotSession(user.facebook_id, null)
+            await this.sendMessage(user.facebook_id, `❌ Đã hủy quy trình ${this.getFlowDisplayName(currentFlow)}`)
+            await this.showMainMenu(user)
+        } catch (error) {
+            console.error('Error handling flow exit:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Kiểm tra exit command
+     */
+    private static isExitCommand(text: string): boolean {
+        const exitCommands = ['hủy', 'thoát', 'cancel', 'quit', 'exit']
+        return exitCommands.some(cmd => text.toLowerCase().includes(cmd))
+    }
+
+    /**
+     * Lấy tên hiển thị của flow
+     */
+    private static getFlowDisplayName(flow: string): string {
+        const flowNames: { [key: string]: string } = {
+            'registration': 'đăng ký',
+            'listing': 'niêm yết',
+            'search': 'tìm kiếm'
+        }
+        return flowNames[flow] || flow
+    }
+
+    /**
+     * Show welcome message cho new user
+     */
+    private static async showWelcomeMessage(user: any): Promise<void> {
+        try {
             await sendTypingIndicator(user.facebook_id)
-            await sendMessage(user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
+            await sendMessage(user.facebook_id, '🎉 Chào mừng đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
+            await sendMessage(user.facebook_id, '🤝 Cộng đồng dành riêng cho những người con Tân Dậu (sinh năm 1981)')
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Bạn muốn:',
+                [
+                    createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                    createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
+                    createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
+                ]
+            )
+        } catch (error) {
+            console.error('Error showing welcome message:', error)
+        }
+    }
+
+    /**
+     * Show main menu cho registered/trial users
+     */
+    private static async showMainMenu(user: any): Promise<void> {
+        try {
+            await sendTypingIndicator(user.facebook_id)
+
+            const context = await this.analyzeUserContext(user)
+            const displayName = context.user?.name || 'bạn'
+
+            let statusText = '✅ Đã đăng ký'
+            if (context.userType === UserType.TRIAL_USER && context.user?.membership_expires_at) {
+                const daysLeft = Math.ceil((new Date(context.user.membership_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+
+                // Chỉ hiển thị thông tin trial nếu còn thời gian hợp lệ
+                if (daysLeft > 0) {
+                    statusText = `📅 Trial còn ${daysLeft} ngày`
+                } else {
+                    statusText = '⏰ Trial đã hết hạn - Vui lòng thanh toán'
+                }
+            }
+
+            await sendMessage(user.facebook_id, '🏠 TRANG CHỦ Tân Dậu - Hỗ Trợ Chéo')
+            await sendMessage(user.facebook_id, `👋 Chào mừng ${displayName}!`)
+            await sendMessage(user.facebook_id, `📊 Trạng thái: ${statusText}`)
+
+            const menuOptions = [
+                createQuickReply('🛒 NIÊM YẾT SẢN PHẨM', 'LISTING'),
+                createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+                createQuickReply('💰 THANH TOÁN', 'PAYMENT')
+            ]
+
+            await sendQuickReply(user.facebook_id, 'Chọn chức năng:', menuOptions)
+        } catch (error) {
+            console.error('Error showing main menu:', error)
+        }
+    }
+
+    /**
+     * Show admin dashboard
+     */
+    private static async showAdminDashboard(user: any): Promise<void> {
+        try {
+            await sendTypingIndicator(user.facebook_id)
+            await sendMessage(user.facebook_id, '🔧 ADMIN DASHBOARD')
+            await sendMessage(user.facebook_id, 'Chào mừng Admin! Bạn có toàn quyền quản lý hệ thống.')
+
+            const adminOptions = [
+                createQuickReply('💰 QUẢN LÝ THANH TOÁN', 'ADMIN_PAYMENTS'),
+                createQuickReply('👥 QUẢN LÝ NGƯỜI DÙNG', 'ADMIN_USERS'),
+                createQuickReply('🛒 QUẢN LÝ TIN ĐĂNG', 'ADMIN_LISTINGS'),
+                createQuickReply('📊 XEM THỐNG KÊ', 'ADMIN_STATS')
+            ]
+
+            await sendQuickReply(user.facebook_id, 'Chọn chức năng:', adminOptions)
+        } catch (error) {
+            console.error('Error showing admin dashboard:', error)
+        }
+    }
+
+    /**
+     * Show bot info
+     */
+    private static async showBotInfo(user: any): Promise<void> {
+        try {
+            await sendMessage(user.facebook_id, 'ℹ️ Bot Tân Dậu - Hỗ Trợ Chéo dành riêng cho cộng đồng những người con Tân Dậu (sinh năm 1981)')
+            await sendMessage(user.facebook_id, '💡 Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên')
 
             await sendQuickReply(
                 user.facebook_id,
                 'Bạn muốn:',
                 [
                     createQuickReply('🚀 ĐĂNG KÝ', 'REGISTER'),
-                    createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
                     createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
                 ]
             )
-        }
-    }
-
-    /**
-     * Xử lý khi user chọn từ menu
-     */
-    static async handleMenuSelection(user: any, action: string): Promise<boolean> {
-        try {
-            const context = await SmartContextManager.analyzeUserContext(user)
-
-            // Route đến handler phù hợp dựa trên action và context
-            return await this.routeToHandler(user, action, context)
-
         } catch (error) {
-            console.error('Error handling menu selection:', error)
-            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại!')
-            return false
+            console.error('Error showing bot info:', error)
         }
     }
 
     /**
-     * Route to appropriate handler based on action and context
+     * Show support info
      */
-    private static async routeToHandler(user: any, action: string, context: UserContext): Promise<boolean> {
-        const { userType, userState } = context
-
-        // Handle flow-specific actions first
-        if (this.isFlowAction(action)) {
-            return await this.handleFlowAction(user, action, context)
-        }
-
-        // Handle admin actions
-        if (userType === UserType.ADMIN && this.isAdminAction(action)) {
-            return await this.handleAdminAction(user, action)
-        }
-
-        // Handle user actions based on user type
-        switch (userType) {
-            case UserType.ADMIN:
-                return await this.handleAdminAction(user, action)
-
-            case UserType.REGISTERED_USER:
-            case UserType.TRIAL_USER:
-                return await this.handleRegisteredUserAction(user, action, context)
-
-            case UserType.EXPIRED_USER:
-                return await this.handleExpiredUserAction(user, action)
-
-            case UserType.NEW_USER:
-            default:
-                return await this.handleNewUserAction(user, action)
-        }
-    }
-
-    /**
-     * Kiểm tra xem action có phải là flow action không
-     */
-    private static isFlowAction(action: string): boolean {
-        const flowActions = [
-            'CONTINUE_REGISTRATION', 'CANCEL_REGISTRATION',
-            'CONTINUE_LISTING', 'CANCEL_LISTING',
-            'CONTINUE_SEARCH', 'CANCEL_SEARCH',
-            'CONTINUE_PAYMENT', 'CANCEL_PAYMENT'
-        ]
-        return flowActions.includes(action)
-    }
-
-    /**
-     * Kiểm tra xem action có phải là admin action không
-     */
-    private static isAdminAction(action: string): boolean {
-        return action.startsWith('ADMIN_')
-    }
-
-    /**
-     * Xử lý flow actions
-     */
-    private static async handleFlowAction(user: any, action: string, context: UserContext): Promise<boolean> {
-        const { userState, flowType } = context
-
-        switch (action) {
-            case 'CONTINUE_REGISTRATION':
-                if (userState === UserState.IN_REGISTRATION) {
-                    // Tiếp tục registration flow
-                    const { AuthFlow } = await import('../flows/auth-flow')
-                    const authFlow = new AuthFlow()
-                    await authFlow.handleRegistration(user)
-                    return true
-                }
-                break
-
-            case 'CANCEL_REGISTRATION':
-                if (userState === UserState.IN_REGISTRATION) {
-                    await updateBotSession(user.facebook_id, null)
-                    await sendMessage(user.facebook_id, '❌ Đã hủy đăng ký. Bạn có thể bắt đầu lại bất cứ lúc nào!')
-                    await this.handleInitialMessage(user)
-                    return true
-                }
-                break
-
-            case 'CONTINUE_LISTING':
-                if (userState === UserState.IN_LISTING) {
-                    // Tiếp tục listing flow - sử dụng handler từ marketplace-handlers
-                    const { handleListing } = await import('../handlers/marketplace-handlers')
-                    await handleListing(user)
-                    return true
-                }
-                break
-
-            case 'CANCEL_LISTING':
-                if (userState === UserState.IN_LISTING) {
-                    await updateBotSession(user.facebook_id, null)
-                    await sendMessage(user.facebook_id, '❌ Đã hủy niêm yết. Bạn có thể tạo tin mới bất cứ lúc nào!')
-                    await this.handleInitialMessage(user)
-                    return true
-                }
-                break
-
-            case 'CONTINUE_SEARCH':
-                if (userState === UserState.IN_SEARCH) {
-                    // Tiếp tục search flow - sử dụng handler từ marketplace-handlers
-                    const { handleSearch } = await import('../handlers/marketplace-handlers')
-                    await handleSearch(user)
-                    return true
-                }
-                break
-
-            case 'CANCEL_SEARCH':
-                if (userState === UserState.IN_SEARCH) {
-                    await updateBotSession(user.facebook_id, null)
-                    await sendMessage(user.facebook_id, '❌ Đã hủy tìm kiếm. Bạn có thể tìm kiếm lại bất cứ lúc nào!')
-                    await this.handleInitialMessage(user)
-                    return true
-                }
-                break
-        }
-
-        return false
-    }
-
-    /**
-     * Xử lý admin actions
-     */
-    private static async handleAdminAction(user: any, action: string): Promise<boolean> {
+    private static async showSupportInfo(user: any): Promise<void> {
         try {
-            const { handleAdminCommand, handleAdminPayments, handleAdminUsers } = await import('../handlers/admin-handlers')
+            await sendMessage(user.facebook_id, '💬 Để được hỗ trợ, vui lòng liên hệ admin')
 
-            switch (action) {
-                case 'ADMIN_PAYMENTS':
-                    await handleAdminPayments(user)
-                    return true
-                case 'ADMIN_USERS':
-                    await handleAdminUsers(user)
-                    return true
-                case 'ADMIN_LISTINGS':
-                    const { handleAdminListings } = await import('../handlers/admin-handlers')
-                    await handleAdminListings(user)
-                    return true
-                case 'ADMIN_STATS':
-                    const { handleAdminStats } = await import('../handlers/admin-handlers')
-                    await handleAdminStats(user)
-                    return true
-                case 'ADMIN_NOTIFICATIONS':
-                    const { handleAdminNotifications } = await import('../handlers/admin-handlers')
-                    await handleAdminNotifications(user)
-                    return true
-                case 'ADMIN_SETTINGS':
-                    const { handleAdminSettings } = await import('../handlers/admin-handlers')
-                    await handleAdminSettings(user)
-                    return true
+            await sendQuickReply(
+                user.facebook_id,
+                'Liên hệ:',
+                [
+                    createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN'),
+                    createQuickReply('📧 EMAIL', 'EMAIL_ADMIN')
+                ]
+            )
+        } catch (error) {
+            console.error('Error showing support info:', error)
+        }
+    }
+
+    /**
+     * Xử lý admin postback
+     */
+    private static async handleAdminPostback(user: any, postback: string): Promise<void> {
+        try {
+            const { handleAdminCommand } = await import('../handlers/admin-handlers')
+            await handleAdminCommand(user)
+        } catch (error) {
+            console.error('Error handling admin postback:', error)
+            await this.showAdminDashboard(user)
+        }
+    }
+
+    /**
+     * Handle default message
+     */
+    private static async handleDefaultMessage(user: any): Promise<void> {
+        try {
+            const context = await this.analyzeUserContext(user)
+
+            switch (context.userType) {
+                case UserType.ADMIN:
+                    await this.showAdminDashboard(user)
+                    break
+                case UserType.REGISTERED_USER:
+                case UserType.TRIAL_USER:
+                    await this.showMainMenu(user)
+                    break
+                case UserType.EXPIRED_USER:
+                    await this.sendMessage(user.facebook_id, '⏰ Tài khoản đã hết hạn. Vui lòng thanh toán để tiếp tục.')
+                    break
+                case UserType.NEW_USER:
                 default:
-                    await handleAdminCommand(user)
-                    return true
+                    await this.showWelcomeMessage(user)
+                    break
             }
         } catch (error) {
-            console.error('Error handling admin action:', error)
-            return false
+            console.error('Error handling default message:', error)
+            await this.showWelcomeMessage(user)
         }
     }
 
     /**
-     * Xử lý registered user actions
+     * Send message helper
      */
-    private static async handleRegisteredUserAction(user: any, action: string, context: UserContext): Promise<boolean> {
+    private static async sendMessage(facebookId: string, message: string): Promise<void> {
         try {
-            switch (action) {
-                case 'MAIN_MENU':
-                    await this.showMainMenu(user, context)
-                    return true
-
-                case 'LISTING':
-                    const { handleListing } = await import('../handlers/marketplace-handlers')
-                    await handleListing(user)
-                    return true
-
-                case 'SEARCH':
-                    const { handleSearch } = await import('../handlers/marketplace-handlers')
-                    await handleSearch(user)
-                    return true
-
-                case 'COMMUNITY':
-                    const { handleCommunity } = await import('../handlers/community-handlers')
-                    await handleCommunity(user)
-                    return true
-
-                case 'PAYMENT':
-                case 'PAYMENT_URGENT':
-                    const { handlePayment } = await import('../handlers/payment-handlers')
-                    await handlePayment(user)
-                    return true
-
-                case 'POINTS':
-                    const { handlePoints } = await import('../handlers/utility-handlers')
-                    await handlePoints(user)
-                    return true
-
-                case 'SETTINGS':
-                    const { handleSettings } = await import('../handlers/utility-handlers')
-                    await handleSettings(user)
-                    return true
-
-                default:
-                    await this.showMainMenu(user, context)
-                    return true
-            }
+            await sendMessage(facebookId, message)
         } catch (error) {
-            console.error('Error handling registered user action:', error)
-            return false
+            console.error('Error sending message:', error)
         }
     }
 
     /**
-     * Xử lý expired user actions
+     * Send error message
      */
-    private static async handleExpiredUserAction(user: any, action: string): Promise<boolean> {
+    private static async sendErrorMessage(facebookId: string): Promise<void> {
         try {
-            switch (action) {
-                case 'PAYMENT':
-                    const { handlePayment } = await import('../handlers/payment-handlers')
-                    await handlePayment(user)
-                    return true
-
-                case 'REGISTER':
-                    const { AuthFlow } = await import('../flows/auth-flow')
-                    const authFlow = new AuthFlow()
-                    await authFlow.handleRegistration(user)
-                    return true
-
-                case 'INFO':
-                    await sendMessage(user.facebook_id, 'ℹ️ Để tiếp tục sử dụng bot, vui lòng thanh toán để gia hạn tài khoản.')
-                    await this.handleInitialMessage(user)
-                    return true
-
-                default:
-                    await this.handleInitialMessage(user)
-                    return true
-            }
+            await sendMessage(facebookId, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
         } catch (error) {
-            console.error('Error handling expired user action:', error)
-            return false
+            console.error('Error sending error message:', error)
         }
     }
 
     /**
-     * Xử lý new user actions
+     * Send spam blocked message
      */
-    private static async handleNewUserAction(user: any, action: string): Promise<boolean> {
+    private static async sendSpamBlockedMessage(facebookId: string, reason?: string): Promise<void> {
         try {
-            switch (action) {
-                case 'REGISTER':
-                    // Sử dụng AuthFlow instance trực tiếp
-                    const { AuthFlow } = await import('../flows/auth-flow')
-                    const authFlowInstance = new AuthFlow()
-                    await authFlowInstance.handleRegistration(user)
-                    return true
+            await sendMessage(facebookId, '🚫 Bot đã tạm dừng do phát hiện spam')
+            await sendMessage(facebookId, 'Nếu cần hỗ trợ, hãy liên hệ admin')
 
-                case 'INFO':
-                    await sendMessage(user.facebook_id, 'ℹ️ Bot Tân Dậu - Hỗ Trợ Chéo dành riêng cho cộng đồng những người con Tân Dậu (sinh năm 1981).')
-                    await sendMessage(user.facebook_id, '💡 Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên.')
-                    await this.handleInitialMessage(user)
-                    return true
-
-                case 'SUPPORT':
-                    await sendMessage(user.facebook_id, '💬 Để được hỗ trợ, vui lòng liên hệ admin hoặc đăng ký thành viên để sử dụng đầy đủ tính năng.')
-                    await this.handleInitialMessage(user)
-                    return true
-
-                default:
-                    await this.handleInitialMessage(user)
-                    return true
-            }
+            await sendQuickReply(
+                facebookId,
+                'Liên hệ:',
+                [
+                    createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN'),
+                    createQuickReply('🔄 THỬ LẠI SAU', 'MAIN_MENU')
+                ]
+            )
         } catch (error) {
-            console.error('Error handling new user action:', error)
-            return false
+            console.error('Error sending spam blocked message:', error)
         }
     }
 
-    /**
-     * Hiển thị main menu cho registered user
-     */
-    private static async showMainMenu(user: any, context: UserContext): Promise<void> {
-        await sendTypingIndicator(user.facebook_id)
 
-        const displayName = context.user?.name || 'bạn'
-        const statusText = context.userType === UserType.TRIAL_USER ?
-            `📅 Trial còn ${Math.ceil((new Date(context.user.membership_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} ngày` :
-            '✅ Đã thanh toán'
-
-        await sendMessage(user.facebook_id, '🏠 TRANG CHỦ Tân Dậu - Hỗ Trợ Chéo')
-        await sendMessage(user.facebook_id, `👋 Chào mừng ${displayName}!`)
-        await sendMessage(user.facebook_id, `📊 Trạng thái: ${statusText}`)
-        await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
-        await sendMessage(user.facebook_id, '🎯 Chọn chức năng bạn muốn sử dụng:')
-
-        const mainMenuOptions = [
-            createQuickReply('🛒 NIÊM YẾT SẢN PHẨM', 'LISTING'),
-            createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
-            createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
-            createQuickReply('💰 THANH TOÁN', 'PAYMENT'),
-            createQuickReply('⭐ ĐIỂM THƯỞNG', 'POINTS'),
-            createQuickReply('⚙️ CÀI ĐẶT', 'SETTINGS')
-        ]
-
-        await sendQuickReply(user.facebook_id, 'Chức năng chính:', mainMenuOptions)
-    }
 }

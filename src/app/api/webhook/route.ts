@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { handleMessage } from '@/lib/bot-handlers'
 import { sendMessage } from '@/lib/facebook-api'
 import { updateBotSession, getBotSession } from '@/lib/utils'
+import { UnifiedBotSystem } from '@/lib/core/unified-entry-point'
 
 // Verify webhook signature
 function verifySignature(payload: string, signature: string): boolean {
@@ -345,30 +346,56 @@ async function handleMessageEvent(event: any) {
             return
         }
 
-        // Handle different message types with better logic
-        if (message.text) {
-            // Check if it's a quick reply first
-            if (message.quick_reply && message.quick_reply.payload) {
-                console.log('Handling Quick Reply:', message.quick_reply.payload)
-                await handlePostbackEvent({
-                    sender: { id: senderId },
-                    postback: { payload: message.quick_reply.payload }
-                })
-            } else {
-                // Handle regular text message
-                console.log('Handling regular text message:', message.text)
-                await handleTextMessage(user, message.text)
+        // SỬ DỤNG UNIFIED BOT SYSTEM CHO TẤT CẢ CÁC LOẠI MESSAGE
+        try {
+            // Tạo user object chuẩn cho UnifiedBotSystem
+            const userObj = user || {
+                facebook_id: senderId,
+                status: 'new_user',
+                name: 'User',
+                membership_expires_at: null
             }
-        } else if (message.attachments && message.attachments.length > 0) {
-            console.log('Handling attachment message:', message.attachments.length, 'attachments')
-            await handleAttachmentMessage(user, message.attachments)
-        } else if (message.sticker_id) {
-            console.log('Handling sticker message')
-            // Handle sticker if needed
-        } else {
-            // Handle other message types or empty messages
-            console.log('Handling other message type or empty message - message structure:', JSON.stringify(message, null, 2))
-            // Don't send default message for empty/reaction messages
+
+            // Xử lý bằng UnifiedBotSystem
+            if (message.text) {
+                // Check if it's a quick reply first
+                if (message.quick_reply && message.quick_reply.payload) {
+                    console.log('Handling Quick Reply via UnifiedBotSystem:', message.quick_reply.payload)
+                    await UnifiedBotSystem.handleMessage(userObj, '', true, message.quick_reply.payload)
+                } else {
+                    // Handle regular text message
+                    console.log('Handling regular text message via UnifiedBotSystem:', message.text)
+                    await UnifiedBotSystem.handleMessage(userObj, message.text)
+                }
+            } else if (message.attachments && message.attachments.length > 0) {
+                console.log('Handling attachment message via UnifiedBotSystem:', message.attachments.length, 'attachments')
+                // Với attachment, vẫn dùng text message để xử lý
+                await UnifiedBotSystem.handleMessage(userObj, 'attachment')
+            } else if (message.sticker_id) {
+                console.log('Handling sticker message via UnifiedBotSystem')
+                await UnifiedBotSystem.handleMessage(userObj, 'sticker')
+            } else {
+                // Handle other message types or empty messages
+                console.log('Handling other message type via UnifiedBotSystem')
+                await UnifiedBotSystem.handleMessage(userObj, 'other')
+            }
+        } catch (error) {
+            console.error('Error in UnifiedBotSystem:', error)
+            // Fallback về hệ thống cũ nếu cần
+            try {
+                if (message.text) {
+                    if (message.quick_reply && message.quick_reply.payload) {
+                        await handlePostbackEvent({
+                            sender: { id: senderId },
+                            postback: { payload: message.quick_reply.payload }
+                        })
+                    } else {
+                        await handleTextMessage(user, message.text)
+                    }
+                }
+            } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError)
+            }
         }
     } catch (error) {
         console.error('Error handling message event:', error)
@@ -455,16 +482,32 @@ async function handlePostbackEvent(event: any) {
         return
     }
 
-    // Handle postback payload for registered users
+    // SỬ DỤNG UNIFIED BOT SYSTEM CHO POSTBACK
     try {
-        console.log('Handling postback for user:', user.facebook_id, 'payload:', payload)
-        await handlePostback(user, payload)
+        console.log('Handling postback for user via UnifiedBotSystem:', user.facebook_id, 'payload:', payload)
+
+        // Tạo user object chuẩn cho UnifiedBotSystem
+        const userObj = user || {
+            facebook_id: senderId,
+            status: 'new_user',
+            name: 'User',
+            membership_expires_at: null
+        }
+
+        // Xử lý bằng UnifiedBotSystem
+        await UnifiedBotSystem.handleMessage(userObj, '', true, payload)
     } catch (error) {
-        console.error('Error handling postback:', error)
+        console.error('Error in UnifiedBotSystem postback:', error)
+        // Fallback về hệ thống cũ nếu cần
         try {
-            await sendMessageToUser(senderId, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
-        } catch (sendError) {
-            console.error('Error sending error message:', sendError)
+            await handlePostback(user, payload)
+        } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError)
+            try {
+                await sendMessageToUser(senderId, 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau!')
+            } catch (sendError) {
+                console.error('Error sending error message:', sendError)
+            }
         }
     }
 }

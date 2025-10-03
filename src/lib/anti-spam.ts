@@ -350,6 +350,18 @@ export async function trackNonButtonMessage(facebookId: string, message: string)
         }
     }
 
+    // Check if user is in admin chat mode - skip tracking
+    const { isUserInAdminChat } = await import('./admin-chat')
+    const isInAdminChat = await isUserInAdminChat(facebookId)
+
+    if (isInAdminChat) {
+        console.log('Skipping anti-spam for user in admin chat:', facebookId)
+        return {
+            shouldStopBot: false,
+            warningCount: 0
+        }
+    }
+
     const now = Date.now()
     const windowMs = SPAM_CONFIG.NON_BUTTON_WINDOW_MINUTES * 60 * 1000
 
