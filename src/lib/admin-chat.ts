@@ -2,6 +2,7 @@ import { supabaseAdmin } from './supabase'
 import {
     sendMessage,
     sendTypingIndicator,
+    sendQuickReply,
     sendQuickReplyNoTyping,
     createQuickReply,
     sendMessagesWithTyping

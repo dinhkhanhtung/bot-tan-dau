@@ -2,9 +2,8 @@ import { supabaseAdmin } from '../supabase'
 import {
     sendMessage,
     sendTypingIndicator,
-    sendQuickReply, sendQuickReplyNoTyping,
     sendQuickReply,
-    createQuickReply,
+    sendQuickReplyNoTyping,
     createQuickReply,
     sendMessagesWithTyping
 } from '../facebook-api'

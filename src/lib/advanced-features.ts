@@ -4,6 +4,7 @@ import { supabaseAdmin } from './supabase'
 import {
     sendMessage,
     sendTypingIndicator,
+    sendQuickReply,
     sendQuickReplyNoTyping,
     sendGenericTemplate,
     createQuickReply,
