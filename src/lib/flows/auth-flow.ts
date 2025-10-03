@@ -17,8 +17,7 @@ export class AuthFlow {
         await sendTypingIndicator(user.facebook_id)
 
         // Check if user is admin first
-        const { isAdmin } = await import('../handlers/admin-handlers')
-        const { sessionManager } = await import('../core/session-manager')
+        const { isAdmin } = await import('../utils')
         const userIsAdmin = await isAdmin(user.facebook_id)
 
         if (userIsAdmin) {
@@ -66,6 +65,16 @@ export class AuthFlow {
             return
         }
 
+        // Kiểm tra xem user đã có session registration chưa
+        const existingSession = await getBotSession(user.facebook_id)
+
+        if (existingSession && existingSession.session_data?.current_flow === 'registration') {
+            // User đã trong flow registration, chỉ gửi lại hướng dẫn hiện tại
+            console.log('User already in registration flow, resuming current step')
+            await this.resumeRegistration(user, existingSession.session_data)
+            return
+        }
+
         // OPTIMIZED: Single screen with essential info first
         await sendMessage(user.facebook_id, '🚀 ĐĂNG KÝ NHANH - Tân Dậu Hỗ Trợ Chéo')
 
@@ -89,6 +98,65 @@ export class AuthFlow {
         // Verify session was created
         const sessionCheck = await getBotSession(user.facebook_id)
         console.log('Session created for registration:', sessionCheck)
+    }
+
+    /**
+     * Resume registration flow from current step
+     */
+    async resumeRegistration(user: any, sessionData: any): Promise<void> {
+        const currentStep = sessionData.step
+        const data = sessionData.data || {}
+
+        switch (currentStep) {
+            case 'name':
+                await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/7)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Nguyễn Văn Minh\n📝 Nhập họ tên để tiếp tục:')
+                break
+            case 'phone':
+                await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 2/7)\n━━━━━━━━━━━━━━━━━━━━\n📱 SỐ ĐIỆN THOẠI\nVui lòng nhập số điện thoại của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: 0901234567\n📝 Nhập số điện thoại để tiếp tục:')
+                break
+            case 'location':
+                await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 3/7)\n━━━━━━━━━━━━━━━━━━━━\n📍 TỈNH/THÀNH SINH SỐNG\nVui lòng chọn tỉnh/thành bạn đang sinh sống:\n━━━━━━━━━━━━━━━━━━━━\n📝 Chọn tỉnh/thành để tiếp tục:')
+                break
+            case 'birthday':
+                await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 4/7)\n━━━━━━━━━━━━━━━━━━━━\n🎂 XÁC NHẬN NĂM SINH\nBạn có sinh năm 1981 (Tân Dậu) không?\n━━━━━━━━━━━━━━━━━━━━\n📝 Chọn câu trả lời để tiếp tục:')
+                break
+            case 'keywords':
+                await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 5/7)\n━━━━━━━━━━━━━━━━━━━━\n🔍 TỪ KHÓA TÌM KIẾM\nVui lòng nhập từ khóa bạn quan tâm:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: nhà đất, xe cộ, kinh doanh\n📝 Nhập từ khóa để tiếp tục:')
+                break
+            case 'product_service':
+                await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 6/7)\n━━━━━━━━━━━━━━━━━━━━\n🛒 SẢN PHẨM/DỊCH VỤ\nBạn muốn bán sản phẩm hay dịch vụ gì?\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: nhà đất, xe cộ, dịch vụ tư vấn\n📝 Nhập sản phẩm/dịch vụ để tiếp tục:')
+                break
+            case 'confirm':
+                await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 7/7)\n━━━━━━━━━━━━━━━━━━━━\n✅ XÁC NHẬN THÔNG TIN\nVui lòng xem lại thông tin và xác nhận:\n━━━━━━━━━━━━━━━━━━━━')
+                await this.showRegistrationSummary(user, data)
+                break
+            default:
+                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng bắt đầu đăng ký lại!')
+                await updateBotSession(user.facebook_id, null)
+        }
+    }
+
+    /**
+     * Show registration summary
+     */
+    async showRegistrationSummary(user: any, data: any): Promise<void> {
+        const summary = `👤 Họ tên: ${data.name || 'Chưa nhập'}
+📱 Số điện thoại: ${data.phone || 'Chưa nhập'}
+📍 Tỉnh/thành: ${data.location || 'Chưa chọn'}
+🎂 Năm sinh: ${data.birthday || 'Chưa xác nhận'}
+🔍 Từ khóa: ${data.keywords || 'Chưa nhập'}
+🛒 Sản phẩm/dịch vụ: ${data.product_service || 'Chưa nhập'}`
+
+        await sendMessage(user.facebook_id, summary)
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Bạn có muốn tiếp tục đăng ký không?',
+            [
+                createQuickReply('✅ XÁC NHẬN', 'REG_CONFIRM_YES'),
+                createQuickReply('❌ HỦY BỎ', 'REG_CONFIRM_NO')
+            ]
+        )
     }
 
     /**

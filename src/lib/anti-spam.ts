@@ -93,7 +93,7 @@ export async function handleAntiSpam(facebookId: string, message: string, userSt
     message?: string
 }> {
     // Check if user is admin - skip all spam checks for admin
-    const { isAdmin } = await import('./handlers/admin-handlers')
+    const { isAdmin } = await import('./utils')
     const userIsAdmin = await isAdmin(facebookId)
 
     if (userIsAdmin) {
@@ -397,7 +397,7 @@ export async function sendSpamBlockMessage(facebookId: string): Promise<void> {
 export async function isUserBlocked(facebookId: string): Promise<boolean> {
     // Check if user is admin - never block admin
     try {
-        const { isAdmin } = await import('./handlers/admin-handlers')
+        const { isAdmin } = await import('./utils')
         const userIsAdmin = await isAdmin(facebookId)
 
         if (userIsAdmin) {
@@ -411,10 +411,7 @@ export async function isUserBlocked(facebookId: string): Promise<boolean> {
     try {
         const { getBotSession } = await import('./utils')
         const sessionData = await getBotSession(facebookId)
-
-        // Handle both possible session data structures
-    const session = await import('./core/session-manager').then(m => m.sessionManager.getSession(facebookId))
-    const currentFlow = session?.current_flow || null
+        const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow || null
 
         if (currentFlow) {
             // Don't block users during active flows as they need to type information
@@ -617,7 +614,7 @@ async function stopBotForUser(facebookId: string, reason: string): Promise<void>
 export async function isBotStoppedForUser(facebookId: string): Promise<boolean> {
     // Check if user is admin - never stop bot for admin
     try {
-        const { isAdmin } = await import('./handlers/admin-handlers')
+        const { isAdmin } = await import('./utils')
         const userIsAdmin = await isAdmin(facebookId)
 
         if (userIsAdmin) {
@@ -631,9 +628,7 @@ export async function isBotStoppedForUser(facebookId: string): Promise<boolean> 
     try {
         const { getBotSession } = await import('./utils')
         const sessionData = await getBotSession(facebookId)
-
-        // Handle both possible session data structures
-        const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow
+        const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow || null
 
         if (currentFlow) {
             // Don't stop bot during active flows as users need to type information

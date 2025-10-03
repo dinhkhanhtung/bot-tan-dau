@@ -200,63 +200,32 @@ async function handleMessageEvent(event: any) {
             }
 
 
-            // Handle Quick Reply for unregistered users
+            // Handle Quick Reply for unregistered users - CHUYỂN VỀ UNIFIED SYSTEM
             if (message.quick_reply?.payload) {
-                console.log('Handling Quick Reply for unregistered user:', message.quick_reply.payload)
+                console.log('Handling Quick Reply for unregistered user via UnifiedBotSystem:', message.quick_reply.payload)
                 try {
-                    const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
-
-                    switch (message.quick_reply.payload) {
-                        case 'REGISTER':
-                            await sendMessage(senderId, '📝 BẮT ĐẦU ĐĂNG KÝ')
-                            await sendMessage(senderId, 'Để đăng ký, bạn cần cung cấp thông tin cá nhân. Hãy bắt đầu bằng cách gửi họ tên của bạn.')
-                            // Start registration flow
-                            const { updateBotSession } = await import('@/lib/utils')
-                            const sessionData = {
-                                current_flow: 'registration',
-                                step: 'name',
-                                data: {}
-                            }
-                            console.log('Creating registration session for user:', senderId, 'data:', JSON.stringify(sessionData, null, 2))
-                            try {
-                                await updateBotSession(senderId, sessionData)
-                                console.log('Registration session created successfully')
-                            } catch (error) {
-                                console.error('Error creating registration session:', error)
-                            }
-                            break
-                        case 'INFO':
-                            await sendMessage(senderId, 'ℹ️ THÔNG TIN BOT Tân Dậu - Hỗ Trợ Chéo')
-                            await sendMessage(senderId, 'Bot Tân Dậu - Hỗ Trợ Chéo là nền tảng kết nối cộng đồng sinh năm 1981. Chúng tôi cung cấp:')
-                            await sendMessage(senderId, '• 🛒 Niêm yết sản phẩm/dịch vụ\n• 🔍 Tìm kiếm và kết nối\n• 👥 Cộng đồng Tân Dậu\n• 💰 Thanh toán an toàn\n• ⭐ Hệ thống đánh giá')
-                            await sendQuickReply(
-                                senderId,
-                                'Bạn muốn:',
-                                [
-                                    createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
-                                    createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
-                                ]
-                            )
-                            break
-                        case 'CONTACT_ADMIN':
-                            await sendMessage(senderId, '💬 LIÊN HỆ ADMIN')
-                            await sendMessage(senderId, 'Để được hỗ trợ, vui lòng liên hệ:\n📞 Hotline: 0901 234 567\n📧 Email: admin@tandau1981.com\n⏰ Thời gian: 8:00 - 22:00')
-                            await sendMessage(senderId, 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.')
-                            break
-                        default:
-                            await sendMessage(senderId, '❌ Lựa chọn không hợp lệ. Vui lòng chọn lại.')
-                            await sendQuickReply(
-                                senderId,
-                                'Bạn muốn:',
-                                [
-                                    createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
-                                    createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
-                                    createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
-                                ]
-                            )
+                    // Tạo user object tạm thời cho UnifiedBotSystem
+                    const userObj = {
+                        facebook_id: senderId,
+                        status: 'new_user',
+                        name: null,
+                        phone: null,
+                        membership_expires_at: null
                     }
+
+                    // Xử lý bằng UnifiedBotSystem
+                    await UnifiedBotSystem.handleMessage(userObj, '', true, message.quick_reply.payload)
                 } catch (error) {
-                    console.error('Error handling Quick Reply for unregistered user:', error)
+                    console.error('Error handling Quick Reply via UnifiedBotSystem:', error)
+                    // Fallback về xử lý cũ nếu cần
+                    try {
+                        await handlePostbackEvent({
+                            sender: { id: senderId },
+                            postback: { payload: message.quick_reply.payload }
+                        })
+                    } catch (fallbackError) {
+                        console.error('Fallback also failed:', fallbackError)
+                    }
                 }
                 return
             }

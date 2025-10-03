@@ -36,7 +36,7 @@ export async function handleMessage(user: any, text: string) {
         }
 
         // Check if user is admin first - skip all restrictions for admin
-        const { isAdmin } = await import('./handlers/admin-handlers')
+        const { isAdmin } = await import('./utils')
         const userIsAdmin = await isAdmin(user.facebook_id)
 
         // If admin is in an active chat session, handle message to user
@@ -74,18 +74,17 @@ export async function handleMessage(user: any, text: string) {
             }
         }
 
-        // Check if user is in admin chat mode - PRIORITY: Admin chat takes precedence over everything
-        const { isUserInAdminChat, handleUserMessageInAdminChat } = await import('./admin-chat')
+        // Check if user is in admin chat mode - SIMPLIFIED: Just stop bot with message
+        const { isUserInAdminChat } = await import('./admin-chat')
         if (await isUserInAdminChat(user.facebook_id)) {
-            console.log('User is in admin chat mode, forwarding message to admin')
-            await handleUserMessageInAdminChat(user.facebook_id, text)
+            console.log('User is in admin chat mode, stopping bot')
+            await sendMessage(user.facebook_id, '💬 Bạn đang trong chế độ chat với admin. Bot sẽ tạm dừng để admin có thể hỗ trợ bạn trực tiếp.')
             return
         }
 
         // Check if user is in any active flow - OPTIMIZED for faster response
         const sessionData = await getBotSession(user.facebook_id)
-        const session = await import('./core/session-manager').then(m => m.sessionManager.getSession(user.facebook_id))
-        const currentFlow = session?.current_flow || null
+        const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow || null
 
         if (currentFlow) {
             // User is in an active flow - check if they want to quit current flow

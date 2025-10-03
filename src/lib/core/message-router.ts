@@ -66,10 +66,12 @@ export class MessageRouter {
                 return
             }
 
-            // Check if user is admin first - skip all restrictions for admin
-            const userIsAdmin = await this.checkAdminStatus(user.facebook_id)
+            // UNIFIED PRIORITY ORDER: Admin > Flow > Spam > Normal
 
-            // Handle admin chat session if active
+            // 1. ADMIN (Highest Priority)
+            const { isAdmin } = await import('../utils')
+            const userIsAdmin = await isAdmin(user.facebook_id)
+
             if (userIsAdmin) {
                 const adminSession = await this.getActiveAdminSession(user.facebook_id)
                 if (adminSession && adminSession.id) {
@@ -78,25 +80,18 @@ export class MessageRouter {
                 }
             }
 
-            // Handle anti-spam for non-admin users
-            if (!userIsAdmin) {
-                const spamCheck = await this.checkSpamStatus(user.facebook_id, text, isPostback)
-                if (spamCheck.shouldStop) {
-                    await this.sendBotStoppedMessage(user.facebook_id, spamCheck.reason)
-                    return
-                }
-            }
-
-            // Check if user is in admin chat mode (PRIORITY: Admin chat takes precedence)
+            // 2. ADMIN CHAT MODE (Second Priority) - SIMPLIFIED
             if (await isUserInAdminChat(user.facebook_id)) {
-                console.log('User is in admin chat mode, forwarding message to admin')
-                await handleUserMessageInAdminChat(user.facebook_id, text)
+                console.log('User is in admin chat mode, stopping bot')
+                const { sendMessage } = await import('../facebook-api')
+                await sendMessage(user.facebook_id, '💬 Bạn đang trong chế độ chat với admin. Bot sẽ tạm dừng để admin có thể hỗ trợ bạn trực tiếp.')
                 return
             }
 
-            // Check if user is in an active flow
-            const sessionData = await this.sessionManager.getSession(user.facebook_id)
-            const currentFlow = sessionData?.current_flow || null
+            // 3. FLOW SESSION (Third Priority - Skip spam check)
+            const { getBotSession } = await import('../utils')
+            const sessionData = await getBotSession(user.facebook_id)
+            const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow || null
 
             if (currentFlow) {
                 // Handle flow cancellation
@@ -108,6 +103,15 @@ export class MessageRouter {
                 // Route to appropriate flow
                 await this.routeToFlow(user, text, currentFlow, session)
                 return
+            }
+
+            // 4. SPAM CHECK (Third Priority - Only for non-admin, non-flow)
+            if (!userIsAdmin) {
+                const spamCheck = await this.checkSpamStatus(user.facebook_id, text, isPostback)
+                if (spamCheck.shouldStop) {
+                    await this.sendBotStoppedMessage(user.facebook_id, spamCheck.reason)
+                    return
+                }
             }
 
             // Handle trial/expiration status for non-admin users

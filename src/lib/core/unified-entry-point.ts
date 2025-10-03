@@ -37,10 +37,11 @@ export class UnifiedBotSystem {
                 }
             }
 
-            // Bước 2: KIỂM TRA ADMIN CHAT MODE
+            // Bước 2: KIỂM TRA ADMIN CHAT MODE - SIMPLIFIED
             const isInAdminChat = await this.checkAdminChatMode(user.facebook_id)
             if (isInAdminChat) {
-                await this.handleAdminChatMessage(user, text)
+                const { sendMessage } = await import('../facebook-api')
+                await sendMessage(user.facebook_id, '💬 Bạn đang trong chế độ chat với admin. Bot sẽ tạm dừng để admin có thể hỗ trợ bạn trực tiếp.')
                 return
             }
 
@@ -78,7 +79,7 @@ export class UnifiedBotSystem {
     private static async checkAdminStatus(facebookId: string): Promise<boolean> {
         try {
             console.log('🔍 Checking admin status for:', facebookId)
-            const { isAdmin } = await import('../handlers/admin-handlers')
+            const { isAdmin } = await import('../utils')
             const result = await isAdmin(facebookId)
             console.log('🔍 Admin check result:', result)
             return result
@@ -236,6 +237,16 @@ export class UnifiedBotSystem {
 
             switch (action) {
                 case 'REGISTER':
+                    // Kiểm tra xem user đã có session registration chưa
+                    const { getBotSession } = await import('../utils')
+                    const existingSession = await getBotSession(user.facebook_id)
+
+                    if (existingSession && existingSession.session_data?.current_flow === 'registration') {
+                        // User đã trong flow registration, không gửi lại welcome
+                        console.log('User already in registration flow, skipping duplicate welcome')
+                        return
+                    }
+
                     await this.startRegistration(user)
                     break
                 case 'MAIN':
@@ -488,6 +499,19 @@ export class UnifiedBotSystem {
      */
     private static async startRegistration(user: any): Promise<void> {
         try {
+            // Kiểm tra xem user đã có session registration chưa
+            const { getBotSession } = await import('../utils')
+            const existingSession = await getBotSession(user.facebook_id)
+
+            if (existingSession && existingSession.session_data?.current_flow === 'registration') {
+                // User đã trong flow registration, chỉ gửi lại hướng dẫn hiện tại
+                console.log('User already in registration flow, resuming current step')
+                const { AuthFlow } = await import('../flows/auth-flow')
+                const authFlow = new AuthFlow()
+                await authFlow.handleRegistration(user)
+                return
+            }
+
             const { AuthFlow } = await import('../flows/auth-flow')
             const authFlow = new AuthFlow()
             await authFlow.handleRegistration(user)
