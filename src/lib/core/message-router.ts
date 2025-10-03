@@ -568,20 +568,8 @@ export class MessageRouter {
      * Handle default message
      */
     private async handleDefaultMessage(user: any): Promise<void> {
-        await sendTypingIndicator(user.facebook_id)
-        await hideButtons(user.facebook_id)
-
-        await sendMessage(user.facebook_id, '🎉 Chào mừng bạn đến với Đinh Khánh Tùng!')
-
-        await sendQuickReply(
-            user.facebook_id,
-            'Bạn muốn:',
-            [
-                createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
-                createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
-                createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
-            ]
-        )
+        // DISABLED: Welcome message now handled by anti-spam system
+        console.log('Welcome message handled by anti-spam system')
     }
 
     /**

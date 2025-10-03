@@ -408,7 +408,8 @@ export class NotificationManager {
     }
 
     private async sendWelcomeMessage(context: NotificationContext): Promise<void> {
-        await sendMessage(context.user.facebook_id, '🎉 Chào mừng bạn đến với Đinh Khánh Tùng!')
+        // DISABLED: Welcome message now handled by anti-spam system
+        console.log('Welcome message handled by anti-spam system')
     }
 
     private async sendWelcomeOptions(context: NotificationContext): Promise<void> {

@@ -279,21 +279,8 @@ async function handleMessageEvent(event: any) {
                             ]
                         )
                     } else {
-                        // NEW_USER welcome message
-                        await sendMessage(senderId, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!`)
-                        await sendMessage(senderId, '🤝 Cộng đồng dành riêng cho Tân Dậu (sinh năm 1981)')
-                        await sendMessage(senderId, '💡 Có thể bạn muốn tham gia cùng cộng đồng để kết nối và hỗ trợ lẫn nhau!')
-                        await sendMessage(senderId, 'Để sử dụng bot, bạn cần đăng ký tài khoản trước.')
-
-                        await sendQuickReply(
-                            senderId,
-                            'Bạn muốn:',
-                            [
-                                createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
-                                createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
-                                createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
-                            ]
-                        )
+                        // DISABLED: Welcome message now handled by anti-spam system
+                        console.log('Welcome message handled by anti-spam system')
                     }
 
                     // Mark welcome message as sent

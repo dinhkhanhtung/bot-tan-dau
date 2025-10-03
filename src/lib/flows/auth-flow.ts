@@ -482,21 +482,8 @@ export class AuthFlow {
             return
         }
 
-        await sendMessagesWithTyping(user.facebook_id, [
-            '🎉 CHÀO MỪNG ĐẾN VỚI BOT Tân Dậu - Hỗ Trợ Chéo! 🎉',
-            '👋 Xin chào! Tôi là bot hỗ trợ cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
-            'Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên trước.'
-        ])
-
-        await sendQuickReply(
-            user.facebook_id,
-            'Bạn muốn:',
-            [
-                createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
-                createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
-                createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
-            ]
-        )
+        // DISABLED: Welcome message now handled by anti-spam system
+        console.log('Welcome message handled by anti-spam system')
     }
 
     /**
