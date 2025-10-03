@@ -103,7 +103,7 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Lấy user session
+     * Lấy session của user
      */
     private static async getUserSession(facebookId: string): Promise<any> {
         try {
@@ -114,6 +114,7 @@ export class UnifiedBotSystem {
             return null
         }
     }
+
 
     /**
      * Kiểm tra spam status - SỬ DỤNG LOGIC MỚI
@@ -268,6 +269,10 @@ export class UnifiedBotSystem {
                     break
                 case 'ADMIN':
                     await this.showAdminDashboard(user)
+                    break
+                case 'EXIT_BOT':
+                    const { handleBotExit } = await import('../anti-spam')
+                    await handleBotExit(user.facebook_id)
                     break
                 default:
                     await this.routeToHandler(user, postback)
@@ -460,9 +465,44 @@ export class UnifiedBotSystem {
      */
     private static async handleNewUserText(user: any, text: string): Promise<void> {
         try {
+            // QUAN TRỌNG: Kiểm tra user có đang trong bot mode không
+            const { checkUserBotMode } = await import('../anti-spam')
+            const isInBotMode = await checkUserBotMode(user.facebook_id)
+
+            if (!isInBotMode) {
+                console.log('💬 New user not in bot mode - processing as normal message')
+                // Gửi tin nhắn thường cho admin xử lý
+                const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+                await sendMessage(user.facebook_id, '💬 Tin nhắn của bạn đã được chuyển đến admin. Họ sẽ phản hồi sớm nhất có thể!')
+                await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng bot, hãy ấn nút "Chat Bot" bên dưới.')
+
+                await sendQuickReply(
+                    user.facebook_id,
+                    'Chọn hành động:',
+                    [
+                        createQuickReply('🤖 CHAT BOT', 'CHAT_BOT'),
+                        createQuickReply('💬 CHAT THƯỜNG', 'NORMAL_CHAT')
+                    ]
+                )
+                return
+            }
+
+            // QUAN TRỌNG: Kiểm tra user có đang trong flow đăng ký không
+            const session = await this.getUserSession(user.facebook_id)
+            const currentFlow = session?.current_flow || null
+
+            console.log('🔍 New user text handling:', { currentFlow, session, isInBotMode })
+
+            // Nếu đang trong flow đăng ký, xử lý tin nhắn bình thường
+            if (currentFlow === 'registration') {
+                console.log('🔄 New user in registration flow - processing message normally')
+                await this.handleFlowMessage(user, text, session)
+                return
+            }
+
             // KIỂM TRA SPAM TRƯỚC - SỬ DỤNG ANTI-SPAM SYSTEM
             const { handleAntiSpam } = await import('../anti-spam')
-            const spamResult = await handleAntiSpam(user.facebook_id, text, user.status || 'new', null)
+            const spamResult = await handleAntiSpam(user.facebook_id, text, user.status || 'new', currentFlow)
 
             if (spamResult.block) {
                 console.log('User bị block do spam:', spamResult.message || 'Spam detected')

@@ -143,11 +143,40 @@ async function handleMessageEvent(event: any) {
             return
         }
 
+        // QUAN TRỌNG: Kiểm tra nút "Chat Bot" trước
+        if (message.quick_reply?.payload === 'CHAT_BOT') {
+            console.log('🤖 User clicked Chat Bot button')
+            const { setUserBotMode, sendChatBotWelcome } = await import('@/lib/anti-spam')
+            setUserBotMode(senderId)
+
+            const userStatus = user ? (user.status === 'registered' || user.status === 'trial' ? 'registered' : 'unregistered') : 'unregistered'
+            await sendChatBotWelcome(senderId, userStatus)
+            return
+        }
+
+        // QUAN TRỌNG: Kiểm tra nút "Thoát Bot"
+        if (message.quick_reply?.payload === 'EXIT_BOT') {
+            console.log('🚪 User clicked Exit Bot button')
+            const { handleBotExit } = await import('@/lib/anti-spam')
+            await handleBotExit(senderId)
+            return
+        }
+
         // Check for spam using NEW logic (áp dụng cho CHỈ user này)
         const userStatus = user ? (user.status === 'registered' || user.status === 'trial' ? 'registered' : 'unregistered') : 'unregistered'
         console.log('📊 User status for spam check:', userStatus)
 
-        const spamCheck = await handleAntiSpam(senderId, message.text || '', userStatus, null)
+        // QUAN TRỌNG: Kiểm tra user có đang trong flow đăng ký không
+        let currentFlow = null
+        try {
+            const sessionData = await getBotSession(senderId)
+            currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow || null
+            console.log('🔄 Current flow for spam check:', currentFlow)
+        } catch (error) {
+            console.error('Error getting session for spam check:', error)
+        }
+
+        const spamCheck = await handleAntiSpam(senderId, message.text || '', userStatus, currentFlow)
 
         if (spamCheck.block) {
             console.log('🚫 Spam check blocked user:', senderId)
@@ -159,6 +188,35 @@ async function handleMessageEvent(event: any) {
         if (spamCheck.message && spamCheck.action === 'none') {
             console.log('Anti-spam đã xử lý tin nhắn, không gọi UnifiedBotSystem')
             return
+        }
+
+        // QUAN TRỌNG: Nếu user chưa trong bot mode, xử lý tin nhắn thường
+        const { checkUserBotMode } = await import('@/lib/anti-spam')
+        const isInBotMode = await checkUserBotMode(senderId)
+
+        if (!isInBotMode) {
+            console.log('💬 User not in bot mode - processing as normal message')
+            // Gửi tin nhắn thường cho admin xử lý
+            const { sendMessage } = await import('@/lib/facebook-api')
+            await sendMessage(senderId, '💬 Tin nhắn của bạn đã được chuyển đến admin. Họ sẽ phản hồi sớm nhất có thể!')
+            await sendMessage(senderId, '🤖 Nếu muốn sử dụng bot, hãy ấn nút "Chat Bot" bên dưới.')
+
+            const { sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
+            await sendQuickReply(
+                senderId,
+                'Chọn hành động:',
+                [
+                    createQuickReply('🤖 CHAT BOT', 'CHAT_BOT'),
+                    createQuickReply('💬 CHAT THƯỜNG', 'NORMAL_CHAT')
+                ]
+            )
+            return
+        }
+
+        // QUAN TRỌNG: Nếu user chưa đăng ký và đang trong flow đăng ký, cho phép xử lý tin nhắn
+        if (!user && currentFlow === 'registration') {
+            console.log('Unregistered user in registration flow - processing message normally')
+            // Không return, tiếp tục xử lý tin nhắn bình thường
         }
 
         // Send warning if needed
@@ -207,6 +265,29 @@ async function handleMessageEvent(event: any) {
                 }
             } catch (error) {
                 console.error('Error checking admin status:', error)
+            }
+
+            // QUAN TRỌNG: Nếu user chưa đăng ký và đang trong flow đăng ký, xử lý tin nhắn bình thường
+            if (currentFlow === 'registration') {
+                console.log('Unregistered user in registration flow - processing message normally')
+                // Tạo user object tạm thời cho UnifiedBotSystem
+                const userObj = {
+                    facebook_id: senderId,
+                    status: 'new_user',
+                    name: null,
+                    phone: null,
+                    membership_expires_at: null
+                }
+
+                // Xử lý tin nhắn bằng UnifiedBotSystem
+                if (message.text) {
+                    console.log('Processing text message for unregistered user in registration flow:', message.text)
+                    await UnifiedBotSystem.handleMessage(userObj, message.text)
+                } else if (message.quick_reply?.payload) {
+                    console.log('Processing quick reply for unregistered user in registration flow:', message.quick_reply.payload)
+                    await UnifiedBotSystem.handleMessage(userObj, '', true, message.quick_reply.payload)
+                }
+                return
             }
 
 

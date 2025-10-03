@@ -52,6 +52,43 @@ async function sendWelcomeMessage(userId: string, userStatus: string): Promise<v
     }
 }
 
+// Hàm gửi tin nhắn chào mừng khi user ấn nút "Chat Bot"
+export async function sendChatBotWelcome(userId: string, userStatus: string): Promise<void> {
+    const { sendQuickReply, createQuickReply } = await import('./facebook-api');
+
+    if (isRegistered(userStatus)) {
+        // User đã đăng ký - hiển thị menu chính
+        await sendQuickReply(
+            userId,
+            '🤖 BOT MODE ACTIVATED\nChọn chức năng:',
+            [
+                createQuickReply('🛒 TÌM KIẾM HÀNG HÓA', 'SEARCH'),
+                createQuickReply('📝 ĐĂNG BÁN/CẬP NHẬT', 'LISTING'),
+                createQuickReply('💬 HỖ TRỢ ADMIN', 'SUPPORT_ADMIN'),
+                createQuickReply('ℹ️ HƯỚNG DẪN', 'HELP'),
+                createQuickReply('🚪 THOÁT BOT', 'EXIT_BOT')
+            ]
+        );
+    } else {
+        // User chưa đăng ký - hiển thị thông tin cộng đồng
+        const { sendMessage } = await import('./facebook-api');
+
+        await sendMessage(userId, '🌟 Có thể bạn muốn tham gia cùng cộng đồng Tân Dậu - Hỗ Trợ Chéo!')
+        await sendMessage(userId, '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')
+
+        await sendQuickReply(
+            userId,
+            'Bạn muốn:',
+            [
+                createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
+                createQuickReply('💬 HỖ TRỢ', 'SUPPORT'),
+                createQuickReply('🚪 THOÁT BOT', 'EXIT_BOT')
+            ]
+        );
+    }
+}
+
 // Spam detection configuration - THEO YÊU CẦU MỚI
 const SPAM_CONFIG = {
     // User chưa đăng ký (xử lý nhẹ nhàng)
@@ -102,6 +139,63 @@ const userSpamBlocks = new Map<string, { blocked: boolean, blockTime: number }>(
 const userNonButtonMessages = new Map<string, { count: number, lastMessage: number, messages: string[] }>()
 const userBotStops = new Map<string, { stopped: boolean, stopTime: number, reason: string }>()
 
+// Bot mode tracking - user chỉ được coi là trong bot khi đã ấn nút "Chat Bot"
+const userBotMode = new Map<string, { inBot: boolean, enteredAt: number }>()
+
+// Hàm kiểm tra user có trong bot mode không
+export async function checkUserBotMode(facebookId: string): Promise<boolean> {
+    const botMode = userBotMode.get(facebookId)
+    if (!botMode) return false
+
+    // Auto-exit bot mode sau 24 giờ
+    const now = Date.now()
+    const twentyFourHours = 24 * 60 * 60 * 1000
+    if (now - botMode.enteredAt > twentyFourHours) {
+        userBotMode.delete(facebookId)
+        return false
+    }
+
+    return botMode.inBot
+}
+
+// Hàm đặt user vào bot mode (khi ấn nút "Chat Bot")
+export function setUserBotMode(facebookId: string): void {
+    userBotMode.set(facebookId, {
+        inBot: true,
+        enteredAt: Date.now()
+    })
+    console.log('✅ User entered bot mode:', facebookId)
+}
+
+// Hàm đưa user ra khỏi bot mode (khi ấn nút "Thoát Bot")
+export function exitUserBotMode(facebookId: string): void {
+    userBotMode.delete(facebookId)
+    console.log('🚪 User exited bot mode:', facebookId)
+}
+
+// Hàm xử lý thoát bot với đếm ngược thời gian
+export async function handleBotExit(facebookId: string): Promise<void> {
+    const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api')
+
+    // Đưa user ra khỏi bot mode
+    exitUserBotMode(facebookId)
+
+    // Gửi tin nhắn xác nhận thoát bot
+    await sendMessage(facebookId, '🚪 Bạn đã thoát khỏi Bot Mode!')
+    await sendMessage(facebookId, '💬 Bây giờ bạn có thể chat bình thường với admin.')
+    await sendMessage(facebookId, '🤖 Nếu muốn sử dụng bot, hãy ấn nút "Chat Bot" bên dưới.')
+
+    // Gửi nút để quay lại bot
+    await sendQuickReply(
+        facebookId,
+        'Chọn hành động:',
+        [
+            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT'),
+            createQuickReply('💬 CHAT THƯỜNG', 'NORMAL_CHAT')
+        ]
+    )
+}
+
 // Hàm chống spam THÔNG MINH chính - thay thế checkSpam cũ
 export async function handleAntiSpam(facebookId: string, message: string, userStatus: string, currentFlow: string | null = null): Promise<{
     action: 'none' | 'warning' | 'block',
@@ -117,10 +211,23 @@ export async function handleAntiSpam(facebookId: string, message: string, userSt
         return { action: 'none', block: false }
     }
 
+    // QUAN TRỌNG: Kiểm tra user có đang trong bot mode không
+    const isInBotMode = await checkUserBotMode(facebookId)
+    if (!isInBotMode) {
+        console.log('🚫 User not in bot mode - skipping anti-spam check')
+        return { action: 'none', block: false }
+    }
+
     // QUAN TRỌNG: Nếu đang trong flow hợp lệ, KHÔNG áp dụng chống spam
     // Vì user đang nhập thông tin cần thiết cho việc đăng ký/niêm yết/tìm kiếm
     if (currentFlow && ['registration', 'listing', 'search'].includes(currentFlow)) {
         console.log('🔄 User đang trong flow:', currentFlow, '- KHÔNG áp dụng chống spam')
+        return { action: 'none', block: false }
+    }
+
+    // ĐẶC BIỆT: User chưa đăng ký đang trong flow đăng ký - cho phép gửi tin nhắn
+    if (!isRegistered(userStatus) && currentFlow === 'registration') {
+        console.log('🔄 Unregistered user in registration flow - allowing messages')
         return { action: 'none', block: false }
     }
 
@@ -187,10 +294,10 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
         await sendWelcomeMessage(facebookId, userStatus)
         return { action: 'none', block: false, message: 'Welcome sent' }
     } else if (newCount >= 2) {
-        // Lần 2+: IM LẶNG HOÀN TOÀN - TÔN TRỌNG NGƯỜI DÙNG
-        console.log('🚫 Message count >= 2 - blocking user')
-        // Nếu họ muốn đăng ký, họ sẽ nhắn tin admin
-        return { action: 'block', block: true }
+        // Lần 2+: Chỉ cảnh báo nhẹ, KHÔNG khóa user chưa đăng ký
+        console.log('⚠️ Message count >= 2 - sending gentle warning')
+        await sendMessage(facebookId, '💡 Bạn có thể chọn một trong các nút bên dưới để tiếp tục!')
+        return { action: 'warning', block: false, message: 'Gentle warning sent' }
     }
 
     return { action: 'none', block: false }
