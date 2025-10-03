@@ -1,87 +1,89 @@
 import { sendMessage, sendTypingIndicator, sendQuickReply, createQuickReply } from '../facebook-api'
 import { SmartContextManager, UserContext, UserType, UserState } from './smart-context-manager'
-import { updateBotSession, getBotSession } from '../utils'
-import { supabaseAdmin } from '../supabase'
+import { updateBotSession } from '../utils'
 
 // Unified Bot System - Hệ thống bot thống nhất, thay thế cả Unified Entry Point và Message Router
 export class UnifiedBotSystem {
 
     /**
      * Xử lý TẤT CẢ tin nhắn - đây là điểm vào DUY NHẤT
-     * ĐÃ ĐƠN GIẢN HÓA VÀ TỐI ƯU LOGIC
      */
     static async handleMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
         try {
-            console.log('🔍 UnifiedBotSystem xử lý:', {
+            console.log('🔍 Received message from user:', {
                 facebook_id: user.facebook_id,
-                text: text?.substring(0, 50),
+                text: text,
                 isPostback: isPostback,
                 postback: postback
             })
 
-            // Bước 1: KIỂM TRA ADMIN (ưu tiên cao nhất)
-            if (await this.checkAdminStatus(user.facebook_id)) {
+            // Bước 1: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất)
+            const isAdminUser = await this.checkAdminStatus(user.facebook_id)
+
+            if (isAdminUser) {
+                console.log('✅ User is admin, handling admin message')
                 await this.handleAdminMessage(user, text, isPostback, postback)
                 return
             }
 
+            // Kiểm tra lệnh admin đặc biệt
+            if (text && (text.toLowerCase().includes('/admin') || text.toLowerCase().includes('admin'))) {
+                console.log('🔍 Admin command detected, checking admin status again')
+                const isAdminUser2 = await this.checkAdminStatus(user.facebook_id)
+                if (isAdminUser2) {
+                    console.log('✅ User is admin via command, showing admin dashboard')
+                    await this.showAdminDashboard(user)
+                    return
+                }
+            }
+
             // Bước 2: KIỂM TRA ADMIN CHAT MODE
-            if (await this.checkAdminChatMode(user.facebook_id)) {
+            const isInAdminChat = await this.checkAdminChatMode(user.facebook_id)
+            if (isInAdminChat) {
                 await this.handleAdminChatMessage(user, text)
                 return
             }
 
-            // Bước 3: PHÂN TÍCH USER CONTEXT ĐỂ XỬ LÝ CHÍNH XÁC
-            const context = await this.analyzeUserContext(user)
+            // Bước 3: KIỂM TRA ANTI-SPAM (chỉ cho non-admin, non-flow users)
+            const session = await this.getUserSession(user.facebook_id)
+            if (!session?.current_flow) {
+                const spamCheck = await this.checkSpamStatus(user.facebook_id, text, isPostback)
+                if (spamCheck.shouldStop) {
+                    await this.sendSpamBlockedMessage(user.facebook_id, spamCheck.reason)
+                    return
+                }
+            }
 
-            // Bước 4: XỬ LÝ THEO USER TYPE
-            switch (context.userType) {
-                case UserType.ADMIN:
-                    await this.handleAdminMessage(user, text, isPostback, postback)
-                    break
-                case UserType.REGISTERED_USER:
-                case UserType.TRIAL_USER:
-                    await this.handleRegisteredUserText(user, text, context)
-                    break
-                case UserType.PENDING_USER:
-                    await this.handlePendingUserText(user, text, context)
-                    break
-                case UserType.EXPIRED_USER:
-                    await this.handleExpiredUserText(user, text)
-                    break
-                case UserType.NEW_USER:
-                default:
-                    await this.handleNewUserText(user, text)
-                    break
+            // Bước 4: XỬ LÝ FLOW NẾU USER ĐANG TRONG FLOW
+            if (session?.current_flow) {
+                await this.handleFlowMessage(user, text, session)
+                return
+            }
+
+            // Bước 5: XỬ LÝ TIN NHẮN THƯỜNG
+            if (isPostback && postback) {
+                await this.handlePostbackAction(user, postback)
+            } else if (text) {
+                await this.handleTextMessage(user, text)
+            } else {
+                await this.handleDefaultMessage(user)
             }
 
         } catch (error) {
-            console.error('❌ Lỗi UnifiedBotSystem:', error)
+            console.error('Error in unified bot system:', error)
             await this.sendErrorMessage(user.facebook_id)
         }
     }
 
-    // Cache để tối ưu hóa performance
-    private static adminCache = new Map<string, { isAdmin: boolean, timestamp: number }>()
-    private static readonly CACHE_TTL = 5 * 60 * 1000 // 5 phút
-
     /**
-     * Kiểm tra trạng thái admin - CÓ CACHING
+     * Kiểm tra trạng thái admin
      */
     private static async checkAdminStatus(facebookId: string): Promise<boolean> {
         try {
-            // Kiểm tra cache trước
-            const cached = this.adminCache.get(facebookId)
-            if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL) {
-                return cached.isAdmin
-            }
-
+            console.log('🔍 Checking admin status for:', facebookId)
             const { isAdmin } = await import('../handlers/admin-handlers')
             const result = await isAdmin(facebookId)
-
-            // Lưu vào cache
-            this.adminCache.set(facebookId, { isAdmin: result, timestamp: Date.now() })
-
+            console.log('🔍 Admin check result:', result)
             return result
         } catch (error) {
             console.error('Error checking admin status:', error)
@@ -103,10 +105,11 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Lấy user session - TỐI ƯU HÓA
+     * Lấy user session
      */
     private static async getUserSession(facebookId: string): Promise<any> {
         try {
+            const { getBotSession } = await import('../utils')
             return await getBotSession(facebookId)
         } catch (error) {
             console.error('Error getting user session:', error)
@@ -115,22 +118,17 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Kiểm tra spam status - TỐI ƯU HÓA
+     * Kiểm tra spam status
      */
     private static async checkSpamStatus(facebookId: string, text: string, isPostback?: boolean): Promise<{ shouldStop: boolean, reason?: string }> {
         try {
-            // Chỉ kiểm tra spam cho text message, không kiểm tra postback
-            if (isPostback || !text?.trim()) {
-                return { shouldStop: false }
-            }
-
             const { trackNonButtonMessage } = await import('../anti-spam')
-            const result = await trackNonButtonMessage(facebookId, text)
-
-            if (result.shouldStopBot) {
-                return { shouldStop: true, reason: result.reason }
+            if (!isPostback && text) {
+                const result = await trackNonButtonMessage(facebookId, text)
+                if (result.shouldStopBot) {
+                    return { shouldStop: true, reason: result.reason }
+                }
             }
-
             return { shouldStop: false }
         } catch (error) {
             console.error('Error checking spam status:', error)
@@ -286,57 +284,76 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Phân tích ngữ cảnh đơn giản và rõ ràng - TỐI ƯU HÓA
+     * Phân tích ngữ cảnh đơn giản và rõ ràng
      */
     private static async analyzeUserContext(user: any): Promise<{ userType: UserType, user?: any }> {
         try {
-            // 1. Kiểm tra Admin trước (ưu tiên cao nhất) - đã cache
+            // 1. Kiểm tra Admin trước (ưu tiên cao nhất)
             const isAdminUser = await this.checkAdminStatus(user.facebook_id)
             if (isAdminUser) {
                 return { userType: UserType.ADMIN }
             }
 
-            // 2. Lấy thông tin user từ database - tối ưu hóa query
+            // 2. Lấy thông tin user từ database
+            const { supabaseAdmin } = await import('../supabase')
             const { data: userData, error } = await supabaseAdmin
                 .from('users')
-                .select('facebook_id, status, name, phone, membership_expires_at')
+                .select('*')
                 .eq('facebook_id', user.facebook_id)
                 .single()
 
             // Nếu không tìm thấy user trong database -> NEW USER
             if (error || !userData) {
+                console.log('❌ No user data found for:', user.facebook_id, 'Error:', error?.message)
                 return { userType: UserType.NEW_USER, user: null }
             }
 
-            // 3. KIỂM TRA TRẠNG THÁI USER - LOGIC RÕ RÀNG HƠN
-            const { status, name, phone, membership_expires_at } = userData
+            // 3. KIỂM TRA TRẠNG THÁI USER - RÕ RÀNG
+            console.log('✅ User data found:', {
+                facebook_id: userData.facebook_id,
+                status: userData.status,
+                name: userData.name,
+                phone: userData.phone,
+                membership_expires_at: userData.membership_expires_at
+            })
 
             // KIỂM TRA USER CÓ PHẢI LÀ DỮ LIỆU TEST KHÔNG
-            if (name === 'User' && phone?.startsWith('temp_')) {
+            if (userData.name === 'User' && userData.phone?.startsWith('temp_')) {
+                console.log('🚫 Found test user data, treating as NEW USER')
                 return { userType: UserType.NEW_USER, user: null }
             }
 
-            // XỬ LÝ THEO STATUS - GIẢM ĐIỀU KIỆN LỒNG NHAU
-            switch (status) {
-                case 'pending':
-                    return { userType: UserType.PENDING_USER, user: userData }
-                case 'registered':
-                    return { userType: UserType.REGISTERED_USER, user: userData }
-                case 'trial':
-                    // Kiểm tra trial có hết hạn không
-                    if (membership_expires_at) {
-                        const expiryDate = new Date(membership_expires_at)
-                        const now = new Date()
-                        if (expiryDate <= now) {
-                            return { userType: UserType.EXPIRED_USER, user: userData }
-                        }
-                    }
-                    return { userType: UserType.TRIAL_USER, user: userData }
-                case 'expired':
-                    return { userType: UserType.EXPIRED_USER, user: userData }
-                default:
-                    return { userType: UserType.NEW_USER, user: null }
+            // KIỂM TRA USER ĐANG CHỜ DUYỆT
+            if (userData.status === 'pending') {
+                console.log('⏳ User pending approval, treating as PENDING_USER')
+                return { userType: UserType.PENDING_USER, user: userData }
             }
+
+            if (userData.status === 'registered') {
+                return { userType: UserType.REGISTERED_USER, user: userData }
+            } else if (userData.status === 'trial') {
+                // Kiểm tra trial có hết hạn không
+                if (userData.membership_expires_at) {
+                    const expiryDate = new Date(userData.membership_expires_at)
+                    const now = new Date()
+
+                    if (expiryDate <= now) {
+                        console.log('Trial user expired, treating as expired user')
+                        return { userType: UserType.EXPIRED_USER, user: userData }
+                    }
+                }
+                return { userType: UserType.TRIAL_USER, user: userData }
+            } else if (userData.status === 'pending') {
+                // User đang chờ admin duyệt
+                console.log('User pending approval, treating as pending user')
+                return { userType: UserType.NEW_USER, user: userData }
+            } else if (userData.status === 'expired') {
+                return { userType: UserType.EXPIRED_USER, user: userData }
+            }
+
+            // 4. Nếu status không xác định -> coi như NEW USER
+            console.log('❓ Unknown user status:', userData.status, 'treating as new user')
+            return { userType: UserType.NEW_USER, user: null }
         } catch (error) {
             console.error('❌ Error analyzing user context:', error)
             return { userType: UserType.NEW_USER }

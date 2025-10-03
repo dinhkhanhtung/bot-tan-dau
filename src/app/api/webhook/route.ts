@@ -378,9 +378,9 @@ async function handleMessageEvent(event: any) {
             return
         }
 
-        // SỬ DỤNG UNIFIED BOT SYSTEM - ĐÃ ĐƠN GIẢN HÓA
+        // SỬ DỤNG UNIFIED BOT SYSTEM CHO TẤT CẢ CÁC LOẠI MESSAGE
         try {
-            // Tạo user object chuẩn
+            // Tạo user object chuẩn cho UnifiedBotSystem
             const userObj = user || {
                 facebook_id: senderId,
                 status: 'new_user',
@@ -388,31 +388,32 @@ async function handleMessageEvent(event: any) {
                 membership_expires_at: null
             }
 
-            // Xử lý bằng UnifiedBotSystem với logic đơn giản hơn
-            if (message.quick_reply && message.quick_reply.payload) {
-                // Quick Reply - ưu tiên cao nhất
-                console.log('🔄 Quick Reply via UnifiedBotSystem:', message.quick_reply.payload)
-                await UnifiedBotSystem.handleMessage(userObj, '', true, message.quick_reply.payload)
-            } else if (message.text) {
-                // Text message thường
-                console.log('📝 Text message via UnifiedBotSystem:', message.text)
-                await UnifiedBotSystem.handleMessage(userObj, message.text)
+            // Xử lý bằng UnifiedBotSystem
+            if (message.text) {
+                // Check if it's a quick reply first
+                if (message.quick_reply && message.quick_reply.payload) {
+                    console.log('Handling Quick Reply via UnifiedBotSystem:', message.quick_reply.payload)
+                    await UnifiedBotSystem.handleMessage(userObj, '', true, message.quick_reply.payload)
+                } else {
+                    // Handle regular text message
+                    console.log('Handling regular text message via UnifiedBotSystem:', message.text)
+                    await UnifiedBotSystem.handleMessage(userObj, message.text)
+                }
             } else if (message.attachments && message.attachments.length > 0) {
-                // Attachment - xử lý đơn giản
-                console.log('📎 Attachment via UnifiedBotSystem')
-                await UnifiedBotSystem.handleMessage(userObj, '📎 Đã nhận file/ảnh')
+                console.log('Handling attachment message via UnifiedBotSystem:', message.attachments.length, 'attachments')
+                // Với attachment, vẫn dùng text message để xử lý
+                await UnifiedBotSystem.handleMessage(userObj, 'attachment')
             } else if (message.sticker_id) {
-                // Sticker - phản hồi vui vẻ
-                console.log('😊 Sticker via UnifiedBotSystem')
-                await UnifiedBotSystem.handleMessage(userObj, '😊 Cảm ơn sticker dễ thương!')
+                console.log('Handling sticker message via UnifiedBotSystem')
+                await UnifiedBotSystem.handleMessage(userObj, 'sticker')
             } else {
-                // Các loại message khác
-                console.log('❓ Other message type via UnifiedBotSystem')
+                // Handle other message types or empty messages
+                console.log('Handling other message type via UnifiedBotSystem')
                 await UnifiedBotSystem.handleMessage(userObj, 'other')
             }
         } catch (error) {
-            console.error('❌ Lỗi UnifiedBotSystem:', error)
-            // Fallback đơn giản về hệ thống cũ
+            console.error('Error in UnifiedBotSystem:', error)
+            // Fallback về hệ thống cũ nếu cần
             try {
                 if (message.text) {
                     if (message.quick_reply && message.quick_reply.payload) {
@@ -425,7 +426,7 @@ async function handleMessageEvent(event: any) {
                     }
                 }
             } catch (fallbackError) {
-                console.error('❌ Fallback cũng lỗi:', fallbackError)
+                console.error('Fallback also failed:', fallbackError)
             }
         }
     } catch (error) {
