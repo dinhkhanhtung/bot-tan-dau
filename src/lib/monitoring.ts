@@ -280,10 +280,11 @@ export class MonitoringSystem {
                 .select('created_at')
                 .eq('status', 'pending')
 
-            const avgPendingTime = allPendingUsers?.reduce((sum, user) => {
-                const pendingDays = Math.ceil((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))
-                return sum + pendingDays
-            }, 0) / (allPendingUsers?.length || 1) || 0
+            const avgPendingTime = allPendingUsers && allPendingUsers.length > 0 ? 
+                allPendingUsers.reduce((sum, user) => {
+                    const pendingDays = Math.ceil((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                    return sum + pendingDays
+                }, 0) / allPendingUsers.length : 0
 
             return {
                 daily_pending_users: dailyCounts,

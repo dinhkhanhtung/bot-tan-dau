@@ -147,7 +147,7 @@ export class SafetyMeasures {
                 .upsert({
                     facebook_id: facebookId,
                     date: today,
-                    [this.getActionField(action)]: supabaseAdmin.raw(`${this.getActionField(action)} + 1`),
+                    [this.getActionField(action)]: 1, // Will be incremented by database trigger
                     last_activity: new Date().toISOString()
                 }, {
                     onConflict: 'facebook_id,date'
