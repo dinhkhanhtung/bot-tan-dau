@@ -484,7 +484,7 @@ export class UnifiedBotSystem {
                 await this.showSupportInfo(user)
             } else {
                 // Xử lý tin nhắn thường - CHỈ nếu chưa bị spam check xử lý
-                if (spamResult.action === 'none') {
+                if (spamResult.action === 'none' && !spamResult.message) {
                     await this.showWelcomeMessage(user)
                 }
             }
@@ -821,13 +821,14 @@ export class UnifiedBotSystem {
                     break
                 case UserType.NEW_USER:
                 default:
-                    // CHỈ hiển thị welcome message một lần, không lặp lại thông báo
-                    await this.showWelcomeMessage(user)
+                    // NEW USER: Không gửi welcome message mặc định
+                    // Welcome message chỉ được gửi qua spam check system
+                    console.log('New user default message - không gửi welcome để tránh spam')
                     break
             }
         } catch (error) {
             console.error('Error handling default message:', error)
-            await this.showWelcomeMessage(user)
+            // Không gửi welcome message khi có lỗi để tránh spam
         }
     }
 

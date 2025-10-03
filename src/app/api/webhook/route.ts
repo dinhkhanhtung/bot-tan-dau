@@ -707,16 +707,8 @@ async function deleteUserFromFacebook(facebookId: string) {
 
 // Import bot handlers
 async function handleUserMessage(user: any, text: string) {
-    // Check if user is new (has no name or phone)
-    if (!user.name || !user.phone) {
-        // New user - show welcome message
-        const { handleDefaultMessage } = await import('@/lib/handlers/auth-handlers')
-        await handleDefaultMessage(user)
-    } else {
-        // Registered user - show registered menu
-        const { handleDefaultMessageRegistered } = await import('@/lib/handlers/utility-handlers')
-        await handleDefaultMessageRegistered(user)
-    }
+    // Sử dụng UnifiedBotSystem để xử lý tất cả tin nhắn
+    await UnifiedBotSystem.handleMessage(user, '')
 }
 
 async function handlePostback(user: any, payload: string) {
