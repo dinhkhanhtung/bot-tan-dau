@@ -98,7 +98,7 @@ export class UnifiedBotSystem {
     /**
      * Kiểm tra spam status
      */
-    private static async checkSpamStatus(facebookId: string, text?: string, isPostback: boolean = false): Promise<{ shouldStop: boolean, reason?: string }> {
+    private static async checkSpamStatus(facebookId: string, text: string, isPostback?: boolean): Promise<{ shouldStop: boolean, reason?: string }> {
         try {
             const { trackNonButtonMessage } = await import('../anti-spam')
             if (!isPostback && text) {
@@ -117,7 +117,7 @@ export class UnifiedBotSystem {
     /**
      * Xử lý tin nhắn của admin
      */
-    private static async handleAdminMessage(user: any, text?: string, isPostback: boolean = false, postback?: string): Promise<void> {
+    private static async handleAdminMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
         try {
             // Admin có toàn quyền, không bị giới hạn gì
             if (isPostback && postback) {
@@ -136,7 +136,7 @@ export class UnifiedBotSystem {
     /**
      * Xử lý admin chat message
      */
-    private static async handleAdminChatMessage(user: any, text?: string): Promise<void> {
+    private static async handleAdminChatMessage(user: any, text: string): Promise<void> {
         try {
             const { handleUserMessageInAdminChat } = await import('../admin-chat')
             if (text) {
@@ -150,8 +150,14 @@ export class UnifiedBotSystem {
     /**
      * Xử lý flow message
      */
-    private static async handleFlowMessage(user: any, text?: string, session: any): Promise<void> {
+    private static async handleFlowMessage(user: any, text: string, session?: any): Promise<void> {
         try {
+            // Kiểm tra session hợp lệ
+            if (!session || !session.current_flow) {
+                await this.sendErrorMessage(user.facebook_id)
+                return
+            }
+
             // Xử lý các lệnh thoát flow
             if (text && this.isExitCommand(text)) {
                 await this.handleFlowExit(user, session.current_flow)
@@ -422,10 +428,11 @@ export class UnifiedBotSystem {
     /**
      * Xử lý flow exit
      */
-    private static async handleFlowExit(user: any, currentFlow: string): Promise<void> {
+    private static async handleFlowExit(user: any, currentFlow?: string): Promise<void> {
         try {
             await updateBotSession(user.facebook_id, null)
-            await this.sendMessage(user.facebook_id, `❌ Đã hủy quy trình ${this.getFlowDisplayName(currentFlow)}`)
+            const flowName = currentFlow ? this.getFlowDisplayName(currentFlow) : 'hiện tại'
+            await this.sendMessage(user.facebook_id, `❌ Đã hủy quy trình ${flowName}`)
             await this.showMainMenu(user)
         } catch (error) {
             console.error('Error handling flow exit:', error)
