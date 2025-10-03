@@ -61,8 +61,11 @@ export class UnifiedBotSystem {
      */
     private static async checkAdminStatus(facebookId: string): Promise<boolean> {
         try {
+            console.log('🔍 Checking admin status for:', facebookId)
             const { isAdmin } = await import('../handlers/admin-handlers')
-            return await isAdmin(facebookId)
+            const result = await isAdmin(facebookId)
+            console.log('🔍 Admin check result:', result)
+            return result
         } catch (error) {
             console.error('Error checking admin status:', error)
             return false

@@ -12,9 +12,13 @@ import { formatCurrency, formatNumber, updateBotSession, daysUntilExpiry } from 
 
 // Check if user is admin
 export async function isAdmin(facebookId: string): Promise<boolean> {
+    console.log('🔍 isAdmin called with facebookId:', facebookId)
+    
     // First check environment variables (priority)
     const adminIds = process.env.ADMIN_IDS || ''
+    console.log('🔍 ADMIN_IDS from env:', adminIds)
     const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
+    console.log('🔍 Parsed admin IDs:', envAdmins)
 
     if (envAdmins.includes(facebookId)) {
         console.log(`✅ Admin found in environment: ${facebookId}`)
