@@ -571,7 +571,7 @@ export class MessageRouter {
         await sendTypingIndicator(user.facebook_id)
         await hideButtons(user.facebook_id)
 
-        await sendMessage(user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
+        await sendMessage(user.facebook_id, '🎉 Chào mừng bạn đến với Đinh Khánh Tùng!')
 
         await sendQuickReply(
             user.facebook_id,

@@ -128,7 +128,7 @@ export class FlowAdapter {
             console.error('Error migrating to Smart Router:', error)
             // Fallback: gửi welcome message cơ bản
             await sendTypingIndicator(user.facebook_id)
-            await sendMessage(user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
+            await sendMessage(user.facebook_id, '🎉 Chào mừng bạn đến với Đinh Khánh Tùng!')
         }
     }
 
@@ -141,7 +141,7 @@ export class FlowAdapter {
         try {
             // Fallback về welcome message cơ bản
             await sendTypingIndicator(user.facebook_id)
-            await sendMessage(user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
+            await sendMessage(user.facebook_id, '🎉 Chào mừng bạn đến với Đinh Khánh Tùng!')
 
             await sendQuickReply(
                 user.facebook_id,

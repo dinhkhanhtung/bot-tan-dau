@@ -408,7 +408,7 @@ export class NotificationManager {
     }
 
     private async sendWelcomeMessage(context: NotificationContext): Promise<void> {
-        await sendMessage(context.user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
+        await sendMessage(context.user.facebook_id, '🎉 Chào mừng bạn đến với Đinh Khánh Tùng!')
     }
 
     private async sendWelcomeOptions(context: NotificationContext): Promise<void> {

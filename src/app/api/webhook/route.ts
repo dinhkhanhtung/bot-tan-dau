@@ -246,8 +246,9 @@ async function handleMessageEvent(event: any) {
                 .eq('facebook_id', senderId)
                 .single()
 
-            // Send welcome message only if not sent before - STRICTER CHECK
-            if (!existingUser || existingUser.welcome_message_sent !== true) {
+            // DISABLED: Welcome message logic moved to UnifiedBotSystem
+            // This prevents duplicate welcome messages
+            if (false) {
                 try {
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
                     const { getFacebookDisplayName } = await import('@/lib/utils')
@@ -257,10 +258,10 @@ async function handleMessageEvent(event: any) {
                     const displayName = facebookName || 'bạn'
 
                     // Different welcome messages based on user status
-                    if (existingUser && existingUser.status === 'pending') {
+                    if (existingUser && existingUser?.status === 'pending') {
                         // PENDING_USER welcome message
-                        const pendingDays = existingUser.created_at ?
-                            Math.ceil((Date.now() - new Date(existingUser.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
+                        const pendingDays = existingUser?.created_at ?
+                            Math.ceil((Date.now() - new Date(existingUser?.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
 
                         await sendMessage(senderId, `⏳ CHÀO MỪNG ${displayName.toUpperCase()}!`)
                         await sendMessage(senderId, `📋 Trạng thái: Đang chờ Admin duyệt (${pendingDays} ngày)`)
@@ -279,7 +280,7 @@ async function handleMessageEvent(event: any) {
                         )
                     } else {
                         // NEW_USER welcome message
-                        await sendMessage(senderId, `👋 Chào mừng ${displayName} đến với Bot Tân Dậu - Hỗ Trợ Chéo!`)
+                        await sendMessage(senderId, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!`)
                         await sendMessage(senderId, '🤝 Cộng đồng dành riêng cho Tân Dậu (sinh năm 1981)')
                         await sendMessage(senderId, '💡 Có thể bạn muốn tham gia cùng cộng đồng để kết nối và hỗ trợ lẫn nhau!')
                         await sendMessage(senderId, 'Để sử dụng bot, bạn cần đăng ký tài khoản trước.')
