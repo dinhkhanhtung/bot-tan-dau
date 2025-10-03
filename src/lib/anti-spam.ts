@@ -154,7 +154,7 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
     if (newCount === 1) {
         // Lần 1: Gửi welcome đầy đủ
         await sendWelcomeMessage(facebookId, userStatus)
-        return { action: 'none', block: false }
+        return { action: 'none', block: false, message: 'Welcome sent' }
     } else if (newCount >= 2) {
         // Lần 2+: IM LẶNG HOÀN TOÀN - TÔN TRỌNG NGƯỜI DÙNG
         // Nếu họ muốn đăng ký, họ sẽ nhắn tin admin

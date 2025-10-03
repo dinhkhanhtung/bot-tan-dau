@@ -58,18 +58,7 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Bước 4: KIỂM TRA SPAM (chỉ cho user không phải admin)
-            if (!isAdminUser) {
-                const { handleAntiSpam } = await import('../anti-spam')
-                const spamResult = await handleAntiSpam(user.facebook_id, text || '', user.status || 'new', currentFlow)
-
-                if (spamResult.block) {
-                    console.log('User bị block do spam:', spamResult.message || 'Spam detected')
-                    return
-                }
-            }
-
-            // Bước 5: XỬ LÝ TIN NHẮN THƯỜNG
+            // Bước 4: XỬ LÝ TIN NHẮN THƯỜNG
             if (isPostback && postback) {
                 await this.handlePostbackAction(user, postback)
             } else if (text) {
@@ -467,26 +456,26 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý new user text - LOGIC THÔNG MINH
+     * Xử lý new user text - LOGIC THÔNG MINH VỚI SPAM CHECK
      */
     private static async handleNewUserText(user: any, text: string): Promise<void> {
         try {
-            // Kiểm tra spam count trước
-            const { supabaseAdmin } = await import('../supabase')
-            const { data: spamData } = await supabaseAdmin
-                .from('spam_tracking')
-                .select('message_count')
-                .eq('user_id', user.facebook_id)
-                .single()
-
-            const messageCount = spamData?.message_count || 0
-
-            // Nếu đã nhắn lần 2+ thì im lặng hoàn toàn
-            if (messageCount >= 2) {
-                console.log('User đã nhắn lần 2+, im lặng để tôn trọng người dùng')
+            // KIỂM TRA SPAM TRƯỚC - SỬ DỤNG ANTI-SPAM SYSTEM
+            const { handleAntiSpam } = await import('../anti-spam')
+            const spamResult = await handleAntiSpam(user.facebook_id, text, user.status || 'new', null)
+            
+            if (spamResult.block) {
+                console.log('User bị block do spam:', spamResult.message || 'Spam detected')
                 return
             }
 
+            // Nếu spam check đã xử lý (gửi welcome), không cần xử lý thêm
+            if (spamResult.action === 'none' && spamResult.message) {
+                console.log('Anti-spam đã xử lý tin nhắn, không cần xử lý thêm')
+                return
+            }
+
+            // Xử lý các lệnh đặc biệt
             if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
                 await this.startRegistration(user)
             } else if (text.includes('thông tin') || text.includes('THÔNG TIN')) {
@@ -494,8 +483,10 @@ export class UnifiedBotSystem {
             } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
                 await this.showSupportInfo(user)
             } else {
-                // Xử lý tin nhắn thường
-                await this.showWelcomeMessage(user)
+                // Xử lý tin nhắn thường - CHỈ nếu chưa bị spam check xử lý
+                if (spamResult.action === 'none') {
+                    await this.showWelcomeMessage(user)
+                }
             }
         } catch (error) {
             console.error('Error handling new user text:', error)
