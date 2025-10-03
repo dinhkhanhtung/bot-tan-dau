@@ -46,8 +46,16 @@ export class UnifiedBotSystem {
 
             // Bước 3: KIỂM TRA ANTI-SPAM (chỉ cho non-admin, non-flow users)
             const session = await this.getUserSession(user.facebook_id)
-            if (!session?.current_flow) {
-                const spamCheck = await this.checkSpamStatus(user.facebook_id, text, isPostback)
+            const currentFlow = session?.current_flow || null
+
+            // Chỉ kiểm tra spam nếu không trong flow hợp lệ
+            if (!currentFlow) {
+                // Lấy thông tin user để xác định trạng thái
+                const context = await this.analyzeUserContext(user)
+                const userStatus = context.userType === UserType.REGISTERED_USER ? 'registered' :
+                                 context.userType === UserType.TRIAL_USER ? 'trial' : 'unregistered'
+
+                const spamCheck = await this.checkSpamStatus(user.facebook_id, text, isPostback, userStatus, currentFlow)
                 if (spamCheck.shouldStop) {
                     await this.sendSpamBlockedMessage(user.facebook_id, spamCheck.reason)
                     return
@@ -118,17 +126,25 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Kiểm tra spam status
+     * Kiểm tra spam status - SỬ DỤNG LOGIC MỚI
      */
-    private static async checkSpamStatus(facebookId: string, text: string, isPostback?: boolean): Promise<{ shouldStop: boolean, reason?: string }> {
+    private static async checkSpamStatus(facebookId: string, text: string, isPostback?: boolean, userStatus?: string, currentFlow?: string | null): Promise<{ shouldStop: boolean, reason?: string }> {
         try {
-            const { trackNonButtonMessage } = await import('../anti-spam')
-            if (!isPostback && text) {
-                const result = await trackNonButtonMessage(facebookId, text)
-                if (result.shouldStopBot) {
-                    return { shouldStop: true, reason: result.reason }
+            // Nếu là postback (tương tác nút bấm) -> không áp dụng chống spam
+            if (isPostback) {
+                return { shouldStop: false }
+            }
+
+            // Nếu có text -> áp dụng logic chống spam thông minh
+            if (text) {
+                const { handleAntiSpam } = await import('../anti-spam')
+                const result = await handleAntiSpam(facebookId, text, userStatus || 'unregistered', currentFlow)
+
+                if (result.block) {
+                    return { shouldStop: true, reason: result.message }
                 }
             }
+
             return { shouldStop: false }
         } catch (error) {
             console.error('Error checking spam status:', error)

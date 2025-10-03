@@ -1,30 +1,86 @@
 import { supabaseAdmin } from './supabase'
 
-// Spam detection configuration - ENHANCED: Stricter limits for new users
+// Hàm xác định trạng thái user
+export function isRegistered(userStatus: string): boolean {
+  return userStatus === 'registered' || userStatus === 'trial' || userStatus === 'active';
+}
+
+// Hàm xử lý welcome message theo trạng thái user
+async function sendWelcomeMessage(userId: string, userStatus: string): Promise<void> {
+  const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api');
+
+  if (isRegistered(userStatus)) {
+    // User đã đăng ký - hiển thị menu chính
+    await sendMessage(userId, '🏠 TRANG CHỦ Tân Dậu - Hỗ Trợ Chéo');
+    await sendMessage(userId, '👋 Chào mừng bạn quay trở lại!');
+
+    await sendQuickReply(
+      userId,
+      'Chọn chức năng:',
+      [
+        createQuickReply('🛒 TÌM KIẾM HÀNG HÓA', 'SEARCH'),
+        createQuickReply('📝 ĐĂNG BÁN/CẬP NHẬT', 'LISTING'),
+        createQuickReply('💬 HỖ TRỢ ADMIN', 'SUPPORT_ADMIN'),
+        createQuickReply('ℹ️ HƯỚNG DẪN', 'HELP')
+      ]
+    );
+  } else {
+    // User chưa đăng ký - hiển thị menu dùng thử
+    await sendMessage(userId, '👋 Chào mừng bạn đến với Tân Dậu - Hỗ Trợ Chéo!');
+    await sendMessage(userId, '💡 Bạn có thể dùng thử một số tính năng trước khi đăng ký');
+
+    await sendQuickReply(
+      userId,
+      'Chọn chức năng:',
+      [
+        createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+        createQuickReply('🔍 XEM HÀNG HÓA (Dùng thử)', 'TRIAL_SEARCH'),
+        createQuickReply('ℹ️ HƯỚNG DẪN', 'HELP')
+      ]
+    );
+  }
+}
+
+// Spam detection configuration - THEO YÊU CẦU MỚI
 const SPAM_CONFIG = {
-    // Max messages per minute for registered users
-    MAX_MESSAGES_PER_MINUTE: 20,
-    // Max messages per hour for registered users
-    MAX_MESSAGES_PER_HOUR: 100,
-    // Max messages per minute for NEW users (much stricter)
-    MAX_MESSAGES_PER_MINUTE_NEW: 3,
-    // Max messages per hour for NEW users (much stricter)
-    MAX_MESSAGES_PER_HOUR_NEW: 10,
-    // Max identical messages in a row
-    MAX_IDENTICAL_MESSAGES: 2,
-    // Cooldown period after spam detection
+    // User chưa đăng ký (xử lý nhẹ nhàng)
+    UNREGISTERED: {
+        RESET_TIME_MINUTES: 2,
+        WARNING_LEVELS: {
+            1: '💡 Bạn vui lòng chọn một trong các nút bên dưới để tiếp tục',
+            2: '💡 Bạn vui lòng chọn một trong các nút bên dưới để tiếp tục',
+            3: '⚠️ Bạn đã gửi tin nhắn nhiều lần. Vui lòng đăng ký để sử dụng đầy đủ tính năng!',
+            4: '🚫 Bạn đã bị tạm khóa 30 phút do gửi quá nhiều tin nhắn'
+        },
+        LOCK_TIME_MINUTES: 30
+    },
+    // User đã đăng ký (phân cấp theo ngữ cảnh)
+    REGISTERED: {
+        SEARCH_LISTING: {
+            TIME_WINDOW_SECONDS: 30,
+            MAX_MESSAGES: 5,
+            WARNING_AT: 3,
+            LOCK_TIME_MINUTES: 30
+        },
+        ADMIN_SUPPORT: {
+            TIME_WINDOW_MINUTES: 1,
+            MAX_MESSAGES: 5,
+            WARNING_AT: 3,
+            LOCK_TIME_HOURS: 2
+        }
+    },
+    // Các cấu hình cũ (để tương thích ngược)
     SPAM_COOLDOWN_MINUTES: 15,
-    // Max consecutive identical messages before warning
+    MAX_MESSAGES_PER_MINUTE: 20,
+    MAX_MESSAGES_PER_HOUR: 100,
+    MAX_MESSAGES_PER_MINUTE_NEW: 3,
+    MAX_MESSAGES_PER_HOUR_NEW: 10,
+    MAX_IDENTICAL_MESSAGES: 2,
     WARNING_THRESHOLD: 1,
-    // Max consecutive non-button messages for registered users
     MAX_NON_BUTTON_MESSAGES: 20,
-    // Max consecutive non-button messages for NEW users (much stricter)
     MAX_NON_BUTTON_MESSAGES_NEW: 5,
-    // Time window for non-button message tracking
     NON_BUTTON_WINDOW_MINUTES: 45,
-    // Warning threshold for non-button messages for registered users
     NON_BUTTON_WARNING_THRESHOLD: 8,
-    // Warning threshold for non-button messages for NEW users (much stricter)
     NON_BUTTON_WARNING_THRESHOLD_NEW: 3
 }
 
@@ -35,122 +91,204 @@ const userSpamBlocks = new Map<string, { blocked: boolean, blockTime: number }>(
 const userNonButtonMessages = new Map<string, { count: number, lastMessage: number, messages: string[] }>()
 const userBotStops = new Map<string, { stopped: boolean, stopTime: number, reason: string }>()
 
-// Check if user is spamming
-export async function checkSpam(facebookId: string, message: string): Promise<{
-    isSpam: boolean,
-    reason?: string,
-    shouldBlock: boolean,
-    warningCount: number
+// Hàm chống spam THÔNG MINH chính - thay thế checkSpam cũ
+export async function handleAntiSpam(facebookId: string, message: string, userStatus: string, currentFlow: string | null = null): Promise<{
+    action: 'none' | 'warning' | 'block',
+    block: boolean,
+    unlockTime?: number,
+    message?: string
 }> {
     // Check if user is admin - skip all spam checks for admin
     const { isAdmin } = await import('./handlers/admin-handlers')
     const userIsAdmin = await isAdmin(facebookId)
 
     if (userIsAdmin) {
-        return {
-            isSpam: false,
-            shouldBlock: false,
-            warningCount: 0
-        }
+        return { action: 'none', block: false }
     }
 
-    // Check if user is in any active flow - skip spam checks for legitimate input
-    const { getBotSession } = await import('./utils')
-    const sessionData = await getBotSession(facebookId)
-    const currentFlow = sessionData?.session_data?.current_flow
-
-    if (currentFlow) {
-        // Don't apply spam checks during active flows
-        // as users need to type their information (registration, listing, search)
-        return {
-            isSpam: false,
-            shouldBlock: false,
-            warningCount: 0
-        }
+    // Nếu đang trong flow hợp lệ, không áp dụng chống spam
+    if (currentFlow && ['registration', 'listing', 'search'].includes(currentFlow)) {
+        return { action: 'none', block: false }
     }
 
-    const now = Date.now()
-    const minute = Math.floor(now / 60000) // Current minute
-    const hour = Math.floor(now / 3600000) // Current hour
-
-    // Check if user is currently blocked
-    const blockInfo = userSpamBlocks.get(facebookId)
-    if (blockInfo && blockInfo.blocked) {
-        const blockDuration = now - blockInfo.blockTime
-        if (blockDuration < SPAM_CONFIG.SPAM_COOLDOWN_MINUTES * 60 * 1000) {
-            return {
-                isSpam: true,
-                reason: 'User is temporarily blocked for spam',
-                shouldBlock: true,
-                warningCount: 0
-            }
-        } else {
-            // Unblock user after cooldown
-            userSpamBlocks.delete(facebookId)
-        }
+    // Kiểm tra trạng thái khóa hiện tại
+    if (await isUserLocked(facebookId)) {
+        return { action: 'block', block: true }
     }
 
-    // Get or create user message count
-    let userCount = userMessageCounts.get(facebookId)
-    if (!userCount || userCount.lastReset !== minute) {
-        userCount = { count: 0, lastReset: minute }
-        userMessageCounts.set(facebookId, userCount)
-    }
-
-    // Increment message count
-    userCount.count++
-
-    // Check if user exists to apply different rate limits
-    const isNewUser = !await checkIfUserExists(facebookId)
-    const maxMessagesPerMinute = isNewUser ? SPAM_CONFIG.MAX_MESSAGES_PER_MINUTE_NEW : SPAM_CONFIG.MAX_MESSAGES_PER_MINUTE
-    const maxMessagesPerHour = isNewUser ? SPAM_CONFIG.MAX_MESSAGES_PER_HOUR_NEW : SPAM_CONFIG.MAX_MESSAGES_PER_HOUR
-
-    // Check rate limits với giới hạn phù hợp cho loại user
-    if (userCount.count > maxMessagesPerMinute) {
-        await blockUser(facebookId, `Exceeded message rate limit (${userCount.count}/${maxMessagesPerMinute} per minute)`)
-        return {
-            isSpam: true,
-            reason: `Too many messages per minute (${userCount.count})`,
-            shouldBlock: true,
-            warningCount: 0
-        }
-    }
-
-    // Check for identical messages
-    const identicalCount = await checkIdenticalMessages(facebookId, message)
-    if (identicalCount >= SPAM_CONFIG.MAX_IDENTICAL_MESSAGES) {
-        await blockUser(facebookId, 'Sending identical messages repeatedly')
-        return {
-            isSpam: true,
-            reason: 'Sending identical messages repeatedly',
-            shouldBlock: true,
-            warningCount: 0
-        }
-    }
-
-    // Check if user should get a warning
-    if (identicalCount >= SPAM_CONFIG.WARNING_THRESHOLD) {
-        const warningInfo = userSpamWarnings.get(facebookId)
-        const warningCount = warningInfo ? warningInfo.count + 1 : 1
-
-        userSpamWarnings.set(facebookId, {
-            count: warningCount,
-            lastWarning: now
-        })
-
-        return {
-            isSpam: false,
-            shouldBlock: false,
-            warningCount
-        }
-    }
-
-    return {
-        isSpam: false,
-        shouldBlock: false,
-        warningCount: 0
+    // Xử lý theo loại user
+    if (!isRegistered(userStatus)) {
+        return await handleUnregisteredSpam(facebookId, message, userStatus)
+    } else {
+        return await handleRegisteredSpam(facebookId, message, userStatus, currentFlow)
     }
 }
+
+// Xử lý spam cho user chưa đăng ký (nhẹ nhàng)
+async function handleUnregisteredSpam(facebookId: string, message: string, userStatus: string): Promise<{
+    action: 'none' | 'warning' | 'block',
+    block: boolean,
+    unlockTime?: number,
+    message?: string
+}> {
+    const { sendMessage } = await import('./facebook-api')
+    const now = Date.now()
+    const resetTime = SPAM_CONFIG.UNREGISTERED.RESET_TIME_MINUTES * 60 * 1000
+
+    // Lấy dữ liệu spam từ database
+    const { data: spamData } = await supabaseAdmin
+        .from('spam_tracking')
+        .select('*')
+        .eq('user_id', facebookId)
+        .single()
+
+    // Reset count nếu quá thời gian
+    if (spamData && (now - spamData.last_message_time) > resetTime) {
+        await updateSpamData(facebookId, { message_count: 0, warning_count: 0 })
+    }
+
+    // Cập nhật count
+    const newCount = (spamData?.message_count || 0) + 1
+    await updateSpamData(facebookId, {
+        message_count: newCount,
+        last_message_time: now
+    })
+
+    // Xử lý theo level
+    if (newCount <= 2) {
+        await sendMessage(facebookId, SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[2])
+        await sendWelcomeMessage(facebookId, userStatus)
+        return { action: 'warning', block: false, message: SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[2] }
+    } else if (newCount === 3) {
+        await sendMessage(facebookId, SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[3])
+        await sendWelcomeMessage(facebookId, userStatus)
+        return { action: 'warning', block: false, message: SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[3] }
+    } else if (newCount >= 4) {
+        const lockTime = now + (SPAM_CONFIG.UNREGISTERED.LOCK_TIME_MINUTES * 60 * 1000)
+        await updateSpamData(facebookId, { locked_until: lockTime })
+        await sendMessage(facebookId, SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[4])
+        return { action: 'block', block: true, unlockTime: lockTime, message: SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[4] }
+    }
+
+    return { action: 'none', block: false }
+}
+
+// Xử lý spam cho user đã đăng ký (phân cấp theo ngữ cảnh)
+async function handleRegisteredSpam(facebookId: string, message: string, userStatus: string, currentFlow: string | null): Promise<{
+    action: 'none' | 'warning' | 'block',
+    block: boolean,
+    unlockTime?: number,
+    message?: string
+}> {
+    const { sendMessage } = await import('./facebook-api')
+    const now = Date.now()
+
+    // Lấy dữ liệu spam từ database
+    const { data: spamData } = await supabaseAdmin
+        .from('spam_tracking')
+        .select('*')
+        .eq('user_id', facebookId)
+        .single()
+
+    // Nếu đang trong luồng tìm kiếm/đăng bán
+    if (currentFlow === 'search' || currentFlow === 'listing') {
+        const config = SPAM_CONFIG.REGISTERED.SEARCH_LISTING
+        const timeWindow = config.TIME_WINDOW_SECONDS * 1000
+
+        if (spamData && (now - spamData.last_message_time) > timeWindow) {
+            await updateSpamData(facebookId, { message_count: 1, last_message_time: now })
+            return { action: 'none', block: false }
+        }
+
+        const newCount = (spamData?.message_count || 0) + 1
+        await updateSpamData(facebookId, {
+            message_count: newCount,
+            last_message_time: now
+        })
+
+        if (newCount >= config.MAX_MESSAGES) {
+            const lockTime = now + (config.LOCK_TIME_MINUTES * 60 * 1000)
+            await updateSpamData(facebookId, { locked_until: lockTime })
+            await sendMessage(facebookId, '🚫 Chức năng hiện tại đã bị khóa 30 phút do gửi quá nhiều tin nhắn')
+            return { action: 'block', block: true, unlockTime: lockTime }
+        } else if (newCount >= config.WARNING_AT) {
+            await sendMessage(facebookId, '⚠️ Bạn đang gửi tin nhắn khá nhanh. Vui lòng chậm lại!')
+            return { action: 'warning', block: false }
+        }
+    }
+
+    // Nếu đang trong luồng hỗ trợ admin
+    else if (currentFlow === 'admin_support') {
+        const config = SPAM_CONFIG.REGISTERED.ADMIN_SUPPORT
+        const timeWindow = config.TIME_WINDOW_MINUTES * 60 * 1000
+
+        if (spamData && (now - spamData.last_message_time) > timeWindow) {
+            await updateSpamData(facebookId, { message_count: 1, last_message_time: now })
+            return { action: 'none', block: false }
+        }
+
+        const newCount = (spamData?.message_count || 0) + 1
+        await updateSpamData(facebookId, {
+            message_count: newCount,
+            last_message_time: now
+        })
+
+        if (newCount >= config.MAX_MESSAGES) {
+            const lockTime = now + (config.LOCK_TIME_HOURS * 60 * 60 * 1000)
+            await updateSpamData(facebookId, { locked_until: lockTime })
+            await sendMessage(facebookId, '🚫 Luồng hỗ trợ đã bị khóa 2 giờ. Vui lòng liên hệ admin trực tiếp!')
+            return { action: 'block', block: true, unlockTime: lockTime }
+        } else if (newCount >= config.WARNING_AT) {
+            await sendMessage(facebookId, '⚠️ Bạn đang chat khá nhanh. Vui lòng chậm lại để admin trả lời!')
+            return { action: 'warning', block: false }
+        }
+    }
+
+    // Tin nhắn thường - không áp dụng chống spam nghiêm ngặt
+    await updateSpamData(facebookId, { last_message_time: now })
+    return { action: 'none', block: false }
+}
+
+// Hàm cập nhật dữ liệu spam vào database
+async function updateSpamData(userId: string, updates: any): Promise<void> {
+    try {
+        await supabaseAdmin
+            .from('spam_tracking')
+            .upsert({
+                user_id: userId,
+                ...updates,
+                updated_at: new Date().toISOString()
+            }, {
+                onConflict: 'user_id'
+            })
+    } catch (error) {
+        console.error('Error updating spam data:', error)
+    }
+}
+
+// Kiểm tra user có bị khóa không
+async function isUserLocked(facebookId: string): Promise<boolean> {
+    try {
+        const { data: spamData } = await supabaseAdmin
+            .from('spam_tracking')
+            .select('locked_until')
+            .eq('user_id', facebookId)
+            .single()
+
+        if (spamData?.locked_until) {
+            const lockTime = new Date(spamData.locked_until).getTime()
+            const now = Date.now()
+            return now < lockTime
+        }
+
+        return false
+    } catch (error) {
+        return false
+    }
+}
+
+// Check if user is spamming (HÀM CŨ - ĐÃ LOẠI BỎ ĐỂ TRÁNH XUNG ĐỘT)
+// Sử dụng handleAntiSpam() thay thế
 
 // Check if user exists in database
 async function checkIfUserExists(facebookId: string): Promise<boolean> {

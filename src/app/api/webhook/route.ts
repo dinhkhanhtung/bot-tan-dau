@@ -131,8 +131,8 @@ async function handleMessageEvent(event: any) {
         // Get user first to check if they exist
         const user = await getUserByFacebookId(senderId)
 
-        // Check spam for ALL users (including unregistered)
-        const { checkSpam, isUserBlocked, sendSpamWarning, sendSpamBlockMessage } = await import('@/lib/anti-spam')
+        // Check spam for ALL users (including unregistered) - SỬ DỤNG LOGIC MỚI
+        const { handleAntiSpam, isUserBlocked, sendSpamBlockMessage } = await import('@/lib/anti-spam')
 
         // Check if user is currently blocked
         if (await isUserBlocked(senderId)) {
@@ -140,17 +140,19 @@ async function handleMessageEvent(event: any) {
             return
         }
 
-        // Check for spam (áp dụng cho tất cả user)
-        const spamCheck = await checkSpam(senderId, message.text || '')
+        // Check for spam using NEW logic (áp dụng cho tất cả user)
+        const userStatus = user ? (user.status === 'registered' || user.status === 'trial' ? 'registered' : 'unregistered') : 'unregistered'
+        const spamCheck = await handleAntiSpam(senderId, message.text || '', userStatus, null)
 
-        if (spamCheck.shouldBlock) {
+        if (spamCheck.block) {
             await sendSpamBlockMessage(senderId)
             return
         }
 
-        if (spamCheck.warningCount > 0) {
-            await sendSpamWarning(senderId, spamCheck.warningCount)
-            // Continue processing but with warning
+        // Send warning if needed
+        if (spamCheck.action === 'warning' && spamCheck.message) {
+            const { sendMessage } = await import('@/lib/facebook-api')
+            await sendMessage(senderId, spamCheck.message)
         }
 
         // Log message to database for spam tracking
@@ -311,7 +313,7 @@ async function handleMessageEvent(event: any) {
                     } else {
                         // NEW_USER welcome message
                         await sendMessage(senderId, `👋 Chào mừng ${displayName} đến với Bot Tân Dậu - Hỗ Trợ Chéo!`)
-                        await sendMessage(senderId, '🤝 Cộng đồng dành riêng cho những người con Tân Dậu (sinh năm 1981)')
+                        await sendMessage(senderId, '🤝 Cộng đồng dành riêng cho Tân Dậu (sinh năm 1981)')
                         await sendMessage(senderId, '💡 Có thể bạn muốn tham gia cùng cộng đồng để kết nối và hỗ trợ lẫn nhau!')
                         await sendMessage(senderId, 'Để sử dụng bot, bạn cần đăng ký tài khoản trước.')
 
