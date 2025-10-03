@@ -21,6 +21,30 @@ export class MarketplaceFlow {
      * Handle listing flow
      */
     async handleListing(user: any): Promise<void> {
+        // Kiểm tra permission trước khi cho phép niêm yết
+        const { SmartContextManager, UserType } = await import('../core/smart-context-manager')
+        const context = await SmartContextManager.analyzeUserContext(user)
+        const permissions = SmartContextManager.getUserPermissions(context.userType)
+
+        if (!permissions.canCreateListings) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🚫 CHƯA THỂ NIÊM YẾT',
+                'Tài khoản của bạn chưa được kích hoạt đầy đủ.',
+                'Vui lòng liên hệ admin để được hỗ trợ.'
+            ])
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Tùy chọn:',
+                [
+                    createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
+                    createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                    createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                ]
+            )
+            return
+        }
+
         // Typing indicator removed for quick reply
         await sendQuickReplyNoTyping(
             user.facebook_id,
@@ -63,6 +87,30 @@ export class MarketplaceFlow {
      * Handle search flow
      */
     async handleSearch(user: any): Promise<void> {
+        // Kiểm tra permission trước khi cho phép tìm kiếm
+        const { SmartContextManager, UserType } = await import('../core/smart-context-manager')
+        const context = await SmartContextManager.analyzeUserContext(user)
+        const permissions = SmartContextManager.getUserPermissions(context.userType)
+
+        if (!permissions.canSearch) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🚫 CHƯA THỂ TÌM KIẾM',
+                'Tài khoản của bạn chưa được kích hoạt đầy đủ.',
+                'Vui lòng liên hệ admin để được hỗ trợ.'
+            ])
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Tùy chọn:',
+                [
+                    createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
+                    createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+                    createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                ]
+            )
+            return
+        }
+
         // Typing indicator removed for quick reply
         await sendQuickReplyNoTyping(
             user.facebook_id,

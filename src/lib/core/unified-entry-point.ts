@@ -197,6 +197,16 @@ export class UnifiedBotSystem {
         try {
             const [action, ...params] = postback.split('_')
 
+            // Kiểm tra user type để route đúng handler
+            const context = await this.analyzeUserContext(user)
+
+            if (context.userType === UserType.PENDING_USER) {
+                const { PendingUserFlow } = await import('../flows/pending-user-flow')
+                const pendingUserFlow = new PendingUserFlow()
+                await pendingUserFlow.handlePostback(user, postback)
+                return
+            }
+
             switch (action) {
                 case 'REGISTER':
                     await this.startRegistration(user)
@@ -234,6 +244,9 @@ export class UnifiedBotSystem {
                 case UserType.TRIAL_USER:
                     await this.handleRegisteredUserText(user, text, context)
                     break
+                case UserType.PENDING_USER:
+                    await this.handlePendingUserText(user, text, context)
+                    break
                 case UserType.EXPIRED_USER:
                     await this.handleExpiredUserText(user, text)
                     break
@@ -269,17 +282,30 @@ export class UnifiedBotSystem {
 
             // Nếu không tìm thấy user trong database -> NEW USER
             if (error || !userData) {
-                console.log('No user data found for:', user.facebook_id, 'Error:', error?.message)
+                console.log('❌ No user data found for:', user.facebook_id, 'Error:', error?.message)
                 return { userType: UserType.NEW_USER, user: null }
             }
 
             // 3. KIỂM TRA TRẠNG THÁI USER - RÕ RÀNG
-            console.log('User data found:', {
+            console.log('✅ User data found:', {
                 facebook_id: userData.facebook_id,
                 status: userData.status,
                 name: userData.name,
+                phone: userData.phone,
                 membership_expires_at: userData.membership_expires_at
             })
+
+            // KIỂM TRA USER CÓ PHẢI LÀ DỮ LIỆU TEST KHÔNG
+            if (userData.name === 'User' && userData.phone?.startsWith('temp_')) {
+                console.log('🚫 Found test user data, treating as NEW USER')
+                return { userType: UserType.NEW_USER, user: null }
+            }
+
+            // KIỂM TRA USER ĐANG CHỜ DUYỆT
+            if (userData.status === 'pending') {
+                console.log('⏳ User pending approval, treating as PENDING_USER')
+                return { userType: UserType.PENDING_USER, user: userData }
+            }
 
             if (userData.status === 'registered') {
                 return { userType: UserType.REGISTERED_USER, user: userData }
@@ -295,15 +321,19 @@ export class UnifiedBotSystem {
                     }
                 }
                 return { userType: UserType.TRIAL_USER, user: userData }
+            } else if (userData.status === 'pending') {
+                // User đang chờ admin duyệt
+                console.log('User pending approval, treating as pending user')
+                return { userType: UserType.NEW_USER, user: userData }
             } else if (userData.status === 'expired') {
                 return { userType: UserType.EXPIRED_USER, user: userData }
             }
 
             // 4. Nếu status không xác định -> coi như NEW USER
-            console.log('Unknown user status:', userData.status, 'treating as new user')
+            console.log('❓ Unknown user status:', userData.status, 'treating as new user')
             return { userType: UserType.NEW_USER, user: null }
         } catch (error) {
-            console.error('Error analyzing user context:', error)
+            console.error('❌ Error analyzing user context:', error)
             return { userType: UserType.NEW_USER }
         }
     }
@@ -358,6 +388,20 @@ export class UnifiedBotSystem {
         } catch (error) {
             console.error('Error handling expired user text:', error)
             await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Xử lý pending user text
+     */
+    private static async handlePendingUserText(user: any, text: string, context: any): Promise<void> {
+        try {
+            const { PendingUserFlow } = await import('../flows/pending-user-flow')
+            const pendingUserFlow = new PendingUserFlow()
+            await pendingUserFlow.handleMessage(user, text)
+        } catch (error) {
+            console.error('Error handling pending user text:', error)
+            await this.showWelcomeMessage(user)
         }
     }
 
@@ -466,8 +510,15 @@ export class UnifiedBotSystem {
     private static async showWelcomeMessage(user: any): Promise<void> {
         try {
             await sendTypingIndicator(user.facebook_id)
-            await sendMessage(user.facebook_id, '🎉 Chào mừng đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
+
+            // Get Facebook name for personalized greeting
+            const { getFacebookDisplayName } = await import('../utils')
+            const facebookName = await getFacebookDisplayName(user.facebook_id)
+            const displayName = facebookName || 'bạn'
+
+            await sendMessage(user.facebook_id, `🎉 Chào mừng ${displayName} đến với Bot Tân Dậu - Hỗ Trợ Chéo!`)
             await sendMessage(user.facebook_id, '🤝 Cộng đồng dành riêng cho những người con Tân Dậu (sinh năm 1981)')
+            await sendMessage(user.facebook_id, '💡 Có thể bạn muốn tham gia cùng cộng đồng để kết nối và hỗ trợ lẫn nhau!')
 
             await sendQuickReply(
                 user.facebook_id,
@@ -565,6 +616,20 @@ export class UnifiedBotSystem {
     }
 
     /**
+     * Show pending user welcome
+     */
+    private static async showPendingUserWelcome(user: any, context: any): Promise<void> {
+        try {
+            const { PendingUserFlow } = await import('../flows/pending-user-flow')
+            const pendingUserFlow = new PendingUserFlow()
+            await pendingUserFlow.showPendingUserMenu(user, context)
+        } catch (error) {
+            console.error('Error showing pending user welcome:', error)
+            await this.showWelcomeMessage(user)
+        }
+    }
+
+    /**
      * Show support info
      */
     private static async showSupportInfo(user: any): Promise<void> {
@@ -611,6 +676,9 @@ export class UnifiedBotSystem {
                 case UserType.REGISTERED_USER:
                 case UserType.TRIAL_USER:
                     await this.showMainMenu(user)
+                    break
+                case UserType.PENDING_USER:
+                    await this.showPendingUserWelcome(user, context)
                     break
                 case UserType.EXPIRED_USER:
                     await this.sendMessage(user.facebook_id, '⏰ Tài khoản đã hết hạn. Vui lòng thanh toán để tiếp tục.')

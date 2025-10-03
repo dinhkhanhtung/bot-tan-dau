@@ -95,6 +95,10 @@ export function getUserStatusInfo(user: any) {
         category = 'active'
         canUseBot = true
         needsTrialNotification = false
+    } else if (user.status === 'pending') {
+        category = 'pending'
+        canUseBot = true // ← THAY ĐỔI: Pending user có thể sử dụng bot
+        needsTrialNotification = false
     } else if (user.status === 'expired' || daysLeft <= 0) {
         category = 'expired'
         canUseBot = false
@@ -325,7 +329,7 @@ export async function getBotSession(facebookId: string) {
         .select('*')
         .eq('facebook_id', facebookId)
         .single()
-    
+
     if (error) return null
     return data
 }
@@ -366,7 +370,7 @@ export async function getFacebookDisplayName(facebookId: string): Promise<string
         console.log('Fetching Facebook profile for user:', facebookId)
 
         const response = await fetch(
-            `https://graph.facebook.com/v18.0/${facebookId}?fields=first_name,last_name,name&access_token=${FACEBOOK_ACCESS_TOKEN}`
+            `https://graph.facebook.com/v19.0/${facebookId}?fields=first_name,last_name,name&access_token=${FACEBOOK_ACCESS_TOKEN}`
         )
 
         console.log('Facebook API response status:', response.status)

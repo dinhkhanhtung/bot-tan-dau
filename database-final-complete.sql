@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS users (
     location VARCHAR(100) NOT NULL,
     birthday INTEGER NOT NULL CHECK (birthday = 1981),
     product_service TEXT,
-    status VARCHAR(20) DEFAULT 'trial' CHECK (status IN ('trial', 'active', 'expired', 'suspended')),
+    status VARCHAR(20) DEFAULT 'trial' CHECK (status IN ('trial', 'active', 'expired', 'suspended', 'pending')),
     membership_expires_at TIMESTAMP WITH TIME ZONE,
     rating DECIMAL(3,2) DEFAULT 0.00,
     total_transactions INTEGER DEFAULT 0,
@@ -349,15 +349,166 @@ ON CONFLICT (facebook_id) DO NOTHING;
 UPDATE users SET welcome_message_sent = TRUE WHERE welcome_message_sent IS NULL OR welcome_message_sent = FALSE;
 
 -- ========================================
--- 8. VERIFICATION
+-- 8. PENDING_USER SYSTEM TABLES
 -- ========================================
 
-SELECT 'Database setup hoàn chỉnh!' as status;
+-- User Activities Table (for rate limiting and monitoring)
+CREATE TABLE IF NOT EXISTS user_activities (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    facebook_id TEXT NOT NULL,
+    date DATE NOT NULL,
+    listings_count INTEGER DEFAULT 0,
+    searches_count INTEGER DEFAULT 0,
+    messages_count INTEGER DEFAULT 0,
+    admin_chat_count INTEGER DEFAULT 0,
+    last_activity TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    -- Unique constraint to prevent duplicate entries for same user and date
+    UNIQUE(facebook_id, date)
+);
+
+-- User Activity Logs Table (for detailed monitoring)
+CREATE TABLE IF NOT EXISTS user_activity_logs (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    facebook_id TEXT NOT NULL,
+    user_type TEXT NOT NULL,
+    action TEXT NOT NULL,
+    details JSONB,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    success BOOLEAN DEFAULT true,
+    error_message TEXT,
+    response_time_ms INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- System Metrics Table (for daily snapshots)
+CREATE TABLE IF NOT EXISTS system_metrics (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    date DATE NOT NULL,
+    total_pending_users INTEGER DEFAULT 0,
+    pending_users_today INTEGER DEFAULT 0,
+    total_searches_today INTEGER DEFAULT 0,
+    total_messages_today INTEGER DEFAULT 0,
+    average_response_time_ms INTEGER DEFAULT 0,
+    error_rate_percentage DECIMAL(5,2) DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    -- Unique constraint to prevent duplicate entries for same date
+    UNIQUE(date)
+);
+
+-- ========================================
+-- 9. INDEXES FOR NEW TABLES
+-- ========================================
+
+-- User Activities indexes
+CREATE INDEX IF NOT EXISTS idx_user_activities_facebook_date ON user_activities(facebook_id, date);
+CREATE INDEX IF NOT EXISTS idx_user_activities_date ON user_activities(date);
+CREATE INDEX IF NOT EXISTS idx_user_activities_last_activity ON user_activities(last_activity);
+
+-- User Activity Logs indexes
+CREATE INDEX IF NOT EXISTS idx_user_activity_logs_facebook_id ON user_activity_logs(facebook_id);
+CREATE INDEX IF NOT EXISTS idx_user_activity_logs_timestamp ON user_activity_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_user_activity_logs_user_type ON user_activity_logs(user_type);
+CREATE INDEX IF NOT EXISTS idx_user_activity_logs_action ON user_activity_logs(action);
+CREATE INDEX IF NOT EXISTS idx_user_activity_logs_success ON user_activity_logs(success);
+
+-- System Metrics indexes
+CREATE INDEX IF NOT EXISTS idx_system_metrics_date ON system_metrics(date);
+
+-- ========================================
+-- 10. FUNCTIONS FOR NEW TABLES
+-- ========================================
+
+-- Function to clean up old activity logs (older than specified days)
+CREATE OR REPLACE FUNCTION cleanup_old_activity_logs(days_to_keep INTEGER DEFAULT 30)
+RETURNS void AS $$
+BEGIN
+    DELETE FROM user_activity_logs 
+    WHERE timestamp < NOW() - INTERVAL '1 day' * days_to_keep;
+END;
+$$ language 'plpgsql';
+
+-- Function to clean up old system metrics (older than specified days)
+CREATE OR REPLACE FUNCTION cleanup_old_system_metrics(days_to_keep INTEGER DEFAULT 90)
+RETURNS void AS $$
+BEGIN
+    DELETE FROM system_metrics 
+    WHERE date < CURRENT_DATE - INTERVAL '1 day' * days_to_keep;
+END;
+$$ language 'plpgsql';
+
+-- Function to get daily system metrics summary
+CREATE OR REPLACE FUNCTION get_daily_metrics_summary(target_date DATE DEFAULT CURRENT_DATE)
+RETURNS TABLE (
+    total_pending_users BIGINT,
+    pending_users_today BIGINT,
+    total_searches_today BIGINT,
+    total_messages_today BIGINT,
+    average_response_time_ms NUMERIC,
+    error_rate_percentage NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        (SELECT COUNT(*) FROM users WHERE status = 'pending')::BIGINT as total_pending_users,
+        (SELECT COUNT(*) FROM users WHERE status = 'pending' AND DATE(created_at) = target_date)::BIGINT as pending_users_today,
+        (SELECT COALESCE(SUM(searches_count), 0) FROM user_activities WHERE date = target_date)::BIGINT as total_searches_today,
+        (SELECT COALESCE(SUM(messages_count), 0) FROM user_activities WHERE date = target_date)::BIGINT as total_messages_today,
+        (SELECT COALESCE(AVG(response_time_ms), 0) FROM user_activity_logs WHERE DATE(timestamp) = target_date AND success = true)::NUMERIC as average_response_time_ms,
+        (SELECT COALESCE(
+            (COUNT(*) FILTER (WHERE success = false)::NUMERIC / COUNT(*)::NUMERIC) * 100, 
+            0
+        ) FROM user_activity_logs WHERE DATE(timestamp) = target_date)::NUMERIC as error_rate_percentage;
+END;
+$$ language 'plpgsql';
+
+-- Function to get user activity summary
+CREATE OR REPLACE FUNCTION get_user_activity_summary(
+    target_facebook_id TEXT,
+    days_back INTEGER DEFAULT 7
+)
+RETURNS TABLE (
+    total_activities BIGINT,
+    success_rate NUMERIC,
+    average_response_time_ms NUMERIC,
+    action_counts JSONB
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COUNT(*)::BIGINT as total_activities,
+        COALESCE(
+            (COUNT(*) FILTER (WHERE success = true)::NUMERIC / COUNT(*)::NUMERIC) * 100,
+            0
+        )::NUMERIC as success_rate,
+        COALESCE(AVG(response_time_ms), 0)::NUMERIC as average_response_time_ms,
+        jsonb_object_agg(action, action_count) as action_counts
+    FROM (
+        SELECT 
+            action,
+            COUNT(*) as action_count
+        FROM user_activity_logs 
+        WHERE facebook_id = target_facebook_id 
+        AND timestamp >= NOW() - INTERVAL '1 day' * days_back
+        GROUP BY action
+    ) action_stats;
+END;
+$$ language 'plpgsql';
+
+-- ========================================
+-- 11. VERIFICATION
+-- ========================================
+
+SELECT 'Database setup hoàn chỉnh với PENDING_USER system!' as status;
 SELECT COUNT(*) as total_tables FROM information_schema.tables
 WHERE table_schema = 'public'
 AND table_name IN (
     'users', 'listings', 'conversations', 'messages', 'payments', 'ratings',
     'events', 'event_participants', 'notifications', 'ads', 'search_requests',
     'referrals', 'user_points', 'point_transactions', 'bot_sessions',
-    'user_messages', 'spam_logs', 'admin_users', 'admin_chat_sessions'
+    'user_messages', 'spam_logs', 'admin_users', 'admin_chat_sessions',
+    'user_activities', 'user_activity_logs', 'system_metrics'
 );

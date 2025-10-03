@@ -19,6 +19,30 @@ export async function handleListing(user: any) {
     // Hide previous buttons first - converted to quick reply
     await hideButtons(user.facebook_id)
 
+    // Kiểm tra permission trước khi cho phép niêm yết
+    const { SmartContextManager, UserType } = await import('../core/smart-context-manager')
+    const context = await SmartContextManager.analyzeUserContext(user)
+    const permissions = SmartContextManager.getUserPermissions(context.userType)
+
+    if (!permissions.canCreateListings) {
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🚫 CHƯA THỂ NIÊM YẾT',
+            'Tài khoản của bạn chưa được kích hoạt đầy đủ.',
+            'Vui lòng liên hệ admin để được hỗ trợ.'
+        ])
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
+                createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+        return
+    }
+
     await sendMessagesWithTyping(user.facebook_id, [
         '🛒 NIÊM YẾT SẢN PHẨM/DỊCH VỤ',
         'Chọn loại tin đăng bạn muốn đăng:',
@@ -906,15 +930,15 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
             await sendCarouselTemplate(user.facebook_id, elements)
         }
 
-            await sendQuickReply(
-                user.facebook_id,
-                'Tùy chọn:',
-                [
-                    createQuickReply('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
-                    createQuickReply('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
-                    createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
-                ]
-            )
+        await sendQuickReply(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createQuickReply('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
+                createQuickReply('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
 
         // Clear session
         await updateBotSession(user.facebook_id, null)

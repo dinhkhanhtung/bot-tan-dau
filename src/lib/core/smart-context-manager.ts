@@ -6,6 +6,7 @@ export enum UserType {
     ADMIN = 'admin',
     REGISTERED_USER = 'registered_user',
     TRIAL_USER = 'trial_user',
+    PENDING_USER = 'pending_user', // ← THÊM MỚI: User đang chờ admin duyệt
     NEW_USER = 'new_user',
     EXPIRED_USER = 'expired_user'
 }
@@ -26,6 +27,117 @@ export interface UserContext {
     session: any
     isInFlow: boolean
     flowType?: string
+}
+
+// Permission Matrix cho từng loại user
+export interface UserPermissions {
+    canUseBot: boolean
+    canSearch: boolean
+    canViewListings: boolean
+    canCreateListings: boolean
+    canContactSellers: boolean
+    canMakePayments: boolean
+    canUseAdminChat: boolean
+    canAccessCommunity: boolean
+    canUsePoints: boolean
+    canAccessSettings: boolean
+    maxListingsPerDay?: number
+    maxSearchesPerDay?: number
+    maxMessagesPerDay?: number
+}
+
+// Permission definitions cho từng user type
+export const USER_PERMISSIONS: Record<UserType, UserPermissions> = {
+    [UserType.ADMIN]: {
+        canUseBot: true,
+        canSearch: true,
+        canViewListings: true,
+        canCreateListings: true,
+        canContactSellers: true,
+        canMakePayments: true,
+        canUseAdminChat: true,
+        canAccessCommunity: true,
+        canUsePoints: true,
+        canAccessSettings: true,
+        maxListingsPerDay: 999,
+        maxSearchesPerDay: 999,
+        maxMessagesPerDay: 999
+    },
+    [UserType.REGISTERED_USER]: {
+        canUseBot: true,
+        canSearch: true,
+        canViewListings: true,
+        canCreateListings: true,
+        canContactSellers: true,
+        canMakePayments: true,
+        canUseAdminChat: true,
+        canAccessCommunity: true,
+        canUsePoints: true,
+        canAccessSettings: true,
+        maxListingsPerDay: 10,
+        maxSearchesPerDay: 50,
+        maxMessagesPerDay: 100
+    },
+    [UserType.TRIAL_USER]: {
+        canUseBot: true,
+        canSearch: true,
+        canViewListings: true,
+        canCreateListings: true,
+        canContactSellers: true,
+        canMakePayments: true,
+        canUseAdminChat: true,
+        canAccessCommunity: true,
+        canUsePoints: true,
+        canAccessSettings: true,
+        maxListingsPerDay: 5,
+        maxSearchesPerDay: 20,
+        maxMessagesPerDay: 50
+    },
+    [UserType.PENDING_USER]: {
+        canUseBot: true,
+        canSearch: true,
+        canViewListings: true,
+        canCreateListings: false, // ← GIỚI HẠN: Không được niêm yết
+        canContactSellers: false, // ← GIỚI HẠN: Không được liên hệ người bán
+        canMakePayments: false,
+        canUseAdminChat: true,
+        canAccessCommunity: false,
+        canUsePoints: false,
+        canAccessSettings: false,
+        maxListingsPerDay: 0,
+        maxSearchesPerDay: 10,
+        maxMessagesPerDay: 20
+    },
+    [UserType.NEW_USER]: {
+        canUseBot: false,
+        canSearch: false,
+        canViewListings: false,
+        canCreateListings: false,
+        canContactSellers: false,
+        canMakePayments: false,
+        canUseAdminChat: true,
+        canAccessCommunity: false,
+        canUsePoints: false,
+        canAccessSettings: false,
+        maxListingsPerDay: 0,
+        maxSearchesPerDay: 0,
+        maxMessagesPerDay: 5
+    },
+    [UserType.EXPIRED_USER]: {
+        canUseBot: false,
+        canSearch: false,
+        canViewListings: false,
+        canCreateListings: false,
+        canContactSellers: false,
+        canMakePayments: true, // ← Cho phép thanh toán để gia hạn
+        canUseAdminChat: true,
+        canAccessCommunity: false,
+        canUsePoints: false,
+        canAccessSettings: false,
+        maxListingsPerDay: 0,
+        maxSearchesPerDay: 0,
+        maxMessagesPerDay: 5
+    }
 }
 
 // Simplified Context Manager - ĐƠN GIẢN VÀ RÕ RÀNG
@@ -69,6 +181,8 @@ export class SmartContextManager {
                     userType = UserType.REGISTERED_USER
                 } else if (userData.status === 'trial') {
                     userType = UserType.TRIAL_USER
+                } else if (userData.status === 'pending') {
+                    userType = UserType.PENDING_USER // ← THÊM MỚI: Xử lý pending user
                 } else if (userData.status === 'expired') {
                     userType = UserType.EXPIRED_USER
                 }
@@ -166,6 +280,8 @@ export class SmartContextManager {
             case UserType.REGISTERED_USER:
             case UserType.TRIAL_USER:
                 return this.getRegisteredUserMenu(context)
+            case UserType.PENDING_USER:
+                return this.getPendingUserMenu(context) // ← THÊM MỚI: Menu cho pending user
             case UserType.EXPIRED_USER:
                 return this.getExpiredUserMenu()
             case UserType.NEW_USER:
@@ -208,6 +324,32 @@ export class SmartContextManager {
             if (daysLeft <= 3) {
                 menu.unshift({ title: `⚠️ TRIAL HẾT HẠN: ${daysLeft} NGÀY`, action: 'PAYMENT_URGENT', priority: 0 })
             }
+        }
+
+        return menu
+    }
+
+    /**
+     * Menu cho User đang chờ duyệt
+     */
+    private static getPendingUserMenu(context: UserContext): any[] {
+        const menu = [
+            { title: '🔍 TÌM KIẾM SẢN PHẨM', action: 'SEARCH', priority: 1 },
+            { title: '👀 XEM TIN ĐĂNG', action: 'VIEW_LISTINGS', priority: 2 },
+            { title: '💬 LIÊN HỆ ADMIN', action: 'CONTACT_ADMIN', priority: 3 },
+            { title: 'ℹ️ THÔNG TIN', action: 'INFO', priority: 4 }
+        ]
+
+        // Thêm thông báo trạng thái chờ duyệt
+        const pendingDays = context.user?.created_at ?
+            Math.ceil((Date.now() - new Date(context.user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
+
+        if (pendingDays > 0) {
+            menu.unshift({
+                title: `⏳ CHỜ DUYỆT: ${pendingDays} NGÀY`,
+                action: 'PENDING_STATUS',
+                priority: 0
+            })
         }
 
         return menu
@@ -286,6 +428,11 @@ export class SmartContextManager {
                     Math.ceil((new Date(user.membership_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 7
                 return `🎁 CHÀO MỪNG BẠN ĐẾN VỚI GÓI DÙNG THỬ!\nBạn còn ${daysLeft} ngày sử dụng miễn phí.\n💡 Hãy khám phá các tính năng của bot!`
 
+            case UserType.PENDING_USER:
+                const pendingDays = user?.created_at ?
+                    Math.ceil((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
+                return `⏳ CHÀO MỪNG ${(user?.name || 'bạn').toUpperCase()}!\n\n📋 Trạng thái: Đang chờ Admin duyệt (${pendingDays} ngày)\n🔍 Bạn có thể tìm kiếm và xem sản phẩm\n🚫 Chưa thể niêm yết hoặc liên hệ người bán\n\n💡 Admin sẽ duyệt sớm nhất có thể!`
+
             case UserType.EXPIRED_USER:
                 return '⏰ TÀI KHOẢN ĐÃ HẾT HẠN\nĐể tiếp tục sử dụng, vui lòng thanh toán để gia hạn.'
 
@@ -293,6 +440,35 @@ export class SmartContextManager {
             default:
                 return '🎉 CHÀO MỪNG ĐẾN VỚI BOT Tân Dậu - Hỗ Trợ Chéo!\n🤝 Cộng đồng dành riêng cho những người con Tân Dậu.\n\n💡 Để bắt đầu, bạn cần đăng ký thành viên.'
         }
+    }
+
+    /**
+     * Lấy permissions cho user type
+     */
+    static getUserPermissions(userType: UserType): UserPermissions {
+        return USER_PERMISSIONS[userType] || USER_PERMISSIONS[UserType.NEW_USER]
+    }
+
+    /**
+     * Kiểm tra permission cho user
+     */
+    static hasPermission(userType: UserType, permission: keyof UserPermissions): boolean {
+        const permissions = this.getUserPermissions(userType)
+        return permissions[permission] === true
+    }
+
+    /**
+     * Kiểm tra rate limit cho user
+     */
+    static async checkRateLimit(userType: UserType, action: 'listings' | 'searches' | 'messages', facebookId: string): Promise<boolean> {
+        const permissions = this.getUserPermissions(userType)
+        const limit = permissions[`max${action.charAt(0).toUpperCase() + action.slice(1)}PerDay` as keyof UserPermissions] as number
+
+        if (!limit || limit >= 999) return true // No limit for admin/unlimited users
+
+        // TODO: Implement rate limiting logic with database tracking
+        // For now, return true (no rate limiting implemented yet)
+        return true
     }
 
     /**

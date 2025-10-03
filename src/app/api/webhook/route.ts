@@ -275,7 +275,7 @@ async function handleMessageEvent(event: any) {
             // Check if welcome message was already sent
             const { data: existingUser } = await supabaseAdmin
                 .from('users')
-                .select('welcome_message_sent')
+                .select('welcome_message_sent, status, created_at')
                 .eq('facebook_id', senderId)
                 .single()
 
@@ -283,18 +283,50 @@ async function handleMessageEvent(event: any) {
             if (!existingUser || !existingUser.welcome_message_sent) {
                 try {
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
-                    await sendMessage(senderId, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
-                    await sendMessage(senderId, 'Để sử dụng bot, bạn cần đăng ký tài khoản trước.')
+                    const { getFacebookDisplayName } = await import('@/lib/utils')
 
-                    await sendQuickReply(
-                        senderId,
-                        'Bạn muốn:',
-                        [
-                            createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
-                            createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
-                            createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN')
-                        ]
-                    )
+                    // Get Facebook name for personalized greeting
+                    const facebookName = await getFacebookDisplayName(senderId)
+                    const displayName = facebookName || 'bạn'
+
+                    // Different welcome messages based on user status
+                    if (existingUser && existingUser.status === 'pending') {
+                        // PENDING_USER welcome message
+                        const pendingDays = existingUser.created_at ?
+                            Math.ceil((Date.now() - new Date(existingUser.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
+
+                        await sendMessage(senderId, `⏳ CHÀO MỪNG ${displayName.toUpperCase()}!`)
+                        await sendMessage(senderId, `📋 Trạng thái: Đang chờ Admin duyệt (${pendingDays} ngày)`)
+                        await sendMessage(senderId, '🔍 Bạn có thể tìm kiếm và xem sản phẩm')
+                        await sendMessage(senderId, '🚫 Chưa thể niêm yết hoặc liên hệ người bán')
+                        await sendMessage(senderId, '💡 Admin sẽ duyệt sớm nhất có thể!')
+
+                        await sendQuickReply(
+                            senderId,
+                            'Chọn chức năng:',
+                            [
+                                createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                                createQuickReply('👀 XEM TIN ĐĂNG', 'VIEW_LISTINGS'),
+                                createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN')
+                            ]
+                        )
+                    } else {
+                        // NEW_USER welcome message
+                        await sendMessage(senderId, `👋 Chào mừng ${displayName} đến với Bot Tân Dậu - Hỗ Trợ Chéo!`)
+                        await sendMessage(senderId, '🤝 Cộng đồng dành riêng cho những người con Tân Dậu (sinh năm 1981)')
+                        await sendMessage(senderId, '💡 Có thể bạn muốn tham gia cùng cộng đồng để kết nối và hỗ trợ lẫn nhau!')
+                        await sendMessage(senderId, 'Để sử dụng bot, bạn cần đăng ký tài khoản trước.')
+
+                        await sendQuickReply(
+                            senderId,
+                            'Bạn muốn:',
+                            [
+                                createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                                createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
+                                createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
+                            ]
+                        )
+                    }
 
                     // Mark welcome message as sent
                     if (existingUser) {

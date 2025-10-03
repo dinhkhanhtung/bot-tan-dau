@@ -37,9 +37,9 @@ export class AuthFlow {
             return
         }
 
-        // Check if user is already registered (exclude temp users)
+        // Check if user is already registered (exclude temp users and pending users)
         if ((user.status === 'registered' || user.status === 'trial') &&
-            user.name !== 'User' && !user.phone?.startsWith('temp_')) {
+            user.name !== 'User' && !user.phone?.startsWith('temp_') && user.status !== 'pending') {
 
             // Check if trial is about to expire (within 2 days)
             if (user.status === 'trial' && user.membership_expires_at) {
@@ -533,7 +533,7 @@ export class AuthFlow {
             let userError = null
 
             if (existingUser) {
-                // Update existing user record
+                // Update existing user record - ĐẶT LẠI STATUS PENDING ĐỂ CHỜ ADMIN DUYỆT
                 const { error } = await supabaseAdmin
                     .from('users')
                     .update({
@@ -543,8 +543,8 @@ export class AuthFlow {
                         birthday: data.birth_year || 1981,
                         email: data.email || null,
                         product_service: data.product_service || null,
-                        status: 'trial',
-                        membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                        status: 'pending', // CHỜ ADMIN DUYỆT
+                        membership_expires_at: null, // CHƯA CÓ QUYỀN HẠN
                         referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
                         welcome_message_sent: true,
                         updated_at: new Date().toISOString()
@@ -552,7 +552,7 @@ export class AuthFlow {
                     .eq('facebook_id', user.facebook_id)
                 userError = error
             } else {
-                // Create new user record
+                // Create new user record - TẠO VỚI STATUS PENDING
                 const { error } = await supabaseAdmin
                     .from('users')
                     .insert({
@@ -564,8 +564,8 @@ export class AuthFlow {
                         birthday: data.birth_year || 1981,
                         email: data.email || null,
                         product_service: data.product_service || null,
-                        status: 'trial',
-                        membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                        status: 'pending', // CHỜ ADMIN DUYỆT
+                        membership_expires_at: null, // CHƯA CÓ QUYỀN HẠN
                         referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
                         welcome_message_sent: true,
                         created_at: new Date().toISOString()
@@ -582,17 +582,16 @@ export class AuthFlow {
             // Clear session
             await updateBotSession(user.facebook_id, null)
 
-            // Send success message - SIMPLIFIED
-            await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.email ? `✅ Email: ${data.email}` : '✅ Chưa có email'}\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 7 ngày!\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━`)
+            // Send success message - CHỜ ADMIN DUYỆT
+            await sendMessage(user.facebook_id, `📝 ĐĂNG KÝ HOÀN TẤT!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.email ? `✅ Email: ${data.email}` : '✅ Chưa có email'}\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang chờ Admin duyệt...\n📢 Bạn sẽ nhận được thông báo khi tài khoản được kích hoạt!\n━━━━━━━━━━━━━━━━━━━━`)
 
             await sendQuickReply(
                 user.facebook_id,
-                'Chào mừng bạn đến với cộng đồng Tân Dậu - Hỗ Trợ Chéo!',
+                'Cảm ơn bạn đã đăng ký! Admin sẽ duyệt sớm nhất có thể.',
                 [
-                    createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
-                    createQuickReply('🛒 TẠO TIN', 'LISTING'),
-                    createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
-                    createQuickReply('💳 NÂNG CẤP', 'PAYMENT')
+                    createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU'),
+                    createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
+                    createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN')
                 ]
             )
 
