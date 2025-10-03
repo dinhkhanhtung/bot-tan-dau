@@ -131,28 +131,26 @@ async function handleMessageEvent(event: any) {
         // Get user first to check if they exist
         const user = await getUserByFacebookId(senderId)
 
-        // Only check spam for registered users
-        if (user) {
-            const { checkSpam, isUserBlocked, sendSpamWarning, sendSpamBlockMessage } = await import('@/lib/anti-spam')
+        // Check spam for ALL users (including unregistered)
+        const { checkSpam, isUserBlocked, sendSpamWarning, sendSpamBlockMessage } = await import('@/lib/anti-spam')
 
-            // Check if user is currently blocked
-            if (await isUserBlocked(senderId)) {
-                await sendSpamBlockMessage(senderId)
-                return
-            }
+        // Check if user is currently blocked
+        if (await isUserBlocked(senderId)) {
+            await sendSpamBlockMessage(senderId)
+            return
+        }
 
-            // Check for spam
-            const spamCheck = await checkSpam(senderId, message.text || '')
+        // Check for spam (áp dụng cho tất cả user)
+        const spamCheck = await checkSpam(senderId, message.text || '')
 
-            if (spamCheck.shouldBlock) {
-                await sendSpamBlockMessage(senderId)
-                return
-            }
+        if (spamCheck.shouldBlock) {
+            await sendSpamBlockMessage(senderId)
+            return
+        }
 
-            if (spamCheck.warningCount > 0) {
-                await sendSpamWarning(senderId, spamCheck.warningCount)
-                // Continue processing but with warning
-            }
+        if (spamCheck.warningCount > 0) {
+            await sendSpamWarning(senderId, spamCheck.warningCount)
+            // Continue processing but with warning
         }
 
         // Log message to database for spam tracking
@@ -272,15 +270,15 @@ async function handleMessageEvent(event: any) {
                 return
             }
 
-            // Check if welcome message was already sent
+            // Check if welcome message was already sent - ENHANCED CHECK
             const { data: existingUser } = await supabaseAdmin
                 .from('users')
                 .select('welcome_message_sent, status, created_at')
                 .eq('facebook_id', senderId)
                 .single()
 
-            // Send welcome message only if not sent before
-            if (!existingUser || !existingUser.welcome_message_sent) {
+            // Send welcome message only if not sent before - STRICTER CHECK
+            if (!existingUser || existingUser.welcome_message_sent !== true) {
                 try {
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
                     const { getFacebookDisplayName } = await import('@/lib/utils')

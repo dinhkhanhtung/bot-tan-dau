@@ -1,23 +1,31 @@
 import { supabaseAdmin } from './supabase'
 
-// Spam detection configuration - IMPROVED: More user-friendly limits
+// Spam detection configuration - ENHANCED: Stricter limits for new users
 const SPAM_CONFIG = {
-    // Max messages per minute (increased for better UX)
+    // Max messages per minute for registered users
     MAX_MESSAGES_PER_MINUTE: 20,
-    // Max messages per hour (increased for better UX)
+    // Max messages per hour for registered users
     MAX_MESSAGES_PER_HOUR: 100,
-    // Max identical messages in a row (reduced for better UX)
+    // Max messages per minute for NEW users (much stricter)
+    MAX_MESSAGES_PER_MINUTE_NEW: 3,
+    // Max messages per hour for NEW users (much stricter)
+    MAX_MESSAGES_PER_HOUR_NEW: 10,
+    // Max identical messages in a row
     MAX_IDENTICAL_MESSAGES: 2,
-    // Cooldown period after spam detection (reduced for better UX)
+    // Cooldown period after spam detection
     SPAM_COOLDOWN_MINUTES: 15,
-    // Max consecutive identical messages before warning (reduced)
+    // Max consecutive identical messages before warning
     WARNING_THRESHOLD: 1,
-    // Max consecutive non-button messages before bot stops (significantly increased for better UX)
+    // Max consecutive non-button messages for registered users
     MAX_NON_BUTTON_MESSAGES: 20,
-    // Time window for non-button message tracking (increased)
+    // Max consecutive non-button messages for NEW users (much stricter)
+    MAX_NON_BUTTON_MESSAGES_NEW: 5,
+    // Time window for non-button message tracking
     NON_BUTTON_WINDOW_MINUTES: 45,
-    // Warning threshold for non-button messages (increased)
-    NON_BUTTON_WARNING_THRESHOLD: 8
+    // Warning threshold for non-button messages for registered users
+    NON_BUTTON_WARNING_THRESHOLD: 8,
+    // Warning threshold for non-button messages for NEW users (much stricter)
+    NON_BUTTON_WARNING_THRESHOLD_NEW: 3
 }
 
 // In-memory store for rate limiting (in production, use Redis)
@@ -92,12 +100,17 @@ export async function checkSpam(facebookId: string, message: string): Promise<{
     // Increment message count
     userCount.count++
 
-    // Check rate limits
-    if (userCount.count > SPAM_CONFIG.MAX_MESSAGES_PER_MINUTE) {
-        await blockUser(facebookId, 'Exceeded message rate limit')
+    // Check if user exists to apply different rate limits
+    const isNewUser = !await checkIfUserExists(facebookId)
+    const maxMessagesPerMinute = isNewUser ? SPAM_CONFIG.MAX_MESSAGES_PER_MINUTE_NEW : SPAM_CONFIG.MAX_MESSAGES_PER_MINUTE
+    const maxMessagesPerHour = isNewUser ? SPAM_CONFIG.MAX_MESSAGES_PER_HOUR_NEW : SPAM_CONFIG.MAX_MESSAGES_PER_HOUR
+
+    // Check rate limits với giới hạn phù hợp cho loại user
+    if (userCount.count > maxMessagesPerMinute) {
+        await blockUser(facebookId, `Exceeded message rate limit (${userCount.count}/${maxMessagesPerMinute} per minute)`)
         return {
             isSpam: true,
-            reason: 'Too many messages per minute',
+            reason: `Too many messages per minute (${userCount.count})`,
             shouldBlock: true,
             warningCount: 0
         }
@@ -136,6 +149,21 @@ export async function checkSpam(facebookId: string, message: string): Promise<{
         isSpam: false,
         shouldBlock: false,
         warningCount: 0
+    }
+}
+
+// Check if user exists in database
+async function checkIfUserExists(facebookId: string): Promise<boolean> {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('users')
+            .select('id')
+            .eq('facebook_id', facebookId)
+            .single()
+
+        return !error && !!data
+    } catch {
+        return false
     }
 }
 
@@ -398,18 +426,23 @@ export async function trackNonButtonMessage(facebookId: string, message: string)
         nonButtonData.messages.shift()
     }
 
-    // Check if should stop bot
-    if (nonButtonData.count >= SPAM_CONFIG.MAX_NON_BUTTON_MESSAGES) {
-        await stopBotForUser(facebookId, 'User sent too many non-button messages')
+    // Check if user exists to apply different limits
+    const isNewUser = !await checkIfUserExists(facebookId)
+    const maxNonButtonMessages = isNewUser ? SPAM_CONFIG.MAX_NON_BUTTON_MESSAGES_NEW : SPAM_CONFIG.MAX_NON_BUTTON_MESSAGES
+    const warningThreshold = isNewUser ? SPAM_CONFIG.NON_BUTTON_WARNING_THRESHOLD_NEW : SPAM_CONFIG.NON_BUTTON_WARNING_THRESHOLD
+
+    // Check if should stop bot với giới hạn phù hợp cho loại user
+    if (nonButtonData.count >= maxNonButtonMessages) {
+        await stopBotForUser(facebookId, `User sent too many non-button messages (${nonButtonData.count}/${maxNonButtonMessages})`)
         return {
             shouldStopBot: true,
             warningCount: nonButtonData.count,
-            reason: 'User sent too many non-button messages'
+            reason: `User sent too many non-button messages (${nonButtonData.count})`
         }
     }
 
-    // Check if should warn (use the new threshold)
-    if (nonButtonData.count >= SPAM_CONFIG.NON_BUTTON_WARNING_THRESHOLD) {
+    // Check if should warn với ngưỡng phù hợp cho loại user
+    if (nonButtonData.count >= warningThreshold) {
         return {
             shouldStopBot: false,
             warningCount: nonButtonData.count

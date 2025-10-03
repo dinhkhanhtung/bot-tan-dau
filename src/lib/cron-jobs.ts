@@ -398,6 +398,11 @@ export async function cleanupOldData() {
             console.log('✅ Cleaned up old notifications')
         }
 
+        // Clean up old spam data from memory
+        const { cleanupSpamData } = await import('./anti-spam')
+        cleanupSpamData()
+        console.log('✅ Cleaned up spam tracking data')
+
         console.log('✅ Data cleanup cron job completed')
 
     } catch (error) {
