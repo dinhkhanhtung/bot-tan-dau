@@ -425,7 +425,7 @@ export class PendingUserFlow {
     /**
      * Hiển thị menu chính cho pending user
      */
-    private async showPendingUserMenu(user: any, context?: any): Promise<void> {
+    async showPendingUserMenu(user: any, context?: any): Promise<void> {
         try {
             const pendingDays = user.created_at ?
                 Math.ceil((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
