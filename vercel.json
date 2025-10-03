@@ -1,23 +1,5 @@
 {
     "version": 2,
-    "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "/src/app/api/$1"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/src/app/$1"
-        }
-    ],
-    "env": {
-        "NODE_ENV": "production"
-    },
-    "functions": {
-        "src/app/api/**/*.ts": {
-            "runtime": "@vercel/node"
-        }
-    },
     "headers": [
         {
             "source": "/api/(.*)",
