@@ -406,7 +406,7 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý new user text
+     * Xử lý new user text - GIẢM SPAM
      */
     private static async handleNewUserText(user: any, text: string): Promise<void> {
         try {
@@ -417,11 +417,13 @@ export class UnifiedBotSystem {
             } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
                 await this.showSupportInfo(user)
             } else {
-                await this.showWelcomeMessage(user)
+                // Thay vì hiển thị welcome message đầy đủ, chỉ gửi thông báo ngắn gọn
+                await this.sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
+                await this.sendMessage(user.facebook_id, '💡 Nhập "đăng ký" để bắt đầu hoặc chờ admin hỗ trợ.')
             }
         } catch (error) {
             console.error('Error handling new user text:', error)
-            await this.showWelcomeMessage(user)
+            await this.sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
         }
     }
 
@@ -505,10 +507,26 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Show welcome message cho new user
+     * Show welcome message cho new user - CHỈ HIỂN THỊ 1 LẦN
      */
     private static async showWelcomeMessage(user: any): Promise<void> {
         try {
+            // Kiểm tra xem đã gửi thông báo chào mừng chưa
+            const { supabaseAdmin } = await import('../supabase')
+            const { data: existingUser } = await supabaseAdmin
+                .from('users')
+                .select('welcome_message_sent')
+                .eq('facebook_id', user.facebook_id)
+                .single()
+
+            // Nếu đã gửi thông báo chào mừng rồi, chỉ hiển thị thông báo đơn giản
+            if (existingUser?.welcome_message_sent) {
+                await sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
+                await sendMessage(user.facebook_id, '💡 Nhập "đăng ký" để bắt đầu hoặc chờ admin hỗ trợ.')
+                return
+            }
+
+            // Lần đầu tiên - gửi thông báo chào mừng đầy đủ
             await sendTypingIndicator(user.facebook_id)
 
             // Get Facebook name for personalized greeting
@@ -529,6 +547,22 @@ export class UnifiedBotSystem {
                     createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
                 ]
             )
+
+            // Đánh dấu đã gửi thông báo chào mừng
+            try {
+                await supabaseAdmin
+                    .from('users')
+                    .upsert({
+                        facebook_id: user.facebook_id,
+                        welcome_message_sent: true,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'facebook_id'
+                    })
+            } catch (error) {
+                console.error('Error marking welcome message sent:', error)
+            }
         } catch (error) {
             console.error('Error showing welcome message:', error)
         }
@@ -663,7 +697,7 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Handle default message
+     * Handle default message - GIẢM SPAM CHO NEW USER
      */
     private static async handleDefaultMessage(user: any): Promise<void> {
         try {
@@ -685,12 +719,14 @@ export class UnifiedBotSystem {
                     break
                 case UserType.NEW_USER:
                 default:
-                    await this.showWelcomeMessage(user)
+                    // Thay vì hiển thị welcome message đầy đủ, chỉ gửi thông báo ngắn gọn
+                    await this.sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
+                    await this.sendMessage(user.facebook_id, '💡 Nhập "đăng ký" để bắt đầu hoặc chờ admin hỗ trợ.')
                     break
             }
         } catch (error) {
             console.error('Error handling default message:', error)
-            await this.showWelcomeMessage(user)
+            await this.sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
         }
     }
 

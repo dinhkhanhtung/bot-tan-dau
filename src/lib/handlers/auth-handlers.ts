@@ -32,16 +32,16 @@ export async function handleRegistration(user: any) {
     if (userIsAdmin) {
         await sendMessage(user.facebook_id, '🔧 ADMIN DASHBOARD\nChào admin! 👋\nBạn có quyền truy cập đầy đủ mà không cần đăng ký.')
 
-    await sendQuickReply(
-        user.facebook_id,
-        'Chọn chức năng:',
-        [
-            createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
-            createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
-            createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
-            createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
-        ]
-    )
+        await sendQuickReply(
+            user.facebook_id,
+            'Chọn chức năng:',
+            [
+                createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
+                createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
+                createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
+            ]
+        )
         return
     }
 
@@ -356,10 +356,8 @@ async function handleRegistrationKeywords(user: any, text: string, data: any) {
     await completeRegistration(user, data)
 }
 
-// Handle default message for new users
+// Handle default message for new users - GIẢM SPAM
 export async function handleDefaultMessage(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
     // Check if user is admin first
     const { isAdmin } = await import('./admin-handlers')
     const userIsAdmin = await isAdmin(user.facebook_id)
@@ -384,6 +382,23 @@ export async function handleDefaultMessage(user: any) {
         return
     }
 
+    // Kiểm tra xem đã gửi thông báo chào mừng chưa
+    const { data: existingUser } = await supabaseAdmin
+        .from('users')
+        .select('welcome_message_sent')
+        .eq('facebook_id', user.facebook_id)
+        .single()
+
+    // Nếu đã gửi thông báo chào mừng rồi, chỉ gửi thông báo ngắn gọn
+    if (existingUser?.welcome_message_sent) {
+        await sendMessage(user.facebook_id, '👋 Chào bạn! Để sử dụng bot, bạn cần đăng ký thành viên trước.')
+        await sendMessage(user.facebook_id, '💡 Nhập "đăng ký" để bắt đầu hoặc chờ admin hỗ trợ.')
+        return
+    }
+
+    // Lần đầu tiên - gửi thông báo chào mừng đầy đủ
+    await sendTypingIndicator(user.facebook_id)
+
     await sendMessagesWithTyping(user.facebook_id, [
         '🎉 CHÀO MỪNG ĐẾN VỚI BOT Tân Dậu - Hỗ Trợ Chéo! 🎉',
         '👋 Xin chào! Tôi là bot hỗ trợ cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
@@ -399,6 +414,22 @@ export async function handleDefaultMessage(user: any) {
             createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
         ]
     )
+
+    // Đánh dấu đã gửi thông báo chào mừng
+    try {
+        await supabaseAdmin
+            .from('users')
+            .upsert({
+                facebook_id: user.facebook_id,
+                welcome_message_sent: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }, {
+                onConflict: 'facebook_id'
+            })
+    } catch (error) {
+        console.error('Error marking welcome message sent:', error)
+    }
 }
 
 // Handle info for new users
@@ -451,13 +482,13 @@ export async function sendTrialExpiringMessage(facebookId: string, daysLeft: num
         await sendMessagesWithTyping(facebookId, [
             '🚨 CẢNH BÁO TRIAL SẮP HẾT!',
             'Trial của bạn còn 24 giờ!',
-        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
+            '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
         ])
     } else {
         await sendMessagesWithTyping(facebookId, [
             '⏰ THÔNG BÁO QUAN TRỌNG',
             `Trial của bạn còn ${daysLeft} ngày!`,
-        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
+            '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
         ])
     }
 
