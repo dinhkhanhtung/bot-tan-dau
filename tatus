@@ -1,0 +1,37 @@
+[1mdiff --git a/src/lib/core/unified-entry-point.ts b/src/lib/core/unified-entry-point.ts[m
+[1mindex 02d2168..2c47b37 100644[m
+[1m--- a/src/lib/core/unified-entry-point.ts[m
+[1m+++ b/src/lib/core/unified-entry-point.ts[m
+[36m@@ -534,9 +534,10 @@[m [mexport class UnifiedBotSystem {[m
+             const facebookName = await getFacebookDisplayName(user.facebook_id)[m
+             const displayName = facebookName || 'bạn'[m
+ [m
+[31m-            await sendMessage(user.facebook_id, `🎉 Chào mừng ${displayName} đến với Bot Tân Dậu - Hỗ Trợ Chéo!`)[m
+[31m-            await sendMessage(user.facebook_id, '🤝 Cộng đồng dành riêng cho những người con Tân Dậu (sinh năm 1981)')[m
+[31m-            await sendMessage(user.facebook_id, '💡 Có thể bạn muốn tham gia cùng cộng đồng để kết nối và hỗ trợ lẫn nhau!')[m
+[32m+[m[32m            await sendMessage(user.facebook_id, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!`)[m
+[32m+[m[32m            await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')[m
+[32m+[m[32m            await sendMessage(user.facebook_id, '🌟 Có thể bạn cũng muốn tham gia Tân Dậu - Hỗ Trợ Chéo')[m
+[32m+[m[32m            await sendMessage(user.facebook_id, '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')[m
+ [m
+             await sendQuickReply([m
+                 user.facebook_id,[m
+[1mdiff --git a/src/lib/handlers/auth-handlers.ts b/src/lib/handlers/auth-handlers.ts[m
+[1mindex b8bd058..e8a66e3 100644[m
+[1m--- a/src/lib/handlers/auth-handlers.ts[m
+[1m+++ b/src/lib/handlers/auth-handlers.ts[m
+[36m@@ -400,9 +400,11 @@[m [mexport async function handleDefaultMessage(user: any) {[m
+     await sendTypingIndicator(user.facebook_id)[m
+ [m
+     await sendMessagesWithTyping(user.facebook_id, [[m
+[31m-        '🎉 CHÀO MỪNG ĐẾN VỚI BOT Tân Dậu - Hỗ Trợ Chéo! 🎉',[m
+[31m-        '👋 Xin chào! Tôi là bot hỗ trợ cộng đồng Tân Dậu - Hỗ Trợ Chéo.',[m
+[31m-        'Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên trước.'[m
+[32m+[m[32m        '🎉 CHÀO MỪNG ĐẾN VỚI ĐINH KHÁNH TÙNG! 🎉',[m
+[32m+[m[32m        '👋 Hôm nay mình có thể giúp gì cho bạn?',[m
+[32m+[m[32m        '🌟 Có thể bạn cũng muốn tham gia Tân Dậu - Hỗ Trợ Chéo',[m
+[32m+[m[32m        '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!',[m
+[32m+[m[32m        '💡 Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên trước.'[m
+     ])[m
+ [m
+     await sendQuickReply([m
