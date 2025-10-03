@@ -148,20 +148,33 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
     const now = Date.now()
     const resetTime = SPAM_CONFIG.UNREGISTERED.RESET_TIME_MINUTES * 60 * 1000
 
+    console.log('🔍 Checking spam for unregistered user:', facebookId, 'Status:', userStatus)
+
     // Lấy dữ liệu spam từ database
-    const { data: spamData } = await supabaseAdmin
+    const { data: spamData, error } = await supabaseAdmin
         .from('spam_tracking')
         .select('*')
         .eq('user_id', facebookId)
         .single()
 
+    if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+        console.error('❌ Error fetching spam data:', error)
+    }
+
+    console.log('📊 Current spam data:', spamData)
+
     // Reset count nếu quá thời gian
-    if (spamData && (now - spamData.last_message_time) > resetTime) {
+    if (spamData && spamData.last_message_time && (now - spamData.last_message_time) > resetTime) {
+        console.log('🔄 Resetting spam count - time exceeded reset time')
         await updateSpamData(facebookId, { message_count: 0, warning_count: 0 })
     }
 
     // Cập nhật count
-    const newCount = (spamData?.message_count || 0) + 1
+    const currentCount = spamData?.message_count || 0
+    const newCount = currentCount + 1
+
+    console.log('📈 Spam count:', currentCount, '->', newCount)
+
     await updateSpamData(facebookId, {
         message_count: newCount,
         last_message_time: now
@@ -170,10 +183,12 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
     // Xử lý theo level - LOGIC MỚI THEO YÊU CẦU
     if (newCount === 1) {
         // Lần 1: Gửi welcome đầy đủ
+        console.log('🎉 First message - sending welcome')
         await sendWelcomeMessage(facebookId, userStatus)
         return { action: 'none', block: false, message: 'Welcome sent' }
     } else if (newCount >= 2) {
         // Lần 2+: IM LẶNG HOÀN TOÀN - TÔN TRỌNG NGƯỜI DÙNG
+        console.log('🚫 Message count >= 2 - blocking user')
         // Nếu họ muốn đăng ký, họ sẽ nhắn tin admin
         return { action: 'block', block: true }
     }
@@ -260,7 +275,9 @@ async function handleRegisteredSpam(facebookId: string, message: string, userSta
 // Hàm cập nhật dữ liệu spam vào database
 async function updateSpamData(userId: string, updates: any): Promise<void> {
     try {
-        await supabaseAdmin
+        console.log('🔄 Updating spam data for user:', userId, 'Updates:', updates)
+
+        const result = await supabaseAdmin
             .from('spam_tracking')
             .upsert({
                 user_id: userId,
@@ -269,8 +286,14 @@ async function updateSpamData(userId: string, updates: any): Promise<void> {
             }, {
                 onConflict: 'user_id'
             })
+
+        if (result.error) {
+            console.error('❌ Error updating spam data:', result.error)
+        } else {
+            console.log('✅ Spam data updated successfully for user:', userId)
+        }
     } catch (error) {
-        console.error('Error updating spam data:', error)
+        console.error('❌ Error updating spam data:', error)
     }
 }
 
