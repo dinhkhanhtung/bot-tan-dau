@@ -68,7 +68,7 @@ export class AuthFlow {
         // OPTIMIZED: Single screen with essential info first
         await sendMessage(user.facebook_id, '🚀 ĐĂNG KÝ NHANH - Tân Dậu Hỗ Trợ Chéo')
 
-        await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
+        await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Email (để nhận thông báo quan trọng)\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
 
         await sendMessage(user.facebook_id, '🎁 QUYỀN LỢI: Trial 7 ngày miễn phí\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━')
 
@@ -83,7 +83,7 @@ export class AuthFlow {
         await updateBotSession(user.facebook_id, sessionData)
 
         // Start with first step - SIMPLIFIED
-        await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/4)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Nguyễn Văn Minh\n📝 Nhập họ tên để tiếp tục:')
+        await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/7)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Nguyễn Văn Minh\n📝 Nhập họ tên để tiếp tục:')
 
         // Verify session was created
         const sessionCheck = await getBotSession(user.facebook_id)
@@ -126,6 +126,9 @@ export class AuthFlow {
                 // This step is handled by postback buttons, not text input
                 await sendMessage(user.facebook_id, '❌ Vui lòng chọn nút xác nhận bên dưới để tiếp tục!')
                 break
+            case 'email':
+                await this.handleRegistrationEmail(user, text, session.data)
+                break
             case 'keywords':
                 await this.handleRegistrationKeywords(user, text, session.data)
                 break
@@ -149,7 +152,7 @@ export class AuthFlow {
 
         data.name = text.trim()
 
-        await sendMessage(user.facebook_id, `✅ Họ tên: ${data.name}\n📝 Bước 2/4: Số điện thoại\n📱 Vui lòng nhập số điện thoại của bạn:`)
+        await sendMessage(user.facebook_id, `✅ Họ tên: ${data.name}\n📝 Bước 2/7: Số điện thoại\n📱 Vui lòng nhập số điện thoại của bạn:`)
 
         await updateBotSession(user.facebook_id, {
             current_flow: 'registration',
@@ -183,7 +186,7 @@ export class AuthFlow {
 
         data.phone = phone
 
-        await sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n📝 Bước 3/4: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:`)
+        await sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n📝 Bước 3/7: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:`)
 
         await sendQuickReply(
             user.facebook_id,
@@ -216,7 +219,7 @@ export class AuthFlow {
         const data = session.data
         data.location = location
 
-        await sendMessage(user.facebook_id, `✅ Vị trí: ${location}\n📝 Bước 4/4: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!\n❓ Bạn có phải sinh năm 1981 (Tân Dậu) không?`)
+        await sendMessage(user.facebook_id, `✅ Vị trí: ${location}\n📝 Bước 4/7: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!\n❓ Bạn có phải sinh năm 1981 (Tân Dậu) không?`)
 
         await sendQuickReply(
             user.facebook_id,
@@ -235,6 +238,33 @@ export class AuthFlow {
     }
 
     /**
+     * Handle email input
+     */
+    private async handleRegistrationEmail(user: any, text: string, data: any): Promise<void> {
+        if (text.toLowerCase().includes('bỏ qua') || text.toLowerCase().includes('không')) {
+            data.email = null
+        } else {
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            if (!emailRegex.test(text.trim())) {
+                await sendMessage(user.facebook_id, '❌ Email không hợp lệ. Vui lòng nhập lại hoặc "bỏ qua":')
+                return
+            }
+            data.email = text.trim().toLowerCase()
+        }
+
+        await sendMessage(user.facebook_id, data.email ? `✅ Email: ${data.email}` : '✅ Bỏ qua email')
+
+        await sendMessage(user.facebook_id, '📝 Bước 6/7: Từ khóa tìm kiếm\n━━━━━━━━━━━━━━━━━━━━\n🔍 Từ khóa tìm kiếm:\nVD: nhà đất, xe honda, điện thoại...\n━━━━━━━━━━━━━━━━━━━━\n💡 Nhập từ khóa hoặc "bỏ qua":')
+
+        await updateBotSession(user.facebook_id, {
+            current_flow: 'registration',
+            step: 'keywords',
+            data: data
+        })
+    }
+
+    /**
      * Handle birthday verification
      */
     async handleBirthdayVerification(user: any): Promise<void> {
@@ -243,11 +273,13 @@ export class AuthFlow {
 
         const data = session.data
 
-        await sendMessage(user.facebook_id, '✅ Xác nhận tuổi thành công!\n📝 Thông tin tùy chọn (có thể bỏ qua)\n━━━━━━━━━━━━━━━━━━━━\n🔍 Từ khóa tìm kiếm:\nVD: nhà đất, xe honda, điện thoại...\n━━━━━━━━━━━━━━━━━━━━\n🛒 Sản phẩm/Dịch vụ:\nVD: Nhà đất, xe cộ, điện tử...\n━━━━━━━━━━━━━━━━━━━━\n💡 Nhập: "Từ khóa, sản phẩm" hoặc "bỏ qua"')
+        await sendMessage(user.facebook_id, '✅ Xác nhận tuổi thành công!\n📝 Thông tin tùy chọn (có thể bỏ qua)\n━━━━━━━━━━━━━━━━━━━━\n� Email (để nhận thông báo quan trọng):\nVD: nguyenvanminh@gmail.com\n━━━━━━━━━━━━━━━━━━━━\n�🔍 Từ khóa tìm kiếm:\nVD: nhà đất, xe honda, điện thoại...\n━━━━━━━━━━━━━━━━━━━━\n🛒 Sản phẩm/Dịch vụ:\nVD: Nhà đất, xe cộ, điện tử...\n━━━━━━━━━━━━━━━━━━━━\n💡 Nhập: "email,từ khóa,sản phẩm" hoặc "bỏ qua"')
+
+        await sendMessage(user.facebook_id, '📧 Bước 5/7: Email (tùy chọn)\n━━━━━━━━━━━━━━━━━━━━\n📧 Vui lòng nhập email để nhận thông báo quan trọng:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: nguyenvanminh@gmail.com\n📝 Nhập email hoặc "bỏ qua":')
 
         await updateBotSession(user.facebook_id, {
             current_flow: 'registration',
-            step: 'keywords',
+            step: 'email',
             data: data
         })
     }
@@ -508,6 +540,7 @@ export class AuthFlow {
                         phone: data.phone,
                         location: data.location,
                         birthday: data.birth_year || 1981,
+                        email: data.email || null,
                         product_service: data.product_service || null,
                         status: 'trial',
                         membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -528,6 +561,7 @@ export class AuthFlow {
                         phone: data.phone,
                         location: data.location,
                         birthday: data.birth_year || 1981,
+                        email: data.email || null,
                         product_service: data.product_service || null,
                         status: 'trial',
                         membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -548,7 +582,7 @@ export class AuthFlow {
             await updateBotSession(user.facebook_id, null)
 
             // Send success message - SIMPLIFIED
-            await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 7 ngày!\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━`)
+            await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.email ? `✅ Email: ${data.email}` : '✅ Chưa có email'}\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 7 ngày!\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━`)
 
             await sendQuickReply(
                 user.facebook_id,
