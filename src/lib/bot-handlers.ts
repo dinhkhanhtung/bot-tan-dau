@@ -21,18 +21,20 @@ export async function handlePostback(user: any, postback: string) {
     await UnifiedBotSystem.handleMessage(user, '', true, postback)
 }
 
-// Keep other utility functions that might be used elsewhere
-export * from './handlers/admin-handlers'
-export * from './handlers/community-handlers'
-export * from './handlers/marketplace-handlers'
-export * from './handlers/payment-handlers'
-export * from './handlers/utility-handlers'
-export * from './handlers/admin-extra'
+// Export specific functions to avoid conflicts
+export {
+    handleAdminCommand
+} from './handlers/admin-handlers'
 
-// Export specific functions from auth-handlers to avoid conflicts
 export {
     handleRegistration,
     handleRegistrationStep,
     handleDefaultMessage,
-    handleSmartTrialNotification
+    handleSmartTrialNotification,
+    handleInfo
 } from './handlers/auth-handlers'
+
+// Re-export from other handlers as needed
+export * from './handlers/marketplace-handlers'
+export * from './handlers/payment-handlers'
+export * from './handlers/utility-handlers'
