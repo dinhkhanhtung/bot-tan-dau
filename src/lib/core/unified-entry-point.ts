@@ -476,7 +476,7 @@ export class UnifiedBotSystem {
             }
 
             // Xử lý các lệnh đặc biệt - CHỈ khi chưa bị spam check xử lý
-            if (spamResult.action === 'none' && !spamResult.message) {
+            if (spamResult.action === 'none' && !spamResult.message && !spamResult.block) {
                 if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
                     await this.startRegistration(user)
                 } else if (text.includes('thông tin') || text.includes('THÔNG TIN')) {
