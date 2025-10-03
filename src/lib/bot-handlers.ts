@@ -649,8 +649,9 @@ async function showMainMenu(user: any) {
     const displayName = await getFacebookDisplayName(user.facebook_id) || user.name || 'bạn'
 
     await sendMessage(user.facebook_id, '🏠 TRANG CHỦ Tân Dậu - Hỗ Trợ Chéo')
-    await sendMessage(user.facebook_id, `👋 Chào mừng ${displayName}!`)
-    await sendMessage(user.facebook_id, `📊 Trạng thái: ${statusText}`)
+    await sendMessage(user.facebook_id, '🌟 Tân Dậu Việt cùng nhau kết nối - Cùng nhau thịnh vượng')
+    await sendMessage(user.facebook_id, `� Chào mừng ${displayName}!`)
+    await sendMessage(user.facebook_id, `�📊 Trạng thái: ${statusText}`)
     await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
     await sendMessage(user.facebook_id, '🎯 Chọn chức năng bạn muốn sử dụng:')
 
