@@ -22,4 +22,4 @@ export { AIManager, aiManager } from '../core/ai-manager'
 export { generateHoroscope } from '../core/ai-manager'
 
 // Export adapter
-export { FlowAdapter, flowAdapter, handleMessage, handlePostback } from '../core/flow-adapter'
+export { FlowAdapter } from '../core/flow-adapter'
