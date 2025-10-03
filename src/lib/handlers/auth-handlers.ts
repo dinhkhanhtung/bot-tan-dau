@@ -106,7 +106,7 @@ export async function handleRegistration(user: any) {
     await updateBotSession(user.facebook_id, sessionData)
 
     // Start with first step - SIMPLIFIED
-    await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/4)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Nguyễn Văn Minh\n📝 Nhập họ tên để tiếp tục:')
+    await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/4)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Đinh Khánh Tùng\n📝 Nhập họ tên để tiếp tục:')
 
     // Verify session was created
     const sessionCheck = await getBotSession(user.facebook_id)

@@ -53,13 +53,13 @@ Bước 1/4: Họ tên
 
 ### **Bước 3: Nhập họ tên**
 ```
-User nhập họ tên: "Nguyễn Văn Minh"
+User nhập họ tên: "Đinh Khánh Tùng"
 ↓
 Bot typing... (2 giây)
 ↓
 Bot gửi:
 
-"✅ Họ tên: Nguyễn Văn Minh
+"✅ Họ tên: Đinh Khánh Tùng
 
 Bước 2/4: Số điện thoại
 📱 Vui lòng nhập số điện thoại của bạn:
@@ -118,7 +118,7 @@ Bot gửi:
 👥 Bạn đã gia nhập cộng đồng Tân Dậu - hỗ trợ chéo
 
 📱 Thông tin tài khoản:
-• Họ tên: Nguyễn Văn Minh
+• Họ tên: Đinh Khánh Tùng
 • SĐT: 0123456789
 • Vị trí: Hà Nội
 • Sinh nhật: 1981 (42 tuổi)
@@ -164,7 +164,7 @@ Bot gửi:
 
 "🏠 TRANG CHỦ TÂN DẬU
 
-Chào anh/chị Nguyễn Văn Minh! 👋
+Chào anh/chị Đinh Khánh Tùng! 👋
 
 [🛒 NIÊM YẾT] [🔍 TÌM KIẾM] [💬 KẾT NỐI] [👥 CỘNG ĐỒNG TÂN DẬU]
 [💰 THANH TOÁN] [⭐ ĐIỂM THƯỞNG] [🔮 TỬ VI] [⚙️ CÀI ĐẶT]
@@ -1399,7 +1399,7 @@ Bot gửi:
 "👤 THÔNG TIN CÁ NHÂN
 
 📋 Thông tin hiện tại:
-• Tên: Nguyễn Văn Minh
+• Tên: Đinh Khánh Tùng
 • Sinh nhật: 1981 (42 tuổi)
 • Vị trí: Hà Nội
 • SĐT: 0123456789

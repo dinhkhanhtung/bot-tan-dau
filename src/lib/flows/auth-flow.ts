@@ -93,7 +93,7 @@ export class AuthFlow {
         await updateBotSession(user.facebook_id, sessionData)
 
         // Start with first step - SIMPLIFIED
-        await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/7)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Nguyễn Văn Minh\n📝 Nhập họ tên để tiếp tục:')
+        await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/7)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Đinh Khánh Tùng\n📝 Nhập họ tên để tiếp tục:')
 
         // Verify session was created
         const sessionCheck = await getBotSession(user.facebook_id)
@@ -109,7 +109,7 @@ export class AuthFlow {
 
         switch (currentStep) {
             case 'name':
-                await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/7)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Nguyễn Văn Minh\n📝 Nhập họ tên để tiếp tục:')
+                await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/7)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Đinh Khánh Tùng\n📝 Nhập họ tên để tiếp tục:')
                 break
             case 'phone':
                 await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 2/7)\n━━━━━━━━━━━━━━━━━━━━\n📱 SỐ ĐIỆN THOẠI\nVui lòng nhập số điện thoại của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: 0901234567\n📝 Nhập số điện thoại để tiếp tục:')
