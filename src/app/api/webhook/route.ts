@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase'
-import { handleMessage } from '@/lib/bot-handlers'
+// import { handleMessage } from '@/lib/bot-handlers' // DEPRECATED
 import { sendMessage } from '@/lib/facebook-api'
 import { updateBotSession, getBotSession } from '@/lib/utils'
 import { UnifiedBotSystem } from '@/lib/core/unified-entry-point'
@@ -186,12 +186,10 @@ async function handleMessageEvent(event: any) {
                         await handleAdminCommand(adminUser)
                     } else if (message.quick_reply?.payload) {
                         // Handle Quick Reply for admin
-                        const { handlePostback } = await import('@/lib/bot-handlers')
-                        await handlePostback(adminUser, message.quick_reply.payload)
+                        await UnifiedBotSystem.handleMessage(adminUser, '', true, message.quick_reply.payload)
                     } else {
                         // Handle regular message for admin
-                        const { handleMessage } = await import('@/lib/bot-handlers')
-                        await handleMessage(adminUser, message.text || '')
+                        await UnifiedBotSystem.handleMessage(adminUser, message.text || '')
                     }
                     return
                 }
@@ -546,8 +544,7 @@ async function handleTextMessage(user: any, text: string) {
 
     // Handle regular user messages
     try {
-        const { handleMessage } = await import('@/lib/bot-handlers')
-        await handleMessage(user, text)
+        await UnifiedBotSystem.handleMessage(user, text)
     } catch (error) {
         console.error('Error handling user message:', error)
         try {
@@ -592,8 +589,8 @@ async function handleImageAttachment(user: any, attachment: any) {
         // Check if user is in payment flow
         const session = await getBotSession(user.id)
         if (session?.current_flow === 'payment' && session?.current_step === 2) {
-            // Handle payment receipt
-            await handlePaymentReceipt(user, imageUrl)
+            // Handle payment receipt - TODO: Implement payment receipt handling
+            await sendMessageToUser(user.facebook_id, 'Cảm ơn bạn đã gửi ảnh thanh toán! Tôi sẽ xử lý sau.')
         } else if (session?.current_flow === 'listing' && session?.current_step === 5) {
             // Handle listing images
             await handleListingImages(user, imageUrl)
@@ -713,32 +710,30 @@ async function handleUserMessage(user: any, text: string) {
     // Check if user is new (has no name or phone)
     if (!user.name || !user.phone) {
         // New user - show welcome message
-        const { handleDefaultMessage } = await import('@/lib/bot-handlers')
+        const { handleDefaultMessage } = await import('@/lib/handlers/auth-handlers')
         await handleDefaultMessage(user)
     } else {
         // Registered user - show registered menu
-        const { handleDefaultMessageRegistered } = await import('@/lib/bot-handlers')
+        const { handleDefaultMessageRegistered } = await import('@/lib/handlers/utility-handlers')
         await handleDefaultMessageRegistered(user)
     }
 }
 
 async function handlePostback(user: any, payload: string) {
-    const { handlePostback } = await import('@/lib/bot-handlers')
-    await handlePostback(user, payload)
+    await UnifiedBotSystem.handleMessage(user, '', true, payload)
 }
 
 async function handleAdminCommand(user: any, command: string) {
-    const { handleAdminCommand } = await import('@/lib/bot-handlers')
-    await handleAdminCommand(user, command)
+    const { handleAdminCommand } = await import('@/lib/handlers/admin-handlers')
+    await handleAdminCommand(user)
 }
 
-async function handlePaymentReceipt(user: any, imageUrl: string) {
-    const { handlePaymentReceipt } = await import('@/lib/bot-handlers')
-    await handlePaymentReceipt(user, imageUrl)
-}
+// async function handlePaymentReceipt(user: any, imageUrl: string) {
+//     // Function not implemented yet
+// }
 
 async function handleListingImages(user: any, imageUrl: string) {
-    const { handleListingImages } = await import('@/lib/bot-handlers')
+    const { handleListingImages } = await import('@/lib/handlers/marketplace-handlers')
     await handleListingImages(user, imageUrl)
 }
 

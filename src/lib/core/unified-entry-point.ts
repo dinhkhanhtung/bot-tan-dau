@@ -58,7 +58,18 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Bước 4: XỬ LÝ TIN NHẮN THƯỜNG
+            // Bước 4: KIỂM TRA SPAM (chỉ cho user không phải admin)
+            if (!isAdminUser) {
+                const { handleAntiSpam } = await import('../anti-spam')
+                const spamResult = await handleAntiSpam(user.facebook_id, text || '', user.status || 'new', currentFlow)
+
+                if (spamResult.block) {
+                    console.log('User bị block do spam:', spamResult.message || 'Spam detected')
+                    return
+                }
+            }
+
+            // Bước 5: XỬ LÝ TIN NHẮN THƯỜNG
             if (isPostback && postback) {
                 await this.handlePostbackAction(user, postback)
             } else if (text) {
@@ -249,10 +260,22 @@ export class UnifiedBotSystem {
 
                     await this.startRegistration(user)
                     break
+                case 'INFO':
+                    // Xử lý nút TÌM HIỂU THÊM - CHỈ hiển thị thông tin, KHÔNG đăng ký
+                    await this.showBotInfo(user)
+                    break
+                case 'CONTACT':
+                    if (params[0] === 'ADMIN') {
+                        await this.showSupportInfo(user)
+                    }
+                    break
                 case 'MAIN':
                     if (params[0] === 'MENU') {
                         await this.showMainMenu(user)
                     }
+                    break
+                case 'MAIN_MENU':
+                    await this.showMainMenu(user)
                     break
                 case 'ADMIN':
                     await this.showAdminDashboard(user)
@@ -448,6 +471,22 @@ export class UnifiedBotSystem {
      */
     private static async handleNewUserText(user: any, text: string): Promise<void> {
         try {
+            // Kiểm tra spam count trước
+            const { supabaseAdmin } = await import('../supabase')
+            const { data: spamData } = await supabaseAdmin
+                .from('spam_tracking')
+                .select('message_count')
+                .eq('user_id', user.facebook_id)
+                .single()
+
+            const messageCount = spamData?.message_count || 0
+
+            // Nếu đã nhắn lần 2+ thì im lặng hoàn toàn
+            if (messageCount >= 2) {
+                console.log('User đã nhắn lần 2+, im lặng để tôn trọng người dùng')
+                return
+            }
+
             if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
                 await this.startRegistration(user)
             } else if (text.includes('thông tin') || text.includes('THÔNG TIN')) {
@@ -460,7 +499,7 @@ export class UnifiedBotSystem {
             }
         } catch (error) {
             console.error('Error handling new user text:', error)
-            await this.showWelcomeMessage(user)
+            // Không gửi welcome message nếu có lỗi để tránh spam
         }
     }
 
@@ -490,6 +529,85 @@ export class UnifiedBotSystem {
             }
         } catch (error) {
             console.error('Error routing to handler:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Hiển thị thông tin bot
+     */
+    private static async showBotInfo(user: any): Promise<void> {
+        try {
+            const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+
+            await sendMessage(user.facebook_id, 'ℹ️ THÔNG TIN VỀ BOT Tân Dậu - Hỗ Trợ Chéo')
+            await sendMessage(user.facebook_id, '🤖 Bot này được thiết kế đặc biệt cho cộng đồng Tân Dậu - Hỗ Trợ Chéo')
+            await sendMessage(user.facebook_id, '🎯 Chức năng chính:\n• Niêm yết sản phẩm/dịch vụ\n• Tìm kiếm & kết nối mua bán\n• Cộng đồng Tân Dậu - hỗ trợ chéo\n• Tử vi hàng ngày\n• Điểm thưởng & quà tặng')
+            await sendMessage(user.facebook_id, '💰 Phí sử dụng:\n• Trial 7 ngày miễn phí\n• Phí duy trì: 2,000đ/ngày\n• Gói tối thiểu: 7 ngày = 14,000đ')
+            await sendMessage(user.facebook_id, '🔒 Bảo mật:\n• Chỉ dành cho Tân Dậu - Hỗ Trợ Chéo\n• Thông tin được mã hóa bảo mật\n• Lưu trữ để tìm kiếm & kết nối hiệu quả')
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Bạn muốn:',
+                [
+                    createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                    createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN'),
+                    createQuickReply('🔙 TRANG CHỦ', 'MAIN_MENU')
+                ]
+            )
+        } catch (error) {
+            console.error('Error showing bot info:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Hiển thị thông tin hỗ trợ
+     */
+    private static async showSupportInfo(user: any): Promise<void> {
+        try {
+            const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+
+            await sendMessage(user.facebook_id, '💬 LIÊN HỆ HỖ TRỢ')
+            await sendMessage(user.facebook_id, 'Để được hỗ trợ, vui lòng liên hệ:\n📞 Hotline: 0901 234 567\n📧 Email: admin@tandau1981.com\n⏰ Thời gian: 8:00 - 22:00')
+            await sendMessage(user.facebook_id, 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.')
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Bạn muốn:',
+                [
+                    createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                    createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
+                    createQuickReply('🔙 TRANG CHỦ', 'MAIN_MENU')
+                ]
+            )
+        } catch (error) {
+            console.error('Error showing support info:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Hiển thị menu chính
+     */
+    private static async showMainMenu(user: any): Promise<void> {
+        try {
+            const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+
+            await sendMessage(user.facebook_id, '🏠 TRANG CHỦ - Bot Tân Dậu - Hỗ Trợ Chéo')
+            await sendMessage(user.facebook_id, 'Chào mừng bạn đến với cộng đồng Tân Dậu!')
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Chọn chức năng:',
+                [
+                    createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                    createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
+                    createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
+                ]
+            )
+        } catch (error) {
+            console.error('Error showing main menu:', error)
             await this.sendErrorMessage(user.facebook_id)
         }
     }
@@ -637,43 +755,6 @@ export class UnifiedBotSystem {
         }
     }
 
-    /**
-     * Show main menu cho registered/trial users
-     */
-    private static async showMainMenu(user: any): Promise<void> {
-        try {
-            await sendTypingIndicator(user.facebook_id)
-
-            const context = await this.analyzeUserContext(user)
-            const displayName = context.user?.name || 'bạn'
-
-            let statusText = '✅ Đã đăng ký'
-            if (context.userType === UserType.TRIAL_USER && context.user?.membership_expires_at) {
-                const daysLeft = Math.ceil((new Date(context.user.membership_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-
-                // Chỉ hiển thị thông tin trial nếu còn thời gian hợp lệ
-                if (daysLeft > 0) {
-                    statusText = `📅 Trial còn ${daysLeft} ngày`
-                } else {
-                    statusText = '⏰ Trial đã hết hạn - Vui lòng thanh toán'
-                }
-            }
-
-            await sendMessage(user.facebook_id, '🏠 TRANG CHỦ Tân Dậu - Hỗ Trợ Chéo')
-            await sendMessage(user.facebook_id, `👋 Chào mừng ${displayName}!`)
-            await sendMessage(user.facebook_id, `📊 Trạng thái: ${statusText}`)
-
-            const menuOptions = [
-                createQuickReply('🛒 NIÊM YẾT SẢN PHẨM', 'LISTING'),
-                createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
-                createQuickReply('💰 THANH TOÁN', 'PAYMENT')
-            ]
-
-            await sendQuickReply(user.facebook_id, 'Chọn chức năng:', menuOptions)
-        } catch (error) {
-            console.error('Error showing main menu:', error)
-        }
-    }
 
     /**
      * Show admin dashboard
@@ -697,26 +778,6 @@ export class UnifiedBotSystem {
         }
     }
 
-    /**
-     * Show bot info
-     */
-    private static async showBotInfo(user: any): Promise<void> {
-        try {
-            await sendMessage(user.facebook_id, 'ℹ️ Bot Tân Dậu - Hỗ Trợ Chéo dành riêng cho cộng đồng những người con Tân Dậu (sinh năm 1981)')
-            await sendMessage(user.facebook_id, '💡 Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên')
-
-            await sendQuickReply(
-                user.facebook_id,
-                'Bạn muốn:',
-                [
-                    createQuickReply('🚀 ĐĂNG KÝ', 'REGISTER'),
-                    createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
-                ]
-            )
-        } catch (error) {
-            console.error('Error showing bot info:', error)
-        }
-    }
 
     /**
      * Show pending user welcome
@@ -732,25 +793,6 @@ export class UnifiedBotSystem {
         }
     }
 
-    /**
-     * Show support info
-     */
-    private static async showSupportInfo(user: any): Promise<void> {
-        try {
-            await sendMessage(user.facebook_id, '💬 Để được hỗ trợ, vui lòng liên hệ admin')
-
-            await sendQuickReply(
-                user.facebook_id,
-                'Liên hệ:',
-                [
-                    createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN'),
-                    createQuickReply('📧 EMAIL', 'EMAIL_ADMIN')
-                ]
-            )
-        } catch (error) {
-            console.error('Error showing support info:', error)
-        }
-    }
 
     /**
      * Xử lý admin postback

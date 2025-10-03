@@ -2,37 +2,37 @@ import { supabaseAdmin } from './supabase'
 
 // Hàm xác định trạng thái user
 export function isRegistered(userStatus: string): boolean {
-  return userStatus === 'registered' || userStatus === 'trial' || userStatus === 'active';
+    return userStatus === 'registered' || userStatus === 'trial' || userStatus === 'active';
 }
 
 // Hàm xử lý welcome message theo trạng thái user - CHỈ DÙNG CHO CHỐNG SPAM
 async function sendWelcomeMessage(userId: string, userStatus: string): Promise<void> {
-  const { sendQuickReply, createQuickReply } = await import('./facebook-api');
+    const { sendQuickReply, createQuickReply } = await import('./facebook-api');
 
-  if (isRegistered(userStatus)) {
-    // User đã đăng ký - chỉ hiển thị menu
-    await sendQuickReply(
-      userId,
-      'Chọn chức năng:',
-      [
-        createQuickReply('🛒 TÌM KIẾM HÀNG HÓA', 'SEARCH'),
-        createQuickReply('📝 ĐĂNG BÁN/CẬP NHẬT', 'LISTING'),
-        createQuickReply('💬 HỖ TRỢ ADMIN', 'SUPPORT_ADMIN'),
-        createQuickReply('ℹ️ HƯỚNG DẪN', 'HELP')
-      ]
-    );
-  } else {
-    // User chưa đăng ký - chỉ hiển thị menu
-    await sendQuickReply(
-      userId,
-      'Chọn chức năng:',
-      [
-        createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
-        createQuickReply('🔍 XEM HÀNG HÓA (Dùng thử)', 'TRIAL_SEARCH'),
-        createQuickReply('ℹ️ HƯỚNG DẪN', 'HELP')
-      ]
-    );
-  }
+    if (isRegistered(userStatus)) {
+        // User đã đăng ký - chỉ hiển thị menu
+        await sendQuickReply(
+            userId,
+            'Chọn chức năng:',
+            [
+                createQuickReply('🛒 TÌM KIẾM HÀNG HÓA', 'SEARCH'),
+                createQuickReply('📝 ĐĂNG BÁN/CẬP NHẬT', 'LISTING'),
+                createQuickReply('💬 HỖ TRỢ ADMIN', 'SUPPORT_ADMIN'),
+                createQuickReply('ℹ️ HƯỚNG DẪN', 'HELP')
+            ]
+        );
+    } else {
+        // User chưa đăng ký - chỉ hiển thị menu
+        await sendQuickReply(
+            userId,
+            'Chọn chức năng:',
+            [
+                createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                createQuickReply('🔍 XEM HÀNG HÓA (Dùng thử)', 'TRIAL_SEARCH'),
+                createQuickReply('ℹ️ HƯỚNG DẪN', 'HELP')
+            ]
+        );
+    }
 }
 
 // Spam detection configuration - THEO YÊU CẦU MỚI
@@ -150,20 +150,15 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
         last_message_time: now
     })
 
-    // Xử lý theo level
-    if (newCount <= 2) {
-        await sendMessage(facebookId, SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[2])
+    // Xử lý theo level - LOGIC MỚI THEO YÊU CẦU
+    if (newCount === 1) {
+        // Lần 1: Gửi welcome đầy đủ
         await sendWelcomeMessage(facebookId, userStatus)
-        return { action: 'warning', block: false, message: SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[2] }
-    } else if (newCount === 3) {
-        await sendMessage(facebookId, SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[3])
-        await sendWelcomeMessage(facebookId, userStatus)
-        return { action: 'warning', block: false, message: SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[3] }
-    } else if (newCount >= 4) {
-        const lockTime = now + (SPAM_CONFIG.UNREGISTERED.LOCK_TIME_MINUTES * 60 * 1000)
-        await updateSpamData(facebookId, { locked_until: lockTime })
-        await sendMessage(facebookId, SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[4])
-        return { action: 'block', block: true, unlockTime: lockTime, message: SPAM_CONFIG.UNREGISTERED.WARNING_LEVELS[4] }
+        return { action: 'none', block: false }
+    } else if (newCount >= 2) {
+        // Lần 2+: IM LẶNG HOÀN TOÀN - TÔN TRỌNG NGƯỜI DÙNG
+        // Nếu họ muốn đăng ký, họ sẽ nhắn tin admin
+        return { action: 'block', block: true }
     }
 
     return { action: 'none', block: false }
