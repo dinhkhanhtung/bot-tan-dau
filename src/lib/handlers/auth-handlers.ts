@@ -400,9 +400,11 @@ export async function handleDefaultMessage(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
     await sendMessagesWithTyping(user.facebook_id, [
-        '🎉 CHÀO MỪNG ĐẾN VỚI BOT Tân Dậu - Hỗ Trợ Chéo! 🎉',
-        '👋 Xin chào! Tôi là bot hỗ trợ cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
-        'Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên trước.'
+        '🎉 CHÀO MỪNG ĐẾN VỚI ĐINH KHÁNH TÙNG! 🎉',
+        '👋 Hôm nay mình có thể giúp gì cho bạn?',
+        '🌟 Có thể bạn cũng muốn tham gia Tân Dậu - Hỗ Trợ Chéo',
+        '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!',
+        '💡 Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên trước.'
     ])
 
     await sendQuickReply(

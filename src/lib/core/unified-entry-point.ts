@@ -534,9 +534,10 @@ export class UnifiedBotSystem {
             const facebookName = await getFacebookDisplayName(user.facebook_id)
             const displayName = facebookName || 'bạn'
 
-            await sendMessage(user.facebook_id, `🎉 Chào mừng ${displayName} đến với Bot Tân Dậu - Hỗ Trợ Chéo!`)
-            await sendMessage(user.facebook_id, '🤝 Cộng đồng dành riêng cho những người con Tân Dậu (sinh năm 1981)')
-            await sendMessage(user.facebook_id, '💡 Có thể bạn muốn tham gia cùng cộng đồng để kết nối và hỗ trợ lẫn nhau!')
+            await sendMessage(user.facebook_id, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!`)
+            await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
+            await sendMessage(user.facebook_id, '🌟 Có thể bạn cũng muốn tham gia Tân Dậu - Hỗ Trợ Chéo')
+            await sendMessage(user.facebook_id, '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')
 
             await sendQuickReply(
                 user.facebook_id,
