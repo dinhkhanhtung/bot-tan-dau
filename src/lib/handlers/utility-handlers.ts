@@ -3,12 +3,12 @@ import {
     sendMessage,
     sendTypingIndicator,
     sendQuickReply,
-    sendButtonTemplate,
-    createPostbackButton,
+    sendQuickReplyNoTyping,
     createQuickReply,
     sendMessagesWithTyping
 } from '../facebook-api'
-import { formatCurrency, formatNumber, generateId, generateHoroscope } from '../utils'
+import { formatCurrency, formatNumber, generateId } from '../utils'
+import { generateHoroscope } from '../core/ai-manager'
 
 // Handle horoscope
 export async function handleHoroscope(user: any) {
@@ -141,13 +141,13 @@ export async function handleHoroscopeMonth(user: any) {
         '• Kết nối với bạn bè cũ'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
-            createPostbackButton('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
-            createPostbackButton('🔙 QUAY LẠI', 'HOROSCOPE')
+            createQuickReply('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
+            createQuickReply('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
+            createQuickReply('🔙 QUAY LẠI', 'HOROSCOPE')
         ]
     )
 }
@@ -210,38 +210,22 @@ export async function handlePoints(user: any) {
 
 // Handle points rewards discount
 export async function handlePointsRewardsDiscount(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '💳 PHẦN THƯỞNG GIẢM GIÁ',
-        '🎁 Có thể đổi:',
-        '• 100 điểm = 10% phí niêm yết',
-        '• 200 điểm = 1 ngày miễn phí',
-        '• 500 điểm = Featured listing 1 tuần',
-        '• 1000 điểm = 1 tuần miễn phí'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('🔄 ĐỔI PHẦN THƯỞNG', 'POINTS_REDEEM'),
-            createPostbackButton('📊 XEM LỊCH SỬ', 'POINTS_HISTORY'),
-            createPostbackButton('🔙 QUAY LẠI', 'POINTS')
+            createQuickReply('🔄 ĐỔI PHẦN THƯỞNG', 'POINTS_REDEEM'),
+            createQuickReply('📊 XEM LỊCH SỬ', 'POINTS_HISTORY'),
+            createQuickReply('🔙 QUAY LẠI', 'POINTS')
         ]
     )
 }
 
 // Handle points redeem
 export async function handlePointsRedeem(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🔄 ĐỔI PHẦN THƯỞNG',
-        'Chọn phần thưởng muốn đổi:'
-    ])
-
-    await sendQuickReply(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Phần thưởng:',
         [
@@ -256,14 +240,8 @@ export async function handlePointsRedeem(user: any) {
 
 // Handle settings
 export async function handleSettings(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '⚙️ CÀI ĐẶT',
-        'Quản lý tài khoản và cài đặt:'
-    ])
-
-    await sendQuickReply(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Cài đặt:',
         [
@@ -281,64 +259,46 @@ export async function handleSettings(user: any) {
 
 // Handle support
 export async function handleSupport(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '💬 HỖ TRỢ',
-        'Chọn loại hỗ trợ bạn cần:'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Loại hỗ trợ:',
         [
-            createPostbackButton('🤖 CHAT BOT', 'SUPPORT_BOT'),
-            createPostbackButton('👨‍💼 CHAT ADMIN', 'SUPPORT_ADMIN'),
-            createPostbackButton('❓ FAQ', 'SUPPORT_FAQ'),
-            createPostbackButton('📞 LIÊN HỆ', 'SUPPORT_CONTACT'),
-            createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+            createQuickReply('🤖 CHAT BOT', 'SUPPORT_BOT'),
+            createQuickReply('👨‍💼 CHAT ADMIN', 'SUPPORT_ADMIN'),
+            createQuickReply('❓ FAQ', 'SUPPORT_FAQ'),
+            createQuickReply('📞 LIÊN HỆ', 'SUPPORT_CONTACT'),
+            createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
         ]
     )
 }
 
 // Handle support bot
 export async function handleSupportBot(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🤖 Tôi đã sẵn sàng hỗ trợ bạn!',
-        'Bạn có thể hỏi tôi về:\n• Tìm kiếm sản phẩm/dịch vụ\n• Hướng dẫn sử dụng\n• Thông tin cộng đồng\n• Tử vi hàng ngày'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('❓ HỖ TRỢ', 'SUPPORT'),
-            createPostbackButton('🔮 TỬ VI', 'HOROSCOPE'),
-            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+            createQuickReply('❓ HỖ TRỢ', 'SUPPORT'),
+            createQuickReply('🔮 TỬ VI', 'HOROSCOPE'),
+            createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
 
 // Handle support admin
 export async function handleSupportAdmin(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '👨‍💼 CHAT VỚI ADMIN',
-        'Bạn muốn chat trực tiếp với admin?',
-        '⚠️ Lưu ý: Bot sẽ tạm dừng để admin có thể trả lời bạn trực tiếp.'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chọn hành động:',
         [
-            createPostbackButton('💬 BẮT ĐẦU CHAT', 'START_ADMIN_CHAT'),
-            createPostbackButton('🤖 CHAT BOT', 'SUPPORT_BOT'),
-            createPostbackButton('❓ FAQ', 'SUPPORT_FAQ'),
-            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createQuickReply('💬 BẮT ĐẦU CHAT', 'START_ADMIN_CHAT'),
+            createQuickReply('🤖 CHAT BOT', 'SUPPORT_BOT'),
+            createQuickReply('❓ FAQ', 'SUPPORT_FAQ'),
+            createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -361,22 +321,22 @@ export async function handleStartAdminChat(user: any) {
                 '🤖 Bot sẽ tạm dừng cho đến khi admin trả lời.'
             ])
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 'Trong khi chờ đợi:',
                 [
-                    createPostbackButton('❌ HỦY CHAT', 'CANCEL_ADMIN_CHAT'),
-                    createPostbackButton('🔄 QUAY LẠI BOT', 'EXIT_ADMIN_CHAT')
+                    createQuickReply('❌ HỦY CHAT', 'CANCEL_ADMIN_CHAT'),
+                    createQuickReply('🔄 QUAY LẠI BOT', 'EXIT_ADMIN_CHAT')
                 ]
             )
         } else {
             await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi kết nối với admin. Vui lòng thử lại sau!')
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 'Tùy chọn khác:',
                 [
-                    createPostbackButton('🤖 CHAT BOT', 'SUPPORT_BOT'),
-                    createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                    createQuickReply('🤖 CHAT BOT', 'SUPPORT_BOT'),
+                    createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
                 ]
             )
         }
@@ -399,21 +359,14 @@ export async function handleReferral(user: any) {
         '📊 Thống kê:\n• Số người đã giới thiệu: 0\n• Tổng thưởng: 0đ\n• Thưởng chưa rút: 0đ'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📤 CHIA SẺ MÃ', 'REFERRAL_SHARE'),
-            createPostbackButton('📊 THỐNG KÊ', 'REFERRAL_STATS'),
-            createPostbackButton('💰 RÚT THƯỞNG', 'REFERRAL_WITHDRAW')
-        ]
-    )
-
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Thêm tùy chọn:',
-        [
-            createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+            createQuickReply('📤 CHIA SẺ MÃ', 'REFERRAL_SHARE'),
+            createQuickReply('📊 THỐNG KÊ', 'REFERRAL_STATS'),
+            createQuickReply('💰 RÚT THƯỞNG', 'REFERRAL_WITHDRAW'),
+            createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -431,22 +384,15 @@ export async function handleReferralShare(user: any) {
         'Chọn cách chia sẻ:'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Chọn cách chia sẻ:',
         [
-            createPostbackButton('📱 Facebook', 'REFERRAL_SHARE_FACEBOOK'),
-            createPostbackButton('💬 Messenger', 'REFERRAL_SHARE_MESSENGER'),
-            createPostbackButton('📧 Email', 'REFERRAL_SHARE_EMAIL'),
-            createPostbackButton('📋 Sao chép', 'REFERRAL_SHARE_COPY')
-        ]
-    )
-
-    await sendButtonTemplate(
-        user.facebook_id,
-        'Thêm tùy chọn:',
-        [
-            createPostbackButton('🔙 QUAY LẠI', 'REFERRAL')
+            createQuickReply('📱 Facebook', 'REFERRAL_SHARE_FACEBOOK'),
+            createQuickReply('💬 Messenger', 'REFERRAL_SHARE_MESSENGER'),
+            createQuickReply('📧 Email', 'REFERRAL_SHARE_EMAIL'),
+            createQuickReply('📋 Sao chép', 'REFERRAL_SHARE_COPY'),
+            createQuickReply('🔙 QUAY LẠI', 'REFERRAL')
         ]
     )
 }
@@ -493,15 +439,15 @@ export async function handleReferralStats(user: any) {
             await sendMessage(user.facebook_id, recentText)
         }
 
-        await sendButtonTemplate(
-            user.facebook_id,
-            'Tùy chọn:',
-            [
-                createPostbackButton('💰 RÚT THƯỞNG', 'REFERRAL_WITHDRAW'),
-                createPostbackButton('📤 CHIA SẺ MÃ', 'REFERRAL_SHARE'),
-                createPostbackButton('🔙 QUAY LẠI', 'REFERRAL')
-            ]
-        )
+            await sendQuickReply(
+                user.facebook_id,
+                'Tùy chọn:',
+                [
+                    createQuickReply('💰 RÚT THƯỞNG', 'REFERRAL_WITHDRAW'),
+                    createQuickReply('📤 CHIA SẺ MÃ', 'REFERRAL_SHARE'),
+                    createQuickReply('🔙 QUAY LẠI', 'REFERRAL')
+                ]
+            )
 
     } catch (error) {
         console.error('Error in handleReferralStats:', error)
@@ -536,12 +482,12 @@ export async function handleReferralWithdraw(user: any) {
                 'Hãy giới thiệu bạn bè để nhận thưởng nhé!'
             ])
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 'Tùy chọn:',
                 [
-                    createPostbackButton('📤 CHIA SẺ MÃ', 'REFERRAL_SHARE'),
-                    createPostbackButton('🔙 QUAY LẠI', 'REFERRAL')
+                    createQuickReply('📤 CHIA SẺ MÃ', 'REFERRAL_SHARE'),
+                    createQuickReply('🔙 QUAY LẠI', 'REFERRAL')
                 ]
             )
             return
@@ -557,14 +503,14 @@ export async function handleReferralWithdraw(user: any) {
             `• Nội dung: THUONG ${user.phone || user.facebook_id.slice(-6)}`
         ])
 
-        await sendButtonTemplate(
-            user.facebook_id,
-            'Sau khi chuyển khoản:',
-            [
-                createPostbackButton('📸 GỬI BIÊN LAI', 'REFERRAL_WITHDRAW_CONFIRM'),
-                createPostbackButton('❌ HỦY', 'REFERRAL')
-            ]
-        )
+            await sendQuickReply(
+                user.facebook_id,
+                'Sau khi chuyển khoản:',
+                [
+                    createQuickReply('📸 GỬI BIÊN LAI', 'REFERRAL_WITHDRAW_CONFIRM'),
+                    createQuickReply('❌ HỦY', 'REFERRAL')
+                ]
+            )
 
     } catch (error) {
         console.error('Error in handleReferralWithdraw:', error)
@@ -574,14 +520,8 @@ export async function handleReferralWithdraw(user: any) {
 
 // Handle default message for registered users
 export async function handleDefaultMessageRegistered(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-    await sendMessagesWithTyping(user.facebook_id, [
-        `👋 Chào anh/chị ${user.name}!`,
-        'Hôm nay bạn muốn làm gì?'
-    ])
-
-    // Send all options as quick replies (up to 13 buttons in a row)
-    await sendQuickReply(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chọn chức năng:',
         [
@@ -633,22 +573,22 @@ export async function handleHoroscopeTomorrow(user: any) {
         'Chọn cung hoàng đạo của bạn:'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Cung hoàng đạo:',
         [
-            createPostbackButton('♈ Bạch Dương', 'HOROSCOPE_TOMORROW_ARIES'),
-            createPostbackButton('♉ Kim Ngưu', 'HOROSCOPE_TOMORROW_TAURUS'),
-            createPostbackButton('♊ Song Tử', 'HOROSCOPE_TOMORROW_GEMINI'),
-            createPostbackButton('♋ Cự Giải', 'HOROSCOPE_TOMORROW_CANCER'),
-            createPostbackButton('♌ Sư Tử', 'HOROSCOPE_TOMORROW_LEO'),
-            createPostbackButton('♍ Xử Nữ', 'HOROSCOPE_TOMORROW_VIRGO'),
-            createPostbackButton('♎ Thiên Bình', 'HOROSCOPE_TOMORROW_LIBRA'),
-            createPostbackButton('♏ Thần Nông', 'HOROSCOPE_TOMORROW_SCORPIO'),
-            createPostbackButton('♐ Nhân Mã', 'HOROSCOPE_TOMORROW_SAGITTARIUS'),
-            createPostbackButton('♑ Ma Kết', 'HOROSCOPE_TOMORROW_CAPRICORN'),
-            createPostbackButton('♒ Bảo Bình', 'HOROSCOPE_TOMORROW_AQUARIUS'),
-            createPostbackButton('♓ Song Ngư', 'HOROSCOPE_TOMORROW_PISCES')
+            createQuickReply('♈ Bạch Dương', 'HOROSCOPE_TOMORROW_ARIES'),
+            createQuickReply('♉ Kim Ngưu', 'HOROSCOPE_TOMORROW_TAURUS'),
+            createQuickReply('♊ Song Tử', 'HOROSCOPE_TOMORROW_GEMINI'),
+            createQuickReply('♋ Cự Giải', 'HOROSCOPE_TOMORROW_CANCER'),
+            createQuickReply('♌ Sư Tử', 'HOROSCOPE_TOMORROW_LEO'),
+            createQuickReply('♍ Xử Nữ', 'HOROSCOPE_TOMORROW_VIRGO'),
+            createQuickReply('♎ Thiên Bình', 'HOROSCOPE_TOMORROW_LIBRA'),
+            createQuickReply('♏ Thần Nông', 'HOROSCOPE_TOMORROW_SCORPIO'),
+            createQuickReply('♐ Nhân Mã', 'HOROSCOPE_TOMORROW_SAGITTARIUS'),
+            createQuickReply('♑ Ma Kết', 'HOROSCOPE_TOMORROW_CAPRICORN'),
+            createQuickReply('♒ Bảo Bình', 'HOROSCOPE_TOMORROW_AQUARIUS'),
+            createQuickReply('♓ Song Ngư', 'HOROSCOPE_TOMORROW_PISCES')
         ]
     )
 }
@@ -690,12 +630,12 @@ export async function handlePointsRewardsBadges(user: any) {
             await sendMessage(user.facebook_id, badgeText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🎁 PHẦN THƯỞNG', 'POINTS_REWARDS'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('🎁 PHẦN THƯỞNG', 'POINTS_REWARDS'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -742,12 +682,12 @@ export async function handlePointsRewardsGifts(user: any) {
             await sendMessage(user.facebook_id, giftText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🎁 PHẦN THƯỞNG', 'POINTS_REWARDS'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('🎁 PHẦN THƯỞNG', 'POINTS_REWARDS'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -759,22 +699,16 @@ export async function handlePointsRewardsGifts(user: any) {
 
 // Handle points rewards games
 export async function handlePointsRewardsGames(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🎮 GAME ĐIỂM THƯỞNG',
-        'Chơi game để kiếm điểm thưởng!'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chọn game:',
         [
-            createPostbackButton('🎯 BẮN BIA', 'GAME_DART'),
-            createPostbackButton('🎲 XÚC XẮC', 'GAME_DICE'),
-            createPostbackButton('🃏 BÀI TÂY', 'GAME_CARDS'),
-            createPostbackButton('🧩 GHÉP HÌNH', 'GAME_PUZZLE'),
-            createPostbackButton('🔙 QUAY LẠI', 'POINTS_REWARDS')
+            createQuickReply('🎯 BẮN BIA', 'GAME_DART'),
+            createQuickReply('🎲 XÚC XẮC', 'GAME_DICE'),
+            createQuickReply('🃏 BÀI TÂY', 'GAME_CARDS'),
+            createQuickReply('🧩 GHÉP HÌNH', 'GAME_PUZZLE'),
+            createQuickReply('🔙 QUAY LẠI', 'POINTS_REWARDS')
         ]
     )
 }
@@ -819,12 +753,12 @@ export async function handlePointsHistory(user: any) {
             await sendMessage(user.facebook_id, historyText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('💰 ĐIỂM THƯỞNG', 'POINTS'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('🎁 PHẦN THƯỞNG', 'POINTS_REWARDS'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -872,12 +806,12 @@ export async function handlePointsAchievements(user: any) {
             await sendMessage(user.facebook_id, achievementText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('💰 ĐIỂM THƯỞNG', 'POINTS'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('💰 ĐIỂM THƯỞNG', 'POINTS'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -926,12 +860,12 @@ export async function handlePointsLeaderboard(user: any) {
             await sendMessage(user.facebook_id, leaderboardText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('💰 ĐIỂM THƯỞNG', 'POINTS'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('💰 ĐIỂM THƯỞNG', 'POINTS'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -995,13 +929,13 @@ export async function handlePersonalStats(user: any) {
             `• Còn lại: ${formatNumber(totalPoints % 200)} điểm`
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('📈 XEM CHI TIẾT', 'PERSONAL_STATS_DETAIL'),
-                createPostbackButton('📤 XUẤT BÁO CÁO', 'PERSONAL_STATS_EXPORT'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('📈 XEM CHI TIẾT', 'PERSONAL_STATS_DETAIL'),
+                createQuickReply('📤 XUẤT BÁO CÁO', 'PERSONAL_STATS_EXPORT'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -1066,12 +1000,12 @@ export async function handlePersonalStatsDetail(user: any) {
             await sendMessage(user.facebook_id, paymentsText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('📊 THỐNG KÊ TỔNG', 'PERSONAL_STATS'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('💰 ĐIỂM THƯỞNG', 'POINTS'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -1083,21 +1017,15 @@ export async function handlePersonalStatsDetail(user: any) {
 
 // Handle personal stats export
 export async function handlePersonalStatsExport(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '📤 XUẤT BÁO CÁO CÁ NHÂN',
-        'Chọn định dạng xuất báo cáo:'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Định dạng:',
         [
-            createPostbackButton('📊 PDF', 'PERSONAL_STATS_EXPORT_PDF'),
-            createPostbackButton('📋 EXCEL', 'PERSONAL_STATS_EXPORT_EXCEL'),
-            createPostbackButton('📱 IMAGE', 'PERSONAL_STATS_EXPORT_IMAGE'),
-            createPostbackButton('🔙 QUAY LẠI', 'PERSONAL_STATS')
+            createQuickReply('📊 PDF', 'PERSONAL_STATS_EXPORT_PDF'),
+            createQuickReply('📋 EXCEL', 'PERSONAL_STATS_EXPORT_EXCEL'),
+            createQuickReply('📱 IMAGE', 'PERSONAL_STATS_EXPORT_IMAGE'),
+            createQuickReply('🔙 QUAY LẠI', 'PERSONAL_STATS')
         ]
     )
 }

@@ -2,8 +2,8 @@ import { supabaseAdmin } from './supabase'
 import {
     sendMessage,
     sendTypingIndicator,
-    sendButtonTemplate,
-    createPostbackButton,
+    sendQuickReplyNoTyping,
+    createQuickReply,
     sendMessagesWithTyping
 } from './facebook-api'
 import { formatCurrency, isTrialUser, isExpiredUser, daysUntilExpiry } from './utils'
@@ -67,7 +67,7 @@ async function sendTrialExpiringReminder(facebookId: string, hoursLeft: number) 
             await sendMessagesWithTyping(facebookId, [
                 '⏰ THÔNG BÁO QUAN TRỌNG',
                 'Trial của bạn còn 48 giờ!',
-        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
+                '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
             ])
         } else if (hoursLeft === 24) {
             await sendMessagesWithTyping(facebookId, [
@@ -77,13 +77,13 @@ async function sendTrialExpiringReminder(facebookId: string, hoursLeft: number) 
             ])
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             facebookId,
             'Gia hạn tài khoản:',
             [
-                createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT'),
-                createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
-                createPostbackButton('❌ HỦY', 'MAIN_MENU')
+                createQuickReply('💰 THANH TOÁN NGAY', 'PAYMENT'),
+                createQuickReply('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
+                createQuickReply('❌ HỦY', 'MAIN_MENU')
             ]
         )
 
@@ -97,21 +97,14 @@ async function sendTrialExpiringReminder(facebookId: string, hoursLeft: number) 
 // Send trial expired notification
 async function sendTrialExpiredNotification(facebookId: string) {
     try {
-        await sendTypingIndicator(facebookId)
-
-        await sendMessagesWithTyping(facebookId, [
-            '⏰ TRIAL ĐÃ HẾT HẠN!',
-            'Trial của bạn đã hết hạn!',
-            '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
-        ])
-
-        await sendButtonTemplate(
+        // Typing indicator removed for quick reply
+        await sendQuickReplyNoTyping(
             facebookId,
             'Gia hạn tài khoản:',
             [
-                createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT'),
-                createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
-                createPostbackButton('❌ HỦY', 'MAIN_MENU')
+                createQuickReply('💰 THANH TOÁN NGAY', 'PAYMENT'),
+                createQuickReply('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
+                createQuickReply('❌ HỦY', 'MAIN_MENU')
             ]
         )
 
@@ -348,13 +341,13 @@ export async function sendPaymentFollowUps() {
                     '📞 Liên hệ admin nếu có vấn đề.'
                 ])
 
-                await sendButtonTemplate(
+                await sendQuickReply(
                     payment.user_id,
                     'Tùy chọn:',
                     [
-                        createPostbackButton('💰 THANH TOÁN LẠI', 'PAYMENT'),
-                        createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
-                        createPostbackButton('📊 XEM TRẠNG THÁI', `PAYMENT_STATUS_${payment.id}`)
+                        createQuickReply('💰 THANH TOÁN LẠI', 'PAYMENT'),
+                        createQuickReply('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
+                        createQuickReply('📊 XEM TRẠNG THÁI', `PAYMENT_STATUS_${payment.id}`)
                     ]
                 )
 

@@ -2,9 +2,10 @@ import { supabaseAdmin } from '../supabase'
 import {
     sendMessage,
     sendTypingIndicator,
+    sendQuickReply, sendQuickReplyNoTyping,
     sendQuickReply,
-    sendButtonTemplate,
-    createPostbackButton,
+    createQuickReply,
+    createQuickReply,
     sendMessagesWithTyping
 } from '../facebook-api'
 import { formatCurrency, isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession } from '../utils'
@@ -32,16 +33,16 @@ export async function handlePayment(user: any) {
             '💡 Với số tiền này bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu!'
         ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Gói dịch vụ:',
         [
-            createPostbackButton('📅 7 NGÀY - ₫7,000', 'PAYMENT_PACKAGE_7'),
-            createPostbackButton('📅 15 NGÀY - ₫15,000', 'PAYMENT_PACKAGE_15'),
-            createPostbackButton('📅 30 NGÀY - ₫30,000', 'PAYMENT_PACKAGE_30'),
-            createPostbackButton('📅 90 NGÀY - ₫90,000', 'PAYMENT_PACKAGE_90'),
-            createPostbackButton('📊 LỊCH SỬ THANH TOÁN', 'PAYMENT_HISTORY'),
-            createPostbackButton('ℹ️ HƯỚNG DẪN', 'PAYMENT_GUIDE')
+            createQuickReply('📅 7 NGÀY - ₫7,000', 'PAYMENT_PACKAGE_7'),
+            createQuickReply('📅 15 NGÀY - ₫15,000', 'PAYMENT_PACKAGE_15'),
+            createQuickReply('📅 30 NGÀY - ₫30,000', 'PAYMENT_PACKAGE_30'),
+            createQuickReply('📅 90 NGÀY - ₫90,000', 'PAYMENT_PACKAGE_90'),
+            createQuickReply('📊 LỊCH SỬ THANH TOÁN', 'PAYMENT_HISTORY'),
+            createQuickReply('ℹ️ HƯỚNG DẪN', 'PAYMENT_GUIDE')
         ]
     )
 }
@@ -54,13 +55,13 @@ async function sendExpiredPaymentMessage(user: any) {
         '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Gia hạn tài khoản:',
         [
-            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_PACKAGE_7'),
-            createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
-            createPostbackButton('❌ HỦY', 'MAIN_MENU')
+            createQuickReply('💰 THANH TOÁN NGAY', 'PAYMENT_PACKAGE_7'),
+            createQuickReply('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
+            createQuickReply('❌ HỦY', 'MAIN_MENU')
         ]
     )
 }
@@ -81,13 +82,13 @@ async function sendTrialPaymentMessage(user: any, daysLeft: number) {
         ])
     }
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Gia hạn tài khoản:',
         [
-            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT_PACKAGE_7'),
-            createPostbackButton('⏰ NHẮC LẠI SAU', 'MAIN_MENU'),
-            createPostbackButton('ℹ️ TÌM HIỂU', 'PAYMENT_GUIDE')
+            createQuickReply('💰 THANH TOÁN NGAY', 'PAYMENT_PACKAGE_7'),
+            createQuickReply('⏰ NHẮC LẠI SAU', 'MAIN_MENU'),
+            createQuickReply('ℹ️ TÌM HIỂU', 'PAYMENT_GUIDE')
         ]
     )
 }
@@ -116,33 +117,26 @@ export async function handlePaymentPackage(user: any, packageType: string) {
         `• Nội dung: TD-HTC ${user.phone || user.facebook_id.slice(-6)}`
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Sau khi chuyển khoản:',
         [
-            createPostbackButton('📸 UPLOAD BIÊN LAI', `PAYMENT_UPLOAD_${packageType}`),
-            createPostbackButton('❌ HỦY', 'PAYMENT')
+            createQuickReply('📸 UPLOAD BIÊN LAI', `PAYMENT_UPLOAD_${packageType}`),
+            createQuickReply('❌ HỦY', 'PAYMENT')
         ]
     )
 }
 
 // Handle payment upload receipt
 export async function handlePaymentUploadReceipt(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '📸 UPLOAD BIÊN LAI',
-        'Vui lòng gửi ảnh biên lai chuyển khoản rõ nét:',
-        '📋 Lưu ý:\n• Ảnh phải rõ nét, đọc được thông tin\n• Bao gồm số tiền, thời gian, nội dung chuyển khoản\n• Thời gian xử lý: 2-4 giờ'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📷 Chụp ảnh', 'PAYMENT_CAMERA'),
-            createPostbackButton('📁 Chọn từ thư viện', 'PAYMENT_GALLERY'),
-            createPostbackButton('❌ HỦY', 'PAYMENT')
+            createQuickReply('📷 Chụp ảnh', 'PAYMENT_CAMERA'),
+            createQuickReply('📁 Chọn từ thư viện', 'PAYMENT_GALLERY'),
+            createQuickReply('❌ HỦY', 'PAYMENT')
         ]
     )
 }
@@ -157,13 +151,13 @@ export async function handlePaymentConfirm(user: any) {
         '⏱️ Thời gian xử lý: 2-4 giờ\n📱 Sẽ thông báo khi duyệt'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📊 LỊCH SỬ THANH TOÁN', 'PAYMENT_HISTORY'),
-            createPostbackButton('❓ HỖ TRỢ', 'SUPPORT'),
-            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createQuickReply('📊 LỊCH SỬ THANH TOÁN', 'PAYMENT_HISTORY'),
+            createQuickReply('❓ HỖ TRỢ', 'SUPPORT'),
+            createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 }
@@ -252,14 +246,14 @@ export async function handlePaymentHistory(user: any) {
             ])
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('💰 THANH TOÁN MỚI', 'PAYMENT'),
-                createPostbackButton('📤 XUẤT BÁO CÁO', 'PAYMENT_EXPORT'),
-                createPostbackButton('🔄 LÀM MỚI', 'PAYMENT_HISTORY'),
-                createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+                createQuickReply('💰 THANH TOÁN MỚI', 'PAYMENT'),
+                createQuickReply('📤 XUẤT BÁO CÁO', 'PAYMENT_EXPORT'),
+                createQuickReply('🔄 LÀM MỚI', 'PAYMENT_HISTORY'),
+                createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
             ]
         )
 
@@ -354,15 +348,15 @@ ${payment.receipt_image ? '📸 Đã upload biên lai' : '⚠️ Chưa có biên
 
             await sendMessage(user.facebook_id, paymentCard)
 
-            // Add action buttons based on status
+            // Add action buttons based on status - converted to quick reply
             if (payment.status === 'pending') {
-                await sendButtonTemplate(
+                await sendQuickReply(
                     user.facebook_id,
                     `Thanh toán #${payment.id.slice(-8)}:`,
                     [
-                        createPostbackButton('🔄 KIỂM TRA LẠI', `PAYMENT_STATUS_${payment.id}`),
-                        createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
-                        createPostbackButton('📋 XEM TẤT CẢ', 'PAYMENT_HISTORY')
+                        createQuickReply('🔄 KIỂM TRA LẠI', `PAYMENT_STATUS_${payment.id}`),
+                        createQuickReply('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
+                        createQuickReply('📋 XEM TẤT CẢ', 'PAYMENT_HISTORY')
                     ]
                 )
             }
@@ -376,13 +370,13 @@ ${payment.receipt_image ? '📸 Đã upload biên lai' : '⚠️ Chưa có biên
             '• Giữ lại biên lai để đối chiếu khi cần thiết'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('💰 THANH TOÁN MỚI', 'PAYMENT'),
-                createPostbackButton('📊 XEM TẤT CẢ', 'PAYMENT_HISTORY'),
-                createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+                createQuickReply('💰 THANH TOÁN MỚI', 'PAYMENT'),
+                createQuickReply('📊 XEM TẤT CẢ', 'PAYMENT_HISTORY'),
+                createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
             ]
         )
 
@@ -427,16 +421,16 @@ export async function handlePaymentNotifications(user: any) {
             await sendMessage(user.facebook_id, '📊 Trạng thái hiện tại: Chưa thanh toán')
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Cài đặt thông báo:',
             [
-                createPostbackButton('🔔 BẬT NHẮC THANH TOÁN', 'PAYMENT_NOTIF_ON'),
-                createPostbackButton('🔕 TẮT NHẮC THANH TOÁN', 'PAYMENT_NOTIF_OFF'),
-                createPostbackButton('📅 NHẮC TRƯỚC 3 NGÀY', 'PAYMENT_REMIND_3'),
-                createPostbackButton('📅 NHẮC TRƯỚC 1 NGÀY', 'PAYMENT_REMIND_1'),
-                createPostbackButton('📊 XEM LỊCH SỬ', 'PAYMENT_HISTORY'),
-                createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+                createQuickReply('🔔 BẬT NHẮC THANH TOÁN', 'PAYMENT_NOTIF_ON'),
+                createQuickReply('🔕 TẮT NHẮC THANH TOÁN', 'PAYMENT_NOTIF_OFF'),
+                createQuickReply('📅 NHẮC TRƯỚC 3 NGÀY', 'PAYMENT_REMIND_3'),
+                createQuickReply('📅 NHẮC TRƯỚC 1 NGÀY', 'PAYMENT_REMIND_1'),
+                createQuickReply('📊 XEM LỊCH SỬ', 'PAYMENT_HISTORY'),
+                createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
             ]
         )
 
@@ -448,23 +442,17 @@ export async function handlePaymentNotifications(user: any) {
 
 // Handle paid advertising
 export async function handlePaidAdvertising(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '💰 GÓI QUẢNG CÁO',
-        'Tăng khả năng hiển thị tin đăng của bạn:'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chọn gói quảng cáo:',
         [
-            createPostbackButton('🏠 HOMEPAGE BANNER - 50,000đ/ngày', 'ADVERTISING_HOMEPAGE'),
-            createPostbackButton('🔍 SEARCH BOOST - 30,000đ/ngày', 'ADVERTISING_SEARCH'),
-            createPostbackButton('🎯 CROSS-SELL SPOT - 20,000đ/ngày', 'ADVERTISING_CROSS_SELL'),
-            createPostbackButton('⭐ FEATURED LISTING - 15,000đ/ngày', 'ADVERTISING_FEATURED'),
-            createPostbackButton('📊 XEM THỐNG KÊ QUẢNG CÁO', 'ADVERTISING_STATS'),
-            createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+            createQuickReply('🏠 HOMEPAGE BANNER - 50,000đ/ngày', 'ADVERTISING_HOMEPAGE'),
+            createQuickReply('🔍 SEARCH BOOST - 30,000đ/ngày', 'ADVERTISING_SEARCH'),
+            createQuickReply('🎯 CROSS-SELL SPOT - 20,000đ/ngày', 'ADVERTISING_CROSS_SELL'),
+            createQuickReply('⭐ FEATURED LISTING - 15,000đ/ngày', 'ADVERTISING_FEATURED'),
+            createQuickReply('📊 XEM THỐNG KÊ QUẢNG CÁO', 'ADVERTISING_STATS'),
+            createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
         ]
     )
 }
@@ -518,12 +506,12 @@ export async function handleAdvertisingPackage(user: any, packageType: string) {
         '• Nội dung: QUANGCAO [SĐT_CỦA_BẠN]'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Sau khi chuyển khoản:',
         [
-            createPostbackButton('📸 UPLOAD BIÊN LAI', 'ADVERTISING_UPLOAD_RECEIPT'),
-            createPostbackButton('❌ HỦY', 'ADVERTISING')
+            createQuickReply('📸 UPLOAD BIÊN LAI', 'ADVERTISING_UPLOAD_RECEIPT'),
+            createQuickReply('❌ HỦY', 'ADVERTISING')
         ]
     )
 }
@@ -578,12 +566,12 @@ export async function handleAdvertisingReceiptProcess(user: any, imageUrl: strin
             return
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('📊 XEM THỐNG KÊ', 'ADVERTISING_STATS'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('📊 XEM THỐNG KÊ', 'ADVERTISING_STATS'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -635,12 +623,12 @@ export async function handleAdvertisingStats(user: any) {
             await sendMessage(user.facebook_id, statsText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('💰 QUẢNG CÁO MỚI', 'ADVERTISING'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('💰 QUẢNG CÁO MỚI', 'ADVERTISING'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -662,55 +650,43 @@ export async function handlePaymentGuide(user: any) {
         '❓ CÂU HỎI THƯỜNG GẶP:\n• Q: Khi nào tài khoản được gia hạn?\nA: Ngay sau khi admin duyệt\n• Q: Có thể hủy giao dịch không?\nA: Có, liên hệ admin trong 24h'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT'),
-            createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
-            createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+            createQuickReply('💰 THANH TOÁN NGAY', 'PAYMENT'),
+            createQuickReply('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
+            createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
         ]
     )
 }
 
 // Handle payment extend
 export async function handlePaymentExtend(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🔄 GIA HẠN TÀI KHOẢN',
-        'Gia hạn tài khoản để tiếp tục sử dụng dịch vụ:'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chọn gói gia hạn:',
         [
-            createPostbackButton('📅 7 NGÀY - 7,000đ', 'PAYMENT_PACKAGE_7'),
-            createPostbackButton('📅 15 NGÀY - 15,000đ', 'PAYMENT_PACKAGE_15'),
-            createPostbackButton('📅 30 NGÀY - 30,000đ', 'PAYMENT_PACKAGE_30'),
-            createPostbackButton('📅 90 NGÀY - 90,000đ', 'PAYMENT_PACKAGE_90'),
-            createPostbackButton('🔙 QUAY LẠI', 'PAYMENT')
+            createQuickReply('📅 7 NGÀY - 7,000đ', 'PAYMENT_PACKAGE_7'),
+            createQuickReply('📅 15 NGÀY - 15,000đ', 'PAYMENT_PACKAGE_15'),
+            createQuickReply('📅 30 NGÀY - 30,000đ', 'PAYMENT_PACKAGE_30'),
+            createQuickReply('📅 90 NGÀY - 90,000đ', 'PAYMENT_PACKAGE_90'),
+            createQuickReply('🔙 QUAY LẠI', 'PAYMENT')
         ]
     )
 }
 
 // Handle expired user message
 export async function sendExpiredMessage(facebookId: string) {
-    await sendTypingIndicator(facebookId)
-    await sendMessagesWithTyping(facebookId, [
-        '⏰ TÀI KHOẢN ĐÃ HẾT HẠN!',
-        'Tài khoản của bạn đã hết hạn sử dụng.',
-        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         facebookId,
         'Gia hạn tài khoản:',
         [
-            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT'),
-            createPostbackButton('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
-            createPostbackButton('❌ HỦY', 'MAIN_MENU')
+            createQuickReply('💰 THANH TOÁN NGAY', 'PAYMENT'),
+            createQuickReply('💬 LIÊN HỆ ADMIN', 'SUPPORT_ADMIN'),
+            createQuickReply('❌ HỦY', 'MAIN_MENU')
         ]
     )
 }
@@ -733,13 +709,13 @@ export async function sendTrialExpiringMessage(facebookId: string, daysLeft: num
         ])
     }
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         facebookId,
         'Gia hạn tài khoản:',
         [
-            createPostbackButton('💰 THANH TOÁN NGAY', 'PAYMENT'),
-            createPostbackButton('⏰ NHẮC LẠI SAU', 'MAIN_MENU'),
-            createPostbackButton('ℹ️ TÌM HIỂU', 'INFO')
+            createQuickReply('💰 THANH TOÁN NGAY', 'PAYMENT'),
+            createQuickReply('⏰ NHẮC LẠI SAU', 'MAIN_MENU'),
+            createQuickReply('ℹ️ TÌM HIỂU', 'INFO')
         ]
     )
 }

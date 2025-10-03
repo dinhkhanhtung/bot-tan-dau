@@ -1,0 +1,586 @@
+import { supabaseAdmin } from '../supabase'
+import {
+    sendMessage,
+    sendTypingIndicator,
+    sendQuickReplyNoTyping,
+    sendQuickReply,
+    createQuickReply,
+    sendMessagesWithTyping
+} from '../facebook-api'
+import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from '../utils'
+
+export class AuthFlow {
+    /**
+     * Handle registration flow
+     */
+    async handleRegistration(user: any): Promise<void> {
+        await sendTypingIndicator(user.facebook_id)
+
+        // Check if user is admin first
+        const { isAdmin } = await import('../handlers/admin-handlers')
+        const userIsAdmin = await isAdmin(user.facebook_id)
+
+        if (userIsAdmin) {
+            await sendMessage(user.facebook_id, '🔧 ADMIN DASHBOARD\nChào admin! 👋\nBạn có quyền truy cập đầy đủ mà không cần đăng ký.')
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Chọn chức năng:',
+                [
+                    createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
+                    createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
+                    createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
+                    createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
+                ]
+            )
+            return
+        }
+
+        // Check if user is already registered (exclude temp users)
+        if ((user.status === 'registered' || user.status === 'trial') &&
+            user.name !== 'User' && !user.phone?.startsWith('temp_')) {
+
+            // Check if trial is about to expire (within 2 days)
+            if (user.status === 'trial' && user.membership_expires_at) {
+                const daysLeft = daysUntilExpiry(user.membership_expires_at)
+                if (daysLeft <= 2) {
+                    await sendMessage(user.facebook_id, `✅ Bạn đã đăng ký rồi!\n📅 Trial còn ${daysLeft} ngày\n💡 Hãy thanh toán để tiếp tục sử dụng.`)
+                } else {
+                    await sendMessage(user.facebook_id, `✅ Bạn đã đăng ký rồi!\n📅 Trial còn ${daysLeft} ngày\nSử dụng menu bên dưới để truy cập các tính năng.`)
+                }
+            } else {
+                await sendMessage(user.facebook_id, '✅ Bạn đã đăng ký rồi!\nSử dụng menu bên dưới để truy cập các tính năng.')
+            }
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Chọn chức năng:',
+                [
+                    createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
+                    createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
+                    createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+                    createQuickReply('💰 THANH TOÁN', 'PAYMENT')
+                ]
+            )
+            return
+        }
+
+        // OPTIMIZED: Single screen with essential info first
+        await sendMessage(user.facebook_id, '🚀 ĐĂNG KÝ NHANH - Tân Dậu Hỗ Trợ Chéo')
+
+        await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
+
+        await sendMessage(user.facebook_id, '🎁 QUYỀN LỢI: Trial 7 ngày miễn phí\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━')
+
+        // Create session for registration flow
+        const sessionData = {
+            current_flow: 'registration',
+            step: 'name',
+            data: {},
+            started_at: new Date().toISOString()
+        }
+
+        await updateBotSession(user.facebook_id, sessionData)
+
+        // Start with first step - SIMPLIFIED
+        await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/4)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Nguyễn Văn Minh\n📝 Nhập họ tên để tiếp tục:')
+
+        // Verify session was created
+        const sessionCheck = await getBotSession(user.facebook_id)
+        console.log('Session created for registration:', sessionCheck)
+    }
+
+    /**
+     * Handle registration step
+     */
+    async handleStep(user: any, text: string, session: any): Promise<void> {
+        // Check for exit commands
+        if (text.toLowerCase().includes('hủy') || text.toLowerCase().includes('thoát') || text.toLowerCase().includes('cancel')) {
+            await this.handleRegistrationCancel(user)
+            return
+        }
+
+        // Check if session is too old (more than 30 minutes)
+        if (session.started_at) {
+            const sessionAge = Date.now() - new Date(session.started_at).getTime()
+            if (sessionAge > 30 * 60 * 1000) { // 30 minutes
+                await this.handleRegistrationTimeout(user)
+                return
+            }
+        }
+
+        switch (session.step) {
+            case 'name':
+                await this.handleRegistrationName(user, text, session.data)
+                break
+            case 'phone':
+                await this.handleRegistrationPhone(user, text, session.data)
+                break
+            case 'location':
+                await this.handleRegistrationLocation(user, text, session.data)
+                break
+            case 'birthday':
+                await this.handleRegistrationBirthday(user, text, session.data)
+                break
+            case 'birthday_confirm':
+                // This step is handled by postback buttons, not text input
+                await sendMessage(user.facebook_id, '❌ Vui lòng chọn nút xác nhận bên dưới để tiếp tục!')
+                break
+            case 'keywords':
+                await this.handleRegistrationKeywords(user, text, session.data)
+                break
+            case 'product_service':
+                await this.handleRegistrationProductService(user, text, session.data)
+                break
+            default:
+                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng bắt đầu đăng ký lại!')
+                await updateBotSession(user.facebook_id, null)
+        }
+    }
+
+    /**
+     * Handle name input
+     */
+    private async handleRegistrationName(user: any, text: string, data: any): Promise<void> {
+        if (text.length < 2) {
+            await sendMessage(user.facebook_id, '❌ Tên quá ngắn. Vui lòng nhập họ tên đầy đủ:')
+            return
+        }
+
+        data.name = text.trim()
+
+        await sendMessage(user.facebook_id, `✅ Họ tên: ${data.name}\n📝 Bước 2/4: Số điện thoại\n📱 Vui lòng nhập số điện thoại của bạn:`)
+
+        await updateBotSession(user.facebook_id, {
+            current_flow: 'registration',
+            step: 'phone',
+            data: data
+        })
+    }
+
+    /**
+     * Handle phone input
+     */
+    private async handleRegistrationPhone(user: any, text: string, data: any): Promise<void> {
+        const phone = text.replace(/\D/g, '')
+
+        if (phone.length < 10) {
+            await sendMessage(user.facebook_id, '❌ Số điện thoại không hợp lệ. Vui lòng nhập lại:')
+            return
+        }
+
+        // Check if phone already exists
+        const { data: existingUser, error } = await supabaseAdmin
+            .from('users')
+            .select('facebook_id')
+            .eq('phone', phone)
+            .single()
+
+        if (existingUser && existingUser.facebook_id !== user.facebook_id) {
+            await sendMessage(user.facebook_id, '❌ Số điện thoại đã được sử dụng. Vui lòng nhập số khác:')
+            return
+        }
+
+        data.phone = phone
+
+        await sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n📝 Bước 3/4: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:`)
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Chọn vị trí:',
+            [
+                createQuickReply('🏠 HÀ NỘI', 'REG_LOCATION_HANOI'),
+                createQuickReply('🏢 TP.HCM', 'REG_LOCATION_HCM'),
+                createQuickReply('🏖️ ĐÀ NẴNG', 'REG_LOCATION_DANANG'),
+                createQuickReply('🌊 HẢI PHÒNG', 'REG_LOCATION_HAIPHONG'),
+                createQuickReply('🏔️ CẦN THƠ', 'REG_LOCATION_CANTHO'),
+                createQuickReply('🌾 AN GIANG', 'REG_LOCATION_ANGIANG'),
+                createQuickReply('🏞️ KHÁC...', 'REG_LOCATION_OTHER')
+            ]
+        )
+
+        await updateBotSession(user.facebook_id, {
+            current_flow: 'registration',
+            step: 'location',
+            data: data
+        })
+    }
+
+    /**
+     * Handle location selection
+     */
+    async handleRegistrationLocationPostback(user: any, location: string): Promise<void> {
+        const session = await getBotSession(user.facebook_id)
+        if (!session || session.current_flow !== 'registration') return
+
+        const data = session.data
+        data.location = location
+
+        await sendMessage(user.facebook_id, `✅ Vị trí: ${location}\n📝 Bước 4/4: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!\n❓ Bạn có phải sinh năm 1981 (Tân Dậu) không?`)
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Xác nhận tuổi:',
+            [
+                createQuickReply('✅ CÓ - TÔI SINH NĂM 1981', 'REG_BIRTHDAY_YES'),
+                createQuickReply('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REG_BIRTHDAY_NO')
+            ]
+        )
+
+        await updateBotSession(user.facebook_id, {
+            current_flow: 'registration',
+            step: 'birthday_confirm',
+            data: data
+        })
+    }
+
+    /**
+     * Handle birthday verification
+     */
+    async handleBirthdayVerification(user: any): Promise<void> {
+        const session = await getBotSession(user.facebook_id)
+        if (!session || session.current_flow !== 'registration') return
+
+        const data = session.data
+
+        await sendMessage(user.facebook_id, '✅ Xác nhận tuổi thành công!\n📝 Thông tin tùy chọn (có thể bỏ qua)\n━━━━━━━━━━━━━━━━━━━━\n🔍 Từ khóa tìm kiếm:\nVD: nhà đất, xe honda, điện thoại...\n━━━━━━━━━━━━━━━━━━━━\n🛒 Sản phẩm/Dịch vụ:\nVD: Nhà đất, xe cộ, điện tử...\n━━━━━━━━━━━━━━━━━━━━\n💡 Nhập: "Từ khóa, sản phẩm" hoặc "bỏ qua"')
+
+        await updateBotSession(user.facebook_id, {
+            current_flow: 'registration',
+            step: 'keywords',
+            data: data
+        })
+    }
+
+    /**
+     * Handle birthday rejection
+     */
+    async handleBirthdayRejection(user: any): Promise<void> {
+        await sendMessagesWithTyping(user.facebook_id, [
+            '⚠️ THÔNG BÁO QUAN TRỌNG',
+            'Bot Tân Dậu - Hỗ Trợ Chéo được tạo ra dành riêng cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
+            '🎯 Mục đích:\n• Kết nối mua bán trong cộng đồng cùng tuổi\n• Chia sẻ kinh nghiệm và kỷ niệm\n• Hỗ trợ lẫn nhau trong cuộc sống',
+            '💡 Nếu bạn không phải Tân Dậu - Hỗ Trợ Chéo:\n• Có thể sử dụng các platform khác\n• Hoặc giới thiệu cho bạn bè Tân Dậu - Hỗ Trợ Chéo',
+            '❌ Đăng ký đã bị hủy do không đúng đối tượng mục tiêu.'
+        ])
+
+        // Clear session
+        await updateBotSession(user.facebook_id, null)
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Lựa chọn:',
+            [
+                createQuickReply('🔄 ĐĂNG KÝ LẠI', 'REGISTER'),
+                createQuickReply('ℹ️ THÔNG TIN', 'INFO')
+            ]
+        )
+    }
+
+    /**
+     * Handle registration cancellation
+     */
+    private async handleRegistrationCancel(user: any): Promise<void> {
+        await sendMessagesWithTyping(user.facebook_id, [
+            '❌ ĐÃ HỦY ĐĂNG KÝ',
+            'Quy trình đăng ký đã được hủy bỏ.',
+            'Bạn có thể đăng ký lại bất cứ lúc nào!'
+        ])
+
+        // Clear session
+        await updateBotSession(user.facebook_id, null)
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Bạn muốn:',
+            [
+                createQuickReply('🔄 ĐĂNG KÝ LẠI', 'REGISTER'),
+                createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+    }
+
+    /**
+     * Handle registration timeout
+     */
+    private async handleRegistrationTimeout(user: any): Promise<void> {
+        await sendMessagesWithTyping(user.facebook_id, [
+            '⏰ PHIÊN ĐĂNG KÝ ĐÃ HẾT HẠN',
+            'Quy trình đăng ký đã quá 30 phút và được tự động hủy.',
+            'Điều này giúp tránh thông tin cũ không chính xác.',
+            '💡 Bạn có thể bắt đầu đăng ký lại!'
+        ])
+
+        // Clear session
+        await updateBotSession(user.facebook_id, null)
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Bạn muốn:',
+            [
+                createQuickReply('🔄 ĐĂNG KÝ LẠI', 'REGISTER'),
+                createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+    }
+
+    /**
+     * Handle keywords input for better search
+     */
+    private async handleRegistrationKeywords(user: any, text: string, data: any): Promise<void> {
+        if (text.toLowerCase().includes('bỏ qua') || text.toLowerCase().includes('không')) {
+            data.keywords = null
+            data.product_service = null
+        } else {
+            // Try to parse combined input: "keywords, product_service"
+            const parts = text.split(',').map(part => part.trim())
+            if (parts.length >= 1) {
+                data.keywords = parts[0] || null
+                data.product_service = parts[1] || null
+            } else {
+                data.keywords = text
+                data.product_service = null
+            }
+        }
+
+        await sendMessage(user.facebook_id, data.keywords ? `✅ Từ khóa: ${data.keywords}` : '✅ Bỏ qua thông tin tùy chọn')
+
+        // Complete registration
+        await this.completeRegistration(user, data)
+    }
+
+    /**
+     * Handle default message for new users
+     */
+    async handleDefaultMessage(user: any): Promise<void> {
+        await sendTypingIndicator(user.facebook_id)
+
+        // Check if user is admin first
+        const { isAdmin } = await import('../handlers/admin-handlers')
+        const userIsAdmin = await isAdmin(user.facebook_id)
+
+        if (userIsAdmin) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🔧 ADMIN DASHBOARD',
+                'Chào admin! 👋',
+                'Bạn có quyền truy cập đầy đủ.'
+            ])
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Chọn chức năng:',
+                [
+                    createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
+                    createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
+                    createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
+                    createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
+                ]
+            )
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🎉 CHÀO MỪNG ĐẾN VỚI BOT Tân Dậu - Hỗ Trợ Chéo! 🎉',
+            '👋 Xin chào! Tôi là bot hỗ trợ cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
+            'Để sử dụng đầy đủ tính năng, bạn cần đăng ký thành viên trước.'
+        ])
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Bạn muốn:',
+            [
+                createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+                createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
+                createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
+            ]
+        )
+    }
+
+    /**
+     * Handle info for new users
+     */
+    async handleInfo(user: any): Promise<void> {
+        // Typing indicator removed for quick reply
+        await sendQuickReplyNoTyping(
+            user.facebook_id,
+            'Bạn muốn:',
+            [
+                createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+                createQuickReply('💬 HỖ TRỢ', 'SUPPORT_ADMIN'),
+                createQuickReply('🔙 TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+    }
+
+    // Helper methods for registration steps
+    private async handleRegistrationLocation(user: any, text: string, data: any): Promise<void> {
+        data.location = text.trim()
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            `✅ Địa điểm: ${data.location}`,
+            'Bước 4/6: Ngày sinh\n📅 Vui lòng nhập ngày sinh của bạn (DD/MM/YYYY):',
+            'VD: 15/01/1981'
+        ])
+
+        await updateBotSession(user.facebook_id, {
+            current_flow: 'registration',
+            step: 'birthday',
+            data: data
+        })
+    }
+
+    private async handleRegistrationProductService(user: any, text: string, data: any): Promise<void> {
+        data.product_service = text.trim()
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Bạn chưa có sản phẩm/dịch vụ nào',
+            '🎉 Hoàn thành đăng ký!'
+        ])
+
+        // Complete registration
+        await this.completeRegistration(user, data)
+    }
+
+    private async handleRegistrationBirthday(user: any, text: string, data: any): Promise<void> {
+        const birthdayMatch = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/)
+
+        if (!birthdayMatch) {
+            await sendMessage(user.facebook_id, '❌ Định dạng ngày sinh không đúng! Vui lòng nhập theo định dạng DD/MM/YYYY')
+            return
+        }
+
+        const [, day, month, year] = birthdayMatch
+        const birthday = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+
+        if (isNaN(birthday.getTime())) {
+            await sendMessage(user.facebook_id, '❌ Ngày sinh không hợp lệ! Vui lòng kiểm tra lại')
+            return
+        }
+
+        data.birthday = birthday.toISOString()
+        data.birth_year = parseInt(year)
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            `✅ Ngày sinh: ${birthday.toLocaleDateString('vi-VN')}`,
+            'Bước 5/6: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!',
+            'Bot Tân Dậu - Hỗ Trợ Chéo được tạo ra dành riêng cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
+            `❓ Bạn có phải sinh năm ${data.birth_year} không?`
+        ])
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Xác nhận tuổi:',
+            [
+                createQuickReply(`✅ CÓ - TÔI SINH NĂM ${data.birth_year}`, 'REG_BIRTHDAY_YES'),
+                createQuickReply('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REG_BIRTHDAY_NO')
+            ]
+        )
+
+        await updateBotSession(user.facebook_id, {
+            current_flow: 'registration',
+            step: 'birthday_confirm',
+            data: data
+        })
+    }
+
+    /**
+     * Complete registration process
+     */
+    private async completeRegistration(user: any, data: any): Promise<void> {
+        try {
+            // Check if user already exists (from welcome message tracking)
+            const { data: existingUser } = await supabaseAdmin
+                .from('users')
+                .select('*')
+                .eq('facebook_id', user.facebook_id)
+                .single()
+
+            let userError = null
+
+            if (existingUser) {
+                // Update existing user record
+                const { error } = await supabaseAdmin
+                    .from('users')
+                    .update({
+                        name: data.name,
+                        phone: data.phone,
+                        location: data.location,
+                        birthday: data.birth_year || 1981,
+                        product_service: data.product_service || null,
+                        status: 'trial',
+                        membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                        referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
+                        welcome_message_sent: true,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('facebook_id', user.facebook_id)
+                userError = error
+            } else {
+                // Create new user record
+                const { error } = await supabaseAdmin
+                    .from('users')
+                    .insert({
+                        id: generateId(),
+                        facebook_id: user.facebook_id,
+                        name: data.name,
+                        phone: data.phone,
+                        location: data.location,
+                        birthday: data.birth_year || 1981,
+                        product_service: data.product_service || null,
+                        status: 'trial',
+                        membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                        referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
+                        welcome_message_sent: true,
+                        created_at: new Date().toISOString()
+                    })
+                userError = error
+            }
+
+            if (userError) {
+                console.error('Error creating user:', userError)
+                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau!')
+                return
+            }
+
+            // Clear session
+            await updateBotSession(user.facebook_id, null)
+
+            // Send success message - SIMPLIFIED
+            await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 7 ngày!\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━`)
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Chào mừng bạn đến với cộng đồng Tân Dậu - Hỗ Trợ Chéo!',
+                [
+                    createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+                    createQuickReply('🛒 TẠO TIN', 'LISTING'),
+                    createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
+                    createQuickReply('💳 NÂNG CẤP', 'PAYMENT')
+                ]
+            )
+
+        } catch (error) {
+            console.error('Error in complete registration:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+        }
+    }
+
+    // Additional functions for webhook compatibility
+    static async handleAdminCommand(user: any, command?: string): Promise<void> {
+        // Typing indicator removed for quick reply
+        await sendQuickReplyNoTyping(
+            user.facebook_id,
+            'Quản lý:',
+            [
+                createQuickReply('💰 THANH TOÁN', 'ADMIN_PAYMENTS'),
+                createQuickReply('👥 NGƯỜI DÙNG', 'ADMIN_USERS'),
+                createQuickReply('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS'),
+                createQuickReply('📊 THỐNG KÊ', 'ADMIN_STATS'),
+                createQuickReply('📢 THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
+                createQuickReply('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS')
+            ]
+        )
+    }
+}

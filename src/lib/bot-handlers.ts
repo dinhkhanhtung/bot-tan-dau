@@ -3,9 +3,8 @@ import {
     sendMessage,
     sendTypingIndicator,
     sendMessagesWithTyping,
-    sendButtonTemplate,
     sendQuickReply,
-    createPostbackButton,
+    sendQuickReplyNoTyping,
     createQuickReply,
     hideButtons
 } from './facebook-api'
@@ -153,7 +152,7 @@ export async function handleMessage(user: any, text: string) {
             if (userIsAdmin) {
                 await AdminHandlers.handleAdminCommand(user)
             } else if ((user.status === 'registered' || user.status === 'trial') &&
-                      user.name !== 'User' && !user.phone?.startsWith('temp_')) {
+                user.name !== 'User' && !user.phone?.startsWith('temp_')) {
                 await UtilityHandlers.handleDefaultMessageRegistered(user)
             } else {
                 await AuthHandlers.handleDefaultMessage(user)
@@ -686,13 +685,13 @@ export async function handleDefaultMessage(user: any) {
 
     await sendMessage(user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Bạn muốn:',
         [
-            createPostbackButton('📝 ĐĂNG KÝ', 'REGISTER'),
-            createPostbackButton('ℹ️ TÌM HIỂU', 'INFO'),
-            createPostbackButton('💬 HỖ TRỢ', 'SUPPORT')
+            createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+            createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
+            createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
         ]
     )
 }
@@ -705,14 +704,14 @@ export async function handleDefaultMessageRegistered(user: any) {
 
     await sendMessage(user.facebook_id, '👋 Chào mừng bạn trở lại!')
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Bạn muốn:',
         [
-            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('🛒 TẠO TIN', 'LISTING'),
-            createPostbackButton('👥 CỘNG ĐỒNG', 'COMMUNITY'),
-            createPostbackButton('📊 THỐNG KÊ', 'STATS')
+            createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+            createQuickReply('🛒 TẠO TIN', 'LISTING'),
+            createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
+            createQuickReply('📊 THỐNG KÊ', 'STATS')
         ]
     )
 }
@@ -737,22 +736,14 @@ export async function handleContactAdmin(user: any) {
         const result = await startAdminChatSession(user.facebook_id)
 
         if (result.success) {
-            await sendTypingIndicator(user.facebook_id)
-
-            await sendMessagesWithTyping(user.facebook_id, [
-                '💬 LIÊN HỆ ADMIN',
-                'Yêu cầu chat của bạn đã được gửi đến admin.',
-                '⏳ Bạn sẽ nhận được phản hồi sớm nhất có thể!',
-                '📱 Trong thời gian chờ, bạn có thể gửi tin nhắn và admin sẽ trả lời.'
-            ])
-
-            await sendButtonTemplate(
+            // Typing indicator removed for quick reply
+            await sendQuickReplyNoTyping(
                 user.facebook_id,
                 'Tùy chọn:',
                 [
-                    createPostbackButton('❌ HỦY CHAT', 'CANCEL_ADMIN_CHAT'),
-                    createPostbackButton('🔄 QUAY LẠI BOT', 'EXIT_ADMIN_CHAT'),
-                    createPostbackButton('📝 HƯỚNG DẪN', 'ADMIN_HELP_GENERAL')
+                    createQuickReply('❌ HỦY CHAT', 'CANCEL_ADMIN_CHAT'),
+                    createQuickReply('🔄 QUAY LẠI BOT', 'EXIT_ADMIN_CHAT'),
+                    createQuickReply('📝 HƯỚNG DẪN', 'ADMIN_HELP_GENERAL')
                 ]
             )
         } else {
@@ -782,12 +773,12 @@ export async function handleCancelAdminChat(user: any) {
             await sendMessage(user.facebook_id, '⚠️ Không thể hủy chat. Có thể bạn không có session nào đang hoạt động.')
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Bạn muốn:',
             [
-                createPostbackButton('🤖 CHAT BOT', 'SUPPORT_BOT'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('🤖 CHAT BOT', 'SUPPORT_BOT'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
             ]
         )
     } catch (error) {
@@ -814,13 +805,13 @@ export async function handleExitAdminChat(user: any) {
             await sendMessage(user.facebook_id, '⚠️ Không thể thoát chat. Có thể bạn không có session nào đang hoạt động.')
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Bạn muốn:',
             [
-                createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-                createPostbackButton('🛒 TẠO TIN', 'LISTING'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+                createQuickReply('🛒 TẠO TIN', 'LISTING'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
             ]
         )
     } catch (error) {
@@ -831,21 +822,14 @@ export async function handleExitAdminChat(user: any) {
 
 // Handle exit bot
 export async function handleExitBot(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '👋 TẠM BIỆT!',
-        'Cảm ơn bạn đã sử dụng Bot Tân Dậu - Hỗ Trợ Chéo!',
-        'Hẹn gặp lại bạn sau! 😊'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Bạn có muốn:',
         [
-            createPostbackButton('🏠 VÀO LẠI', 'MAIN_MENU'),
-            createPostbackButton('📝 ĐĂNG KÝ', 'REGISTER'),
-            createPostbackButton('ℹ️ TÌM HIỂU', 'INFO')
+            createQuickReply('🏠 VÀO LẠI', 'MAIN_MENU'),
+            createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+            createQuickReply('ℹ️ TÌM HIỂU', 'INFO')
         ]
     )
 }

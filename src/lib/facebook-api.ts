@@ -318,6 +318,36 @@ export function createQuickReply(text: string, payload: string) {
     }
 }
 
+// Send quick reply without typing indicator for better UX
+export async function sendQuickReplyNoTyping(recipientId: string, text: string, quickReplies: any[]) {
+    const messageData = {
+        recipient: { id: recipientId },
+        message: {
+            text: text,
+            quick_replies: quickReplies
+        }
+    }
+
+    try {
+        const response = await fetch(`https://graph.facebook.com/v18.0/me/messages?access_token=${process.env.FACEBOOK_ACCESS_TOKEN}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(messageData)
+        })
+
+        if (!response.ok) {
+            const errorData = await response.json()
+            console.error('Quick reply error:', errorData)
+            throw new Error(`Quick reply failed: ${errorData.error?.message || 'Unknown error'}`)
+        }
+
+        console.log('Quick reply sent successfully')
+    } catch (error) {
+        console.error('Error sending quick reply:', error)
+        throw error
+    }
+}
+
 // Helper function to create postback buttons
 export function createPostbackButton(title: string, payload: string) {
     return {

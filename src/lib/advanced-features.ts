@@ -4,9 +4,9 @@ import { supabaseAdmin } from './supabase'
 import {
     sendMessage,
     sendTypingIndicator,
-    sendButtonTemplate,
+    sendQuickReplyNoTyping,
     sendGenericTemplate,
-    createPostbackButton,
+    createQuickReply,
     createGenericElement,
     sendMessagesWithTyping
 } from './facebook-api'
@@ -134,9 +134,9 @@ export async function handleAdvancedSearch(user: any, searchParams: {
                     `💰 ${formatCurrency(listing.price)}\n📍 ${listing.location}\n👤 ${seller?.name || 'N/A'}\n⭐ ${rating} ${transactions}\n🎯 Độ phù hợp: ${relevanceScore}%`,
                     listing.images?.[0] || '',
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
-                        createPostbackButton('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`),
-                        createPostbackButton('❤️ LƯU TIN', `SAVE_LISTING_${listing.id}`)
+                        createQuickReply('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createQuickReply('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`),
+                        createQuickReply('❤️ LƯU TIN', `SAVE_LISTING_${listing.id}`)
                     ]
                 )
             })
@@ -152,14 +152,14 @@ export async function handleAdvancedSearch(user: any, searchParams: {
             ])
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             '🔍 TÙY CHỌN NÂNG CAO:',
             [
-                createPostbackButton('🎯 LỌC THÊM', 'ADVANCED_FILTERS'),
-                createPostbackButton('📊 SO SÁNH', 'COMPARE_LISTINGS'),
-                createPostbackButton('💾 LƯU TÌM KIẾM', 'SAVE_SEARCH'),
-                createPostbackButton('🔄 TÌM KIẾM MỚI', 'SEARCH')
+                createQuickReply('🎯 LỌC THÊM', 'ADVANCED_FILTERS'),
+                createQuickReply('📊 SO SÁNH', 'COMPARE_LISTINGS'),
+                createQuickReply('💾 LƯU TÌM KIẾM', 'SAVE_SEARCH'),
+                createQuickReply('🔄 TÌM KIẾM MỚI', 'SEARCH')
             ]
         )
 
@@ -455,7 +455,7 @@ export async function sendRealTimeNotification(userIds: string[], notification: 
         }
 
         // Send immediate Facebook messages
-        const { sendMessage, sendButtonTemplate, createPostbackButton } = await import('./facebook-api')
+        const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api')
 
         const icon = {
             info: 'ℹ️',
@@ -471,12 +471,12 @@ export async function sendRealTimeNotification(userIds: string[], notification: 
                 await sendMessage(userId, message)
 
                 if (notification.actionUrl) {
-                    await sendButtonTemplate(
+                    await sendQuickReply(
                         userId,
                         'Tùy chọn:',
                         [
-                            createPostbackButton('👉 XEM NGAY', `OPEN_URL_${notification.actionUrl}`),
-                            createPostbackButton('📱 VỀ TRANG CHỦ', 'MAIN_MENU')
+                            createQuickReply('👉 XEM NGAY', `OPEN_URL_${notification.actionUrl}`),
+                            createQuickReply('📱 VỀ TRANG CHỦ', 'MAIN_MENU')
                         ]
                     )
                 }
@@ -538,14 +538,14 @@ export async function generateAdvancedAnalytics(user: any, dateRange: { start: D
             insights.recommendations
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             '📈 ANALYTICS OPTIONS:',
             [
-                createPostbackButton('📤 XUẤT BÁO CÁO', 'EXPORT_ANALYTICS'),
-                createPostbackButton('📅 THAY ĐỔI KHOẢNG THỜI GIAN', 'CHANGE_DATE_RANGE'),
-                createPostbackButton('🎯 CHI TIẾT DANH MỤC', 'CATEGORY_ANALYTICS'),
-                createPostbackButton('📊 TỔNG QUAN', 'ADMIN_STATS')
+                createQuickReply('📤 XUẤT BÁO CÁO', 'EXPORT_ANALYTICS'),
+                createQuickReply('📅 THAY ĐỔI KHOẢNG THỜI GIAN', 'CHANGE_DATE_RANGE'),
+                createQuickReply('🎯 CHI TIẾT DANH MỤC', 'CATEGORY_ANALYTICS'),
+                createQuickReply('📊 TỔNG QUAN', 'ADMIN_STATS')
             ]
         )
 
@@ -631,7 +631,7 @@ function getTopLocations(users: any[], limit: number = 3): string[] {
     }, {} as Record<string, number>)
 
     return Object.entries(locationCount)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .slice(0, limit)
         .map(([location]) => location)
 }
@@ -643,7 +643,7 @@ function getTopCategories(listings: any[], limit: number = 3): string[] {
     }, {} as Record<string, number>)
 
     return Object.entries(categoryCount)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .slice(0, limit)
         .map(([category]) => category)
 }
@@ -807,14 +807,14 @@ export async function showPerformanceDashboard(user: any) {
             `${cacheStats.listing.size > 80 ? '⚠️' : '✅'} Listing Cache`
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             '🔧 PERFORMANCE TOOLS:',
             [
-                createPostbackButton('🧹 CLEAR CACHE', 'CLEAR_ALL_CACHE'),
-                createPostbackButton('🔥 WARM CACHE', 'WARM_CACHE'),
-                createPostbackButton('📊 MEMORY STATS', 'MEMORY_STATS'),
-                createPostbackButton('⚙️ OPTIMIZE', 'OPTIMIZE_SYSTEM')
+                createQuickReply('🧹 CLEAR CACHE', 'CLEAR_ALL_CACHE'),
+                createQuickReply('🔥 WARM CACHE', 'WARM_CACHE'),
+                createQuickReply('📊 MEMORY STATS', 'MEMORY_STATS'),
+                createQuickReply('⚙️ OPTIMIZE', 'OPTIMIZE_SYSTEM')
             ]
         )
 

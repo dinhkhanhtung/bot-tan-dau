@@ -3,10 +3,10 @@ import {
     sendMessage,
     sendTypingIndicator,
     sendQuickReply,
-    sendButtonTemplate,
+    sendQuickReplyNoTyping,
     sendGenericTemplate,
     sendCarouselTemplate,
-    createPostbackButton,
+    createQuickReply,
     createGenericElement,
     sendMessagesWithTyping
 } from '../facebook-api'
@@ -14,26 +14,19 @@ import { formatCurrency, formatNumber, generateId } from '../utils'
 
 // Handle community features
 export async function handleCommunity(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '👥 CỘNG ĐỒNG TÂN DẬU - HỖ TRỢ CHÉO',
-        'Chào mừng bạn đến với cộng đồng Tân Dậu - Hỗ Trợ Chéo!',
-        '🤝 Cùng nhau hỗ trợ, chia sẻ và kết nối trong cộng đồng!'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Tính năng cộng đồng:',
         [
-            createPostbackButton('🎂 SINH NHẬT', 'COMMUNITY_BIRTHDAY'),
-            createPostbackButton('🏆 TOP SELLER', 'COMMUNITY_TOP_SELLER'),
-            createPostbackButton('📖 KỶ NIỆM', 'COMMUNITY_MEMORIES'),
-            createPostbackButton('🎪 SỰ KIỆN', 'COMMUNITY_EVENTS'),
-            createPostbackButton('⭐ THÀNH TÍCH', 'COMMUNITY_ACHIEVEMENTS'),
-            createPostbackButton('🔮 TỬ VI', 'COMMUNITY_HOROSCOPE'),
-            createPostbackButton('🤝 HỖ TRỢ CHÉO', 'COMMUNITY_SUPPORT'),
-            createPostbackButton('💬 CHAT NHÓM', 'COMMUNITY_CHAT')
+            createQuickReply('🎂 SINH NHẬT', 'COMMUNITY_BIRTHDAY'),
+            createQuickReply('🏆 TOP SELLER', 'COMMUNITY_TOP_SELLER'),
+            createQuickReply('📖 KỶ NIỆM', 'COMMUNITY_MEMORIES'),
+            createQuickReply('🎪 SỰ KIỆN', 'COMMUNITY_EVENTS'),
+            createQuickReply('⭐ THÀNH TÍCH', 'COMMUNITY_ACHIEVEMENTS'),
+            createQuickReply('🔮 TỬ VI', 'COMMUNITY_HOROSCOPE'),
+            createQuickReply('🤝 HỖ TRỢ CHÉO', 'COMMUNITY_SUPPORT'),
+            createQuickReply('💬 CHAT NHÓM', 'COMMUNITY_CHAT')
         ]
     )
 }
@@ -79,13 +72,13 @@ export async function handleCommunityBirthday(user: any) {
             await sendMessage(user.facebook_id, birthdayText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🎁 GỬI LỜI CHÚC', 'BIRTHDAY_SEND_WISH'),
-                createPostbackButton('📸 XEM ẢNH', 'BIRTHDAY_VIEW_PHOTOS'),
-                createPostbackButton('🔙 QUAY LẠI', 'COMMUNITY')
+                createQuickReply('🎁 GỬI LỜI CHÚC', 'BIRTHDAY_SEND_WISH'),
+                createQuickReply('📸 XEM ẢNH', 'BIRTHDAY_VIEW_PHOTOS'),
+                createQuickReply('🔙 QUAY LẠI', 'COMMUNITY')
             ]
         )
 
@@ -134,13 +127,13 @@ export async function handleCommunityTopSeller(user: any) {
             await sendMessage(user.facebook_id, topSellerText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('👀 XEM CHI TIẾT', 'TOP_SELLER_DETAILS'),
-                createPostbackButton('💬 KẾT NỐI', 'TOP_SELLER_CONNECT'),
-                createPostbackButton('🔙 QUAY LẠI', 'COMMUNITY')
+                createQuickReply('👀 XEM CHI TIẾT', 'TOP_SELLER_DETAILS'),
+                createQuickReply('💬 KẾT NỐI', 'TOP_SELLER_CONNECT'),
+                createQuickReply('🔙 QUAY LẠI', 'COMMUNITY')
             ]
         )
 
@@ -188,8 +181,8 @@ export async function handleCommunityEvents(user: any) {
                     `📅 ${new Date(event.event_date).toLocaleDateString('vi-VN')} - ${event.time}\n📍 ${event.location}\n👥 ${event.participants || 0}/${event.max_participants || 0} người đăng ký`,
                     event.image || '',
                     [
-                        createPostbackButton('✅ ĐĂNG KÝ', `EVENT_REGISTER_${event.id}`),
-                        createPostbackButton('👀 XEM CHI TIẾT', `EVENT_DETAILS_${event.id}`)
+                        createQuickReply('✅ ĐĂNG KÝ', `EVENT_REGISTER_${event.id}`),
+                        createQuickReply('👀 XEM CHI TIẾT', `EVENT_DETAILS_${event.id}`)
                     ]
                 )
             )
@@ -197,15 +190,15 @@ export async function handleCommunityEvents(user: any) {
             await sendCarouselTemplate(user.facebook_id, elements)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('📅 SỰ KIỆN SẮP TỚI', 'EVENTS_UPCOMING'),
-                createPostbackButton('🎉 SỰ KIỆN ĐANG DIỄN RA', 'EVENTS_ONGOING'),
-                createPostbackButton('📸 SỰ KIỆN ĐÃ QUA', 'EVENTS_PAST'),
-                createPostbackButton('➕ TẠO SỰ KIỆN', 'EVENT_CREATE'),
-                createPostbackButton('🔙 QUAY LẠI', 'COMMUNITY')
+                createQuickReply('📅 SỰ KIỆN SẮP TỚI', 'EVENTS_UPCOMING'),
+                createQuickReply('🎉 SỰ KIỆN ĐANG DIỄN RA', 'EVENTS_ONGOING'),
+                createQuickReply('📸 SỰ KIỆN ĐÃ QUA', 'EVENTS_PAST'),
+                createQuickReply('➕ TẠO SỰ KIỆN', 'EVENT_CREATE'),
+                createQuickReply('🔙 QUAY LẠI', 'COMMUNITY')
             ]
         )
 
@@ -275,12 +268,12 @@ export async function handleEventRegistration(user: any, eventId: string) {
             ])
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('📅 XEM SỰ KIỆN KHÁC', 'COMMUNITY_EVENTS'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('📅 XEM SỰ KIỆN KHÁC', 'COMMUNITY_EVENTS'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -292,56 +285,44 @@ export async function handleEventRegistration(user: any, eventId: string) {
 
 // Handle community support
 export async function handleCommunitySupport(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🤝 HỖ TRỢ CHÉO CỘNG ĐỒNG TÂN DẬU',
-        'Cộng đồng Tân Dậu - Hỗ Trợ Chéo luôn sẵn sàng hỗ trợ lẫn nhau!'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chọn loại hỗ trợ:',
         [
-            createPostbackButton('💼 TÌM VIỆC LÀM', 'SUPPORT_JOB'),
-            createPostbackButton('🏠 TÌM NHÀ TRỌ', 'SUPPORT_HOUSING'),
-            createPostbackButton('🚗 ĐI CHUNG XE', 'SUPPORT_CARPOOL'),
-            createPostbackButton('👶 TRÔNG TRẺ', 'SUPPORT_CHILDCARE'),
-            createPostbackButton('🍳 NẤU ĂN', 'SUPPORT_COOKING'),
-            createPostbackButton('🧹 DỌN DẸP', 'SUPPORT_CLEANING'),
-            createPostbackButton('💡 TƯ VẤN', 'SUPPORT_ADVICE'),
-            createPostbackButton('🎓 HỌC TẬP', 'SUPPORT_EDUCATION'),
-            createPostbackButton('🏥 SỨC KHỎE', 'SUPPORT_HEALTH')
+            createQuickReply('💼 TÌM VIỆC LÀM', 'SUPPORT_JOB'),
+            createQuickReply('🏠 TÌM NHÀ TRỌ', 'SUPPORT_HOUSING'),
+            createQuickReply('🚗 ĐI CHUNG XE', 'SUPPORT_CARPOOL'),
+            createQuickReply('👶 TRÔNG TRẺ', 'SUPPORT_CHILDCARE'),
+            createQuickReply('🍳 NẤU ĂN', 'SUPPORT_COOKING'),
+            createQuickReply('🧹 DỌN DẸP', 'SUPPORT_CLEANING'),
+            createQuickReply('💡 TƯ VẤN', 'SUPPORT_ADVICE'),
+            createQuickReply('🎓 HỌC TẬP', 'SUPPORT_EDUCATION'),
+            createQuickReply('🏥 SỨC KHỎE', 'SUPPORT_HEALTH')
         ]
     )
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Thêm tùy chọn:',
         [
-            createPostbackButton('🔙 QUAY LẠI', 'COMMUNITY')
+            createQuickReply('🔙 QUAY LẠI', 'COMMUNITY')
         ]
     )
 }
 
 // Handle community memories
 export async function handleCommunityMemories(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '📖 KỶ NIỆM CỘNG ĐỒNG TÂN DẬU',
-        'Chia sẻ và xem lại những kỷ niệm đẹp của cộng đồng Tân Dậu - Hỗ Trợ Chéo!'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📸 XEM ẢNH KỶ NIỆM', 'MEMORIES_PHOTOS'),
-            createPostbackButton('📝 CHIA SẺ KỶ NIỆM', 'MEMORIES_SHARE'),
-            createPostbackButton('🎂 SINH NHẬT ĐẶC BIỆT', 'MEMORIES_BIRTHDAYS'),
-            createPostbackButton('🏆 THÀNH TÍCH NỔI BẬT', 'MEMORIES_ACHIEVEMENTS'),
-            createPostbackButton('🔙 QUAY LẠI', 'COMMUNITY')
+            createQuickReply('📸 XEM ẢNH KỶ NIỆM', 'MEMORIES_PHOTOS'),
+            createQuickReply('📝 CHIA SẺ KỶ NIỆM', 'MEMORIES_SHARE'),
+            createQuickReply('🎂 SINH NHẬT ĐẶC BIỆT', 'MEMORIES_BIRTHDAYS'),
+            createQuickReply('🏆 THÀNH TÍCH NỔI BẬT', 'MEMORIES_ACHIEVEMENTS'),
+            createQuickReply('🔙 QUAY LẠI', 'COMMUNITY')
         ]
     )
 }
@@ -383,13 +364,13 @@ export async function handleCommunityAchievements(user: any) {
             await sendMessage(user.facebook_id, achievementText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🏆 XEM TẤT CẢ', 'ACHIEVEMENTS_ALL'),
-                createPostbackButton('📊 XEM THỐNG KÊ', 'ACHIEVEMENTS_STATS'),
-                createPostbackButton('🔙 QUAY LẠI', 'COMMUNITY')
+                createQuickReply('🏆 XEM TẤT CẢ', 'ACHIEVEMENTS_ALL'),
+                createQuickReply('📊 XEM THỐNG KÊ', 'ACHIEVEMENTS_STATS'),
+                createQuickReply('🔙 QUAY LẠI', 'COMMUNITY')
             ]
         )
 
@@ -401,22 +382,16 @@ export async function handleCommunityAchievements(user: any) {
 
 // Handle community chat
 export async function handleCommunityChat(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '💬 CHAT NHÓM CỘNG ĐỒNG TÂN DẬU',
-        'Tham gia chat nhóm để giao lưu với các thành viên khác!'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chọn nhóm chat:',
         [
-            createPostbackButton('🏠 CHAT CHUNG', 'CHAT_GENERAL'),
-            createPostbackButton('🛒 CHAT MUA BÁN', 'CHAT_TRADING'),
-            createPostbackButton('🎪 CHAT SỰ KIỆN', 'CHAT_EVENTS'),
-            createPostbackButton('💡 CHAT HỖ TRỢ', 'CHAT_SUPPORT'),
-            createPostbackButton('🔙 QUAY LẠI', 'COMMUNITY')
+            createQuickReply('🏠 CHAT CHUNG', 'CHAT_GENERAL'),
+            createQuickReply('🛒 CHAT MUA BÁN', 'CHAT_TRADING'),
+            createQuickReply('🎪 CHAT SỰ KIỆN', 'CHAT_EVENTS'),
+            createQuickReply('💡 CHAT HỖ TRỢ', 'CHAT_SUPPORT'),
+            createQuickReply('🔙 QUAY LẠI', 'COMMUNITY')
         ]
     )
 }
@@ -474,12 +449,12 @@ export async function handleCommunityRanking(user: any) {
             await sendMessage(user.facebook_id, earningText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('👥 CỘNG ĐỒNG', 'COMMUNITY'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -528,12 +503,12 @@ export async function handleCommunityAnnouncements(user: any) {
             }
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('👥 CỘNG ĐỒNG', 'COMMUNITY'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 

@@ -3,8 +3,7 @@ import {
     sendMessage,
     sendTypingIndicator,
     sendQuickReply,
-    sendButtonTemplate,
-    createPostbackButton,
+    sendQuickReplyNoTyping,
     createQuickReply,
     sendMessagesWithTyping,
     sendImage
@@ -65,15 +64,8 @@ export async function handleAdminCommand(user: any) {
 
     console.log('User is admin, proceeding with dashboard')
 
-    await sendTypingIndicator(user.facebook_id)
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🔧 ADMIN DASHBOARD',
-        'Chào admin! 👋',
-        'Bạn muốn quản lý gì?'
-    ])
-
-    // Admin functions with Quick Reply
-    await sendQuickReply(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chức năng admin:',
         [
@@ -187,15 +179,15 @@ ${payment.receipt_image ? '📸 Đã có biên lai' : '⚠️ Chưa có biên la
 
                 await sendMessage(user.facebook_id, paymentCard)
 
-                // Enhanced action buttons
-                await sendButtonTemplate(
+                // Enhanced action buttons - converted to quick reply
+                await sendQuickReply(
                     user.facebook_id,
                     `⚡ Xử lý nhanh #${payment.id.slice(-8)}:`,
                     [
-                        createPostbackButton('✅ DUYỆT NHANH', `ADMIN_APPROVE_PAYMENT_${payment.id}`),
-                        createPostbackButton('❌ TỪ CHỐI', `ADMIN_REJECT_PAYMENT_${payment.id}`),
-                        createPostbackButton('👀 XEM BIÊN LAI', `ADMIN_VIEW_RECEIPT_${payment.id}`),
-                        createPostbackButton('👤 XEM USER', `ADMIN_VIEW_USER_${payment.user_id}`)
+                        createQuickReply('✅ DUYỆT NHANH', `ADMIN_APPROVE_PAYMENT_${payment.id}`),
+                        createQuickReply('❌ TỪ CHỐI', `ADMIN_REJECT_PAYMENT_${payment.id}`),
+                        createQuickReply('👀 XEM BIÊN LAI', `ADMIN_VIEW_RECEIPT_${payment.id}`),
+                        createQuickReply('👤 XEM USER', `ADMIN_VIEW_USER_${payment.user_id}`)
                     ]
                 )
             }
@@ -219,16 +211,16 @@ ${payment.receipt_image ? '📸 Đã có biên lai' : '⚠️ Chưa có biên la
                 '━━━━━━━━━━━━━━━━━━━━'
             ])
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 '⚡ QUICK ACTIONS:',
                 [
-                    createPostbackButton('⚡ DUYỆT TẤT CẢ', 'ADMIN_BULK_APPROVE'),
-                    createPostbackButton('✅ DUYỆT UY TÍN', 'ADMIN_APPROVE_TRUSTED'),
-                    createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
-                    createPostbackButton('🔍 TÌM KIẾM', 'ADMIN_SEARCH_PAYMENT'),
-                    createPostbackButton('🔄 LÀM MỚI', 'ADMIN_PAYMENTS'),
-                    createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+                    createQuickReply('⚡ DUYỆT TẤT CẢ', 'ADMIN_BULK_APPROVE'),
+                    createQuickReply('✅ DUYỆT UY TÍN', 'ADMIN_APPROVE_TRUSTED'),
+                    createQuickReply('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
+                    createQuickReply('🔍 TÌM KIẾM', 'ADMIN_SEARCH_PAYMENT'),
+                    createQuickReply('🔄 LÀM MỚI', 'ADMIN_PAYMENTS'),
+                    createQuickReply('🔙 QUAY LẠI', 'ADMIN')
                 ]
             )
         }
@@ -398,50 +390,33 @@ export async function handleAdminStats(user: any) {
 
 // Handle admin notifications
 export async function handleAdminNotifications(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🔔 QUẢN LÝ THÔNG BÁO',
-        'Gửi thông báo đến người dùng:'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Loại thông báo:',
         [
-            createPostbackButton('📢 THÔNG BÁO CHUNG', 'ADMIN_SEND_GENERAL'),
-            createPostbackButton('👤 GỬI USER CỤ THỂ', 'ADMIN_SEND_USER'),
-            createPostbackButton('🛒 GỬI THEO TIN ĐĂNG', 'ADMIN_SEND_LISTING'),
-            createPostbackButton('📊 LỊCH SỬ THÔNG BÁO', 'ADMIN_NOTIFICATION_HISTORY'),
-            createPostbackButton('⚙️ CÀI ĐẶT THÔNG BÁO', 'ADMIN_NOTIFICATION_SETTINGS'),
-            createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+            createQuickReply('📢 THÔNG BÁO CHUNG', 'ADMIN_SEND_GENERAL'),
+            createQuickReply('👤 GỬI USER CỤ THỂ', 'ADMIN_SEND_USER'),
+            createQuickReply('🛒 GỬI THEO TIN ĐĂNG', 'ADMIN_SEND_LISTING'),
+            createQuickReply('📊 LỊCH SỬ THÔNG BÁO', 'ADMIN_NOTIFICATION_HISTORY'),
+            createQuickReply('⚙️ CÀI ĐẶT THÔNG BÁO', 'ADMIN_NOTIFICATION_SETTINGS'),
+            createQuickReply('🔙 QUAY LẠI', 'ADMIN')
         ]
     )
 }
 
 // Handle admin settings
 export async function handleAdminSettings(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '⚙️ CÀI ĐẶT HỆ THỐNG',
-        'Cấu hình bot:',
-        `• Phí hàng ngày: ${process.env.BOT_DAILY_FEE || '1000'}đ`,
-        `• Số ngày tối thiểu: ${process.env.BOT_MINIMUM_DAYS || '7'} ngày`,
-        `• Trial miễn phí: ${process.env.BOT_TRIAL_DAYS || '3'} ngày`,
-        `• Thưởng giới thiệu: ${process.env.BOT_REFERRAL_REWARD || '10000'}đ`,
-        `• Phí dịch vụ tìm kiếm: ${process.env.BOT_SEARCH_SERVICE_FEE || '5000'}đ`
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Cài đặt:',
         [
-            createPostbackButton('💰 CÀI ĐẶT PHÍ', 'ADMIN_SETTINGS_FEE'),
-            createPostbackButton('⏰ CÀI ĐẶT THỜI GIAN', 'ADMIN_SETTINGS_TIME'),
-            createPostbackButton('🎁 CÀI ĐẶT THƯỞNG', 'ADMIN_SETTINGS_REWARD'),
-            createPostbackButton('🔔 CÀI ĐẶT THÔNG BÁO', 'ADMIN_SETTINGS_NOTIFICATION'),
-            createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+            createQuickReply('💰 CÀI ĐẶT PHÍ', 'ADMIN_SETTINGS_FEE'),
+            createQuickReply('⏰ CÀI ĐẶT THỜI GIAN', 'ADMIN_SETTINGS_TIME'),
+            createQuickReply('🎁 CÀI ĐẶT THƯỞNG', 'ADMIN_SETTINGS_REWARD'),
+            createQuickReply('🔔 CÀI ĐẶT THÔNG BÁO', 'ADMIN_SETTINGS_NOTIFICATION'),
+            createQuickReply('🔙 QUAY LẠI', 'ADMIN')
         ]
     )
 }
@@ -472,14 +447,14 @@ export async function handleAdminManageAdmins(user: any) {
             'Chức năng:'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('➕ THÊM ADMIN', 'ADMIN_ADD_ADMIN'),
-                createPostbackButton('➖ XÓA ADMIN', 'ADMIN_REMOVE_ADMIN'),
-                createPostbackButton('📊 QUYỀN HẠN', 'ADMIN_PERMISSIONS'),
-                createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+                createQuickReply('➕ THÊM ADMIN', 'ADMIN_ADD_ADMIN'),
+                createQuickReply('➖ XÓA ADMIN', 'ADMIN_REMOVE_ADMIN'),
+                createQuickReply('📊 QUYỀN HẠN', 'ADMIN_PERMISSIONS'),
+                createQuickReply('🔙 QUAY LẠI', 'ADMIN')
             ]
         )
 
@@ -551,12 +526,12 @@ export async function handleAdminApprovePayment(user: any, paymentId: string) {
             '🎯 Cảm ơn bạn đã tin tưởng BOT Tân Dậu - Hỗ Trợ Chéo!'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_PAYMENTS')
+                createQuickReply('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
+                createQuickReply('🔄 LÀM MỚI', 'ADMIN_PAYMENTS')
             ]
         )
 
@@ -593,12 +568,12 @@ export async function handleAdminRejectPayment(user: any, paymentId: string) {
             `⏰ Thời gian: ${new Date().toLocaleString('vi-VN')}`
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_PAYMENTS')
+                createQuickReply('📊 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
+                createQuickReply('🔄 LÀM MỚI', 'ADMIN_PAYMENTS')
             ]
         )
 
@@ -610,43 +585,31 @@ export async function handleAdminRejectPayment(user: any, paymentId: string) {
 
 // Handle admin export
 export async function handleAdminExport(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '📤 XUẤT BÁO CÁO',
-        'Chọn loại báo cáo bạn muốn xuất:'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Loại báo cáo:',
         [
-            createPostbackButton('📊 BÁO CÁO TỔNG QUAN', 'ADMIN_EXPORT_COMPREHENSIVE'),
-            createPostbackButton('👥 BÁO CÁO USER', 'ADMIN_EXPORT_USERS'),
-            createPostbackButton('🛒 BÁO CÁO TIN ĐĂNG', 'ADMIN_EXPORT_LISTINGS'),
-            createPostbackButton('💰 BÁO CÁO THANH TOÁN', 'ADMIN_EXPORT_PAYMENTS'),
-            createPostbackButton('📅 THEO NGÀY', 'ADMIN_EXPORT_BY_DATE'),
-            createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+            createQuickReply('📊 BÁO CÁO TỔNG QUAN', 'ADMIN_EXPORT_COMPREHENSIVE'),
+            createQuickReply('👥 BÁO CÁO USER', 'ADMIN_EXPORT_USERS'),
+            createQuickReply('🛒 BÁO CÁO TIN ĐĂNG', 'ADMIN_EXPORT_LISTINGS'),
+            createQuickReply('💰 BÁO CÁO THANH TOÁN', 'ADMIN_EXPORT_PAYMENTS'),
+            createQuickReply('📅 THEO NGÀY', 'ADMIN_EXPORT_BY_DATE'),
+            createQuickReply('🔙 QUAY LẠI', 'ADMIN')
         ]
     )
 }
 
 // Handle admin send registration link
 export async function handleAdminSendRegistration(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '📤 GỬI LINK ĐĂNG KÝ',
-        'Gửi link đăng ký cho người dùng mới'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chọn cách gửi:',
         [
-            createPostbackButton('📱 GỬI CHO USER CỤ THỂ', 'ADMIN_SEND_TO_USER'),
-            createPostbackButton('📢 GỬI CHO TẤT CẢ', 'ADMIN_SEND_TO_ALL'),
-            createPostbackButton('🔗 TẠO LINK CHIA SẺ', 'ADMIN_CREATE_SHARE_LINK')
+            createQuickReply('📱 GỬI CHO USER CỤ THỂ', 'ADMIN_SEND_TO_USER'),
+            createQuickReply('📢 GỬI CHO TẤT CẢ', 'ADMIN_SEND_TO_ALL'),
+            createQuickReply('🔗 TẠO LINK CHIA SẺ', 'ADMIN_CREATE_SHARE_LINK')
         ]
     )
 }
@@ -671,19 +634,13 @@ export async function handleAdminSendToUser(user: any) {
 
 // Handle admin send to all users
 export async function handleAdminSendToAll(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '📢 GỬI CHO TẤT CẢ',
-        'Bạn có chắc chắn muốn gửi link đăng ký cho tất cả user?'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Xác nhận:',
         [
-            createPostbackButton('✅ CÓ, GỬI NGAY', 'ADMIN_CONFIRM_SEND_ALL'),
-            createPostbackButton('❌ HỦY', 'ADMIN_SEND_REGISTRATION')
+            createQuickReply('✅ CÓ, GỬI NGAY', 'ADMIN_CONFIRM_SEND_ALL'),
+            createQuickReply('❌ HỦY', 'ADMIN_SEND_REGISTRATION')
         ]
     )
 }
@@ -700,34 +657,26 @@ export async function handleAdminCreateShareLink(user: any) {
         'Bạn có thể copy link này để chia sẻ!'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📋 COPY LINK', 'ADMIN_COPY_LINK'),
-            createPostbackButton('📤 GỬI LẠI', 'ADMIN_SEND_REGISTRATION'),
-            createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+            createQuickReply('📋 COPY LINK', 'ADMIN_COPY_LINK'),
+            createQuickReply('📤 GỬI LẠI', 'ADMIN_SEND_REGISTRATION'),
+            createQuickReply('🔙 QUAY LẠI', 'ADMIN')
         ]
     )
 }
 
 // Handle admin stop bot
 export async function handleAdminStopBot(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🛑 TẮT BOT',
-        '⚠️ CẢNH BÁO: Bạn đang tắt bot!',
-        'Bot sẽ ngừng phản hồi tất cả tin nhắn.',
-        'Để bật lại, bạn cần restart server.'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Xác nhận tắt bot:',
         [
-            createPostbackButton('✅ XÁC NHẬN TẮT', 'ADMIN_CONFIRM_STOP'),
-            createPostbackButton('❌ HỦY', 'ADMIN')
+            createQuickReply('✅ XÁC NHẬN TẮT', 'ADMIN_CONFIRM_STOP'),
+            createQuickReply('❌ HỦY', 'ADMIN')
         ]
     )
 }
@@ -758,12 +707,12 @@ export async function handleAdminConfirmStopBot(user: any) {
             'Để bật lại, restart server hoặc chạy lệnh bật bot.'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Bot đã tắt:',
             [
-                createPostbackButton('🔄 BẬT LẠI BOT', 'ADMIN_START_BOT'),
-                createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+                createQuickReply('🔄 BẬT LẠI BOT', 'ADMIN_START_BOT'),
+                createQuickReply('🔙 QUAY LẠI', 'ADMIN')
             ]
         )
 
@@ -799,12 +748,12 @@ export async function handleAdminStartBot(user: any) {
             'Có thể phản hồi tin nhắn từ user.'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Bot đã bật:',
             [
-                createPostbackButton('🛑 TẮT BOT', 'ADMIN_STOP_BOT'),
-                createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+                createQuickReply('🛑 TẮT BOT', 'ADMIN_STOP_BOT'),
+                createQuickReply('🔙 QUAY LẠI', 'ADMIN')
             ]
         )
 
@@ -851,13 +800,13 @@ export async function handleAdminTakeChat(user: any, sessionId: string) {
                 // Notify user that admin has joined
                 await sendMessage(session.user_id, '✅ Admin đã vào chat! Bạn có thể bắt đầu trò chuyện.')
 
-                await sendButtonTemplate(
+                await sendQuickReply(
                     user.facebook_id,
                     'Quản lý chat:',
                     [
-                        createPostbackButton('❌ KẾT THÚC CHAT', `ADMIN_END_CHAT_${sessionId}`),
-                        createPostbackButton('👀 XEM LỊCH SỬ', `ADMIN_CHAT_HISTORY_${sessionId}`),
-                        createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+                        createQuickReply('❌ KẾT THÚC CHAT', `ADMIN_END_CHAT_${sessionId}`),
+                        createQuickReply('👀 XEM LỊCH SỬ', `ADMIN_CHAT_HISTORY_${sessionId}`),
+                        createQuickReply('🔙 QUAY LẠI', 'ADMIN')
                     ]
                 )
             }
@@ -906,13 +855,13 @@ export async function handleAdminEndChat(user: any, sessionId: string) {
                 'Bot sẽ tiếp tục hỗ trợ bạn như bình thường.'
             ])
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 session.user_id,
                 'Bạn muốn:',
                 [
-                    createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-                    createPostbackButton('🛒 TẠO TIN', 'LISTING'),
-                    createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                    createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+                    createQuickReply('🛒 TẠO TIN', 'LISTING'),
+                    createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
                 ]
             )
         } else {
@@ -1010,24 +959,24 @@ export async function handleAdminBulkApprove(user: any) {
             return hoursAgo > 24
         })
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             '🏆 DUYỆT THEO ƯU TIÊN:',
             [
-                createPostbackButton(`💰 DUYỆT CAO GIÁ (${highValuePayments.length})`, 'ADMIN_BULK_HIGH_VALUE'),
-                createPostbackButton(`⭐ DUYỆT UY TÍN (${trustedUserPayments.length})`, 'ADMIN_BULK_TRUSTED'),
-                createPostbackButton(`⚡ DUYỆT TẤT CẢ (${payments.length})`, 'ADMIN_BULK_ALL'),
-                createPostbackButton(`🕐 DUYỆT CŨ (${oldPayments.length})`, 'ADMIN_BULK_OLD')
+                createQuickReply(`💰 DUYỆT CAO GIÁ (${highValuePayments.length})`, 'ADMIN_BULK_HIGH_VALUE'),
+                createQuickReply(`⭐ DUYỆT UY TÍN (${trustedUserPayments.length})`, 'ADMIN_BULK_TRUSTED'),
+                createQuickReply(`⚡ DUYỆT TẤT CẢ (${payments.length})`, 'ADMIN_BULK_ALL'),
+                createQuickReply(`🕐 DUYỆT CŨ (${oldPayments.length})`, 'ADMIN_BULK_OLD')
             ]
         )
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             '📊 THÔNG TIN CHI TIẾT:',
             [
-                createPostbackButton('📋 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
-                createPostbackButton('🔍 TÌM KIẾM', 'ADMIN_SEARCH_PAYMENT'),
-                createPostbackButton('🔙 QUAY LẠI', 'ADMIN_PAYMENTS')
+                createQuickReply('📋 XEM TẤT CẢ', 'ADMIN_ALL_PAYMENTS'),
+                createQuickReply('🔍 TÌM KIẾM', 'ADMIN_SEARCH_PAYMENT'),
+                createQuickReply('🔙 QUAY LẠI', 'ADMIN_PAYMENTS')
             ]
         )
 
@@ -1181,12 +1130,12 @@ async function executeBulkApproval(user: any, payments: any[], filterType: strin
             '💡 THÀNH CÔNG: Đã xử lý nhanh các thanh toán ưu tiên!'
         ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tiếp theo:',
         [
-            createPostbackButton('📊 XEM THANH TOÁN', 'ADMIN_PAYMENTS'),
-            createPostbackButton('🏠 VỀ DASHBOARD', 'ADMIN')
+            createQuickReply('📊 XEM THANH TOÁN', 'ADMIN_PAYMENTS'),
+            createQuickReply('🏠 VỀ DASHBOARD', 'ADMIN')
         ]
     )
 }
@@ -1223,13 +1172,13 @@ export async function handleAdminViewReceipt(user: any, paymentId: string) {
         // Send image
         await sendImage(user.facebook_id, payment.receipt_image)
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Xử lý biên lai:',
             [
-                createPostbackButton('✅ DUYỆT', `ADMIN_APPROVE_PAYMENT_${paymentId}`),
-                createPostbackButton('❌ TỪ CHỐI', `ADMIN_REJECT_PAYMENT_${paymentId}`),
-                createPostbackButton('🔙 QUAY LẠI', 'ADMIN_PAYMENTS')
+                createQuickReply('✅ DUYỆT', `ADMIN_APPROVE_PAYMENT_${paymentId}`),
+                createQuickReply('❌ TỪ CHỐI', `ADMIN_REJECT_PAYMENT_${paymentId}`),
+                createQuickReply('🔙 QUAY LẠI', 'ADMIN_PAYMENTS')
             ]
         )
 
@@ -1308,14 +1257,14 @@ export async function handleAdminViewUser(user: any, facebookId: string) {
             }
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('💰 XEM THANH TOÁN', `ADMIN_USER_PAYMENTS_${facebookId}`),
-                createPostbackButton('🛒 XEM TIN ĐĂNG', `ADMIN_USER_LISTINGS_${facebookId}`),
-                createPostbackButton('⭐ XEM ĐÁNH GIÁ', `ADMIN_USER_RATINGS_${facebookId}`),
-                createPostbackButton('🔙 QUAY LẠI', 'ADMIN_PAYMENTS')
+                createQuickReply('💰 XEM THANH TOÁN', `ADMIN_USER_PAYMENTS_${facebookId}`),
+                createQuickReply('🛒 XEM TIN ĐĂNG', `ADMIN_USER_LISTINGS_${facebookId}`),
+                createQuickReply('⭐ XEM ĐÁNH GIÁ', `ADMIN_USER_RATINGS_${facebookId}`),
+                createQuickReply('🔙 QUAY LẠI', 'ADMIN_PAYMENTS')
             ]
         )
 
@@ -1422,25 +1371,25 @@ export async function handleAdminDashboard(user: any) {
         ])
 
         // Quick action buttons with priority
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             '🚨 PRIORITY ACTIONS:',
             [
-                createPostbackButton('💰 DUYỆT THANH TOÁN', 'ADMIN_PAYMENTS'),
-                createPostbackButton('👥 QUẢN LÝ USER', 'ADMIN_USERS'),
-                createPostbackButton('📊 CHI TIẾT THỐNG KÊ', 'ADMIN_STATS'),
-                createPostbackButton('🚫 SPAM MANAGEMENT', 'ADMIN_SPAM_LOGS')
+                createQuickReply('💰 DUYỆT THANH TOÁN', 'ADMIN_PAYMENTS'),
+                createQuickReply('👥 QUẢN LÝ USER', 'ADMIN_USERS'),
+                createQuickReply('📊 CHI TIẾT THỐNG KÊ', 'ADMIN_STATS'),
+                createQuickReply('🚫 SPAM MANAGEMENT', 'ADMIN_SPAM_LOGS')
             ]
         )
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             '📋 OTHER FUNCTIONS:',
             [
-                createPostbackButton('🔔 QUẢN LÝ THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
-                createPostbackButton('⚙️ CẤU HÌNH HỆ THỐNG', 'ADMIN_SETTINGS'),
-                createPostbackButton('👨‍💼 QUẢN LÝ ADMIN', 'ADMIN_MANAGE_ADMINS'),
-                createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT')
+                createQuickReply('🔔 QUẢN LÝ THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
+                createQuickReply('⚙️ CẤU HÌNH HỆ THỐNG', 'ADMIN_SETTINGS'),
+                createQuickReply('👨‍💼 QUẢN LÝ ADMIN', 'ADMIN_MANAGE_ADMINS'),
+                createQuickReply('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT')
             ]
         )
 

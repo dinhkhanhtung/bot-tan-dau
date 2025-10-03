@@ -3,8 +3,6 @@ import {
     sendMessage,
     sendTypingIndicator,
     sendQuickReply,
-    sendButtonTemplate,
-    createPostbackButton,
     createQuickReply,
     sendMessagesWithTyping
 } from '../facebook-api'
@@ -22,16 +20,16 @@ export async function handleRegistration(user: any) {
     if (userIsAdmin) {
         await sendMessage(user.facebook_id, '🔧 ADMIN DASHBOARD\nChào admin! 👋\nBạn có quyền truy cập đầy đủ mà không cần đăng ký.')
 
-        await sendQuickReply(
-            user.facebook_id,
-            'Chọn chức năng:',
-            [
-                createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
-                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
-                createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
-                createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
-            ]
-        )
+    await sendQuickReply(
+        user.facebook_id,
+        'Chọn chức năng:',
+        [
+            createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
+            createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
+            createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
+            createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
+        ]
+    )
         return
     }
 

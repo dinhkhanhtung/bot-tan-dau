@@ -1,9 +1,9 @@
 import { supabaseAdmin } from './supabase'
 import {
     sendMessage,
-    sendButtonTemplate,
+    sendQuickReplyNoTyping,
     sendGenericTemplate,
-    createPostbackButton,
+    createQuickReply,
     sendMessagesWithTyping
 } from './facebook-api'
 import { formatCurrency, formatNumber, formatDateTime } from './utils'
@@ -45,9 +45,9 @@ export async function handleAdminPayments(user: any) {
             title: `${index + 1}. ${payment.users?.name || 'Unknown'} - ${formatCurrency(payment.amount)}`,
             subtitle: `SĐT: ${payment.users?.phone || 'N/A'} | ${formatDateTime(payment.created_at)}`,
             buttons: [
-                createPostbackButton('✅ DUYỆT', `ADMIN_APPROVE_PAYMENT_${payment.id}`),
-                createPostbackButton('❌ TỪ CHỐI', `ADMIN_REJECT_PAYMENT_${payment.id}`),
-                createPostbackButton('👀 XEM', `ADMIN_VIEW_PAYMENT_${payment.id}`)
+                createQuickReply('✅ DUYỆT', `ADMIN_APPROVE_PAYMENT_${payment.id}`),
+                createQuickReply('❌ TỪ CHỐI', `ADMIN_REJECT_PAYMENT_${payment.id}`),
+                createQuickReply('👀 XEM', `ADMIN_VIEW_PAYMENT_${payment.id}`)
             ]
         }))
 
@@ -86,9 +86,9 @@ export async function handleAdminUsers(user: any) {
             title: `${index + 1}. ${userData.name}`,
             subtitle: `SĐT: ${userData.phone} | ${userData.location} | ${userData.status}`,
             buttons: [
-                createPostbackButton('👀 XEM CHI TIẾT', `ADMIN_VIEW_USER_${userData.id}`),
-                createPostbackButton('🔒 KHÓA', `ADMIN_BAN_USER_${userData.id}`),
-                createPostbackButton('✅ KÍCH HOẠT', `ADMIN_ACTIVATE_USER_${userData.id}`)
+                createQuickReply('👀 XEM CHI TIẾT', `ADMIN_VIEW_USER_${userData.id}`),
+                createQuickReply('🔒 KHÓA', `ADMIN_BAN_USER_${userData.id}`),
+                createQuickReply('✅ KÍCH HOẠT', `ADMIN_ACTIVATE_USER_${userData.id}`)
             ]
         }))
 
@@ -133,9 +133,9 @@ export async function handleAdminListings(user: any) {
             title: `${index + 1}. ${listing.title}`,
             subtitle: `${listing.users?.name || 'Unknown'} | ${formatCurrency(listing.price)} | ${listing.status}`,
             buttons: [
-                createPostbackButton('👀 XEM CHI TIẾT', `ADMIN_VIEW_LISTING_${listing.id}`),
-                createPostbackButton('✅ DUYỆT', `ADMIN_APPROVE_LISTING_${listing.id}`),
-                createPostbackButton('❌ XÓA', `ADMIN_DELETE_LISTING_${listing.id}`)
+                createQuickReply('👀 XEM CHI TIẾT', `ADMIN_VIEW_LISTING_${listing.id}`),
+                createQuickReply('✅ DUYỆT', `ADMIN_APPROVE_LISTING_${listing.id}`),
+                createQuickReply('❌ XÓA', `ADMIN_DELETE_LISTING_${listing.id}`)
             ]
         }))
 
@@ -221,14 +221,14 @@ export async function handleAdminStats(user: any) {
             `• Tin đăng: +${todayListings || 0} hôm nay`
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Chọn thống kê chi tiết:',
             [
-                createPostbackButton('📈 XEM CHI TIẾT', 'ADMIN_DETAILED_STATS'),
-                createPostbackButton('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT_REPORT'),
-                createPostbackButton('🔄 LÀM MỚI', 'ADMIN_STATS'),
-                createPostbackButton('🏠 VỀ MENU', 'ADMIN_MENU')
+                createQuickReply('📈 XEM CHI TIẾT', 'ADMIN_DETAILED_STATS'),
+                createQuickReply('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT_REPORT'),
+                createQuickReply('🔄 LÀM MỚI', 'ADMIN_STATS'),
+                createQuickReply('🏠 VỀ MENU', 'ADMIN_MENU')
             ]
         )
     } catch (error) {
@@ -328,16 +328,16 @@ export async function handleAdminRejectPayment(user: any, paymentId: string) {
 }
 
 export async function handleAdminMenu(user: any) {
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         '🔧 ADMIN DASHBOARD\n\nChào admin! 👋',
         [
-            createPostbackButton('💰 THANH TOÁN', 'ADMIN_PAYMENTS'),
-            createPostbackButton('👥 USER', 'ADMIN_USERS'),
-            createPostbackButton('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS'),
-            createPostbackButton('📊 THỐNG KÊ', 'ADMIN_STATS'),
-            createPostbackButton('🔔 THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
-            createPostbackButton('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS')
+            createQuickReply('💰 THANH TOÁN', 'ADMIN_PAYMENTS'),
+            createQuickReply('👥 USER', 'ADMIN_USERS'),
+            createQuickReply('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS'),
+            createQuickReply('📊 THỐNG KÊ', 'ADMIN_STATS'),
+            createQuickReply('🔔 THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
+            createQuickReply('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS')
         ]
     )
 }

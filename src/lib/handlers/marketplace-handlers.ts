@@ -3,10 +3,9 @@ import {
     sendMessage,
     sendTypingIndicator,
     sendQuickReply,
-    sendButtonTemplate,
+    sendQuickReplyNoTyping,
     sendGenericTemplate,
     sendCarouselTemplate,
-    createPostbackButton,
     createQuickReply,
     createGenericElement,
     sendMessagesWithTyping,
@@ -17,9 +16,7 @@ import { CATEGORIES, LOCATIONS, DISTRICTS, PRICE_RANGES, SEARCH_HELPERS, HASHTAG
 
 // Handle listing flow
 export async function handleListing(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    // Hide previous buttons first
+    // Hide previous buttons first - converted to quick reply
     await hideButtons(user.facebook_id)
 
     await sendMessagesWithTyping(user.facebook_id, [
@@ -28,8 +25,8 @@ export async function handleListing(user: any) {
         '📋 Thông tin cần cung cấp:\n• Tên sản phẩm/dịch vụ\n• Mô tả chi tiết\n• Giá bán\n• Vị trí cụ thể\n• Hình ảnh minh họa'
     ])
 
-    // Send all categories as quick replies
-    await sendQuickReply(
+    // Send all categories as quick replies without typing indicator
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chọn danh mục:',
         [
@@ -90,15 +87,15 @@ export async function handleListingCategory(user: any, category: string) {
     ])
 
     const buttons = categoryInfo.subcategories.map((sub: any) =>
-        createPostbackButton(sub.icon + ' ' + sub.name, `LISTING_SUBCATEGORY_${sub.key}`)
+        createQuickReply(sub.icon + ' ' + sub.name, `LISTING_SUBCATEGORY_${sub.key}`)
     )
 
-    buttons.push(createPostbackButton('🔄 QUAY LẠI', 'LISTING'))
+    buttons.push(createQuickReply('🔄 QUAY LẠI', 'LISTING'))
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Chọn loại:',
-        buttons
+        buttons.map(button => createQuickReply(button.title, button.payload))
     )
 }
 
@@ -220,22 +217,22 @@ export async function handleListingCity(user: any, city: string) {
     const firstDistricts = districts.slice(0, 3)
     const remainingDistricts = districts.slice(3)
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         `Chọn quận/huyện tại ${city}:`,
         firstDistricts.map(district =>
-            createPostbackButton(`🏠 ${district}`, `LISTING_LOCATION_${district}`)
+            createQuickReply(`🏠 ${district}`, `LISTING_LOCATION_${district}`)
         )
     )
 
     if (remainingDistricts.length > 0) {
-        // Show more districts if available
-        await sendButtonTemplate(
+        // Show more districts if available - converted to quick reply
+        await sendQuickReply(
             user.facebook_id,
             'Xem thêm:',
             [
-                createPostbackButton('📋 XEM TẤT CẢ', `LISTING_DISTRICTS_${city}`),
-                createPostbackButton('🏙️ CHỌN THÀNH PHỐ KHÁC', 'LISTING_LOCATION_SELECT')
+                createQuickReply('📋 XEM TẤT CẢ', `LISTING_DISTRICTS_${city}`),
+                createQuickReply('🏙️ CHỌN THÀNH PHỐ KHÁC', 'LISTING_LOCATION_SELECT')
             ]
         )
     }
@@ -256,13 +253,13 @@ export async function handleListingLocation(user: any, location: string) {
         'Bước 5/5: Hình ảnh\n📸 Vui lòng gửi hình ảnh sản phẩm (tối đa 5 ảnh):'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn hình ảnh:',
         [
-            createPostbackButton('📷 Chụp ảnh', 'LISTING_IMAGE_CAMERA'),
-            createPostbackButton('📁 Chọn từ thư viện', 'LISTING_IMAGE_GALLERY'),
-            createPostbackButton('⏭️ Bỏ qua', 'LISTING_CONFIRM')
+            createQuickReply('📷 Chụp ảnh', 'LISTING_IMAGE_CAMERA'),
+            createQuickReply('📁 Chọn từ thư viện', 'LISTING_IMAGE_GALLERY'),
+            createQuickReply('⏭️ Bỏ qua', 'LISTING_CONFIRM')
         ]
     )
 
@@ -333,14 +330,14 @@ ${data.images && data.images.length > 0 ? `📸 ${data.images.length} hình ản
         '━━━━━━━━━━━━━━━━━━━━'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Bạn muốn:',
         [
-            createPostbackButton('✅ ĐĂNG TIN NGAY', 'LISTING_SUBMIT'),
-            createPostbackButton('✏️ CHỈNH SỬA', 'LISTING_EDIT'),
-            createPostbackButton('📝 THÊM HÌNH ẢNH', 'LISTING_IMAGES'),
-            createPostbackButton('❌ HỦY ĐĂNG TIN', 'MAIN_MENU')
+            createQuickReply('✅ ĐĂNG TIN NGAY', 'LISTING_SUBMIT'),
+            createQuickReply('✏️ CHỈNH SỬA', 'LISTING_EDIT'),
+            createQuickReply('📝 THÊM HÌNH ẢNH', 'LISTING_IMAGES'),
+            createQuickReply('❌ HỦY ĐĂNG TIN', 'MAIN_MENU')
         ]
     )
 
@@ -401,13 +398,13 @@ export async function handleListingSubmit(user: any) {
             '💬 Sẽ thông báo khi có người quan tâm\n🎯 Chúc bạn bán được giá tốt!'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('📱 XEM TIN ĐĂNG', `VIEW_LISTING_${listing.id}`),
-                createPostbackButton('✏️ CHỈNH SỬA', `EDIT_LISTING_${listing.id}`),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('📱 XEM TIN ĐĂNG', `VIEW_LISTING_${listing.id}`),
+                createQuickReply('✏️ CHỈNH SỬA', `EDIT_LISTING_${listing.id}`),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -419,18 +416,8 @@ export async function handleListingSubmit(user: any) {
 
 // Handle search flow
 export async function handleSearch(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    // Hide previous buttons first
-    await hideButtons(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🔍 TÌM KIẾM SẢN PHẨM/DỊCH VỤ',
-        'Tìm kiếm trong cộng đồng Tân Dậu - Hỗ Trợ Chéo:',
-        '💡 Bạn có thể tìm theo:\n• Danh mục sản phẩm\n• Từ khóa\n• Vị trí\n• Giá cả\n• Hashtag'
-    ])
-
-    await sendQuickReply(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chọn danh mục:',
         [
@@ -484,13 +471,13 @@ export async function handleSearchCategory(user: any, category: string) {
                 '🤖 Mẹo: Sử dụng tìm kiếm nâng cao để có kết quả tốt hơn!'
             ])
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 'Tùy chọn:',
                 [
-                    createPostbackButton('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
-                    createPostbackButton('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
-                    createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                    createQuickReply('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
+                    createQuickReply('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
+                    createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
                 ]
             )
             return
@@ -520,9 +507,9 @@ export async function handleSearchCategory(user: any, category: string) {
                 `💰 ${formatCurrency(listing.price)}\n📍 ${listing.location}\n👤 ${seller?.name || 'N/A'}\n⭐ ${rating} ${transactions}\n🎯 Độ phù hợp: ${relevanceScore}%`,
                 listing.images?.[0] || '',
                 [
-                    createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
-                    createPostbackButton('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`),
-                    createPostbackButton('❤️ LƯU TIN', `SAVE_LISTING_${listing.id}`)
+                    createQuickReply('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                    createQuickReply('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`),
+                    createQuickReply('❤️ LƯU TIN', `SAVE_LISTING_${listing.id}`)
                 ]
             )
         })
@@ -552,16 +539,16 @@ export async function handleSearchCategory(user: any, category: string) {
             `• ${newListings > listings.length * 0.5 ? 'Nhiều tin đăng mới, thị trường sôi động!' : 'Thị trường ổn định'}`
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             '🔍 TÙY CHỌN TÌM KIẾM THÔNG MINH:',
             [
-                createPostbackButton('💰 THEO GIÁ', 'SEARCH_PRICE'),
-                createPostbackButton('📍 THEO VỊ TRÍ', 'SEARCH_LOCATION'),
-                createPostbackButton('⭐ CHỈ HIỂN THỊ CHẤT LƯỢNG', 'SEARCH_HIGH_QUALITY'),
-                createPostbackButton('🆕 CHỈ HIỂN THỊ TIN MỚI', 'SEARCH_RECENT'),
-                createPostbackButton('🔄 TÌM KIẾM KHÁC', 'SEARCH'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('💰 THEO GIÁ', 'SEARCH_PRICE'),
+                createQuickReply('📍 THEO VỊ TRÍ', 'SEARCH_LOCATION'),
+                createQuickReply('⭐ CHỈ HIỂN THỊ CHẤT LƯỢNG', 'SEARCH_HIGH_QUALITY'),
+                createQuickReply('🆕 CHỈ HIỂN THỊ TIN MỚI', 'SEARCH_RECENT'),
+                createQuickReply('🔄 TÌM KIẾM KHÁC', 'SEARCH'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -605,23 +592,23 @@ export async function handleViewListing(user: any, listingId: string) {
         // Show image buttons if available
         if (listing.images && listing.images.length > 0) {
             const imageButtons = listing.images.slice(0, 3).map((_: any, index: number) =>
-                createPostbackButton(`🖼️ XEM ẢNH ${index + 1}`, `VIEW_IMAGE_${listingId}_${index}`)
+                createQuickReply(`🖼️ XEM ẢNH ${index + 1}`, `VIEW_IMAGE_${listingId}_${index}`)
             )
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 'Hình ảnh:',
                 imageButtons
             )
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('💬 KẾT NỐI NGAY', `CONTACT_SELLER_${listing.user_id}`),
-                createPostbackButton('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`),
-                createPostbackButton('🔍 TÌM TƯƠNG TỰ', `SIMILAR_LISTINGS_${listing.category}`)
+                createQuickReply('💬 KẾT NỐI NGAY', `CONTACT_SELLER_${listing.user_id}`),
+                createQuickReply('⭐ ĐÁNH GIÁ', `RATE_SELLER_${listing.user_id}`),
+                createQuickReply('🔍 TÌM TƯƠNG TỰ', `SIMILAR_LISTINGS_${listing.category}`)
             ]
         )
 
@@ -671,12 +658,12 @@ export async function handleContactSeller(user: any, sellerId: string) {
             '💬 Các bạn có thể chat trực tiếp để thương lượng\n🎯 Chúc mua bán thành công!'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('💬 VÀO CHAT', `CHAT_${sellerId}`),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('💬 VÀO CHAT', `CHAT_${sellerId}`),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -688,26 +675,17 @@ export async function handleContactSeller(user: any, sellerId: string) {
 
 // Handle search advanced
 export async function handleSearchAdvanced(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    // Hide previous buttons first
-    await hideButtons(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🎯 TÌM KIẾM NÂNG CAO',
-        'Chọn tiêu chí tìm kiếm:'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Tiêu chí tìm kiếm:',
         [
-            createPostbackButton('🔍 TÌM THEO TỪ KHÓA', 'SEARCH_KEYWORD'),
-            createPostbackButton('📍 TÌM THEO VỊ TRÍ', 'SEARCH_LOCATION'),
-            createPostbackButton('💰 TÌM THEO GIÁ', 'SEARCH_PRICE'),
-            createPostbackButton('⭐ TÌM THEO ĐÁNH GIÁ', 'SEARCH_RATING'),
-            createPostbackButton('📅 TÌM THEO NGÀY', 'SEARCH_DATE'),
-            createPostbackButton('👤 TÌM THEO NGƯỜI BÁN', 'SEARCH_SELLER')
+            createQuickReply('🔍 TÌM THEO TỪ KHÓA', 'SEARCH_KEYWORD'),
+            createQuickReply('📍 TÌM THEO VỊ TRÍ', 'SEARCH_LOCATION'),
+            createQuickReply('💰 TÌM THEO GIÁ', 'SEARCH_PRICE'),
+            createQuickReply('⭐ TÌM THEO ĐÁNH GIÁ', 'SEARCH_RATING'),
+            createQuickReply('📅 TÌM THEO NGÀY', 'SEARCH_DATE'),
+            createQuickReply('👤 TÌM THEO NGƯỜI BÁN', 'SEARCH_SELLER')
         ]
     )
 }
@@ -725,20 +703,20 @@ export async function handleSearchKeyword(user: any) {
 
     // Show popular hashtags
     const popularHashtags = SEARCH_HELPERS.getPopularHashtags().slice(0, 6)
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Hashtag phổ biến:',
         popularHashtags.map(hashtag =>
-            createPostbackButton(hashtag, `SEARCH_HASHTAG_${hashtag}`)
+            createQuickReply(hashtag, `SEARCH_HASHTAG_${hashtag}`)
         )
     )
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('🔙 QUAY LẠI', 'SEARCH_ADVANCED'),
-            createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            createQuickReply('🔙 QUAY LẠI', 'SEARCH_ADVANCED'),
+            createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
         ]
     )
 
@@ -899,11 +877,11 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
                 suggestions.slice(0, 5).map(s => `• ${s}`).join('\n')
             ])
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 'Thử tìm kiếm:',
                 suggestions.slice(0, 6).map(suggestion =>
-                    createPostbackButton(`🔍 ${suggestion}`, `SEARCH_KEYWORD_${suggestion}`)
+                    createQuickReply(`🔍 ${suggestion}`, `SEARCH_KEYWORD_${suggestion}`)
                 )
             )
         } else {
@@ -919,8 +897,8 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
                     `📍 ${listing.location} | 👤 ${listing.user_id.slice(-6)}\n💰 ${formatCurrency(listing.price)}`,
                     listing.images?.[0] || '',
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
-                        createPostbackButton('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`)
+                        createQuickReply('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createQuickReply('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`)
                     ]
                 )
             )
@@ -928,15 +906,15 @@ async function handleSearchKeywordInput(user: any, text: string, data: any) {
             await sendCarouselTemplate(user.facebook_id, elements)
         }
 
-        await sendButtonTemplate(
-            user.facebook_id,
-            'Tùy chọn:',
-            [
-                createPostbackButton('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
-                createPostbackButton('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
-            ]
-        )
+            await sendQuickReply(
+                user.facebook_id,
+                'Tùy chọn:',
+                [
+                    createQuickReply('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
+                    createQuickReply('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
+                    createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                ]
+            )
 
         // Clear session
         await updateBotSession(user.facebook_id, null)
@@ -1014,8 +992,8 @@ async function handleSearchLocationInput(user: any, text: string, data: any) {
                     `📍 ${listing.location} | 👤 ${listing.user_id.slice(-6)}\n💰 ${formatCurrency(listing.price)}`,
                     listing.images?.[0] || '',
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
-                        createPostbackButton('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`)
+                        createQuickReply('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createQuickReply('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`)
                     ]
                 )
             )
@@ -1023,13 +1001,13 @@ async function handleSearchLocationInput(user: any, text: string, data: any) {
             await sendCarouselTemplate(user.facebook_id, elements)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
-                createPostbackButton('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
+                createQuickReply('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -1084,14 +1062,14 @@ export async function handleMyListings(user: any) {
             await sendMessage(user.facebook_id, listingText)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🛒 TẠO TIN MỚI', 'LISTING'),
-                createPostbackButton('✏️ CHỈNH SỬA', 'EDIT_LISTING'),
-                createPostbackButton('📊 THỐNG KÊ', 'LISTING_STATS'),
-                createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+                createQuickReply('🛒 TẠO TIN MỚI', 'LISTING'),
+                createQuickReply('✏️ CHỈNH SỬA', 'EDIT_LISTING'),
+                createQuickReply('📊 THỐNG KÊ', 'LISTING_STATS'),
+                createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
             ]
         )
 
@@ -1103,46 +1081,30 @@ export async function handleMyListings(user: any) {
 
 // Handle buy & sell for new users
 export async function handleBuySell(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    // Hide previous buttons first
-    await hideButtons(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🛒 MUA BÁN & TÌM KIẾM',
-        'Chào mừng bạn đến với cộng đồng Tân Dậu - Hỗ Trợ Chéo!',
-        'Để sử dụng đầy đủ tính năng mua bán, bạn cần đăng ký thành viên trước.'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Bạn muốn:',
         [
-            createPostbackButton('📝 ĐĂNG KÝ', 'REGISTER'),
-            createPostbackButton('ℹ️ TÌM HIỂU', 'INFO'),
-            createPostbackButton('💬 HỖ TRỢ', 'SUPPORT')
+            createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+            createQuickReply('ℹ️ TÌM HIỂU', 'INFO'),
+            createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
         ]
     )
 }
 
 // Handle search & update for registered users
 export async function handleSearchUpdate(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🔍 TÌM KIẾM & CẬP NHẬT',
-        'Chọn chức năng bạn muốn:'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chức năng:',
         [
-            createPostbackButton('🔍 TÌM KIẾM', 'SEARCH'),
-            createPostbackButton('📱 TIN ĐĂNG CỦA TÔI', 'MY_LISTINGS'),
-            createPostbackButton('🛒 TẠO TIN MỚI', 'LISTING'),
-            createPostbackButton('📊 THỐNG KÊ', 'STATS'),
-            createPostbackButton('🔙 QUAY LẠI', 'MAIN_MENU')
+            createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+            createQuickReply('📱 TIN ĐĂNG CỦA TÔI', 'MY_LISTINGS'),
+            createQuickReply('🛒 TẠO TIN MỚI', 'LISTING'),
+            createQuickReply('📊 THỐNG KÊ', 'STATS'),
+            createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
         ]
     )
 }
@@ -1176,13 +1138,13 @@ export async function handleListingImages(user: any, imageUrl?: string) {
                 'Bạn có thể tiếp tục hoặc xác nhận tin đăng.'
             ])
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 'Tùy chọn:',
                 [
-                    createPostbackButton('✅ XÁC NHẬN', 'LISTING_CONFIRM'),
-                    createPostbackButton('➕ THÊM ẢNH', 'LISTING_IMAGES'),
-                    createPostbackButton('⏭️ BỎ QUA', 'LISTING_CONFIRM')
+                    createQuickReply('✅ XÁC NHẬN', 'LISTING_CONFIRM'),
+                    createQuickReply('➕ THÊM ẢNH', 'LISTING_IMAGES'),
+                    createQuickReply('⏭️ BỎ QUA', 'LISTING_CONFIRM')
                 ]
             )
         } else {
@@ -1192,13 +1154,13 @@ export async function handleListingImages(user: any, imageUrl?: string) {
                 'Gửi thêm ảnh hoặc bỏ qua:'
             ])
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 'Tùy chọn:',
                 [
-                    createPostbackButton('📷 Chụp ảnh', 'LISTING_IMAGE_CAMERA'),
-                    createPostbackButton('📁 Chọn từ thư viện', 'LISTING_IMAGE_GALLERY'),
-                    createPostbackButton('⏭️ Bỏ qua', 'LISTING_CONFIRM')
+                    createQuickReply('📷 Chụp ảnh', 'LISTING_IMAGE_CAMERA'),
+                    createQuickReply('📁 Chọn từ thư viện', 'LISTING_IMAGE_GALLERY'),
+                    createQuickReply('⏭️ Bỏ qua', 'LISTING_CONFIRM')
                 ]
             )
         }
@@ -1260,8 +1222,8 @@ export async function handleSearchLocation(user: any, location: string) {
                     `📍 ${listing.location} | 👤 ${listing.user_id.slice(-6)}\n💰 ${formatCurrency(listing.price)}`,
                     listing.images?.[0] || '',
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
-                        createPostbackButton('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`)
+                        createQuickReply('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createQuickReply('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`)
                     ]
                 )
             )
@@ -1269,13 +1231,13 @@ export async function handleSearchLocation(user: any, location: string) {
             await sendCarouselTemplate(user.facebook_id, elements)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
-                createPostbackButton('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
+                createQuickReply('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -1326,8 +1288,8 @@ export async function handleSearchAllLocations(user: any) {
                     `📍 ${listing.location} | 👤 ${listing.user_id.slice(-6)}\n💰 ${formatCurrency(listing.price)}`,
                     listing.images?.[0] || '',
                     [
-                        createPostbackButton('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
-                        createPostbackButton('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`)
+                        createQuickReply('👀 XEM CHI TIẾT', `VIEW_LISTING_${listing.id}`),
+                        createQuickReply('💬 KẾT NỐI', `CONTACT_SELLER_${listing.user_id}`)
                     ]
                 )
             )
@@ -1335,13 +1297,13 @@ export async function handleSearchAllLocations(user: any) {
             await sendCarouselTemplate(user.facebook_id, elements)
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
-                createPostbackButton('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('🔍 TÌM KIẾM KHÁC', 'SEARCH'),
+                createQuickReply('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 
@@ -1353,69 +1315,51 @@ export async function handleSearchAllLocations(user: any) {
 
 // Handle search by price
 export async function handleSearchByPrice(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '💰 TÌM KIẾM THEO GIÁ',
-        'Chọn khoảng giá:'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Khoảng giá:',
         [
-            createPostbackButton('💰 Dưới 100 triệu', 'SEARCH_PRICE_UNDER_100M'),
-            createPostbackButton('💰 100-500 triệu', 'SEARCH_PRICE_100M_500M'),
-            createPostbackButton('💰 500 triệu - 1 tỷ', 'SEARCH_PRICE_500M_1B'),
-            createPostbackButton('💰 1-3 tỷ', 'SEARCH_PRICE_1B_3B'),
-            createPostbackButton('💰 3-5 tỷ', 'SEARCH_PRICE_3B_5B'),
-            createPostbackButton('💰 Trên 5 tỷ', 'SEARCH_PRICE_OVER_5B'),
-            createPostbackButton('💰 TÙY CHỈNH', 'SEARCH_PRICE_CUSTOM')
+            createQuickReply('💰 Dưới 100 triệu', 'SEARCH_PRICE_UNDER_100M'),
+            createQuickReply('💰 100-500 triệu', 'SEARCH_PRICE_100M_500M'),
+            createQuickReply('💰 500 triệu - 1 tỷ', 'SEARCH_PRICE_500M_1B'),
+            createQuickReply('💰 1-3 tỷ', 'SEARCH_PRICE_1B_3B'),
+            createQuickReply('💰 3-5 tỷ', 'SEARCH_PRICE_3B_5B'),
+            createQuickReply('💰 Trên 5 tỷ', 'SEARCH_PRICE_OVER_5B'),
+            createQuickReply('💰 TÙY CHỈNH', 'SEARCH_PRICE_CUSTOM')
         ]
     )
 }
 
 // Handle search by rating
 export async function handleSearchByRating(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '⭐ TÌM KIẾM THEO ĐÁNH GIÁ',
-        'Chọn mức đánh giá tối thiểu:'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Mức đánh giá:',
         [
-            createPostbackButton('⭐ Từ 1 sao', 'SEARCH_RATING_1'),
-            createPostbackButton('⭐⭐ Từ 2 sao', 'SEARCH_RATING_2'),
-            createPostbackButton('⭐⭐⭐ Từ 3 sao', 'SEARCH_RATING_3'),
-            createPostbackButton('⭐⭐⭐⭐ Từ 4 sao', 'SEARCH_RATING_4'),
-            createPostbackButton('⭐⭐⭐⭐⭐ Chỉ 5 sao', 'SEARCH_RATING_5')
+            createQuickReply('⭐ Từ 1 sao', 'SEARCH_RATING_1'),
+            createQuickReply('⭐⭐ Từ 2 sao', 'SEARCH_RATING_2'),
+            createQuickReply('⭐⭐⭐ Từ 3 sao', 'SEARCH_RATING_3'),
+            createQuickReply('⭐⭐⭐⭐ Từ 4 sao', 'SEARCH_RATING_4'),
+            createQuickReply('⭐⭐⭐⭐⭐ Chỉ 5 sao', 'SEARCH_RATING_5')
         ]
     )
 }
 
 // Handle search by date
 export async function handleSearchByDate(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '📅 TÌM KIẾM THEO NGÀY',
-        'Chọn khoảng thời gian:'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Khoảng thời gian:',
         [
-            createPostbackButton('📅 Hôm nay', 'SEARCH_DATE_TODAY'),
-            createPostbackButton('📅 3 ngày qua', 'SEARCH_DATE_3_DAYS'),
-            createPostbackButton('📅 1 tuần qua', 'SEARCH_DATE_1_WEEK'),
-            createPostbackButton('📅 1 tháng qua', 'SEARCH_DATE_1_MONTH'),
-            createPostbackButton('📅 3 tháng qua', 'SEARCH_DATE_3_MONTHS'),
-            createPostbackButton('📅 TÙY CHỈNH', 'SEARCH_DATE_CUSTOM')
+            createQuickReply('📅 Hôm nay', 'SEARCH_DATE_TODAY'),
+            createQuickReply('📅 3 ngày qua', 'SEARCH_DATE_3_DAYS'),
+            createQuickReply('📅 1 tuần qua', 'SEARCH_DATE_1_WEEK'),
+            createQuickReply('📅 1 tháng qua', 'SEARCH_DATE_1_MONTH'),
+            createQuickReply('📅 3 tháng qua', 'SEARCH_DATE_3_MONTHS'),
+            createQuickReply('📅 TÙY CHỈNH', 'SEARCH_DATE_CUSTOM')
         ]
     )
 }
@@ -1444,15 +1388,15 @@ export async function handleRateSeller(user: any, sellerId: string) {
             'Chọn số sao đánh giá:'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Chọn đánh giá:',
             [
-                createPostbackButton('⭐ 1 sao', `RATE_SELLER_1_${sellerId}`),
-                createPostbackButton('⭐⭐ 2 sao', `RATE_SELLER_2_${sellerId}`),
-                createPostbackButton('⭐⭐⭐ 3 sao', `RATE_SELLER_3_${sellerId}`),
-                createPostbackButton('⭐⭐⭐⭐ 4 sao', `RATE_SELLER_4_${sellerId}`),
-                createPostbackButton('⭐⭐⭐⭐⭐ 5 sao', `RATE_SELLER_5_${sellerId}`)
+                createQuickReply('⭐ 1 sao', `RATE_SELLER_1_${sellerId}`),
+                createQuickReply('⭐⭐ 2 sao', `RATE_SELLER_2_${sellerId}`),
+                createQuickReply('⭐⭐⭐ 3 sao', `RATE_SELLER_3_${sellerId}`),
+                createQuickReply('⭐⭐⭐⭐ 4 sao', `RATE_SELLER_4_${sellerId}`),
+                createQuickReply('⭐⭐⭐⭐⭐ 5 sao', `RATE_SELLER_5_${sellerId}`)
             ]
         )
 
@@ -1505,12 +1449,12 @@ export async function handleRateSubmission(user: any, sellerId: string, rating: 
             '🎯 Giúp cộng đồng Tân Dậu - Hỗ Trợ Chéo tin tưởng hơn'
         ])
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🏠 VỀ TRANG CHỦ', 'MAIN_MENU'),
-                createPostbackButton('👥 XEM CỘNG ĐỒNG', 'COMMUNITY')
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU'),
+                createQuickReply('👥 XEM CỘNG ĐỒNG', 'COMMUNITY')
             ]
         )
 
@@ -1522,63 +1466,38 @@ export async function handleRateSubmission(user: any, sellerId: string, rating: 
 
 // Handle search service (dịch vụ tìm kiếm hộ)
 export async function handleSearchService(user: any) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '🔍 DỊCH VỤ TÌM KIẾM HỘ - 5,000đ/lần',
-        'Tôi sẽ tìm kiếm chuyên nghiệp cho bạn:',
-        '• Tìm kiếm thông minh',
-        '• Phân tích thị trường',
-        '• Gợi ý phù hợp nhất',
-        '• Báo cáo chi tiết'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chọn loại tìm kiếm:',
         [
-            createPostbackButton('🏠 BẤT ĐỘNG SẢN', 'SEARCH_SERVICE_REAL_ESTATE'),
-            createPostbackButton('🚗 Ô TÔ', 'SEARCH_SERVICE_CAR'),
-            createPostbackButton('📱 ĐIỆN TỬ', 'SEARCH_SERVICE_ELECTRONICS'),
-            createPostbackButton('👕 THỜI TRANG', 'SEARCH_SERVICE_FASHION'),
-            createPostbackButton('🍽️ ẨM THỰC', 'SEARCH_SERVICE_FOOD'),
-            createPostbackButton('🔧 DỊCH VỤ', 'SEARCH_SERVICE_SERVICE')
+            createQuickReply('🏠 BẤT ĐỘNG SẢN', 'SEARCH_SERVICE_REAL_ESTATE'),
+            createQuickReply('🚗 Ô TÔ', 'SEARCH_SERVICE_CAR'),
+            createQuickReply('📱 ĐIỆN TỬ', 'SEARCH_SERVICE_ELECTRONICS'),
+            createQuickReply('👕 THỜI TRANG', 'SEARCH_SERVICE_FASHION'),
+            createQuickReply('🍽️ ẨM THỰC', 'SEARCH_SERVICE_FOOD'),
+            createQuickReply('🔧 DỊCH VỤ', 'SEARCH_SERVICE_SERVICE')
         ]
     )
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Thêm tùy chọn:',
         [
-            createPostbackButton('🔙 QUAY LẠI', 'SEARCH')
+            createQuickReply('🔙 QUAY LẠI', 'SEARCH')
         ]
     )
 }
 
 // Handle search service payment
 export async function handleSearchServicePayment(user: any, category: string) {
-    await sendTypingIndicator(user.facebook_id)
-
-    await sendMessagesWithTyping(user.facebook_id, [
-        '💰 THANH TOÁN DỊCH VỤ TÌM KIẾM HỘ',
-        `📋 Thông tin dịch vụ:`,
-        `• Loại: ${category}`,
-        `• Phí: 5,000đ/lần`,
-        `• Thời gian: 24h`,
-        '',
-        '🏦 THÔNG TIN CHUYỂN KHOẢN:',
-        '• STK: 0123456789',
-        '• Ngân hàng: Vietcombank',
-        '• Chủ TK: BOT TÂN DẬU',
-        '• Nội dung: TIMKIEM [SĐT_CỦA_BẠN]'
-    ])
-
-    await sendButtonTemplate(
+    // Typing indicator removed for quick reply
+    await sendQuickReplyNoTyping(
         user.facebook_id,
         'Sau khi chuyển khoản:',
         [
-            createPostbackButton('📸 UPLOAD BIÊN LAI', 'SEARCH_SERVICE_UPLOAD_RECEIPT'),
-            createPostbackButton('❌ HỦY', 'SEARCH_SERVICE')
+            createQuickReply('📸 UPLOAD BIÊN LAI', 'SEARCH_SERVICE_UPLOAD_RECEIPT'),
+            createQuickReply('❌ HỦY', 'SEARCH_SERVICE')
         ]
     )
 }
@@ -1633,12 +1552,12 @@ export async function handleSearchServiceReceiptProcess(user: any, imageUrl: str
             return
         }
 
-        await sendButtonTemplate(
+        await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
             [
-                createPostbackButton('🔍 TÌM KIẾM THƯỜNG', 'SEARCH'),
-                createPostbackButton('🏠 TRANG CHỦ', 'MAIN_MENU')
+                createQuickReply('🔍 TÌM KIẾM THƯỜNG', 'SEARCH'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
             ]
         )
 

@@ -485,26 +485,26 @@ export function resetNonButtonTracking(facebookId: string): void {
 
 // Send bot stopped message
 export async function sendBotStoppedMessage(facebookId: string, reason: string): Promise<void> {
-    const { sendMessage, sendButtonTemplate, createPostbackButton } = await import('./facebook-api')
+    const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api')
 
     await sendMessage(facebookId, '🚫 BOT ĐÃ TẠM DỪNG!')
     await sendMessage(facebookId, 'Bạn đã gửi quá nhiều tin nhắn mà không chọn nút. Bot sẽ tạm dừng để tránh spam.')
     await sendMessage(facebookId, 'Nếu cần hỗ trợ, hãy liên hệ admin:')
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         facebookId,
         'Liên hệ admin:',
         [
-            createPostbackButton('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN'),
-            createPostbackButton('🔄 THỬ LẠI SAU', 'MAIN_MENU'),
-            createPostbackButton('ℹ️ THÔNG TIN', 'INFO')
+            createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN'),
+            createQuickReply('🔄 THỬ LẠI SAU', 'MAIN_MENU'),
+            createQuickReply('ℹ️ THÔNG TIN', 'INFO')
         ]
     )
 }
 
 // Send non-button warning message
 export async function sendNonButtonWarning(facebookId: string, warningCount: number): Promise<void> {
-    const { sendMessage, sendButtonTemplate, createPostbackButton } = await import('./facebook-api')
+    const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api')
 
     if (warningCount === 1) {
         await sendMessage(facebookId, '⚠️ Cảnh báo: Bạn đang gửi tin nhắn thay vì chọn nút!')

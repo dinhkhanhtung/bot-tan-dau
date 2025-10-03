@@ -2,9 +2,8 @@ import { supabaseAdmin } from './supabase'
 import {
     sendMessage,
     sendTypingIndicator,
-    sendButtonTemplate,
+    sendQuickReplyNoTyping,
     sendQuickReply,
-    createPostbackButton,
     createQuickReply,
     sendMessagesWithTyping
 } from './facebook-api'
@@ -65,12 +64,12 @@ export async function handleRegistrationStep(user: any, step: number, input: str
                 '❓ Bạn có phải sinh năm 1981 không?'
             ])
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 'Xác nhận tuổi của bạn:',
                 [
-                    createPostbackButton('✅ CÓ - TÔI SINH NĂM 1981', 'REGISTER_CONFIRM_1981'),
-                    createPostbackButton('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REGISTER_NOT_1981')
+                    createQuickReply('✅ CÓ - TÔI SINH NĂM 1981', 'REGISTER_CONFIRM_1981'),
+                    createQuickReply('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REGISTER_NOT_1981')
                 ]
             )
             break
@@ -169,13 +168,13 @@ export async function handleListingStep(user: any, step: number, input: string) 
                 'Bước 5/5: Hình ảnh\n📸 Vui lòng gửi hình ảnh sản phẩm (tối đa 5 ảnh):'
             ])
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 'Chọn cách gửi ảnh:',
                 [
-                    createPostbackButton('📷 Chụp ảnh', 'LISTING_TAKE_PHOTO'),
-                    createPostbackButton('📁 Chọn từ thư viện', 'LISTING_CHOOSE_PHOTO'),
-                    createPostbackButton('⏭️ Bỏ qua', 'LISTING_SKIP_PHOTO')
+                    createQuickReply('📷 Chụp ảnh', 'LISTING_TAKE_PHOTO'),
+                    createQuickReply('📁 Chọn từ thư viện', 'LISTING_CHOOSE_PHOTO'),
+                    createQuickReply('⏭️ Bỏ qua', 'LISTING_SKIP_PHOTO')
                 ]
             )
             break
@@ -241,12 +240,12 @@ export async function handleSearchStep(user: any, step: number, input: string) {
                 'Bước 3/3: Từ khóa (tùy chọn)\n🔍 Nhập từ khóa tìm kiếm hoặc bỏ qua:'
             ])
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 user.facebook_id,
                 'Bạn có muốn thêm từ khóa không?',
                 [
-                    createPostbackButton('🔍 THÊM TỪ KHÓA', 'SEARCH_ADD_KEYWORD'),
-                    createPostbackButton('⏭️ BỎ QUA', 'SEARCH_SKIP_KEYWORD')
+                    createQuickReply('🔍 THÊM TỪ KHÓA', 'SEARCH_ADD_KEYWORD'),
+                    createQuickReply('⏭️ BỎ QUA', 'SEARCH_SKIP_KEYWORD')
                 ]
             )
             break
@@ -256,10 +255,10 @@ export async function handleSearchStep(user: any, step: number, input: string) {
 // Helper functions
 async function sendLocationButtons(facebookId: string) {
     const locationButtons = LOCATIONS.slice(0, 6).map(location =>
-        createPostbackButton(location, `LOCATION_${location}`)
+        createQuickReply(location, `LOCATION_${location}`)
     )
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         facebookId,
         'Chọn tỉnh/thành:',
         locationButtons
@@ -271,10 +270,10 @@ async function sendSubcategoryButtons(facebookId: string, category: string) {
     if (!subcategories) return
 
     const subcategoryButtons = Object.keys(subcategories).slice(0, 4).map(sub =>
-        createPostbackButton(sub, `SUBCATEGORY_${sub}`)
+        createQuickReply(sub, `SUBCATEGORY_${sub}`)
     )
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         facebookId,
         `Chọn loại ${category}:`,
         subcategoryButtons
@@ -283,10 +282,10 @@ async function sendSubcategoryButtons(facebookId: string, category: string) {
 
 async function sendPriceRangeButtons(facebookId: string) {
     const priceButtons = PRICE_RANGES.slice(0, 6).map(range =>
-        createPostbackButton(range.label, `PRICE_${range.label}`)
+        createQuickReply(range.label, `PRICE_${range.label}`)
     )
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         facebookId,
         'Chọn khoảng giá:',
         priceButtons

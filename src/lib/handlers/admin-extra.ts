@@ -2,8 +2,8 @@ import { supabaseAdmin } from '../supabase'
 import {
     sendMessage,
     sendTypingIndicator,
-    sendButtonTemplate,
-    createPostbackButton,
+    sendQuickReplyNoTyping,
+    createQuickReply,
     sendMessagesWithTyping
 } from '../facebook-api'
 
@@ -57,12 +57,12 @@ export async function handleAdminConfirmSendAll(user: any) {
         await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi gửi!')
     }
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📤 GỬI LẠI', 'ADMIN_SEND_REGISTRATION'),
-            createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+            createQuickReply('📤 GỬI LẠI', 'ADMIN_SEND_REGISTRATION'),
+            createQuickReply('🔙 QUAY LẠI', 'ADMIN')
         ]
     )
 }
@@ -79,12 +79,12 @@ export async function handleAdminCopyLink(user: any) {
         'Bạn có thể paste vào bất kỳ đâu để chia sẻ!'
     ])
 
-    await sendButtonTemplate(
+    await sendQuickReply(
         user.facebook_id,
         'Tùy chọn:',
         [
-            createPostbackButton('📤 GỬI LẠI', 'ADMIN_SEND_REGISTRATION'),
-            createPostbackButton('🔙 QUAY LẠI', 'ADMIN')
+            createQuickReply('📤 GỬI LẠI', 'ADMIN_SEND_REGISTRATION'),
+            createQuickReply('🔙 QUAY LẠI', 'ADMIN')
         ]
     )
 }

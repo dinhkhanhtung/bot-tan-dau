@@ -2,8 +2,8 @@ import { supabaseAdmin } from './supabase'
 import {
     sendMessage,
     sendTypingIndicator,
-    sendButtonTemplate,
-    createPostbackButton,
+    sendQuickReplyNoTyping,
+    createQuickReply,
     sendMessagesWithTyping
 } from './facebook-api'
 
@@ -177,13 +177,13 @@ async function notifyAdminsNewChatRequest(userId: string, sessionId: string): Pr
                     `🆔 Session: ${sessionId.slice(-8)}`
                 ])
 
-                await sendButtonTemplate(
+                await sendQuickReply(
                     adminId,
                     'Bạn muốn nhận chat này?',
                     [
-                        createPostbackButton('✅ NHẬN CHAT', `ADMIN_TAKE_CHAT_${sessionId}`),
-                        createPostbackButton('👀 XEM CHI TIẾT', `ADMIN_VIEW_CHAT_${sessionId}`),
-                        createPostbackButton('❌ BỎ QUA', 'ADMIN_IGNORE_CHAT')
+                        createQuickReply('✅ NHẬN CHAT', `ADMIN_TAKE_CHAT_${sessionId}`),
+                        createQuickReply('👀 XEM CHI TIẾT', `ADMIN_VIEW_CHAT_${sessionId}`),
+                        createQuickReply('❌ BỎ QUA', 'ADMIN_IGNORE_CHAT')
                     ]
                 )
             } catch (error) {
@@ -212,12 +212,12 @@ export async function handleUserMessageInAdminChat(userId: string, message: stri
             await sendMessage(userId, '⏳ Bạn đang chờ admin phản hồi...')
             await sendMessage(userId, 'Admin sẽ trả lời sớm nhất có thể!')
 
-            await sendButtonTemplate(
+            await sendQuickReply(
                 userId,
                 'Trong khi chờ đợi:',
                 [
-                    createPostbackButton('❌ HỦY CHAT', 'CANCEL_ADMIN_CHAT'),
-                    createPostbackButton('🔄 QUAY LẠI BOT', 'EXIT_ADMIN_CHAT')
+                    createQuickReply('❌ HỦY CHAT', 'CANCEL_ADMIN_CHAT'),
+                    createQuickReply('🔄 QUAY LẠI BOT', 'EXIT_ADMIN_CHAT')
                 ]
             )
         } else if (session.status === 'active' && session.admin_id) {
