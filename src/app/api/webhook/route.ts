@@ -131,20 +131,26 @@ async function handleMessageEvent(event: any) {
         // Get user first to check if they exist
         const user = await getUserByFacebookId(senderId)
 
-        // Check spam for ALL users (including unregistered) - SỬ DỤNG LOGIC MỚI
+        // Check spam for THIS SPECIFIC USER - SỬ DỤNG LOGIC MỚI
         const { handleAntiSpam, isUserBlocked, sendSpamBlockMessage } = await import('@/lib/anti-spam')
 
-        // Check if user is currently blocked
+        console.log('🔍 Checking spam for user:', senderId, 'Message:', message.text || '')
+
+        // Check if THIS user is currently blocked
         if (await isUserBlocked(senderId)) {
+            console.log('🚫 User is blocked, sending block message')
             await sendSpamBlockMessage(senderId)
             return
         }
 
-        // Check for spam using NEW logic (áp dụng cho tất cả user)
+        // Check for spam using NEW logic (áp dụng cho CHỈ user này)
         const userStatus = user ? (user.status === 'registered' || user.status === 'trial' ? 'registered' : 'unregistered') : 'unregistered'
+        console.log('📊 User status for spam check:', userStatus)
+
         const spamCheck = await handleAntiSpam(senderId, message.text || '', userStatus, null)
 
         if (spamCheck.block) {
+            console.log('🚫 Spam check blocked user:', senderId)
             await sendSpamBlockMessage(senderId)
             return
         }

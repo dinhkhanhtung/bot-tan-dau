@@ -552,16 +552,16 @@ export class MessageRouter {
      * Handle exit bot
      */
     private async handleExitBot(user: any): Promise<void> {
-        // Typing indicator removed for quick reply
-        await sendQuickReplyNoTyping(
-            user.facebook_id,
-            'Bạn có muốn:',
-            [
-                createQuickReply('🏠 VÀO LẠI', 'MAIN_MENU'),
-                createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
-                createQuickReply('ℹ️ TÌM HIỂU', 'INFO')
-            ]
-        )
+        // Clear user session to exit bot completely
+        await updateBotSession(user.facebook_id, null)
+
+        // Send goodbye message without quick replies (normal chat)
+        await sendMessage(user.facebook_id, '👋 Tạm biệt! Bạn đã thoát khỏi bot.')
+        await sendMessage(user.facebook_id, '💬 Bây giờ bạn có thể chat thường với mọi người.')
+        await sendMessage(user.facebook_id, '📱 Nếu muốn sử dụng bot lại, chỉ cần nhắn tin bất kỳ!')
+
+        // Hide any existing buttons
+        await hideButtons(user.facebook_id)
     }
 
     /**

@@ -415,15 +415,15 @@ export async function sendSpamBlockMessage(facebookId: string): Promise<void> {
 
     await sendMessage(facebookId, '🚫 BOT ĐÃ BỊ TẠM KHÓA DO SPAM!')
     await sendMessage(facebookId, 'Bạn đã gửi quá nhiều tin nhắn hoặc spam. Bot sẽ được mở khóa sau 30 phút.')
-    await sendMessage(facebookId, 'Nếu cần hỗ trợ khẩn cấp, hãy liên hệ admin:')
+    await sendMessage(facebookId, 'Trong thời gian này, bạn có thể:')
 
     await sendQuickReply(
         facebookId,
-        'Liên hệ admin:',
+        'Chọn hành động:',
         [
+            createQuickReply('🔄 THOÁT BOT (Chat thường)', 'EXIT_BOT'),
             createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN'),
-            createQuickReply('📞 GỌI ĐIỆN THOẠI', 'CALL_ADMIN'),
-            createQuickReply('📧 GỬI EMAIL', 'EMAIL_ADMIN')
+            createQuickReply('⏰ ĐỢI 30 PHÚT', 'WAIT_30_MIN')
         ]
     )
 }
