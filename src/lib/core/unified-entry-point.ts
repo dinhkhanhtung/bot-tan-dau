@@ -44,22 +44,15 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Bước 3: KIỂM TRA ANTI-SPAM (chỉ cho non-admin, non-flow users)
+            // Bước 3: KIỂM TRA SESSION TRƯỚC - ƯU TIÊN FLOW
             const session = await this.getUserSession(user.facebook_id)
             const currentFlow = session?.current_flow || null
 
-            // Chỉ kiểm tra spam nếu không trong flow hợp lệ
-            if (!currentFlow) {
-                // Lấy thông tin user để xác định trạng thái
-                const context = await this.analyzeUserContext(user)
-                const userStatus = context.userType === UserType.REGISTERED_USER ? 'registered' :
-                                 context.userType === UserType.TRIAL_USER ? 'trial' : 'unregistered'
-
-                const spamCheck = await this.checkSpamStatus(user.facebook_id, text, isPostback, userStatus, currentFlow)
-                if (spamCheck.shouldStop) {
-                    await this.sendSpamBlockedMessage(user.facebook_id, spamCheck.reason)
-                    return
-                }
+            // Nếu đang trong flow hợp lệ, xử lý flow trước, KHÔNG áp dụng chống spam
+            if (currentFlow && ['registration', 'listing', 'search'].includes(currentFlow)) {
+                console.log('🔄 User đang trong flow:', currentFlow, '- Xử lý flow trước')
+                await this.handleFlowMessage(user, text, session)
+                return
             }
 
             // Bước 4: XỬ LÝ FLOW NẾU USER ĐANG TRONG FLOW

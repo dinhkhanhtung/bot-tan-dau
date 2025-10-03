@@ -106,17 +106,19 @@ export async function handleAntiSpam(facebookId: string, message: string, userSt
         return { action: 'none', block: false }
     }
 
-    // Nếu đang trong flow hợp lệ, không áp dụng chống spam
+    // QUAN TRỌNG: Nếu đang trong flow hợp lệ, KHÔNG áp dụng chống spam
+    // Vì user đang nhập thông tin cần thiết cho việc đăng ký/niêm yết/tìm kiếm
     if (currentFlow && ['registration', 'listing', 'search'].includes(currentFlow)) {
+        console.log('🔄 User đang trong flow:', currentFlow, '- KHÔNG áp dụng chống spam')
         return { action: 'none', block: false }
     }
 
-    // Kiểm tra trạng thái khóa hiện tại
+    // Kiểm tra trạng thái khóa hiện tại (chỉ khi không trong flow)
     if (await isUserLocked(facebookId)) {
         return { action: 'block', block: true }
     }
 
-    // Xử lý theo loại user
+    // Xử lý theo loại user (chỉ khi không trong flow)
     if (!isRegistered(userStatus)) {
         return await handleUnregisteredSpam(facebookId, message, userStatus)
     } else {
