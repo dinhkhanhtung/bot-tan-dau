@@ -13,7 +13,7 @@ import { formatCurrency, formatNumber, updateBotSession, daysUntilExpiry } from 
 // Check if user is admin
 export async function isAdmin(facebookId: string): Promise<boolean> {
     console.log('🔍 isAdmin called with facebookId:', facebookId)
-    
+
     // First check environment variables (priority)
     const adminIds = process.env.ADMIN_IDS || ''
     console.log('🔍 ADMIN_IDS from env:', adminIds)
@@ -1123,16 +1123,16 @@ async function executeBulkApproval(user: any, payments: any[], filterType: strin
         }
     }
 
-        await sendMessagesWithTyping(user.facebook_id, [
-            '━━━━━━━━━━━━━━━━━━━━',
-            '📊 KẾT QUẢ DUYỆT HÀNG LOẠT:',
-            `✅ Duyệt thành công: ${approvedCount}`,
-            `❌ Duyệt thất bại: ${failedCount}`,
-            `💰 Tổng tiền: ${formatCurrency(totalAmount)}`,
-            `🎯 Loại: ${filterType}`,
-            '━━━━━━━━━━━━━━━━━━━━',
-            '💡 THÀNH CÔNG: Đã xử lý nhanh các thanh toán ưu tiên!'
-        ])
+    await sendMessagesWithTyping(user.facebook_id, [
+        '━━━━━━━━━━━━━━━━━━━━',
+        '📊 KẾT QUẢ DUYỆT HÀNG LOẠT:',
+        `✅ Duyệt thành công: ${approvedCount}`,
+        `❌ Duyệt thất bại: ${failedCount}`,
+        `💰 Tổng tiền: ${formatCurrency(totalAmount)}`,
+        `🎯 Loại: ${filterType}`,
+        '━━━━━━━━━━━━━━━━━━━━',
+        '💡 THÀNH CÔNG: Đã xử lý nhanh các thanh toán ưu tiên!'
+    ])
 
     await sendQuickReply(
         user.facebook_id,

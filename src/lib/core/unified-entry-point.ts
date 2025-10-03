@@ -10,12 +10,31 @@ export class UnifiedBotSystem {
      */
     static async handleMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
         try {
+            console.log('🔍 Received message from user:', {
+                facebook_id: user.facebook_id,
+                text: text,
+                isPostback: isPostback,
+                postback: postback
+            })
+            
             // Bước 1: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất)
             const isAdminUser = await this.checkAdminStatus(user.facebook_id)
 
             if (isAdminUser) {
+                console.log('✅ User is admin, handling admin message')
                 await this.handleAdminMessage(user, text, isPostback, postback)
                 return
+            }
+
+            // Kiểm tra lệnh admin đặc biệt
+            if (text && (text.toLowerCase().includes('/admin') || text.toLowerCase().includes('admin'))) {
+                console.log('🔍 Admin command detected, checking admin status again')
+                const isAdminUser2 = await this.checkAdminStatus(user.facebook_id)
+                if (isAdminUser2) {
+                    console.log('✅ User is admin via command, showing admin dashboard')
+                    await this.showAdminDashboard(user)
+                    return
+                }
             }
 
             // Bước 2: KIỂM TRA ADMIN CHAT MODE
