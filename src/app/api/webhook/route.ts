@@ -313,21 +313,8 @@ async function handleMessageEvent(event: any) {
                     console.error('Error sending welcome message:', error)
                 }
             } else {
-                // User already received welcome message, CHỈ hiển thị menu
-                try {
-                    const { sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
-                    await sendQuickReply(
-                        senderId,
-                        'Chọn chức năng:',
-                        [
-                            createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
-                            createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
-                            createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
-                        ]
-                    )
-                } catch (error) {
-                    console.error('Error sending brief response:', error)
-                }
+                // DISABLED: Welcome message now handled by anti-spam system
+                console.log('Welcome message handled by anti-spam system')
             }
             return
         }

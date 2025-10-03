@@ -126,9 +126,8 @@ export class FlowAdapter {
 
         } catch (error) {
             console.error('Error migrating to Smart Router:', error)
-            // Fallback: gửi welcome message cơ bản
-            await sendTypingIndicator(user.facebook_id)
-            await sendMessage(user.facebook_id, '🎉 Chào mừng bạn đến với Đinh Khánh Tùng!')
+            // DISABLED: Welcome message now handled by anti-spam system
+            console.log('Welcome message handled by anti-spam system')
         }
     }
 
@@ -139,20 +138,8 @@ export class FlowAdapter {
         console.error('Smart Router error, falling back to legacy system:', error)
 
         try {
-            // Fallback về welcome message cơ bản
-            await sendTypingIndicator(user.facebook_id)
-            await sendMessage(user.facebook_id, '🎉 Chào mừng bạn đến với Đinh Khánh Tùng!')
-
-            await sendQuickReply(
-                user.facebook_id,
-                'Bạn muốn:',
-                [
-                    createQuickReply('🚀 ĐĂNG KÝ', 'REGISTER'),
-                    createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
-                    createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
-                ]
-            )
-
+            // DISABLED: Welcome message now handled by anti-spam system
+            console.log('Welcome message handled by anti-spam system')
         } catch (fallbackError) {
             console.error('Fallback handler also failed:', fallbackError)
         }
