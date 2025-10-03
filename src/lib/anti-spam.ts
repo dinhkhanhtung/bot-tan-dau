@@ -177,7 +177,7 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
 
     await updateSpamData(facebookId, {
         message_count: newCount,
-        last_message_time: now
+        last_message_time: new Date(now).toISOString()
     })
 
     // Xử lý theo level - LOGIC MỚI THEO YÊU CẦU
@@ -219,14 +219,14 @@ async function handleRegisteredSpam(facebookId: string, message: string, userSta
         const timeWindow = config.TIME_WINDOW_SECONDS * 1000
 
         if (spamData && (now - spamData.last_message_time) > timeWindow) {
-            await updateSpamData(facebookId, { message_count: 1, last_message_time: now })
+            await updateSpamData(facebookId, { message_count: 1, last_message_time: new Date(now).toISOString() })
             return { action: 'none', block: false }
         }
 
         const newCount = (spamData?.message_count || 0) + 1
         await updateSpamData(facebookId, {
             message_count: newCount,
-            last_message_time: now
+            last_message_time: new Date(now).toISOString()
         })
 
         if (newCount >= config.MAX_MESSAGES) {
@@ -246,14 +246,14 @@ async function handleRegisteredSpam(facebookId: string, message: string, userSta
         const timeWindow = config.TIME_WINDOW_MINUTES * 60 * 1000
 
         if (spamData && (now - spamData.last_message_time) > timeWindow) {
-            await updateSpamData(facebookId, { message_count: 1, last_message_time: now })
+            await updateSpamData(facebookId, { message_count: 1, last_message_time: new Date(now).toISOString() })
             return { action: 'none', block: false }
         }
 
         const newCount = (spamData?.message_count || 0) + 1
         await updateSpamData(facebookId, {
             message_count: newCount,
-            last_message_time: now
+            last_message_time: new Date(now).toISOString()
         })
 
         if (newCount >= config.MAX_MESSAGES) {
@@ -268,7 +268,7 @@ async function handleRegisteredSpam(facebookId: string, message: string, userSta
     }
 
     // Tin nhắn thường - không áp dụng chống spam nghiêm ngặt
-    await updateSpamData(facebookId, { last_message_time: now })
+    await updateSpamData(facebookId, { last_message_time: new Date(now).toISOString() })
     return { action: 'none', block: false }
 }
 
