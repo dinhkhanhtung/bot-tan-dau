@@ -37,9 +37,9 @@ export class AuthFlow {
             return
         }
 
-        // Check if user is already registered (exclude temp users and pending users)
+        // Check if user is already registered (exclude users without complete info)
         if ((user.status === 'registered' || user.status === 'trial') &&
-            user.name !== 'User' && !user.phone?.startsWith('temp_') && user.status !== 'pending') {
+            user.name && user.phone && user.status !== 'pending') {
 
             // Check if trial is about to expire (within 2 days)
             if (user.status === 'trial' && user.membership_expires_at) {

@@ -426,7 +426,7 @@ export class MessageRouter {
             if (userIsAdmin) {
                 await this.adminFlow.handleCommand(user)
             } else if ((user.status === 'registered' || user.status === 'trial') &&
-                user.name !== 'User' && !user.phone?.startsWith('temp_')) {
+                user.name && user.phone) {
                 await this.utilityFlow.handleDefaultMessageRegistered(user)
             } else {
                 await this.authFlow.handleDefaultMessage(user)
@@ -480,7 +480,16 @@ export class MessageRouter {
             ? `📅 Trial còn ${daysUntilExpiry(user.membership_expires_at!)} ngày`
             : '✅ Đã thanh toán'
 
-        const displayName = await getFacebookDisplayName(user.facebook_id) || user.name || 'bạn'
+        // Get display name with error handling
+        let displayName = user.name || 'bạn'
+        try {
+            const facebookName = await getFacebookDisplayName(user.facebook_id)
+            if (facebookName) {
+                displayName = facebookName
+            }
+        } catch (error) {
+            console.warn('Failed to get Facebook display name, using fallback:', error instanceof Error ? error.message : String(error))
+        }
 
         await sendMessage(user.facebook_id, '🏠 TRANG CHỦ Tân Dậu - Hỗ Trợ Chéo')
         await sendMessage(user.facebook_id, `👋 Chào mừng ${displayName}!`)

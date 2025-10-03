@@ -119,7 +119,7 @@ export async function handleMessage(user: any, text: string) {
 
                 // Then check if user needs default message based on registration status
                 if ((user.status === 'registered' || user.status === 'trial') &&
-                    user.name !== 'User' && !user.phone?.startsWith('temp_')) {
+                    user.name && user.phone) {
                     await UtilityHandlers.handleDefaultMessageRegistered(user)
                 } else {
                     await AuthHandlers.handleDefaultMessage(user)
@@ -619,7 +619,7 @@ export async function handlePostback(user: any, postback: string) {
             default:
                 // Check if user is registered (exclude temp users)
                 if ((user.status === 'registered' || user.status === 'trial') &&
-                    user.name !== 'User' && !user.phone?.startsWith('temp_')) {
+                    user.name && user.phone) {
                     await UtilityHandlers.handleDefaultMessageRegistered(user)
                 } else {
                     await AuthHandlers.handleDefaultMessage(user)
@@ -840,7 +840,7 @@ export async function handleExitBot(user: any) {
 // Helper functions for notification system
 function determineUserBehavior(user: any, text: string): 'active' | 'passive' | 'new' {
     // Check if user is new (no registration data)
-    if (!user.name || user.name === 'User' || user.phone?.startsWith('temp_')) {
+    if (!user.name || !user.phone) {
         return 'new'
     }
 

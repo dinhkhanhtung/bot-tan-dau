@@ -340,8 +340,8 @@ async function handleMessageEvent(event: any) {
                             .from('users')
                             .insert({
                                 facebook_id: senderId,
-                                name: 'User',
-                                phone: `temp_${senderId.slice(-10)}`, // Use unique temp phone
+                                name: null, // User must provide name during registration
+                                phone: null, // User must provide phone during registration
                                 location: 'Unknown',
                                 birthday: 1981,
                                 referral_code: `TD1981-${senderId.slice(-6)}`,
@@ -383,7 +383,7 @@ async function handleMessageEvent(event: any) {
             const userObj = user || {
                 facebook_id: senderId,
                 status: 'new_user',
-                name: 'User',
+                name: null, // User must provide name during registration
                 membership_expires_at: null
             }
 
@@ -692,8 +692,8 @@ async function createUserFromFacebook(facebookId: string) {
             .from('users')
             .insert({
                 facebook_id: facebookId,
-                name: 'User',
-                phone: '0000000000', // Provide a default phone number
+                name: null, // User must provide name during registration
+                phone: null, // User must provide phone during registration
                 location: 'HÀ NỘI',
                 birthday: 1981, // Trust-based verification - chỉ cần xác nhận năm sinh
                 status: 'trial',
@@ -741,8 +741,8 @@ async function deleteUserFromFacebook(facebookId: string) {
 
 // Import bot handlers
 async function handleUserMessage(user: any, text: string) {
-    // Check if user is new (has default name 'User')
-    if (user.name === 'User' && user.phone === '0000000000') {
+    // Check if user is new (has no name or phone)
+    if (!user.name || !user.phone) {
         // New user - show welcome message
         const { handleDefaultMessage } = await import('@/lib/bot-handlers')
         await handleDefaultMessage(user)

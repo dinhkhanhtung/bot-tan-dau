@@ -356,6 +356,59 @@ export async function retry<T>(
     }
 }
 
+// Validate Facebook ID format
+export function isValidFacebookId(facebookId: string): boolean {
+    if (!facebookId || typeof facebookId !== 'string') {
+        return false
+    }
+
+    // Facebook ID should be numeric and between 10-20 digits
+    return /^\d{10,20}$/.test(facebookId)
+}
+
+// Create new user with fallback when Facebook API fails
+export async function createNewUserWithFallback(facebookId: string): Promise<any> {
+    try {
+        // Try to get Facebook name first
+        const facebookName = await getFacebookDisplayName(facebookId)
+
+        if (facebookName) {
+            return {
+                facebook_id: facebookId,
+                name: facebookName,
+                phone: null, // User will provide real phone during registration
+                status: 'pending', // Start as pending, not trial
+                membership_expires_at: null, // No trial period
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }
+        } else {
+            // Fallback when Facebook API fails - still require registration
+            return {
+                facebook_id: facebookId,
+                name: null, // User must provide name during registration
+                phone: null, // User must provide phone during registration
+                status: 'pending', // Start as pending, not trial
+                membership_expires_at: null, // No trial period
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }
+        }
+    } catch (error) {
+        console.warn('Error creating user with Facebook data, using fallback:', error instanceof Error ? error.message : String(error))
+        // Complete fallback - still require registration
+        return {
+            facebook_id: facebookId,
+            name: null, // User must provide name during registration
+            phone: null, // User must provide phone during registration
+            status: 'pending', // Start as pending, not trial
+            membership_expires_at: null, // No trial period
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        }
+    }
+}
+
 // Get Facebook display name from Facebook API
 export async function getFacebookDisplayName(facebookId: string): Promise<string | null> {
     try {
@@ -367,10 +420,19 @@ export async function getFacebookDisplayName(facebookId: string): Promise<string
             return null
         }
 
+        // Validate Facebook ID format
+        if (!isValidFacebookId(facebookId)) {
+            console.log('Invalid Facebook ID format:', facebookId)
+            return null
+        }
+
         console.log('Fetching Facebook profile for user:', facebookId)
 
         const response = await fetch(
-            `https://graph.facebook.com/v19.0/${facebookId}?fields=first_name,last_name,name&access_token=${FACEBOOK_ACCESS_TOKEN}`
+            `https://graph.facebook.com/v19.0/${facebookId}?fields=first_name,last_name,name&access_token=${FACEBOOK_ACCESS_TOKEN}`,
+            {
+                timeout: 5000 // 5 second timeout
+            }
         )
 
         console.log('Facebook API response status:', response.status)
@@ -389,30 +451,35 @@ export async function getFacebookDisplayName(facebookId: string): Promise<string
             }
         }
 
-        // Handle specific error codes
+        // Handle specific error codes with better logging
         if (response.status === 400) {
-            console.error('Bad Request - Check if Facebook ID is valid:', facebookId)
+            console.warn('Facebook API 400 - Invalid Facebook ID or permissions:', facebookId)
         } else if (response.status === 401) {
-            console.error('Unauthorized - Check if access token is valid and has required permissions')
+            console.warn('Facebook API 401 - Access token invalid or expired')
         } else if (response.status === 403) {
-            console.error('Forbidden - Access token may not have permission to access user profile')
+            console.warn('Facebook API 403 - Insufficient permissions for user profile')
         } else if (response.status === 404) {
-            console.error('User not found - Facebook ID may be invalid:', facebookId)
+            console.warn('Facebook API 404 - User not found:', facebookId)
         } else {
-            console.error('Facebook API error:', response.status, response.statusText)
+            console.warn('Facebook API error:', response.status, response.statusText)
         }
 
-        // Try to get error details
+        // Try to get error details for debugging
         try {
             const errorData = await response.json()
-            console.error('Facebook API error details:', JSON.stringify(errorData, null, 2))
+            console.warn('Facebook API error details:', JSON.stringify(errorData, null, 2))
         } catch (parseError) {
-            console.error('Could not parse error response')
+            console.warn('Could not parse Facebook API error response')
         }
 
         return null
     } catch (error) {
-        console.error('Error getting Facebook display name:', error)
+        // Handle network errors gracefully
+        if (error.name === 'AbortError') {
+            console.warn('Facebook API request timeout for user:', facebookId)
+        } else {
+            console.warn('Error getting Facebook display name:', error instanceof Error ? error.message : String(error))
+        }
         return null
     }
 }

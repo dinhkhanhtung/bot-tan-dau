@@ -322,9 +322,9 @@ export class UnifiedBotSystem {
                 membership_expires_at: userData.membership_expires_at
             })
 
-            // KIỂM TRA USER CÓ PHẢI LÀ DỮ LIỆU TEST KHÔNG
-            if (userData.name === 'User' && userData.phone?.startsWith('temp_')) {
-                console.log('🚫 Found test user data, treating as NEW USER')
+            // KIỂM TRA USER CÓ THÔNG TIN ĐẦY ĐỦ KHÔNG
+            if (!userData.name || !userData.phone) {
+                console.log('🚫 User missing required info, treating as NEW USER')
                 return { userType: UserType.NEW_USER, user: null }
             }
 
@@ -551,10 +551,17 @@ export class UnifiedBotSystem {
             if (!existingUser?.welcome_message_sent) {
                 await sendTypingIndicator(user.facebook_id)
 
-                // Get Facebook name for personalized greeting
-                const { getFacebookDisplayName } = await import('../utils')
-                const facebookName = await getFacebookDisplayName(user.facebook_id)
-                const displayName = facebookName || 'bạn'
+                // Get Facebook name for personalized greeting - with error handling
+                let displayName = 'bạn'
+                try {
+                    const { getFacebookDisplayName } = await import('../utils')
+                    const facebookName = await getFacebookDisplayName(user.facebook_id)
+                    if (facebookName) {
+                        displayName = facebookName
+                    }
+                } catch (error) {
+                    console.warn('Failed to get Facebook display name, using fallback:', error instanceof Error ? error.message : String(error))
+                }
 
                 await sendMessage(user.facebook_id, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!`)
                 await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
