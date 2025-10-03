@@ -191,25 +191,29 @@ async function handleMessageEvent(event: any) {
         }
 
         // QUAN TRỌNG: Nếu user chưa trong bot mode, xử lý tin nhắn thường
-        const { checkUserBotMode } = await import('@/lib/anti-spam')
+        const { checkUserBotMode, shouldShowChatBotButton } = await import('@/lib/anti-spam')
         const isInBotMode = await checkUserBotMode(senderId)
 
         if (!isInBotMode) {
             console.log('💬 User not in bot mode - processing as normal message')
-            // Gửi tin nhắn thường cho admin xử lý
-            const { sendMessage } = await import('@/lib/facebook-api')
-            await sendMessage(senderId, '💬 Tin nhắn của bạn đã được chuyển đến admin. Họ sẽ phản hồi sớm nhất có thể!')
-            await sendMessage(senderId, '🤖 Nếu muốn sử dụng bot, hãy ấn nút "Chat Bot" bên dưới.')
 
-            const { sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
-            await sendQuickReply(
-                senderId,
-                'Chọn hành động:',
-                [
-                    createQuickReply('🤖 CHAT BOT', 'CHAT_BOT'),
-                    createQuickReply('💬 CHAT THƯỜNG', 'NORMAL_CHAT')
-                ]
-            )
+            // Chỉ gửi thông báo 1 lần duy nhất
+            if (shouldShowChatBotButton(senderId)) {
+                const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
+                await sendMessage(senderId, '💬 Tin nhắn của bạn đã được chuyển đến admin. Họ sẽ phản hồi sớm nhất có thể!')
+                await sendMessage(senderId, '🤖 Nếu muốn sử dụng bot, hãy ấn nút "Chat Bot" bên dưới.')
+
+                await sendQuickReply(
+                    senderId,
+                    'Chọn hành động:',
+                    [
+                        createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
+                    ]
+                )
+            } else {
+                console.log('🚫 User đã nhận thông báo - bot dừng hoàn toàn, để admin xử lý')
+                // Bot dừng hoàn toàn, không gửi gì cả
+            }
             return
         }
 

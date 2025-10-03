@@ -466,24 +466,29 @@ export class UnifiedBotSystem {
     private static async handleNewUserText(user: any, text: string): Promise<void> {
         try {
             // QUAN TRỌNG: Kiểm tra user có đang trong bot mode không
-            const { checkUserBotMode } = await import('../anti-spam')
+            const { checkUserBotMode, shouldShowChatBotButton } = await import('../anti-spam')
             const isInBotMode = await checkUserBotMode(user.facebook_id)
 
             if (!isInBotMode) {
                 console.log('💬 New user not in bot mode - processing as normal message')
-                // Gửi tin nhắn thường cho admin xử lý
-                const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
-                await sendMessage(user.facebook_id, '💬 Tin nhắn của bạn đã được chuyển đến admin. Họ sẽ phản hồi sớm nhất có thể!')
-                await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng bot, hãy ấn nút "Chat Bot" bên dưới.')
 
-                await sendQuickReply(
-                    user.facebook_id,
-                    'Chọn hành động:',
-                    [
-                        createQuickReply('🤖 CHAT BOT', 'CHAT_BOT'),
-                        createQuickReply('💬 CHAT THƯỜNG', 'NORMAL_CHAT')
-                    ]
-                )
+                // Chỉ gửi thông báo 1 lần duy nhất
+                if (shouldShowChatBotButton(user.facebook_id)) {
+                    const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+                    await sendMessage(user.facebook_id, '💬 Tin nhắn của bạn đã được chuyển đến admin. Họ sẽ phản hồi sớm nhất có thể!')
+                    await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng bot, hãy ấn nút "Chat Bot" bên dưới.')
+
+                    await sendQuickReply(
+                        user.facebook_id,
+                        'Chọn hành động:',
+                        [
+                            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
+                        ]
+                    )
+                } else {
+                    console.log('🚫 User đã nhận thông báo - bot dừng hoàn toàn, để admin xử lý')
+                    // Bot dừng hoàn toàn, không gửi gì cả
+                }
                 return
             }
 

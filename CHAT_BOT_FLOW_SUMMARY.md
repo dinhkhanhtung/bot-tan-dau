@@ -32,6 +32,7 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 - `setUserBotMode()` - Đưa user vào bot mode
 - `exitUserBotMode()` - Đưa user ra khỏi bot mode  
 - `checkUserBotMode()` - Kiểm tra user có trong bot mode không
+- `shouldShowChatBotButton()` - Kiểm tra có nên hiển thị nút Chat Bot không (chỉ 1 lần duy nhất)
 - Auto-exit sau 24 giờ
 
 ### ✅ **Welcome Messages**
@@ -41,7 +42,7 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 
 ### ✅ **Exit Logic**
 - `handleBotExit()` - Xử lý thoát bot với thông báo rõ ràng
-- Nút quay lại bot hoặc chat thường
+- Chỉ có nút "Chat Bot" để quay lại
 
 ### ✅ **Anti-Spam Integration**
 - Chỉ áp dụng chống spam khi user trong **Bot Mode**
@@ -52,7 +53,7 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 
 ### **User chưa trong Bot Mode:**
 1. Tin nhắn → Chuyển đến admin
-2. Hiển thị nút "Chat Bot" để vào bot
+2. Hiển thị nút "Chat Bot" chỉ 1 lần duy nhất, sau đó bot dừng hoàn toàn
 3. Không áp dụng chống spam
 
 ### **User trong Bot Mode:**
@@ -83,8 +84,9 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 
 ## Cách test
 
-1. Gửi tin nhắn thường → Nhận thông báo chuyển admin + nút Chat Bot
-2. Ấn nút "Chat Bot" → Vào bot mode + hiển thị menu phù hợp
-3. Sử dụng bot bình thường → Có nút "Thoát Bot"
-4. Ấn nút "Thoát Bot" → Ra khỏi bot mode + nút quay lại
-5. Test đăng ký trong bot mode → Hoạt động bình thường
+1. **Lần 1**: Gửi tin nhắn thường → Nhận thông báo chuyển admin + nút Chat Bot
+2. **Lần 2+**: Gửi tin nhắn thường → Bot dừng hoàn toàn, không gửi gì cả
+3. Ấn nút "Chat Bot" → Vào bot mode + hiển thị menu phù hợp
+4. Sử dụng bot bình thường → Có nút "Thoát Bot"
+5. Ấn nút "Thoát Bot" → Ra khỏi bot mode + chỉ có nút "Chat Bot"
+6. Test đăng ký trong bot mode → Hoạt động bình thường

@@ -142,6 +142,9 @@ const userBotStops = new Map<string, { stopped: boolean, stopTime: number, reaso
 // Bot mode tracking - user chỉ được coi là trong bot khi đã ấn nút "Chat Bot"
 const userBotMode = new Map<string, { inBot: boolean, enteredAt: number }>()
 
+// Tracking số lần hiển thị nút Chat Bot cho mỗi user
+const userChatBotOfferCount = new Map<string, { count: number, lastOffer: number }>()
+
 // Hàm kiểm tra user có trong bot mode không
 export async function checkUserBotMode(facebookId: string): Promise<boolean> {
     const botMode = userBotMode.get(facebookId)
@@ -173,6 +176,27 @@ export function exitUserBotMode(facebookId: string): void {
     console.log('🚪 User exited bot mode:', facebookId)
 }
 
+// Hàm kiểm tra và tăng số lần hiển thị nút Chat Bot
+export function shouldShowChatBotButton(facebookId: string): boolean {
+    const offerData = userChatBotOfferCount.get(facebookId)
+    const now = Date.now()
+
+    // Reset sau 24 giờ
+    if (offerData && (now - offerData.lastOffer) > 24 * 60 * 60 * 1000) {
+        userChatBotOfferCount.delete(facebookId)
+        return true
+    }
+
+    // Chỉ hiển thị 1 lần duy nhất
+    if (!offerData) {
+        userChatBotOfferCount.set(facebookId, { count: 1, lastOffer: now })
+        return true
+    }
+
+    return false
+}
+
+
 // Hàm xử lý thoát bot với đếm ngược thời gian
 export async function handleBotExit(facebookId: string): Promise<void> {
     const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api')
@@ -190,8 +214,7 @@ export async function handleBotExit(facebookId: string): Promise<void> {
         facebookId,
         'Chọn hành động:',
         [
-            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT'),
-            createQuickReply('💬 CHAT THƯỜNG', 'NORMAL_CHAT')
+            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
         ]
     )
 }

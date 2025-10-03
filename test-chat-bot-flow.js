@@ -53,7 +53,7 @@ async function testChatBotFlow() {
     } catch (error) {
         console.log('❌ Error handling bot exit:', error.message)
     }
-    console.log('Expected: Exit confirmation with return options\n')
+    console.log('Expected: Exit confirmation with Chat Bot button only\n')
 
     // Test 6: Kiểm tra user đã thoát bot mode
     console.log('Test 6: Check user exited bot mode')
