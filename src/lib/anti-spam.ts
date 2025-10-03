@@ -5,15 +5,12 @@ export function isRegistered(userStatus: string): boolean {
   return userStatus === 'registered' || userStatus === 'trial' || userStatus === 'active';
 }
 
-// Hàm xử lý welcome message theo trạng thái user
+// Hàm xử lý welcome message theo trạng thái user - CHỈ DÙNG CHO CHỐNG SPAM
 async function sendWelcomeMessage(userId: string, userStatus: string): Promise<void> {
-  const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api');
+  const { sendQuickReply, createQuickReply } = await import('./facebook-api');
 
   if (isRegistered(userStatus)) {
-    // User đã đăng ký - hiển thị menu chính
-    await sendMessage(userId, '🏠 TRANG CHỦ Tân Dậu - Hỗ Trợ Chéo');
-    await sendMessage(userId, '👋 Chào mừng bạn quay trở lại!');
-
+    // User đã đăng ký - chỉ hiển thị menu
     await sendQuickReply(
       userId,
       'Chọn chức năng:',
@@ -25,10 +22,7 @@ async function sendWelcomeMessage(userId: string, userStatus: string): Promise<v
       ]
     );
   } else {
-    // User chưa đăng ký - hiển thị menu dùng thử
-    await sendMessage(userId, '👋 Chào mừng bạn đến với Tân Dậu - Hỗ Trợ Chéo!');
-    await sendMessage(userId, '💡 Bạn có thể dùng thử một số tính năng trước khi đăng ký');
-
+    // User chưa đăng ký - chỉ hiển thị menu
     await sendQuickReply(
       userId,
       'Chọn chức năng:',
@@ -47,8 +41,8 @@ const SPAM_CONFIG = {
     UNREGISTERED: {
         RESET_TIME_MINUTES: 2,
         WARNING_LEVELS: {
-            1: '💡 Bạn vui lòng chọn một trong các nút bên dưới để tiếp tục',
-            2: '💡 Bạn vui lòng chọn một trong các nút bên dưới để tiếp tục',
+            1: '💡 Hãy chọn một trong các nút bên dưới để tiếp tục',
+            2: '💡 Hãy chọn một trong các nút bên dưới để tiếp tục',
             3: '⚠️ Bạn đã gửi tin nhắn nhiều lần. Vui lòng đăng ký để sử dụng đầy đủ tính năng!',
             4: '🚫 Bạn đã bị tạm khóa 30 phút do gửi quá nhiều tin nhắn'
         },

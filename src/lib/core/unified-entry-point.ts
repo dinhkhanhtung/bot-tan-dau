@@ -44,24 +44,20 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Bước 3: KIỂM TRA SESSION TRƯỚC - ƯU TIÊN FLOW
+            // Bước 3: KIỂM TRA SESSION TRƯỚC - ƯU TIÊN FLOW (QUAN TRỌNG NHẤT)
             const session = await this.getUserSession(user.facebook_id)
             const currentFlow = session?.current_flow || null
 
+            console.log('🔍 Session check:', { currentFlow, session })
+
             // Nếu đang trong flow hợp lệ, xử lý flow trước, KHÔNG áp dụng chống spam
             if (currentFlow && ['registration', 'listing', 'search'].includes(currentFlow)) {
-                console.log('🔄 User đang trong flow:', currentFlow, '- Xử lý flow trước')
+                console.log('🔄 User đang trong flow:', currentFlow, '- Xử lý flow trước, BỎ QUA chống spam')
                 await this.handleFlowMessage(user, text, session)
                 return
             }
 
-            // Bước 4: XỬ LÝ FLOW NẾU USER ĐANG TRONG FLOW
-            if (session?.current_flow) {
-                await this.handleFlowMessage(user, text, session)
-                return
-            }
-
-            // Bước 5: XỬ LÝ TIN NHẮN THƯỜNG
+            // Bước 4: XỬ LÝ TIN NHẮN THƯỜNG
             if (isPostback && postback) {
                 await this.handlePostbackAction(user, postback)
             } else if (text) {
@@ -437,7 +433,7 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý new user text - CHỈ HIỂN THỊ MENU, KHÔNG TẠO SPAM
+     * Xử lý new user text - LOGIC THÔNG MINH
      */
     private static async handleNewUserText(user: any, text: string): Promise<void> {
         try {
@@ -448,7 +444,7 @@ export class UnifiedBotSystem {
             } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
                 await this.showSupportInfo(user)
             } else {
-                // CHỈ hiển thị menu, KHÔNG gửi thông báo lặp lại gây spam
+                // Xử lý tin nhắn thường
                 await this.showWelcomeMessage(user)
             }
         } catch (error) {
@@ -537,69 +533,73 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Show welcome message cho new user - CHỈ HIỂN THỊ 1 LẦN
+     * Show welcome message cho new user - LOGIC THÔNG MINH
      */
     private static async showWelcomeMessage(user: any): Promise<void> {
         try {
-            // Kiểm tra xem đã gửi thông báo chào mừng chưa
+            // Kiểm tra trạng thái welcome
             const { supabaseAdmin } = await import('../supabase')
             const { data: existingUser } = await supabaseAdmin
                 .from('users')
-                .select('welcome_message_sent')
+                .select('welcome_message_sent, welcome_interaction_count')
                 .eq('facebook_id', user.facebook_id)
                 .single()
 
-            // Nếu đã gửi thông báo chào mừng rồi, CHỈ hiển thị menu, KHÔNG gửi thông báo
-            if (existingUser?.welcome_message_sent) {
+            const interactionCount = existingUser?.welcome_interaction_count || 0
+
+            // Lần đầu tiên - hiển thị welcome đầy đủ + menu
+            if (!existingUser?.welcome_message_sent) {
+                await sendTypingIndicator(user.facebook_id)
+
+                // Get Facebook name for personalized greeting
+                const { getFacebookDisplayName } = await import('../utils')
+                const facebookName = await getFacebookDisplayName(user.facebook_id)
+                const displayName = facebookName || 'bạn'
+
+                await sendMessage(user.facebook_id, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!`)
+                await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
+                await sendMessage(user.facebook_id, '🌟 Có thể bạn cũng muốn tham gia Tân Dậu - Hỗ Trợ Chéo')
+                await sendMessage(user.facebook_id, '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')
+
                 await sendQuickReply(
                     user.facebook_id,
-                    'Chọn chức năng:',
+                    'Bạn muốn:',
                     [
                         createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
                         createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
                         createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
                     ]
                 )
-                return
-            }
 
-            // Lần đầu tiên - gửi thông báo chào mừng đầy đủ
-            await sendTypingIndicator(user.facebook_id)
-
-            // Get Facebook name for personalized greeting
-            const { getFacebookDisplayName } = await import('../utils')
-            const facebookName = await getFacebookDisplayName(user.facebook_id)
-            const displayName = facebookName || 'bạn'
-
-            await sendMessage(user.facebook_id, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!`)
-            await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
-            await sendMessage(user.facebook_id, '🌟 Có thể bạn cũng muốn tham gia Tân Dậu - Hỗ Trợ Chéo')
-            await sendMessage(user.facebook_id, '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')
-
-            await sendQuickReply(
-                user.facebook_id,
-                'Bạn muốn:',
-                [
-                    createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
-                    createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
-                    createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
-                ]
-            )
-
-            // Đánh dấu đã gửi thông báo chào mừng
-            try {
+                // Đánh dấu đã gửi welcome và tăng interaction count
                 await supabaseAdmin
                     .from('users')
                     .upsert({
                         facebook_id: user.facebook_id,
                         welcome_message_sent: true,
+                        welcome_interaction_count: 1,
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
                     }, {
                         onConflict: 'facebook_id'
                     })
-            } catch (error) {
-                console.error('Error marking welcome message sent:', error)
+            }
+            // Lần thứ 2 trở đi - kiểm tra interaction
+            else {
+                const newCount = interactionCount + 1
+
+                // Lần 2+: Im lặng, ẩn menu hoàn toàn (user không quan tâm)
+                // Không gửi gì cả - im lặng
+                // User không quan tâm đến bot
+
+                // Tăng interaction count
+                await supabaseAdmin
+                    .from('users')
+                    .update({
+                        welcome_interaction_count: newCount,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('facebook_id', user.facebook_id)
             }
         } catch (error) {
             console.error('Error showing welcome message:', error)

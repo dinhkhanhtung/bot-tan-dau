@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS users (
     is_online BOOLEAN DEFAULT FALSE,
     last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     welcome_message_sent BOOLEAN DEFAULT FALSE,
+    welcome_interaction_count INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
