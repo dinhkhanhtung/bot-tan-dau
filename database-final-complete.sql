@@ -1,17 +1,17 @@
 -- ========================================
--- BOT Tân Dậu - Hỗ Trợ Chéo - COMPLETE DATABASE
+-- BOT Tân Dậu - DATABASE SETUP HOÀN CHỈNH
 -- ========================================
 -- Chạy file này 1 lần duy nhất trong Supabase SQL Editor
--- https://supabase.com/dashboard/project/oxornnooldwivlexsnkf/sql/44e6e180-2d37-4ab8-96ec-14407de7e662
+-- Bao gồm tất cả tables + welcome tracking + admin chat sessions
 
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ========================================
--- 0. CLEAN UP EXISTING TABLES
+-- 1. DROP EXISTING TABLES (Nếu có)
 -- ========================================
 
--- Drop existing tables in correct order (reverse dependency)
+DROP TABLE IF EXISTS admin_chat_sessions CASCADE;
 DROP TABLE IF EXISTS messages CASCADE;
 DROP TABLE IF EXISTS conversations CASCADE;
 DROP TABLE IF EXISTS listings CASCADE;
@@ -32,10 +32,10 @@ DROP TABLE IF EXISTS spam_logs CASCADE;
 DROP TABLE IF EXISTS admin_users CASCADE;
 
 -- ========================================
--- 1. MAIN TABLES
+-- 2. MAIN TABLES
 -- ========================================
 
--- Users table
+-- Users table (Đã thêm welcome_message_sent column)
 CREATE TABLE IF NOT EXISTS users (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     facebook_id VARCHAR(255) UNIQUE NOT NULL,
@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS users (
     social_links JSONB DEFAULT '{}',
     is_online BOOLEAN DEFAULT FALSE,
     last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    welcome_message_sent BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -91,7 +92,7 @@ CREATE TABLE IF NOT EXISTS conversations (
     UNIQUE(user1_id, user2_id, listing_id)
 );
 
--- Messages table (for conversations)
+-- Messages table
 CREATE TABLE IF NOT EXISTS messages (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
@@ -232,10 +233,10 @@ CREATE TABLE IF NOT EXISTS bot_sessions (
 );
 
 -- ========================================
--- 2. ANTI-SPAM TABLES
+-- 3. ANTI-SPAM TABLES
 -- ========================================
 
--- User messages table (for spam tracking)
+-- User messages table
 CREATE TABLE IF NOT EXISTS user_messages (
     id SERIAL PRIMARY KEY,
     user_id VARCHAR(255) NOT NULL,
@@ -267,7 +268,24 @@ CREATE TABLE IF NOT EXISTS admin_users (
 );
 
 -- ========================================
--- 3. INDEXES
+-- 4. NEW TABLES (Từ migration)
+-- ========================================
+
+-- Admin chat sessions table (MỚI)
+CREATE TABLE IF NOT EXISTS admin_chat_sessions (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    status VARCHAR(20) DEFAULT 'waiting' CHECK (status IN ('waiting', 'active', 'closed')),
+    admin_id VARCHAR(255),
+    started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    ended_at TIMESTAMP WITH TIME ZONE,
+    last_message_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ========================================
+-- 5. INDEXES
 -- ========================================
 
 -- Users indexes
@@ -275,73 +293,28 @@ CREATE INDEX IF NOT EXISTS idx_users_facebook_id ON users(facebook_id);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 CREATE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code);
 CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
-CREATE INDEX IF NOT EXISTS idx_users_membership_expires_at ON users(membership_expires_at);
+CREATE INDEX IF NOT EXISTS idx_users_welcome_message_sent ON users(welcome_message_sent);
 
 -- Listings indexes
 CREATE INDEX IF NOT EXISTS idx_listings_user_id ON listings(user_id);
 CREATE INDEX IF NOT EXISTS idx_listings_category ON listings(category);
 CREATE INDEX IF NOT EXISTS idx_listings_status ON listings(status);
-CREATE INDEX IF NOT EXISTS idx_listings_is_featured ON listings(is_featured);
-CREATE INDEX IF NOT EXISTS idx_listings_created_at ON listings(created_at);
 
 -- Conversations indexes
 CREATE INDEX IF NOT EXISTS idx_conversations_user1_id ON conversations(user1_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_user2_id ON conversations(user2_id);
-CREATE INDEX IF NOT EXISTS idx_conversations_listing_id ON conversations(listing_id);
 
 -- Messages indexes
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id);
-CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
 
--- Payments indexes
-CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
-CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
-CREATE INDEX IF NOT EXISTS idx_payments_created_at ON payments(created_at);
-
--- Ratings indexes
-CREATE INDEX IF NOT EXISTS idx_ratings_reviewer_id ON ratings(reviewer_id);
-CREATE INDEX IF NOT EXISTS idx_ratings_reviewee_id ON ratings(reviewee_id);
-
--- Events indexes
-CREATE INDEX IF NOT EXISTS idx_events_organizer_id ON events(organizer_id);
-CREATE INDEX IF NOT EXISTS idx_events_status ON events(status);
-CREATE INDEX IF NOT EXISTS idx_events_event_date ON events(event_date);
-
--- Notifications indexes
-CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
-CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
-CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
-
--- Ads indexes
-CREATE INDEX IF NOT EXISTS idx_ads_user_id ON ads(user_id);
-CREATE INDEX IF NOT EXISTS idx_ads_status ON ads(status);
-
--- Search requests indexes
-CREATE INDEX IF NOT EXISTS idx_search_requests_user_id ON search_requests(user_id);
-CREATE INDEX IF NOT EXISTS idx_search_requests_status ON search_requests(status);
-
--- Referrals indexes
-CREATE INDEX IF NOT EXISTS idx_referrals_referrer_id ON referrals(referrer_id);
-CREATE INDEX IF NOT EXISTS idx_referrals_referred_id ON referrals(referred_id);
-
--- Points indexes
-CREATE INDEX IF NOT EXISTS idx_user_points_user_id ON user_points(user_id);
-CREATE INDEX IF NOT EXISTS idx_point_transactions_user_id ON point_transactions(user_id);
-
--- Bot sessions indexes
-CREATE INDEX IF NOT EXISTS idx_bot_sessions_facebook_id ON bot_sessions(facebook_id);
-
--- Anti-spam indexes
-CREATE INDEX IF NOT EXISTS idx_user_messages_user_id ON user_messages(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_messages_created_at ON user_messages(created_at);
-CREATE INDEX IF NOT EXISTS idx_spam_logs_user_id ON spam_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_spam_logs_blocked_at ON spam_logs(blocked_at);
-CREATE INDEX IF NOT EXISTS idx_admin_users_facebook_id ON admin_users(facebook_id);
-CREATE INDEX IF NOT EXISTS idx_admin_users_is_active ON admin_users(is_active);
+-- Admin chat sessions indexes (MỚI)
+CREATE INDEX IF NOT EXISTS idx_admin_chat_sessions_user_id ON admin_chat_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_chat_sessions_status ON admin_chat_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_admin_chat_sessions_admin_id ON admin_chat_sessions(admin_id);
 
 -- ========================================
--- 4. FUNCTIONS & TRIGGERS
+-- 6. TRIGGERS & FUNCTIONS
 -- ========================================
 
 -- Updated_at trigger function
@@ -353,70 +326,18 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Apply updated_at triggers
+-- Apply triggers
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_listings_updated_at BEFORE UPDATE ON listings
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_user_points_updated_at BEFORE UPDATE ON user_points
+CREATE TRIGGER update_admin_chat_sessions_updated_at BEFORE UPDATE ON admin_chat_sessions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_bot_sessions_updated_at BEFORE UPDATE ON bot_sessions
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Rating update function
-CREATE OR REPLACE FUNCTION update_user_rating()
-RETURNS TRIGGER AS $$
-BEGIN
-    UPDATE users 
-    SET rating = (
-        SELECT COALESCE(AVG(rating), 0) 
-        FROM ratings 
-        WHERE reviewee_id = NEW.reviewee_id
-    )
-    WHERE id = NEW.reviewee_id;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- Apply rating update trigger
-CREATE TRIGGER update_rating_after_insert AFTER INSERT ON ratings
-    FOR EACH ROW EXECUTE FUNCTION update_user_rating();
-
--- Points update function
-CREATE OR REPLACE FUNCTION update_user_points()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO user_points (user_id, points, level, updated_at)
-    VALUES (NEW.user_id, NEW.points, 
-            CASE 
-                WHEN NEW.points >= 1000 THEN 'Bạch kim'
-                WHEN NEW.points >= 500 THEN 'Vàng'
-                WHEN NEW.points >= 200 THEN 'Bạc'
-                ELSE 'Đồng'
-            END, NOW())
-    ON CONFLICT (user_id) 
-    DO UPDATE SET 
-        points = user_points.points + NEW.points,
-        level = CASE 
-            WHEN user_points.points + NEW.points >= 1000 THEN 'Bạch kim'
-            WHEN user_points.points + NEW.points >= 500 THEN 'Vàng'
-            WHEN user_points.points + NEW.points >= 200 THEN 'Bạc'
-            ELSE 'Đồng'
-        END,
-        updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- Apply points update trigger
-CREATE TRIGGER update_points_after_transaction AFTER INSERT ON point_transactions
-    FOR EACH ROW EXECUTE FUNCTION update_user_points();
 
 -- ========================================
--- 5. DEFAULT DATA
+-- 7. DEFAULT DATA
 -- ========================================
 
 -- Insert default admin user
@@ -424,18 +345,19 @@ INSERT INTO admin_users (facebook_id, name, role, permissions, is_active)
 VALUES ('31268544269455564', 'Default Admin', 'super_admin', '{"all": true}', true)
 ON CONFLICT (facebook_id) DO NOTHING;
 
+-- Update existing users to have welcome_message_sent = true
+UPDATE users SET welcome_message_sent = TRUE WHERE welcome_message_sent IS NULL OR welcome_message_sent = FALSE;
+
 -- ========================================
--- 6. VERIFICATION
+-- 8. VERIFICATION
 -- ========================================
 
--- Check all tables exist
-SELECT 'Database created successfully!' as status;
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public' 
+SELECT 'Database setup hoàn chỉnh!' as status;
+SELECT COUNT(*) as total_tables FROM information_schema.tables
+WHERE table_schema = 'public'
 AND table_name IN (
     'users', 'listings', 'conversations', 'messages', 'payments', 'ratings',
     'events', 'event_participants', 'notifications', 'ads', 'search_requests',
     'referrals', 'user_points', 'point_transactions', 'bot_sessions',
-    'user_messages', 'spam_logs', 'admin_users'
-) ORDER BY table_name;
-
+    'user_messages', 'spam_logs', 'admin_users', 'admin_chat_sessions'
+);
