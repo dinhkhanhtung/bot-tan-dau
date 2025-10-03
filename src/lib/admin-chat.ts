@@ -44,8 +44,7 @@ export async function startAdminChatSession(userId: string): Promise<{ success: 
             }
         }
 
-        // Notify all admins about new chat request
-        await notifyAdminsNewChatRequest(userId, newSession.id)
+
 
         return {
             success: true,
@@ -144,57 +143,7 @@ export async function updateLastMessageTime(sessionId: string): Promise<void> {
     }
 }
 
-// Notify admins about new chat request
-async function notifyAdminsNewChatRequest(userId: string, sessionId: string): Promise<void> {
-    try {
-        // Get user info
-        const { data: user } = await supabaseAdmin
-            .from('users')
-            .select('name, phone')
-            .eq('facebook_id', userId)
-            .single()
 
-        // Get all admin IDs
-        const adminIds = process.env.ADMIN_IDS || ''
-        const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
-
-        // Also get admins from database
-        const { data: dbAdmins } = await supabaseAdmin
-            .from('admin_users')
-            .select('facebook_id')
-            .eq('status', 'active')
-
-        const allAdmins = [...envAdmins, ...(dbAdmins?.map(a => a.facebook_id) || [])]
-        const uniqueAdmins = Array.from(new Set(allAdmins))
-
-        // Send notification to all admins
-        for (const adminId of uniqueAdmins) {
-            try {
-                await sendTypingIndicator(adminId)
-                await sendMessagesWithTyping(adminId, [
-                    '🔔 YÊU CẦU CHAT MỚI',
-                    `👤 User: ${user?.name || 'Unknown'}`,
-                    `📱 Phone: ${user?.phone || 'Unknown'}`,
-                    `🆔 Session: ${sessionId.slice(-8)}`
-                ])
-
-                await sendQuickReply(
-                    adminId,
-                    'Bạn muốn nhận chat này?',
-                    [
-                        createQuickReply('✅ NHẬN CHAT', `ADMIN_TAKE_CHAT_${sessionId}`),
-                        createQuickReply('👀 XEM CHI TIẾT', `ADMIN_VIEW_CHAT_${sessionId}`),
-                        createQuickReply('❌ BỎ QUA', 'ADMIN_IGNORE_CHAT')
-                    ]
-                )
-            } catch (error) {
-                console.error(`Error notifying admin ${adminId}:`, error)
-            }
-        }
-    } catch (error) {
-        console.error('Error notifying admins:', error)
-    }
-}
 
 // Handle user message in admin chat mode
 export async function handleUserMessageInAdminChat(userId: string, message: string): Promise<void> {

@@ -9,6 +9,7 @@ import {
     hideButtons
 } from './facebook-api'
 import { isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession, getFacebookDisplayName } from './utils'
+import { notificationManager, NotificationContext } from './notification-manager'
 import * as AdminHandlers from './handlers/admin-handlers'
 
 // Import handlers from modules
@@ -107,21 +108,25 @@ export async function handleMessage(user: any, text: string) {
                 return
             }
         } else {
-            // User is NOT in active flow - check trial/expiration status
+            // User is NOT in active flow - use smart notification system
             if (!userIsAdmin) {
-                // Check if user is expired
-                if (isExpiredUser(user.membership_expires_at)) {
-                    await PaymentHandlers.sendExpiredMessage(user.facebook_id)
-                    return
+                // Determine user behavior and chat type for smart notifications
+                const userBehavior = determineUserBehavior(user, text)
+                const chatType = determineChatType(user, currentFlow)
+
+                // Create notification context
+                const notificationContext: NotificationContext = {
+                    user,
+                    currentFlow,
+                    userBehavior,
+                    chatType,
+                    notificationCount: 0 // Will be calculated by notification manager
                 }
 
-                // Check if user is in trial and about to expire (only if not already handled by registration)
-                if (isTrialUser(user.membership_expires_at)) {
-                    const daysLeft = daysUntilExpiry(user.membership_expires_at!)
-                    if (daysLeft <= 2) {
-                        await PaymentHandlers.sendTrialExpiringMessage(user.facebook_id, daysLeft)
-                        return // Exit early to prevent further processing
-                    }
+                // Check if notification should be shown
+                if (await notificationManager.shouldShowNotification(notificationContext)) {
+                    await notificationManager.showNotification(notificationContext)
+                    return // Exit early to prevent further processing if notification was shown
                 }
             }
         }
@@ -680,7 +685,7 @@ async function showMainMenu(user: any) {
 export async function handleDefaultMessage(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
-    // Hide previous buttons first
+    // Hide previous buttons first to avoid button clutter
     await hideButtons(user.facebook_id)
 
     await sendMessage(user.facebook_id, '👋 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
@@ -699,7 +704,7 @@ export async function handleDefaultMessage(user: any) {
 export async function handleDefaultMessageRegistered(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
-    // Hide previous buttons first
+    // Hide previous buttons first to avoid button clutter
     await hideButtons(user.facebook_id)
 
     await sendMessage(user.facebook_id, '👋 Chào mừng bạn trở lại!')
@@ -832,4 +837,35 @@ export async function handleExitBot(user: any) {
             createQuickReply('ℹ️ TÌM HIỂU', 'INFO')
         ]
     )
+}
+
+// Helper functions for notification system
+function determineUserBehavior(user: any, text: string): 'active' | 'passive' | 'new' {
+    // Check if user is new (no registration data)
+    if (!user.name || user.name === 'User' || user.phone?.startsWith('temp_')) {
+        return 'new'
+    }
+
+    // Check if user is actively engaging
+    if (text && text.length > 10) {
+        return 'active'
+    }
+
+    // Default to passive
+    return 'passive'
+}
+
+function determineChatType(user: any, currentFlow: string | null | undefined): 'bot' | 'admin' | 'regular' {
+    // If user is in a flow, it's regular chat
+    if (currentFlow) {
+        return 'regular'
+    }
+
+    // Check if user is admin
+    if (user.is_admin) {
+        return 'admin'
+    }
+
+    // Default to bot chat
+    return 'bot'
 }

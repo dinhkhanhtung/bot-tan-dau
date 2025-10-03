@@ -5,7 +5,8 @@ import {
     sendQuickReply,
     sendQuickReplyNoTyping,
     createQuickReply,
-    sendMessagesWithTyping
+    sendMessagesWithTyping,
+    hideButtons
 } from '../facebook-api'
 import { formatCurrency, formatNumber, generateId } from '../utils'
 import { generateHoroscope } from '../core/ai-manager'
@@ -13,6 +14,9 @@ import { generateHoroscope } from '../core/ai-manager'
 // Handle horoscope
 export async function handleHoroscope(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
 
     const horoscope = generateHoroscope()
 
@@ -46,6 +50,9 @@ export async function handleHoroscope(user: any) {
 // Handle horoscope detail
 export async function handleHoroscopeDetail(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
 
     const horoscope = generateHoroscope()
 
@@ -155,6 +162,9 @@ export async function handleHoroscopeMonth(user: any) {
 // Handle points system
 export async function handlePoints(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
 
     try {
         // Get user points
@@ -307,6 +317,9 @@ export async function handleSupportAdmin(user: any) {
 export async function handleStartAdminChat(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
+
     try {
         const { startAdminChatSession } = await import('../admin-chat')
         const result = await startAdminChatSession(user.facebook_id)
@@ -350,6 +363,9 @@ export async function handleStartAdminChat(user: any) {
 export async function handleReferral(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
+
     const referralCode = user.referral_code || `TD1981-${user.facebook_id.slice(-6)}`
 
     await sendMessagesWithTyping(user.facebook_id, [
@@ -374,6 +390,9 @@ export async function handleReferral(user: any) {
 // Handle referral share
 export async function handleReferralShare(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
 
     const referralCode = user.referral_code || `TD1981-${user.facebook_id.slice(-6)}`
     const shareMessage = `Chào bạn! Tôi đang sử dụng BOT Tân Dậu - Hỗ Trợ Chéo - nơi kết nối mua bán cho cộng đồng Tân Dậu - Hỗ Trợ Chéo. Bạn có muốn tham gia không? Mã giới thiệu: ${referralCode}`
@@ -400,6 +419,9 @@ export async function handleReferralShare(user: any) {
 // Handle referral stats
 export async function handleReferralStats(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
 
     try {
         // Get referral statistics
@@ -458,6 +480,9 @@ export async function handleReferralStats(user: any) {
 // Handle referral withdraw
 export async function handleReferralWithdraw(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
 
     try {
         // Get pending rewards
@@ -567,6 +592,9 @@ export async function handleHoroscopeTomorrow(user: any) {
 
     await sendTypingIndicator(user.facebook_id)
 
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
+
     await sendMessagesWithTyping(user.facebook_id, [
         '🔮 TỬ VI NGÀY MAI',
         `📅 ${tomorrow.toLocaleDateString('vi-VN')}`,
@@ -596,6 +624,9 @@ export async function handleHoroscopeTomorrow(user: any) {
 // Handle points rewards badges
 export async function handlePointsRewardsBadges(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
 
     try {
         // Get available badges
@@ -648,6 +679,9 @@ export async function handlePointsRewardsBadges(user: any) {
 // Handle points rewards gifts
 export async function handlePointsRewardsGifts(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
 
     try {
         // Get available gifts
@@ -717,6 +751,9 @@ export async function handlePointsRewardsGames(user: any) {
 export async function handlePointsHistory(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
+
     try {
         // Get user's points history
         const { data: transactions, error } = await supabaseAdmin
@@ -772,6 +809,9 @@ export async function handlePointsHistory(user: any) {
 export async function handlePointsAchievements(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
+
     try {
         // Get user's achievements
         const { data: achievements, error } = await supabaseAdmin
@@ -824,6 +864,9 @@ export async function handlePointsAchievements(user: any) {
 // Handle points leaderboard
 export async function handlePointsLeaderboard(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
 
     try {
         // Get top users by points
@@ -878,6 +921,9 @@ export async function handlePointsLeaderboard(user: any) {
 // Handle personal statistics
 export async function handlePersonalStats(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
 
     try {
         // Get user's listings stats
@@ -948,6 +994,9 @@ export async function handlePersonalStats(user: any) {
 // Handle personal stats detail
 export async function handlePersonalStatsDetail(user: any) {
     await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
 
     try {
         // Get detailed stats
