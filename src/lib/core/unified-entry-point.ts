@@ -463,7 +463,7 @@ export class UnifiedBotSystem {
             // KIỂM TRA SPAM TRƯỚC - SỬ DỤNG ANTI-SPAM SYSTEM
             const { handleAntiSpam } = await import('../anti-spam')
             const spamResult = await handleAntiSpam(user.facebook_id, text, user.status || 'new', null)
-            
+
             if (spamResult.block) {
                 console.log('User bị block do spam:', spamResult.message || 'Spam detected')
                 return
@@ -475,16 +475,16 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Xử lý các lệnh đặc biệt
-            if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
-                await this.startRegistration(user)
-            } else if (text.includes('thông tin') || text.includes('THÔNG TIN')) {
-                await this.showBotInfo(user)
-            } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
-                await this.showSupportInfo(user)
-            } else {
-                // Xử lý tin nhắn thường - CHỈ nếu chưa bị spam check xử lý
-                if (spamResult.action === 'none' && !spamResult.message) {
+            // Xử lý các lệnh đặc biệt - CHỈ khi chưa bị spam check xử lý
+            if (spamResult.action === 'none' && !spamResult.message) {
+                if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
+                    await this.startRegistration(user)
+                } else if (text.includes('thông tin') || text.includes('THÔNG TIN')) {
+                    await this.showBotInfo(user)
+                } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
+                    await this.showSupportInfo(user)
+                } else {
+                    // Xử lý tin nhắn thường - CHỈ nếu chưa bị spam check xử lý
                     await this.showWelcomeMessage(user)
                 }
             }
@@ -696,9 +696,10 @@ export class UnifiedBotSystem {
                     console.warn('Failed to get Facebook display name, using fallback:', error instanceof Error ? error.message : String(error))
                 }
 
-                await sendMessage(user.facebook_id, `Chào mừng ${displayName} ghé thăm Đinh Khánh Tùng:`)
-                await sendMessage(user.facebook_id, 'Hôm nay mình có thể giúp gì cho bạn')
-                await sendMessage(user.facebook_id, 'Có thể bạn cũng muốn tham gia cộng đồng Tân Dậu - Hỗ Trợ Chéo, Nơi Tân Dậu cùng nhau kết nối - cùng nhau thịnh vượng. Bạn có thể...')
+                await sendMessage(user.facebook_id, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!`)
+                await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
+                await sendMessage(user.facebook_id, '🌟 Có thể bạn cũng muốn tham gia Tân Dậu - Hỗ Trợ Chéo')
+                await sendMessage(user.facebook_id, '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')
 
                 await sendQuickReply(
                     user.facebook_id,
