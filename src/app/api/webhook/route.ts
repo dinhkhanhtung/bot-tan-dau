@@ -149,6 +149,12 @@ async function handleMessageEvent(event: any) {
             return
         }
 
+        // QUAN TRỌNG: Nếu anti-spam đã xử lý tin nhắn (gửi welcome), KHÔNG gọi UnifiedBotSystem
+        if (spamCheck.message && spamCheck.action === 'none') {
+            console.log('Anti-spam đã xử lý tin nhắn, không gọi UnifiedBotSystem')
+            return
+        }
+
         // Send warning if needed
         if (spamCheck.action === 'warning' && spamCheck.message) {
             const { sendMessage } = await import('@/lib/facebook-api')
