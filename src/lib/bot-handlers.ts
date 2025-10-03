@@ -84,7 +84,8 @@ export async function handleMessage(user: any, text: string) {
 
         // Check if user is in any active flow - OPTIMIZED for faster response
         const sessionData = await getBotSession(user.facebook_id)
-        const currentFlow = sessionData?.session_data?.current_flow
+        const session = await import('./core/session-manager').then(m => m.sessionManager.getSession(user.facebook_id))
+        const currentFlow = session?.current_flow || null
 
         if (currentFlow) {
             // User is in an active flow - check if they want to quit current flow

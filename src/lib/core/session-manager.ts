@@ -45,7 +45,12 @@ export class SessionManager {
      */
     async getSession(facebookId: string): Promise<SessionData | null> {
         const session = await getBotSession(facebookId)
-        return session?.session_data || null
+        // Normalize session data structure for consistency
+        if (!session) return null
+
+        // Handle both possible structures: session_data or direct session data
+        const sessionData = session.session_data || session
+        return sessionData || null
     }
 
     /**

@@ -9,7 +9,7 @@ import {
     hideButtons
 } from '../facebook-api'
 import { isTrialUser, isExpiredUser, daysUntilExpiry, getFacebookDisplayName, updateBotSession, getBotSession } from '../utils'
-import { sessionManager } from './session-manager'
+import { sessionManager, SessionManager } from './session-manager'
 
 // Import flow handlers
 import {
@@ -41,6 +41,7 @@ export class MessageRouter {
     private paymentFlow: PaymentFlow
     private utilityFlow: UtilityFlow
     private adminFlow: AdminFlow
+    private sessionManager: SessionManager
 
     constructor() {
         this.authFlow = new AuthFlow()
@@ -49,6 +50,7 @@ export class MessageRouter {
         this.paymentFlow = new PaymentFlow()
         this.utilityFlow = new UtilityFlow()
         this.adminFlow = new AdminFlow()
+        this.sessionManager = sessionManager
     }
 
     /**
@@ -93,7 +95,8 @@ export class MessageRouter {
             }
 
             // Check if user is in an active flow
-            const currentFlow = session && session.session_data ? session.session_data.current_flow : null
+            const sessionData = await this.sessionManager.getSession(user.facebook_id)
+            const currentFlow = sessionData?.current_flow || null
 
             if (currentFlow) {
                 // Handle flow cancellation
@@ -279,7 +282,8 @@ export class MessageRouter {
         const userIsAdmin = await this.checkAdminStatus(user.facebook_id)
         if (!userIsAdmin) {
             const session = await getBotSession(user.facebook_id)
-            const currentFlow = session?.session_data?.current_flow
+            const sessionData = await this.sessionManager.getSession(user.facebook_id)
+            const currentFlow = sessionData?.current_flow || null
 
             if (currentFlow && !this.isFlowAllowedAction(postback, currentFlow)) {
                 await this.sendFlowRestrictionMessage(user.facebook_id, currentFlow)

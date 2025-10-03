@@ -251,7 +251,8 @@ export async function isUserBlocked(facebookId: string): Promise<boolean> {
         const sessionData = await getBotSession(facebookId)
 
         // Handle both possible session data structures
-        const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow
+    const session = await import('./core/session-manager').then(m => m.sessionManager.getSession(facebookId))
+    const currentFlow = session?.current_flow || null
 
         if (currentFlow) {
             // Don't block users during active flows as they need to type information

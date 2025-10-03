@@ -18,6 +18,7 @@ export class AuthFlow {
 
         // Check if user is admin first
         const { isAdmin } = await import('../handlers/admin-handlers')
+        const { sessionManager } = await import('../core/session-manager')
         const userIsAdmin = await isAdmin(user.facebook_id)
 
         if (userIsAdmin) {
