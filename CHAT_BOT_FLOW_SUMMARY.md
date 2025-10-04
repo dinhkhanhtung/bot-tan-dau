@@ -53,9 +53,7 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 
 ### **User chưa trong Bot Mode:**
 1. **Tin nhắn 1**: 
-   - "🎉 Chào bạn ghé thăm Tùng!"
-   - "👋 Hôm nay mình có thể giúp gì cho bạn?"
-   - "🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới."
+   - "🎉 Chào bạn ghé thăm Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?\n🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới."
    - Nút "🤖 CHAT BOT"
 2. **Tin nhắn 2**: 
    - "💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!"
@@ -92,9 +90,7 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 ## Cách test
 
 1. **Lần 1**: Gửi tin nhắn thường → 
-   - "🎉 Chào bạn ghé thăm Tùng!"
-   - "👋 Hôm nay mình có thể giúp gì cho bạn?"
-   - "🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới."
+   - "🎉 Chào bạn ghé thăm Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?\n🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới."
    - Nút "🤖 CHAT BOT"
 2. **Lần 2**: Gửi tin nhắn thường → 
    - "💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!"

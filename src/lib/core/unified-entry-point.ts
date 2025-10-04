@@ -525,11 +525,12 @@ export class UnifiedBotSystem {
 
                 if (currentCount === 1) {
                     console.log(`🎯 Executing count=1 logic for ${user.facebook_id}`)
-                    // Tin nhắn đầu tiên - chào mừng + nút "Chat Bot"
+                    // Tin nhắn đầu tiên - chào mừng + nút "Chat Bot" (gộp thành 1 tin)
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
-                    await sendMessage(user.facebook_id, '🎉 Chào bạn ghé thăm Tùng!')
-                    await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
-                    await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
+                    
+                    // Gộp 3 tin nhắn thành 1
+                    const welcomeMessage = `🎉 Chào bạn ghé thăm Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?\n🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.`
+                    await sendMessage(user.facebook_id, welcomeMessage)
 
                     await sendQuickReply(
                         user.facebook_id,
