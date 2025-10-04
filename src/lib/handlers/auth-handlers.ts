@@ -20,8 +20,9 @@ import {
     getTrialNotificationMessage
 } from '../utils'
 
-
-// Handle registration flow - OPTIMIZED VERSION
+/**
+ * Handle registration flow - Optimized version
+ */
 export async function handleRegistration(user: any) {
     await sendTypingIndicator(user.facebook_id)
 

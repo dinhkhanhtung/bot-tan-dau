@@ -7,11 +7,15 @@ import { getUserByFacebookId, getBotSession, updateBotSession, getBotStatus } fr
 import { welcomeService, WelcomeType } from '../welcome-service'
 import { messageProcessor } from './message-processor'
 
-// Unified Bot System - Hệ thống bot thống nhất, thay thế cả Unified Entry Point và Message Router
+/**
+ * Unified Bot System - Main entry point for bot message processing
+ * Handles all incoming messages with proper routing and flow management
+ */
 export class UnifiedBotSystem {
 
     /**
-     * Xử lý TẤT CẢ tin nhắn - đây là điểm vào DUY NHẤT
+     * Main entry point for processing all incoming messages
+     * This is the single entry point for message handling with proper routing and flow management
      */
     static async handleMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
         const startTime = Date.now()
@@ -24,41 +28,34 @@ export class UnifiedBotSystem {
                 postback: postback
             })
 
-            // Bước 1: KIỂM TRA BOT STATUS
+            // Step 1: Check bot status
             const botStatus = await getBotStatus()
             if (botStatus === 'stopped') {
                 logger.info('Bot is stopped, ignoring message', { facebook_id: user.facebook_id })
                 return
             }
 
-            // Bước 2: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất) - TIN NHẮN TỪ FANPAGE = ADMIN
-            if (user.facebook_id === process.env.FACEBOOK_PAGE_ID) {
-                logger.info('Admin message from fanpage detected', { facebook_id: user.facebook_id })
-                await this.handleAdminMessage(user, text, isPostback, postback)
-                return
-            }
-
-            // Bước 3: KIỂM TRA ADMIN CHAT MODE
+            // Step 2: Check if user is in admin chat mode
             const isInAdminChat = await this.checkAdminChatMode(user.facebook_id)
             if (isInAdminChat) {
                 await sendMessage(user.facebook_id, '💬 Bạn đang trong chế độ chat với admin. Bot sẽ tạm dừng để admin có thể hỗ trợ bạn trực tiếp.')
                 return
             }
 
-            // Bước 4: KIỂM TRA SESSION TRƯỚC - ƯU TIÊN FLOW
+            // Step 3: Check user session and prioritize active flows
             const session = await this.getUserSession(user.facebook_id)
             const currentFlow = session?.current_flow || null
 
             logger.debug('Session check', { currentFlow, session })
 
-            // Nếu đang trong flow hợp lệ, xử lý flow trước
+            // If user is in an active flow, handle flow first
             if (currentFlow && ['registration', 'listing', 'search'].includes(currentFlow)) {
                 logger.info('User in active flow', { currentFlow, facebook_id: user.facebook_id })
                 await this.handleFlowMessage(user, text, session)
                 return
             }
 
-            // Bước 5: XỬ LÝ TIN NHẮN THƯỜNG
+            // Step 4: Handle regular message
             if (isPostback && postback) {
                 await this.handlePostbackAction(user, postback)
             } else if (text) {
@@ -151,92 +148,25 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý tin nhắn của admin
+     * Xử lý tin nhắn của admin - ĐÃ LOẠI BỎ
+     * TẤT CẢ QUẢN LÝ BÂY GIỜ QUA TRANG WEB ADMIN
      */
     private static async handleAdminMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
-        try {
-            // Kiểm tra admin có đang trong cuộc trò chuyện không
-            const { isUserInAdminChat } = await import('../admin-chat')
-            const isInAdminChat = await isUserInAdminChat(user.facebook_id)
-
-            if (isInAdminChat) {
-                // Admin đang trong cuộc trò chuyện - xử lý theo chat mode
-                if (isPostback && postback) {
-                    await this.handleAdminPostback(user, postback)
-                } else if (text) {
-                    await this.handleAdminInChatMode(user, text)
-                } else {
-                    // Admin không có tin nhắn - hiện admin menu
-                    const { getActiveAdminChatSession } = await import('../admin-chat')
-                    const session = await getActiveAdminChatSession(user.facebook_id)
-                    if (session) {
-                        await this.showAdminChatMenu(user, session)
-                    } else {
-                        await this.showAdminDashboard(user)
-                    }
-                }
-            } else {
-                // Admin không trong cuộc trò chuyện - TỰ ĐỘNG TẠO ADMIN CHAT SESSION
-                console.log('🔧 Admin not in chat mode, creating new session for:', user.facebook_id)
-
-                // Lấy user_id từ cuộc trò chuyện hiện tại (giả sử là user cuối cùng admin chat)
-                const adminChatModule = await import('../admin-chat')
-                const recentUser = await adminChatModule.getRecentUserForAdmin(user.facebook_id)
-
-                if (recentUser) {
-                    console.log('📋 Found recent user for admin:', recentUser)
-                    // Tạo admin chat session với user gần đây nhất
-                    const { startAdminChatSession, adminTakeOverChat } = await import('../admin-chat')
-                    const result = await startAdminChatSession(recentUser)
-
-                    if (result.success) {
-                        console.log('✅ Admin chat session created:', result.sessionId)
-                        const success = await adminTakeOverChat(result.sessionId!, user.facebook_id)
-                        if (success) {
-                            const session = {
-                                id: result.sessionId,
-                                user_id: recentUser
-                            }
-                            console.log('🎯 Admin took over chat session:', session.id)
-                            await this.showAdminChatMenu(user, session)
-                            return
-                        } else {
-                            console.error('❌ Failed to take over chat session')
-                        }
-                    } else {
-                        console.error('❌ Failed to create admin chat session:', result.error)
-                    }
-                } else {
-                    console.log('⚠️ No recent user found for admin')
-                }
-
-                // Fallback - hiện admin dashboard với thông báo
-                if (isPostback && postback) {
-                    await this.handleAdminPostback(user, postback)
-                } else if (text) {
-                    await this.handleAdminTextMessage(user, text)
-                } else {
-                    await this.showAdminDashboard(user)
-                }
-            }
-        } catch (error) {
-            console.error('Error handling admin message:', error)
-            await this.sendErrorMessage(user.facebook_id)
-        }
+        // ADMIN SYSTEM ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
+        // TẤT CẢ QUẢN LÝ QUA TRANG WEB: https://bot-tan-dau.vercel.app/admin/login
+        await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
+        await this.sendMessage(user.facebook_id, '📧 Liên hệ admin để được cấp tài khoản quản lý.')
     }
 
     /**
-     * Xử lý admin chat message
+     * Xử lý admin chat message - ĐÃ LOẠI BỎ
+     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
      */
     private static async handleAdminChatMessage(user: any, text: string): Promise<void> {
-        try {
-            const { handleUserMessageInAdminChat } = await import('../admin-chat')
-            if (text) {
-                await handleUserMessageInAdminChat(user.facebook_id, text)
-            }
-        } catch (error) {
-            console.error('Error handling admin chat message:', error)
-        }
+        // ADMIN CHAT ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
+        await this.sendMessage(user.facebook_id, '🔧 Hệ thống chat admin đã được chuyển sang trang web.')
+        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
     }
 
     /**
@@ -484,153 +414,23 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý admin trong cuộc trò chuyện với user - CẢI THIỆN ĐỂ LUÔN HIỂN THỊ MENU
+     * Xử lý admin trong cuộc trò chuyện với user - ĐÃ LOẠI BỎ
+     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
      */
     private static async handleAdminInChatMode(user: any, text: string): Promise<void> {
-        try {
-            console.log('💬 Admin sending message in chat mode:', user.facebook_id, 'Text:', text)
-
-            // Lấy thông tin cuộc trò chuyện admin
-            const { getActiveAdminChatSession } = await import('../admin-chat')
-            const session = await getActiveAdminChatSession(user.facebook_id)
-
-            if (!session) {
-                console.error('❌ No active session found for admin:', user.facebook_id)
-                await this.showAdminDashboard(user)
-                return
-            }
-
-            console.log('✅ Found active session:', session.id, 'User:', session.user_id)
-
-            // Gửi tin nhắn trực tiếp cho user
-            const { sendMessage } = await import('../facebook-api')
-            await sendMessage(session.user_id, `👨‍💼 Admin: ${text}`)
-            console.log('✅ Message sent to user:', session.user_id)
-
-            // Cập nhật thời gian tin nhắn cuối
-            try {
-                const { updateLastMessageTime } = await import('../admin-chat')
-                await updateLastMessageTime(session.id)
-                console.log('✅ Updated last message time for session:', session.id)
-            } catch (error) {
-                console.error('❌ Error updating last message time:', error)
-            }
-
-            // LUÔN hiện admin menu cho admin (không cần gõ gì) - ĐẢM BẢO LUÔN HIỂN THỊ
-            console.log('🔧 Showing admin menu after message...')
-            await this.showAdminChatMenu(user, session)
-
-        } catch (error) {
-            console.error('❌ Error handling admin in chat mode:', error)
-            try {
-                await this.showAdminDashboard(user)
-            } catch (dashboardError) {
-                console.error('❌ Cannot show dashboard either:', dashboardError)
-            }
-        }
+        // ADMIN CHAT ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
+        await this.sendMessage(user.facebook_id, '🔧 Hệ thống chat admin đã được chuyển sang trang web.')
+        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
     }
 
     /**
-     * Hiện admin menu trong cuộc trò chuyện - CẢI THIỆN ĐỂ LUÔN HIỂN THỊ NÚT CHỨC NĂNG
+     * Hiện admin menu trong cuộc trò chuyện - ĐÃ LOẠI BỎ
+     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
      */
     private static async showAdminChatMenu(user: any, session: any): Promise<void> {
-        try {
-            console.log('🔧 Showing admin chat menu for:', user.facebook_id, 'Session:', session?.id)
-
-            const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
-
-            // Đảm bảo session tồn tại
-            if (!session || !session.user_id) {
-                console.error('❌ Invalid session in showAdminChatMenu:', session)
-                await sendMessage(user.facebook_id, '❌ Lỗi session không hợp lệ')
-                return
-            }
-
-            // Lấy thông tin user với error handling tốt hơn
-            let chatUser = null
-            try {
-                const { supabaseAdmin } = await import('../supabase')
-                const { data: userData, error: userError } = await supabaseAdmin
-                    .from('users')
-                    .select('name, phone, status, membership_expires_at')
-                    .eq('facebook_id', session.user_id)
-                    .single()
-
-                if (userError) {
-                    console.error('Error fetching user data:', userError)
-                } else {
-                    chatUser = userData
-                }
-            } catch (error) {
-                console.error('Error in user data fetch:', error)
-            }
-
-            // Hiện thông tin user cho admin (có fallback)
-            const userName = chatUser?.name || 'Unknown'
-            const userPhone = chatUser?.phone || 'N/A'
-            await sendMessage(user.facebook_id, `💬 Đang chat với: ${userName} (${session.user_id})`)
-            await sendMessage(user.facebook_id, `📱 SĐT: ${userPhone}`)
-
-            // ĐẢM BẢO LUÔN CÓ NÚT CHỨC NĂNG CHO ADMIN - BAO GỒM DUYỆT THANH TOÁN
-            const adminMenuOptions = [
-                // Các nút cơ bản
-                createQuickReply('🚀 GỬI ĐĂNG KÝ', `ADMIN_SEND_REGISTER_${session.user_id}`),
-                createQuickReply('💰 GỬI THANH TOÁN', `ADMIN_SEND_PAYMENT_${session.user_id}`),
-                createQuickReply('ℹ️ GỬI THÔNG TIN', `ADMIN_SEND_INFO_${session.user_id}`),
-                createQuickReply('💬 GỬI HỖ TRỢ', `ADMIN_SEND_SUPPORT_${session.user_id}`),
-
-                // Các nút quản lý user
-                createQuickReply('👤 XEM USER INFO', `ADMIN_USER_INFO_${session.user_id}`),
-                createQuickReply('📊 XEM LỊCH SỬ', `ADMIN_USER_HISTORY_${session.user_id}`),
-                createQuickReply('📤 GỬI LINK', `ADMIN_SEND_LINK_${session.user_id}`),
-                createQuickReply('🔔 GỬI THÔNG BÁO', `ADMIN_SEND_NOTIFICATION_${session.user_id}`),
-
-                // Các nút QUAN TRỌNG - DUYỆT THANH TOÁN
-                createQuickReply('✅ DUYỆT THANH TOÁN', `ADMIN_APPROVE_USER_${session.user_id}`),
-                createQuickReply('❌ TỪ CHỐI THANH TOÁN', `ADMIN_REJECT_USER_${session.user_id}`),
-                createQuickReply('💳 XEM THANH TOÁN', `ADMIN_VIEW_PAYMENTS_${session.user_id}`),
-                createQuickReply('📋 DUYỆT HÀNG LOẠT', 'ADMIN_BULK_APPROVE'),
-
-                // Các nút hệ thống
-                createQuickReply('❌ KẾT THÚC CHAT', `ADMIN_END_CHAT_${session.id}`),
-                createQuickReply('🏠 DASHBOARD', 'ADMIN')
-            ]
-
-            // Gửi menu với error handling
-            try {
-                await sendQuickReply(
-                    user.facebook_id,
-                    '🔧 ADMIN MENU - Chọn chức năng:',
-                    adminMenuOptions
-                )
-                console.log('✅ Admin menu sent successfully to:', user.facebook_id)
-            } catch (error) {
-                console.error('❌ Error sending admin menu:', error)
-                // Thử gửi lại với ít nút hơn nếu có lỗi
-                try {
-                    const basicOptions = [
-                        createQuickReply('🚀 ĐĂNG KÝ', `ADMIN_SEND_REGISTER_${session.user_id}`),
-                        createQuickReply('💰 THANH TOÁN', `ADMIN_SEND_PAYMENT_${session.user_id}`),
-                        createQuickReply('❌ KẾT THÚC', `ADMIN_END_CHAT_${session.id}`),
-                        createQuickReply('🏠 DASHBOARD', 'ADMIN')
-                    ]
-                    await sendQuickReply(user.facebook_id, '🔧 ADMIN MENU:', basicOptions)
-                    console.log('✅ Basic admin menu sent as fallback')
-                } catch (fallbackError) {
-                    console.error('❌ Even basic menu failed:', fallbackError)
-                    await sendMessage(user.facebook_id, '❌ Không thể hiển thị menu. Vui lòng thử lại.')
-                }
-            }
-
-        } catch (error) {
-            console.error('❌ Critical error in showAdminChatMenu:', error)
-            try {
-                const { sendMessage } = await import('../facebook-api')
-                await sendMessage(user.facebook_id, '❌ Lỗi hệ thống khi hiển thị menu admin')
-            } catch (msgError) {
-                console.error('❌ Cannot even send error message:', msgError)
-            }
-        }
+        // ADMIN CHAT MENU ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
+        await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
     }
 
     /**
@@ -889,7 +689,7 @@ export class UnifiedBotSystem {
             const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
 
             await sendMessage(user.facebook_id, '💬 LIÊN HỆ HỖ TRỢ')
-            await sendMessage(user.facebook_id, 'Để được hỗ trợ, vui lòng liên hệ:\n📞 Hotline: 0901 234 567\n📧 Email: admin@tandau1981.com\n⏰ Thời gian: 8:00 - 22:00')
+            await sendMessage(user.facebook_id, 'Để được hỗ trợ, vui lòng liên hệ:\n📞 Hotline: 0901 234 567\n📧 Email: dinhkhanhtung@outlook.com\n⏰ Thời gian: 8:00 - 22:00')
             await sendMessage(user.facebook_id, 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.')
 
             await sendQuickReply(
@@ -1164,125 +964,23 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý admin gửi nút cho user
+     * Xử lý admin gửi nút cho user - ĐÃ LOẠI BỎ
+     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
      */
     private static async handleAdminSendToUser(user: any, postback: string): Promise<void> {
-        try {
-            const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
-
-            // Lấy user_id từ postback
-            const userId = postback.split('_').pop()
-            if (!userId) {
-                await sendMessage(user.facebook_id, '❌ Không tìm thấy user ID')
-                return
-            }
-
-            // Xác định loại nút cần gửi
-            let buttonType = ''
-            let buttonText = ''
-            let buttonPayload = ''
-
-            if (postback.includes('REGISTER')) {
-                buttonType = 'ĐĂNG KÝ'
-                buttonText = '🚀 ĐĂNG KÝ THÀNH VIÊN'
-                buttonPayload = 'REGISTER'
-            } else if (postback.includes('PAYMENT')) {
-                buttonType = 'THANH TOÁN'
-                buttonText = '💰 THANH TOÁN'
-                buttonPayload = 'PAYMENT'
-            } else if (postback.includes('INFO')) {
-                buttonType = 'THÔNG TIN'
-                buttonText = 'ℹ️ THÔNG TIN'
-                buttonPayload = 'INFO'
-            } else if (postback.includes('SUPPORT')) {
-                buttonType = 'HỖ TRỢ'
-                buttonText = '💬 HỖ TRỢ'
-                buttonPayload = 'SUPPORT'
-            } else if (postback.includes('LINK')) {
-                buttonType = 'LINK ĐĂNG KÝ'
-                buttonText = '📤 LINK ĐĂNG KÝ'
-                buttonPayload = 'REGISTRATION_LINK'
-            } else if (postback.includes('NOTIFICATION')) {
-                buttonType = 'THÔNG BÁO'
-                buttonText = '🔔 THÔNG BÁO'
-                buttonPayload = 'NOTIFICATION'
-            }
-
-            // Gửi nút cho user
-            await sendQuickReply(
-                userId,
-                `👨‍💼 Admin gửi cho bạn:`,
-                [createQuickReply(buttonText, buttonPayload)]
-            )
-
-            // Thông báo cho admin
-            await sendMessage(user.facebook_id, `✅ Đã gửi nút "${buttonType}" cho user ${userId}`)
-
-            // Hiện lại admin menu
-            const { getActiveAdminChatSession } = await import('../admin-chat')
-            const session = await getActiveAdminChatSession(user.facebook_id)
-            if (session) {
-                await this.showAdminChatMenu(user, session)
-            }
-
-        } catch (error) {
-            console.error('Error sending button to user:', error)
-            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi gửi nút')
-        }
+        // ADMIN SEND TO USER ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
+        await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
     }
 
     /**
-     * Xử lý admin xem thông tin user
+     * Xử lý admin xem thông tin user - ĐÃ LOẠI BỎ
+     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
      */
     private static async handleAdminUserInfo(user: any, postback: string): Promise<void> {
-        try {
-            const { sendMessage } = await import('../facebook-api')
-
-            // Lấy user_id từ postback
-            const userId = postback.split('_').pop()
-            if (!userId) {
-                await sendMessage(user.facebook_id, '❌ Không tìm thấy user ID')
-                return
-            }
-
-            // Lấy thông tin user
-            const { supabaseAdmin } = await import('../supabase')
-            const { data: userInfo } = await supabaseAdmin
-                .from('users')
-                .select('*')
-                .eq('facebook_id', userId)
-                .single()
-
-            if (!userInfo) {
-                await sendMessage(user.facebook_id, '❌ Không tìm thấy thông tin user')
-                return
-            }
-
-            // Hiện thông tin user cho admin
-            const infoText = [
-                `👤 **THÔNG TIN USER**`,
-                `🆔 ID: ${userInfo.facebook_id}`,
-                `📛 Tên: ${userInfo.name || 'Chưa cập nhật'}`,
-                `📱 SĐT: ${userInfo.phone || 'Chưa cập nhật'}`,
-                `📊 Trạng thái: ${userInfo.status || 'Unknown'}`,
-                `💳 Hết hạn: ${userInfo.membership_expires_at ? new Date(userInfo.membership_expires_at).toLocaleDateString('vi-VN') : 'Chưa có'}`,
-                `📅 Tạo: ${new Date(userInfo.created_at).toLocaleDateString('vi-VN')}`,
-                `🔄 Cập nhật: ${new Date(userInfo.updated_at).toLocaleDateString('vi-VN')}`
-            ].join('\n')
-
-            await sendMessage(user.facebook_id, infoText)
-
-            // Hiện lại admin menu
-            const { getActiveAdminChatSession } = await import('../admin-chat')
-            const session = await getActiveAdminChatSession(user.facebook_id)
-            if (session) {
-                await this.showAdminChatMenu(user, session)
-            }
-
-        } catch (error) {
-            console.error('Error getting user info:', error)
-            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi lấy thông tin user')
-        }
+        // ADMIN USER INFO ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
+        await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
     }
 
     /**
@@ -1366,121 +1064,33 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý duyệt thanh toán cho user cụ thể
+     * Xử lý duyệt thanh toán cho user cụ thể - ĐÃ LOẠI BỎ
+     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
      */
     private static async handleAdminApproveUserPayment(adminUser: any, userId: string): Promise<void> {
-        try {
-            console.log('💰 Approving payment for user:', userId)
-
-            // Lấy thanh toán gần đây nhất của user
-            const { supabaseAdmin } = await import('../supabase')
-            const { data: payment, error } = await supabaseAdmin
-                .from('payments')
-                .select('*')
-                .eq('user_id', userId)
-                .eq('status', 'pending')
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single()
-
-            if (error || !payment) {
-                await sendMessage(adminUser.facebook_id, '❌ Không tìm thấy thanh toán chờ duyệt cho user này!')
-                return
-            }
-
-            // Sử dụng hàm duyệt thanh toán từ admin-handlers
-            const { handleAdminApprovePayment } = await import('../handlers/admin-handlers')
-            await handleAdminApprovePayment(adminUser, payment.id)
-
-        } catch (error) {
-            console.error('Error approving user payment:', error)
-            await sendMessage(adminUser.facebook_id, '❌ Có lỗi xảy ra khi duyệt thanh toán!')
-        }
+        // ADMIN PAYMENT ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
+        await this.sendMessage(adminUser.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+        await this.sendMessage(adminUser.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
     }
 
     /**
-     * Xử lý từ chối thanh toán cho user cụ thể
+     * Xử lý từ chối thanh toán cho user cụ thể - ĐÃ LOẠI BỎ
+     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
      */
     private static async handleAdminRejectUserPayment(adminUser: any, userId: string): Promise<void> {
-        try {
-            console.log('❌ Rejecting payment for user:', userId)
-
-            // Lấy thanh toán gần đây nhất của user
-            const { supabaseAdmin } = await import('../supabase')
-            const { data: payment, error } = await supabaseAdmin
-                .from('payments')
-                .select('*')
-                .eq('user_id', userId)
-                .eq('status', 'pending')
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single()
-
-            if (error || !payment) {
-                await sendMessage(adminUser.facebook_id, '❌ Không tìm thấy thanh toán chờ duyệt cho user này!')
-                return
-            }
-
-            // Sử dụng hàm từ chối thanh toán từ admin-handlers
-            const { handleAdminRejectPayment } = await import('../handlers/admin-handlers')
-            await handleAdminRejectPayment(adminUser, payment.id)
-
-        } catch (error) {
-            console.error('Error rejecting user payment:', error)
-            await sendMessage(adminUser.facebook_id, '❌ Có lỗi xảy ra khi từ chối thanh toán!')
-        }
+        // ADMIN PAYMENT REJECT ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
+        await this.sendMessage(adminUser.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+        await this.sendMessage(adminUser.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
     }
 
     /**
-     * Xử lý xem thanh toán của user cụ thể
+     * Xử lý xem thanh toán của user cụ thể - ĐÃ LOẠI BỎ
+     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
      */
     private static async handleAdminViewUserPayments(adminUser: any, userId: string): Promise<void> {
-        try {
-            console.log('💳 Viewing payments for user:', userId)
-
-            // Lấy thông tin thanh toán của user
-            const { supabaseAdmin } = await import('../supabase')
-            const { data: payments, error } = await supabaseAdmin
-                .from('payments')
-                .select('*')
-                .eq('user_id', userId)
-                .order('created_at', { ascending: false })
-                .limit(5)
-
-            if (error || !payments || payments.length === 0) {
-                await sendMessage(adminUser.facebook_id, '❌ Không tìm thấy lịch sử thanh toán cho user này!')
-                return
-            }
-
-            // Hiển thị danh sách thanh toán
-            await sendMessage(adminUser.facebook_id, `💳 LỊCH SỬ THANH TOÁN (${payments.length} giao dịch gần nhất):`)
-
-            for (const payment of payments) {
-                const status = payment.status === 'approved' ? '✅' : payment.status === 'rejected' ? '❌' : '⏳'
-                const date = new Date(payment.created_at).toLocaleDateString('vi-VN')
-                const amount = payment.amount ? `${Math.round(payment.amount / 1000)} ngày` : 'N/A'
-
-                await sendMessage(adminUser.facebook_id,
-                    `${status} ${amount} - ${date} (ID: ${payment.id.slice(-8)})`
-                )
-            }
-
-            // Hiển thị các nút hành động
-            await sendQuickReply(
-                adminUser.facebook_id,
-                'Chọn hành động:',
-                [
-                    createQuickReply('✅ DUYỆT CHỜ DUYỆT', `ADMIN_APPROVE_USER_${userId}`),
-                    createQuickReply('❌ TỪ CHỐI CHỜ DUYỆT', `ADMIN_REJECT_USER_${userId}`),
-                    createQuickReply('👤 XEM USER INFO', `ADMIN_USER_INFO_${userId}`),
-                    createQuickReply('🏠 DASHBOARD', 'ADMIN')
-                ]
-            )
-
-        } catch (error) {
-            console.error('Error viewing user payments:', error)
-            await sendMessage(adminUser.facebook_id, '❌ Có lỗi xảy ra khi xem thanh toán!')
-        }
+        // ADMIN VIEW PAYMENTS ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
+        await this.sendMessage(adminUser.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+        await this.sendMessage(adminUser.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
     }
 
 

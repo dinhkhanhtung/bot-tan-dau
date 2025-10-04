@@ -69,13 +69,13 @@ Bước 2/4: Số điện thoại
 
 ### **Bước 4: Nhập số điện thoại**
 ```
-User nhập SĐT: "0123456789"
+User nhập SĐT: "0982581222"
 ↓
 Bot typing... (2 giây)
 ↓
 Bot gửi:
 
-"✅ SĐT: 0123456789
+"✅ SĐT: 0982581222
 
 Bước 3/4: Vị trí
 📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:
@@ -119,7 +119,7 @@ Bot gửi:
 
 📱 Thông tin tài khoản:
 • Họ tên: Đinh Khánh Tùng
-• SĐT: 0123456789
+• SĐT: 0982581222
 • Vị trí: Hà Nội
 • Sinh nhật: 1981 (42 tuổi)
 • Mã giới thiệu: TD1981-{USER_ID}
@@ -587,7 +587,7 @@ Bot gửi:
 "💰 THANH TOÁN
 
 🏦 THÔNG TIN CHUYỂN KHOẢN:
-• STK: 0123456789
+• STK: 0982581222
 • Ngân hàng: Vietcombank
 • Chủ TK: BOT TÂN DẬU
 • Nội dung: TANDẬU [SĐT_CỦA_BẠN]
@@ -901,7 +901,7 @@ Bot gửi:
 • Tổng: 350,000đ
 
 🏦 THÔNG TIN CHUYỂN KHOẢN:
-• STK: 0123456789
+• STK: 0982581222
 • Ngân hàng: Vietcombank
 • Chủ TK: BOT TÂN DẬU
 • Nội dung: QUANGCAO [SĐT_CỦA_BẠN]
@@ -1049,7 +1049,7 @@ Bot gửi:
 • Thời gian: 24-48 giờ
 
 🏦 THÔNG TIN CHUYỂN KHOẢN:
-• STK: 0123456789
+• STK: 0982581222
 • Ngân hàng: Vietcombank
 • Chủ TK: BOT TÂN DẬU
 • Nội dung: TIMKIEM [SĐT_CỦA_BẠN]
@@ -1402,7 +1402,7 @@ Bot gửi:
 • Tên: Đinh Khánh Tùng
 • Sinh nhật: 1981 (42 tuổi)
 • Vị trí: Hà Nội
-• SĐT: 0123456789
+• SĐT: 0982581222
 • Email: minh@email.com
 
 [✏️ CHỈNH SỬA] [🔒 ĐỔI MẬT KHẨU] [📱 VỀ CÀI ĐẶT]"
@@ -1606,8 +1606,8 @@ Bot gửi:
 📍 Quán cà phê ABC, Q1, TP.HCM
 
 📱 Thông tin liên hệ:
-• Hotline: 0123456789
-• Email: event@tandau1981.com
+• Hotline: 0982581222
+• Email: dinhkhanhtung@outlook.com
 
 ⏰ Sẽ nhắc nhở trước 1 ngày
 🎯 Chúc bạn có trải nghiệm tuyệt vời!

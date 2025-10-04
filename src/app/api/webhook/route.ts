@@ -15,7 +15,7 @@ function verifySignature(payload: string, signature: string): boolean {
     return signature === `sha256=${expectedSignature}`
 }
 
-// Force rebuild - updated 2025-10-01
+// Webhook endpoint for Facebook Messenger Bot
 
 // Handle GET request (webhook verification)
 export async function GET(request: NextRequest) {
@@ -260,4 +260,3 @@ async function handlePostbackEvent(event: any) {
         logError(postbackError, { operation: 'postback_handling', event })
     }
 }
-

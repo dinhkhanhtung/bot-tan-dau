@@ -263,7 +263,7 @@ export async function handleEventRegistration(user: any, eventId: string) {
                 `🎉 ${event.title}`,
                 `📅 ${new Date(event.event_date).toLocaleDateString('vi-VN')} - ${event.time}`,
                 `📍 ${event.location}`,
-                '📱 Thông tin liên hệ:\n• Hotline: 0123456789\n• Email: event@tandau1981.com',
+                '📱 Thông tin liên hệ:\n• Hotline: 0982581222\n• Email: dinhkhanhtung@outlook.com',
                 '⏰ Sẽ nhắc nhở trước 1 ngày\n🎯 Chúc bạn có trải nghiệm tuyệt vời!'
             ])
         }

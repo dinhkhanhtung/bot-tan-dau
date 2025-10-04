@@ -1,6 +1,6 @@
 /**
  * Advanced Message Processor
- * Xử lý tin nhắn với pipeline tối ưu và circuit breaker
+ * Handles message processing with optimized pipeline and circuit breaker pattern
  */
 
 import { logger, logPerformance, logError } from '../logger'

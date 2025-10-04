@@ -89,7 +89,7 @@ export class CommunityFlow {
                     `🎉 ${event.title}`,
                     `📅 ${new Date(event.event_date).toLocaleDateString('vi-VN')} - ${event.time}`,
                     `📍 ${event.location}`,
-                    '📱 Thông tin liên hệ:\n• Hotline: 0123456789\n• Email: event@tandau1981.com',
+                    '📱 Thông tin liên hệ:\n• Hotline: 0982581222\n• Email: dinhkhanhtung@outlook.com',
                     welcomeMessage
                 ])
             }

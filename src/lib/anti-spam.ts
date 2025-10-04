@@ -1,14 +1,16 @@
 import { supabaseAdmin } from './supabase'
 
-// Hàm xác định trạng thái user
+/**
+ * Check if user is registered based on status
+ */
 export function isRegistered(userStatus: string): boolean {
     return userStatus === 'registered' || userStatus === 'trial' || userStatus === 'active';
 }
 
-// DEPRECATED: Welcome message logic moved to welcome-service.ts
-// This function is kept for backward compatibility but should not be used
-
-// Hàm gửi tin nhắn chào mừng khi user ấn nút "Chat Bot"
+/**
+ * Send welcome message when user clicks "Chat Bot" button
+ * @deprecated Welcome message logic moved to welcome-service.ts
+ */
 export async function sendChatBotWelcome(userId: string, userStatus: string): Promise<void> {
     const { sendQuickReply, createQuickReply } = await import('./facebook-api');
 
@@ -45,7 +47,7 @@ export async function sendChatBotWelcome(userId: string, userStatus: string): Pr
     }
 }
 
-// Spam detection configuration - THEO YÊU CẦU MỚI
+// Spam detection configuration
 const SPAM_CONFIG = {
     // User chưa đăng ký (xử lý nhẹ nhàng)
     UNREGISTERED: {

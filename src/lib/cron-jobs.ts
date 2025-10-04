@@ -1,6 +1,5 @@
 /**
- * Cron Jobs Service
- * Simplified cron jobs for production
+ * Cron Jobs Service - Automated background tasks
  */
 
 import { logger } from './logger'

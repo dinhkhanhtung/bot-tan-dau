@@ -306,7 +306,7 @@ export class PendingUserFlow {
                 '💬 LIÊN HỆ ADMIN',
                 'Để được hỗ trợ, vui lòng liên hệ:',
                 '📞 Hotline: 0901 234 567',
-                '📧 Email: admin@tandau1981.com',
+                '📧 Email: dinhkhanhtung@outlook.com',
                 '⏰ Thời gian: 8:00 - 22:00'
             ])
 

@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '../supabase'
 import { getBotSession } from '../utils'
 
-// Định nghĩa các loại user và trạng thái - ĐƠN GIẢN HÓA
+// User type definitions - Simplified and clear
 export enum UserType {
     ADMIN = 'admin',
     REGISTERED_USER = 'registered_user',

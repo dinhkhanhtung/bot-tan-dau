@@ -31,7 +31,7 @@ export function calculateUserLevel(points: number): string {
     return 'Đồng'
 }
 
-// Calculate days until expiry - FIXED: Handle timezone and date parsing properly
+// Calculate days until expiry
 export function daysUntilExpiry(expiryDate: string): number {
     try {
         const now = new Date()
@@ -286,7 +286,7 @@ export function truncateText(text: string, maxLength: number): string {
 
 // Generate random string
 export function generateRandomString(length: number): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0982581222'
     let result = ''
     for (let i = 0; i < length; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length))

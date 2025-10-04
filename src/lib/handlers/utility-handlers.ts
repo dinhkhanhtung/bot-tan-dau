@@ -538,7 +538,7 @@ export async function handleReferralWithdraw(user: any) {
             '💰 RÚT THƯỞNG',
             `💵 Số tiền có thể rút: ${formatCurrency(pendingReward)}`,
             '🏦 Thông tin chuyển khoản:',
-            '• STK: 0123456789',
+            '• STK: 0982581222',
             '• Ngân hàng: Vietcombank',
             '• Chủ TK: BOT TÂN DẬU',
             `• Nội dung: THUONG ${user.phone || user.facebook_id.slice(-6)}`
