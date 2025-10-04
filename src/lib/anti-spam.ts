@@ -5,52 +5,8 @@ export function isRegistered(userStatus: string): boolean {
     return userStatus === 'registered' || userStatus === 'trial' || userStatus === 'active';
 }
 
-// Hàm xử lý welcome message theo trạng thái user - CHỈ DÙNG CHO CHỐNG SPAM
-async function sendWelcomeMessage(userId: string, userStatus: string): Promise<void> {
-    const { sendQuickReply, createQuickReply } = await import('./facebook-api');
-
-    if (isRegistered(userStatus)) {
-        // User đã đăng ký - chỉ hiển thị menu
-        await sendQuickReply(
-            userId,
-            'Chọn chức năng:',
-            [
-                createQuickReply('🛒 TÌM KIẾM HÀNG HÓA', 'SEARCH'),
-                createQuickReply('📝 ĐĂNG BÁN/CẬP NHẬT', 'LISTING'),
-                createQuickReply('💬 HỖ TRỢ ADMIN', 'SUPPORT_ADMIN'),
-                createQuickReply('ℹ️ HƯỚNG DẪN', 'HELP')
-            ]
-        );
-    } else {
-        // User chưa đăng ký - gửi welcome message đầy đủ
-        const { sendMessage } = await import('./facebook-api');
-
-        // Get Facebook name for personalized greeting
-        let displayName = 'bạn'
-        try {
-            const { getFacebookDisplayName } = await import('./utils')
-            const facebookName = await getFacebookDisplayName(userId)
-            if (facebookName) {
-                displayName = facebookName
-            }
-        } catch (error) {
-            console.warn('Failed to get Facebook display name, using fallback:', error)
-        }
-
-        await sendMessage(userId, `🎉 Chào mừng ${displayName} đến với Đinh Khánh Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?`)
-        await sendMessage(userId, '🌟 Có thể bạn cũng muốn tham gia Tân Dậu - Hỗ Trợ Chéo\n🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')
-
-        await sendQuickReply(
-            userId,
-            'Bạn muốn:',
-            [
-                createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
-                createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
-                createQuickReply('💬 HỖ TRỢ', 'SUPPORT')
-            ]
-        );
-    }
-}
+// DEPRECATED: Welcome message logic moved to welcome-service.ts
+// This function is kept for backward compatibility but should not be used
 
 // Hàm gửi tin nhắn chào mừng khi user ấn nút "Chat Bot"
 export async function sendChatBotWelcome(userId: string, userStatus: string): Promise<void> {

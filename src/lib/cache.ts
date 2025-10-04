@@ -1,454 +1,338 @@
-// Performance Optimization - Caching System for Bot Tân Dậu - Hỗ Trợ Chéo
+/**
+ * Centralized Caching System
+ * Hệ thống caching tập trung với TTL và invalidation
+ */
 
-interface CacheEntry<T> {
-    data: T
-    timestamp: number
-    ttl: number // Time to live in milliseconds
+import { CONFIG, CacheKeys } from './config'
+import { logger, logDebug } from './logger'
+
+// Cache entry interface
+interface CacheEntry<T = any> {
+    value: T
+    expiresAt: number
+    createdAt: number
+    accessCount: number
+    lastAccessed: number
 }
 
-interface CacheOptions {
-    ttl?: number // Default: 5 minutes
-    maxSize?: number // Default: 100 entries
+// Cache statistics
+interface CacheStats {
+    hits: number
+    misses: number
+    sets: number
+    deletes: number
+    size: number
+    maxSize: number
 }
 
-export class Cache<T = any> {
-    private cache = new Map<string, CacheEntry<T>>()
-    private options: Required<CacheOptions>
+// Cache class
+export class Cache {
+    private static instance: Cache
+    private cache: Map<string, CacheEntry> = new Map()
+    private stats: CacheStats = {
+        hits: 0,
+        misses: 0,
+        sets: 0,
+        deletes: 0,
+        size: 0,
+        maxSize: CONFIG.DATABASE.CACHE_MAX_SIZE
+    }
+    private cleanupInterval: NodeJS.Timeout | null = null
 
-    constructor(options: CacheOptions = {}) {
-        this.options = {
-            ttl: options.ttl || 5 * 60 * 1000, // 5 minutes
-            maxSize: options.maxSize || 100
+    private constructor() {
+        this.startCleanupInterval()
+    }
+
+    public static getInstance(): Cache {
+        if (!Cache.instance) {
+            Cache.instance = new Cache()
         }
+        return Cache.instance
+    }
+
+    // Start cleanup interval
+    private startCleanupInterval(): void {
+        if (this.cleanupInterval) {
+            clearInterval(this.cleanupInterval)
+        }
+
+        this.cleanupInterval = setInterval(() => {
+            this.cleanup()
+        }, 60000) // Cleanup every minute
     }
 
     // Set cache entry
-    set(key: string, data: T, customTtl?: number): void {
-        // Clean expired entries first
-        this.cleanExpired()
+    public set<T>(key: string, value: T, ttl: number = CONFIG.DATABASE.CACHE_TTL): void {
+        const now = Date.now()
+        const expiresAt = now + ttl
 
-        // Remove oldest entry if cache is full
-        if (this.cache.size >= this.options.maxSize) {
-            const firstKey = Array.from(this.cache.keys())[0]
-            if (firstKey) {
-                this.cache.delete(firstKey)
-            }
-        }
-
-        const ttl = customTtl || this.options.ttl
         this.cache.set(key, {
-            data,
-            timestamp: Date.now(),
-            ttl
+            value,
+            expiresAt,
+            createdAt: now,
+            accessCount: 0,
+            lastAccessed: now
         })
+
+        this.stats.sets++
+        this.stats.size = this.cache.size
+
+        logDebug(`Cache set: ${key}`, { ttl, size: this.stats.size })
     }
 
     // Get cache entry
-    get(key: string): T | null {
+    public get<T>(key: string): T | null {
         const entry = this.cache.get(key)
 
         if (!entry) {
+            this.stats.misses++
             return null
         }
+
+        const now = Date.now()
 
         // Check if expired
-        if (Date.now() - entry.timestamp > entry.ttl) {
+        if (now > entry.expiresAt) {
             this.cache.delete(key)
+            this.stats.misses++
+            this.stats.size = this.cache.size
             return null
         }
 
-        return entry.data
+        // Update access info
+        entry.accessCount++
+        entry.lastAccessed = now
+
+        this.stats.hits++
+        return entry.value as T
     }
 
-    // Check if key exists and is valid
-    has(key: string): boolean {
+    // Check if key exists
+    public has(key: string): boolean {
         const entry = this.cache.get(key)
 
         if (!entry) {
             return false
         }
 
+        const now = Date.now()
+
         // Check if expired
-        if (Date.now() - entry.timestamp > entry.ttl) {
+        if (now > entry.expiresAt) {
             this.cache.delete(key)
+            this.stats.size = this.cache.size
             return false
         }
 
         return true
     }
 
-    // Delete specific entry
-    delete(key: string): boolean {
-        return this.cache.delete(key)
+    // Delete cache entry
+    public delete(key: string): boolean {
+        const deleted = this.cache.delete(key)
+        if (deleted) {
+            this.stats.deletes++
+            this.stats.size = this.cache.size
+        }
+        return deleted
     }
 
-    // Clear all entries
-    clear(): void {
+    // Clear all cache
+    public clear(): void {
         this.cache.clear()
+        this.stats.size = 0
+        logDebug('Cache cleared')
+    }
+
+    // Get cache statistics
+    public getStats(): CacheStats {
+        return { ...this.stats }
     }
 
     // Get cache size
-    size(): number {
-        this.cleanExpired()
+    public getSize(): number {
         return this.cache.size
     }
 
-    // Clean expired entries
-    cleanExpired(): void {
+    // Check if cache is full
+    public isFull(): boolean {
+        return this.cache.size >= this.stats.maxSize
+    }
+
+    // Cleanup expired entries
+    private cleanup(): void {
         const now = Date.now()
-        const entries = Array.from(this.cache.entries())
-        for (const [key, entry] of entries) {
-            if (now - entry.timestamp > entry.ttl) {
+        let cleanedCount = 0
+
+        for (const [key, entry] of this.cache.entries()) {
+            if (now > entry.expiresAt) {
                 this.cache.delete(key)
+                cleanedCount++
             }
         }
-    }
 
-    // Get cache stats
-    getStats(): { size: number; maxSize: number; hitRate: number } {
-        return {
-            size: this.size(),
-            maxSize: this.options.maxSize,
-            hitRate: 0 // Would need to track hits/misses for this
-        }
-    }
-}
+        this.stats.size = this.cache.size
 
-// Global cache instances
-export const userCache = new Cache({ ttl: 10 * 60 * 1000 }) // 10 minutes
-export const listingCache = new Cache({ ttl: 5 * 60 * 1000 }) // 5 minutes
-export const searchCache = new Cache({ ttl: 15 * 60 * 1000 }) // 15 minutes
-export const adminCache = new Cache({ ttl: 2 * 60 * 1000 }) // 2 minutes
-
-// Cache keys generators
-export const CacheKeys = {
-    user: (facebookId: string) => `user:${facebookId}`,
-    userListings: (facebookId: string) => `user_listings:${facebookId}`,
-    listing: (listingId: string) => `listing:${listingId}`,
-    searchResults: (query: string, category?: string) => `search:${category || 'all'}:${query}`,
-    adminStats: (type: string) => `admin_stats:${type}`,
-    popularListings: () => 'popular_listings',
-    recentListings: (category?: string) => `recent_listings:${category || 'all'}`,
-    userStats: (facebookId: string) => `user_stats:${facebookId}`
-}
-
-// Cached database operations
-export async function getCachedUser(facebookId: string): Promise<any | null> {
-    const cacheKey = CacheKeys.user(facebookId)
-    const cached = userCache.get(cacheKey)
-
-    if (cached) {
-        console.log(`✅ Cache hit for user: ${facebookId}`)
-        return cached
-    }
-
-    try {
-        const { supabaseAdmin } = await import('./supabase')
-        const { data, error } = await supabaseAdmin
-            .from('users')
-            .select('*')
-            .eq('facebook_id', facebookId)
-            .single()
-
-        if (error || !data) {
-            return null
-        }
-
-        // Cache the result
-        userCache.set(cacheKey, data)
-        console.log(`💾 Cached user: ${facebookId}`)
-
-        return data
-    } catch (error) {
-        console.error('Error fetching user:', error)
-        return null
-    }
-}
-
-// Cached listing operations
-export async function getCachedListings(category?: string, limit: number = 20): Promise<any[]> {
-    const cacheKey = CacheKeys.recentListings(category)
-    const cached = listingCache.get(cacheKey)
-
-    if (cached) {
-        console.log(`✅ Cache hit for listings: ${category || 'all'}`)
-        return cached
-    }
-
-    try {
-        const { supabaseAdmin } = await import('./supabase')
-        let query = supabaseAdmin
-            .from('listings')
-            .select('*')
-            .eq('status', 'active')
-            .order('created_at', { ascending: false })
-            .limit(limit)
-
-        if (category) {
-            query = query.eq('category', category)
-        }
-
-        const { data, error } = await query
-
-        if (error || !data) {
-            return []
-        }
-
-        // Cache the result
-        listingCache.set(cacheKey, data)
-        console.log(`💾 Cached listings: ${category || 'all'}`)
-
-        return data
-    } catch (error) {
-        console.error('Error fetching listings:', error)
-        return []
-    }
-}
-
-// Cached search with smart invalidation
-export async function getCachedSearchResults(query: string, category?: string): Promise<any[]> {
-    const cacheKey = CacheKeys.searchResults(query, category)
-    const cached = searchCache.get(cacheKey)
-
-    if (cached) {
-        console.log(`✅ Cache hit for search: ${query}`)
-        return cached
-    }
-
-    try {
-        const { supabaseAdmin } = await import('./supabase')
-        let searchQuery = supabaseAdmin
-            .from('listings')
-            .select('*')
-            .eq('status', 'active')
-            .order('created_at', { ascending: false })
-            .limit(20)
-
-        // Simple search implementation
-        if (query) {
-            searchQuery = searchQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-        }
-
-        if (category) {
-            searchQuery = searchQuery.eq('category', category)
-        }
-
-        const { data, error } = await searchQuery
-
-        if (error || !data) {
-            return []
-        }
-
-        // Cache the result
-        searchCache.set(cacheKey, data)
-        console.log(`💾 Cached search results: ${query}`)
-
-        return data
-    } catch (error) {
-        console.error('Error searching listings:', error)
-        return []
-    }
-}
-
-// Cache invalidation helpers
-export function invalidateUserCache(facebookId: string): void {
-    userCache.delete(CacheKeys.user(facebookId))
-    userCache.delete(CacheKeys.userListings(facebookId))
-    userCache.delete(CacheKeys.userStats(facebookId))
-    console.log(`🗑️ Invalidated user cache: ${facebookId}`)
-}
-
-export function invalidateListingCache(listingId?: string, category?: string): void {
-    if (listingId) {
-        listingCache.delete(CacheKeys.listing(listingId))
-    }
-
-    if (category) {
-        listingCache.delete(CacheKeys.recentListings(category))
-    }
-
-    listingCache.delete(CacheKeys.recentListings())
-    listingCache.delete(CacheKeys.popularListings())
-    console.log(`🗑️ Invalidated listing cache: ${listingId || category || 'all'}`)
-}
-
-export function invalidateSearchCache(query?: string): void {
-    if (query) {
-        searchCache.delete(CacheKeys.searchResults(query))
-    } else {
-        // Clear all search cache
-        searchCache.clear()
-        console.log('🗑️ Cleared all search cache')
-    }
-}
-
-// Performance monitoring
-export function getCacheStats(): {
-    user: { size: number; maxSize: number }
-    listing: { size: number; maxSize: number }
-    search: { size: number; maxSize: number }
-    admin: { size: number; maxSize: number }
-} {
-    return {
-        user: userCache.getStats(),
-        listing: listingCache.getStats(),
-        search: searchCache.getStats(),
-        admin: adminCache.getStats()
-    }
-}
-
-// Cache warming for frequently accessed data
-export async function warmCache(): Promise<void> {
-    console.log('🔥 Warming up cache...')
-
-    try {
-        // Warm user cache for active users
-        const { supabaseAdmin } = await import('./supabase')
-        const { data: activeUsers } = await supabaseAdmin
-            .from('users')
-            .select('facebook_id')
-            .in('status', ['registered', 'trial'])
-            .limit(50)
-
-        if (activeUsers) {
-            console.log(`🔥 Warming ${activeUsers.length} user caches...`)
-            // Implementation would fetch and cache user data
-        }
-
-        // Warm popular listings
-        await getCachedListings()
-        console.log('✅ Cache warming completed')
-
-    } catch (error) {
-        console.error('Error warming cache:', error)
-    }
-}
-
-// Database query optimization
-export async function optimizedUserQuery(facebookId: string): Promise<any | null> {
-    const cacheKey = CacheKeys.user(facebookId)
-    const cached = userCache.get(cacheKey)
-
-    if (cached) {
-        return cached
-    }
-
-    try {
-        const { supabaseAdmin } = await import('./supabase')
-        const { data, error } = await supabaseAdmin
-            .from('users')
-            .select(`
-                *,
-                payments!payments_user_id_fkey (
-                    id, amount, status, created_at
-                ),
-                listings!listings_user_id_fkey (
-                    id, title, status, created_at
-                )
-            `)
-            .eq('facebook_id', facebookId)
-            .single()
-
-        if (error || !data) {
-            return null
-        }
-
-        // Cache the enhanced user data
-        userCache.set(cacheKey, data)
-        return data
-
-    } catch (error) {
-        console.error('Error in optimized user query:', error)
-        return null
-    }
-}
-
-// Batch operations for better performance
-export async function batchUserLookup(facebookIds: string[]): Promise<Map<string, any>> {
-    const result = new Map<string, any>()
-    const uncachedIds: string[] = []
-
-    // Check cache first
-    for (const facebookId of facebookIds) {
-        const cacheKey = CacheKeys.user(facebookId)
-        const cached = userCache.get(cacheKey)
-
-        if (cached) {
-            result.set(facebookId, cached)
-        } else {
-            uncachedIds.push(facebookId)
+        if (cleanedCount > 0) {
+            logDebug(`Cache cleanup: removed ${cleanedCount} expired entries`)
         }
     }
 
-    // Fetch uncached users
-    if (uncachedIds.length > 0) {
+    // Evict least recently used entries
+    private evictLRU(): void {
+        const entries = Array.from(this.cache.entries())
+        entries.sort((a, b) => a[1].lastAccessed - b[1].lastAccessed)
+
+        const toEvict = Math.floor(this.stats.maxSize * 0.1) // Evict 10%
+        for (let i = 0; i < toEvict && i < entries.length; i++) {
+            this.cache.delete(entries[i][0])
+        }
+
+        this.stats.size = this.cache.size
+        logDebug(`Cache evicted ${toEvict} LRU entries`)
+    }
+
+    // Destroy cache instance
+    public destroy(): void {
+        if (this.cleanupInterval) {
+            clearInterval(this.cleanupInterval)
+            this.cleanupInterval = null
+        }
+        this.clear()
+    }
+}
+
+// Export singleton instance
+export const cache = Cache.getInstance()
+
+// Cache utility functions
+export const CacheUtils = {
+    // Generate cache key
+    generateKey: (type: keyof typeof CacheKeys, ...params: string[]): string => {
+        const keyTemplate = CacheKeys[type] as any
+        return typeof keyTemplate === 'function' ? keyTemplate(...params) : keyTemplate
+    },
+
+    // Set with auto-generated key
+    set: <T>(type: keyof typeof CacheKeys, value: T, ttl?: number, ...params: string[]): void => {
+        const key = CacheUtils.generateKey(type, ...params)
+        cache.set(key, value, ttl)
+    },
+
+    // Get with auto-generated key
+    get: <T>(type: keyof typeof CacheKeys, ...params: string[]): T | null => {
+        const key = CacheUtils.generateKey(type, ...params)
+        return cache.get<T>(key)
+    },
+
+    // Delete with auto-generated key
+    delete: (type: keyof typeof CacheKeys, ...params: string[]): boolean => {
+        const key = CacheUtils.generateKey(type, ...params)
+        return cache.delete(key)
+    },
+
+    // Check if exists with auto-generated key
+    has: (type: keyof typeof CacheKeys, ...params: string[]): boolean => {
+        const key = CacheUtils.generateKey(type, ...params)
+        return cache.has(key)
+    }
+}
+
+// Database query cache wrapper
+export class DatabaseCache {
+    private static instance: DatabaseCache
+    private cache: Cache
+
+    private constructor() {
+        this.cache = Cache.getInstance()
+    }
+
+    public static getInstance(): DatabaseCache {
+        if (!DatabaseCache.instance) {
+            DatabaseCache.instance = new DatabaseCache()
+        }
+        return DatabaseCache.instance
+    }
+
+    // Cache database query result
+    public async cacheQuery<T>(
+        key: string,
+        queryFn: () => Promise<T>,
+        ttl: number = CONFIG.DATABASE.CACHE_TTL
+    ): Promise<T> {
+        // Check cache first
+        const cached = this.cache.get<T>(key)
+        if (cached !== null) {
+            logDebug(`Database cache hit: ${key}`)
+            return cached
+        }
+
+        // Execute query
+        const startTime = Date.now()
         try {
-            const { supabaseAdmin } = await import('./supabase')
-            const { data: users } = await supabaseAdmin
-                .from('users')
-                .select('*')
-                .in('facebook_id', uncachedIds)
+            const result = await queryFn()
+            const duration = Date.now() - startTime
 
-            if (users) {
-                for (const user of users) {
-                    const cacheKey = CacheKeys.user(user.facebook_id)
-                    userCache.set(cacheKey, user)
-                    result.set(user.facebook_id, user)
-                }
-            }
+            // Cache result
+            this.cache.set(key, result, ttl)
+
+            logDebug(`Database query cached: ${key}`, { duration })
+            return result
         } catch (error) {
-            console.error('Error in batch user lookup:', error)
+            const duration = Date.now() - startTime
+            logger.error(`Database query failed: ${key}`, { duration }, error as Error)
+            throw error
         }
     }
 
-    return result
-}
+    // Invalidate cache by pattern
+    public invalidatePattern(pattern: string): void {
+        const regex = new RegExp(pattern)
+        let invalidatedCount = 0
 
-// Memory usage monitoring
-export function getMemoryUsage(): {
-    cacheSizes: ReturnType<typeof getCacheStats>
-    memoryUsage: NodeJS.MemoryUsage
-} {
-    return {
-        cacheSizes: getCacheStats(),
-        memoryUsage: process.memoryUsage()
+        for (const key of this.cache['cache'].keys()) {
+            if (regex.test(key)) {
+                this.cache.delete(key)
+                invalidatedCount++
+            }
+        }
+
+        if (invalidatedCount > 0) {
+            logDebug(`Cache invalidated by pattern: ${pattern}`, { count: invalidatedCount })
+        }
+    }
+
+    // Invalidate user-related cache
+    public invalidateUser(userId: string): void {
+        this.invalidatePattern(`user:${userId}`)
+        this.invalidatePattern(`session:${userId}`)
+        this.invalidatePattern(`spam:${userId}`)
+    }
+
+    // Invalidate bot-related cache
+    public invalidateBot(): void {
+        this.invalidatePattern('bot:')
+        this.invalidatePattern('system:')
     }
 }
 
-// Cache cleanup on memory pressure
-export function cleanupCacheOnMemoryPressure(): void {
-    const memUsage = process.memoryUsage()
-    const memUsagePercent = memUsage.heapUsed / memUsage.heapTotal
+// Export singleton instance
+export const dbCache = DatabaseCache.getInstance()
 
-    if (memUsagePercent > 0.8) { // If memory usage > 80%
-        console.log('🧹 High memory usage detected, cleaning caches...')
+// Convenience functions
+export const cacheQuery = <T>(
+    key: string,
+    queryFn: () => Promise<T>,
+    ttl?: number
+): Promise<T> => dbCache.cacheQuery(key, queryFn, ttl)
 
-        // Clear oldest entries from all caches
-        userCache.clear()
-        listingCache.clear()
-        searchCache.clear()
-        adminCache.clear()
+export const invalidateUserCache = (userId: string): void =>
+    dbCache.invalidateUser(userId)
 
-        console.log('✅ All caches cleared due to memory pressure')
-    }
-}
+export const invalidateBotCache = (): void =>
+    dbCache.invalidateBot()
 
-// Setup periodic cache cleanup
-export function setupCacheMaintenance(): void {
-    // Clean expired entries every 5 minutes
-    setInterval(() => {
-        userCache.cleanExpired()
-        listingCache.cleanExpired()
-        searchCache.cleanExpired()
-        adminCache.cleanExpired()
+export const invalidatePattern = (pattern: string): void =>
+    dbCache.invalidatePattern(pattern)
 
-        // Check memory pressure
-        cleanupCacheOnMemoryPressure()
-    }, 5 * 60 * 1000)
-
-    // Log cache stats every hour
-    setInterval(() => {
-        const stats = getCacheStats()
-        console.log('📊 Cache Stats:', stats)
-    }, 60 * 60 * 1000)
-}
+export default cache

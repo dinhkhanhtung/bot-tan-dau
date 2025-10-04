@@ -1,6 +1,10 @@
 import { sendMessage, sendTypingIndicator, sendQuickReply, createQuickReply } from '../facebook-api'
 import { SmartContextManager, UserContext, UserType, UserState } from './smart-context-manager'
-import { updateBotSession } from '../utils'
+import { CONFIG } from '../config'
+import { logger, logUserAction, logBotEvent, logError } from '../logger'
+import { errorHandler, createUserError, ErrorType } from '../error-handler'
+import { getUserByFacebookId, getBotSession, updateBotSession, getBotStatus } from '../database-service'
+import { welcomeService, WelcomeType } from '../welcome-service'
 
 // Unified Bot System - Hệ thống bot thống nhất, thay thế cả Unified Entry Point và Message Router
 export class UnifiedBotSystem {
@@ -9,56 +13,63 @@ export class UnifiedBotSystem {
      * Xử lý TẤT CẢ tin nhắn - đây là điểm vào DUY NHẤT
      */
     static async handleMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
+        const startTime = Date.now()
+
         try {
-            console.log('🔍 Received message from user:', {
+            logger.info('Processing message', {
                 facebook_id: user.facebook_id,
                 text: text,
                 isPostback: isPostback,
                 postback: postback
             })
 
-            // Bước 1: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất)
+            // Bước 1: KIỂM TRA BOT STATUS
+            const botStatus = await getBotStatus()
+            if (botStatus === 'stopped') {
+                logger.info('Bot is stopped, ignoring message', { facebook_id: user.facebook_id })
+                return
+            }
+
+            // Bước 2: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất)
             const isAdminUser = await this.checkAdminStatus(user.facebook_id)
 
             if (isAdminUser) {
-                console.log('✅ User is admin, handling admin message')
+                logger.info('Admin user detected', { facebook_id: user.facebook_id })
                 await this.handleAdminMessage(user, text, isPostback, postback)
                 return
             }
 
             // Kiểm tra lệnh admin đặc biệt
             if (text && (text.toLowerCase().includes('/admin') || text.toLowerCase().includes('admin'))) {
-                console.log('🔍 Admin command detected, checking admin status again')
                 const isAdminUser2 = await this.checkAdminStatus(user.facebook_id)
                 if (isAdminUser2) {
-                    console.log('✅ User is admin via command, showing admin dashboard')
+                    logger.info('Admin command detected', { facebook_id: user.facebook_id })
                     await this.showAdminDashboard(user)
                     return
                 }
             }
 
-            // Bước 2: KIỂM TRA ADMIN CHAT MODE - SIMPLIFIED
+            // Bước 3: KIỂM TRA ADMIN CHAT MODE
             const isInAdminChat = await this.checkAdminChatMode(user.facebook_id)
             if (isInAdminChat) {
-                const { sendMessage } = await import('../facebook-api')
                 await sendMessage(user.facebook_id, '💬 Bạn đang trong chế độ chat với admin. Bot sẽ tạm dừng để admin có thể hỗ trợ bạn trực tiếp.')
                 return
             }
 
-            // Bước 3: KIỂM TRA SESSION TRƯỚC - ƯU TIÊN FLOW (QUAN TRỌNG NHẤT)
+            // Bước 4: KIỂM TRA SESSION TRƯỚC - ƯU TIÊN FLOW
             const session = await this.getUserSession(user.facebook_id)
             const currentFlow = session?.current_flow || null
 
-            console.log('🔍 Session check:', { currentFlow, session })
+            logger.debug('Session check', { currentFlow, session })
 
-            // Nếu đang trong flow hợp lệ, xử lý flow trước, KHÔNG áp dụng chống spam
+            // Nếu đang trong flow hợp lệ, xử lý flow trước
             if (currentFlow && ['registration', 'listing', 'search'].includes(currentFlow)) {
-                console.log('🔄 User đang trong flow:', currentFlow, '- Xử lý flow trước, BỎ QUA chống spam')
+                logger.info('User in active flow', { currentFlow, facebook_id: user.facebook_id })
                 await this.handleFlowMessage(user, text, session)
                 return
             }
 
-            // Bước 4: XỬ LÝ TIN NHẮN THƯỜNG
+            // Bước 5: XỬ LÝ TIN NHẮN THƯỜNG
             if (isPostback && postback) {
                 await this.handlePostbackAction(user, postback)
             } else if (text) {
@@ -67,8 +78,29 @@ export class UnifiedBotSystem {
                 await this.handleDefaultMessage(user)
             }
 
+            const duration = Date.now() - startTime
+            logBotEvent('message_processed', {
+                facebook_id: user.facebook_id,
+                duration,
+                isPostback: !!isPostback
+            })
+
         } catch (error) {
-            console.error('Error in unified bot system:', error)
+            const duration = Date.now() - startTime
+            const messageError = createUserError(
+                `Message processing failed: ${error instanceof Error ? error.message : String(error)}`,
+                ErrorType.USER_ERROR,
+                {
+                    facebook_id: user.facebook_id,
+                    text,
+                    isPostback,
+                    postback,
+                    duration
+                },
+                user.facebook_id
+            )
+
+            logError(messageError, { operation: 'message_processing', user, text, isPostback, postback })
             await this.sendErrorMessage(user.facebook_id)
         }
     }
@@ -78,13 +110,12 @@ export class UnifiedBotSystem {
      */
     private static async checkAdminStatus(facebookId: string): Promise<boolean> {
         try {
-            console.log('🔍 Checking admin status for:', facebookId)
             const { isAdmin } = await import('../utils')
             const result = await isAdmin(facebookId)
-            console.log('🔍 Admin check result:', result)
+            logger.debug('Admin status check', { facebook_id: facebookId, isAdmin: result })
             return result
         } catch (error) {
-            console.error('Error checking admin status:', error)
+            logError(error as Error, { operation: 'admin_status_check', facebook_id: facebookId })
             return false
         }
     }
@@ -95,9 +126,11 @@ export class UnifiedBotSystem {
     private static async checkAdminChatMode(facebookId: string): Promise<boolean> {
         try {
             const { isUserInAdminChat } = await import('../admin-chat')
-            return await isUserInAdminChat(facebookId)
+            const result = await isUserInAdminChat(facebookId)
+            logger.debug('Admin chat mode check', { facebook_id: facebookId, isInAdminChat: result })
+            return result
         } catch (error) {
-            console.error('Error checking admin chat mode:', error)
+            logError(error as Error, { operation: 'admin_chat_mode_check', facebook_id: facebookId })
             return false
         }
     }
@@ -107,10 +140,9 @@ export class UnifiedBotSystem {
      */
     private static async getUserSession(facebookId: string): Promise<any> {
         try {
-            const { getBotSession } = await import('../utils')
             return await getBotSession(facebookId)
         } catch (error) {
-            console.error('Error getting user session:', error)
+            logError(error as Error, { operation: 'get_user_session', facebook_id: facebookId })
             return null
         }
     }
@@ -461,16 +493,18 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý new user text - LOGIC THÔNG MINH VỚI SPAM CHECK
+     * Xử lý new user text - SỬ DỤNG WELCOME SERVICE
      */
     private static async handleNewUserText(user: any, text: string): Promise<void> {
         try {
-            // QUAN TRỌNG: Kiểm tra user có đang trong bot mode không
-            const { checkUserBotMode, shouldShowChatBotButton } = await import('../anti-spam')
+            // Kiểm tra user có đang trong bot mode không
+            const { checkUserBotMode } = await import('../anti-spam')
             const isInBotMode = await checkUserBotMode(user.facebook_id)
 
             if (!isInBotMode) {
-                console.log('💬 New user not in bot mode - processing as normal message')
+                logger.info('New user not in bot mode - processing as normal message', {
+                    facebook_id: user.facebook_id
+                })
 
                 // Tăng counter cho mỗi tin nhắn thường
                 const { incrementNormalMessageCount, getUserChatBotOfferCount } = await import('../anti-spam')
@@ -483,60 +517,58 @@ export class UnifiedBotSystem {
                 const currentCount = offerData?.count || 0
 
                 if (currentCount === 1) {
-                    // Tin nhắn đầu tiên - chào mừng + nút
-                    const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
-                    await sendMessage(user.facebook_id, '🎉 Chào bạn ghé thăm Tùng!')
-                    await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
-                    await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
-
-                    await sendQuickReply(
-                        user.facebook_id,
-                        'Chọn hành động:',
-                        [
-                            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
-                        ]
-                    )
+                    // Tin nhắn đầu tiên - sử dụng welcome service
+                    await welcomeService.sendWelcome(user.facebook_id, WelcomeType.NEW_USER)
                 } else if (currentCount === 2) {
-                    // Tin nhắn thứ 2 - chỉ thông báo admin, KHÔNG có nút
-                    const { sendMessage } = await import('../facebook-api')
+                    // Tin nhắn thứ 2 - chỉ thông báo admin
                     await sendMessage(user.facebook_id, '💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!')
                 } else {
                     // Tin nhắn thứ 3+ - bot dừng hoàn toàn
-                    console.log('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 3 - không gửi gì cả')
-                    // Bot dừng hoàn toàn, không gửi gì cả
+                    logger.info('Bot stopped after 3rd message', { facebook_id: user.facebook_id })
                 }
                 return
             }
 
-            // QUAN TRỌNG: Kiểm tra user có đang trong flow đăng ký không
+            // Kiểm tra user có đang trong flow đăng ký không
             const session = await this.getUserSession(user.facebook_id)
             const currentFlow = session?.current_flow || null
 
-            console.log('🔍 New user text handling:', { currentFlow, session, isInBotMode })
+            logger.debug('New user text handling', {
+                currentFlow,
+                session,
+                isInBotMode,
+                facebook_id: user.facebook_id
+            })
 
             // Nếu đang trong flow đăng ký, xử lý tin nhắn bình thường
             if (currentFlow === 'registration') {
-                console.log('🔄 New user in registration flow - processing message normally')
+                logger.info('New user in registration flow', {
+                    facebook_id: user.facebook_id,
+                    currentFlow
+                })
                 await this.handleFlowMessage(user, text, session)
                 return
             }
 
-            // KIỂM TRA SPAM TRƯỚC - SỬ DỤNG ANTI-SPAM SYSTEM
+            // Kiểm tra spam trước
             const { handleAntiSpam } = await import('../anti-spam')
             const spamResult = await handleAntiSpam(user.facebook_id, text, user.status || 'new', currentFlow)
 
             if (spamResult.block) {
-                console.log('User bị block do spam:', spamResult.message || 'Spam detected')
+                logger.warn('User blocked due to spam', {
+                    facebook_id: user.facebook_id,
+                    reason: spamResult.message
+                })
                 return
             }
 
             // Nếu spam check đã xử lý (gửi welcome), không cần xử lý thêm
             if (spamResult.action === 'none' && spamResult.message) {
-                console.log('Anti-spam đã xử lý tin nhắn, không cần xử lý thêm')
+                logger.info('Anti-spam handled message', { facebook_id: user.facebook_id })
                 return
             }
 
-            // Xử lý các lệnh đặc biệt - CHỈ khi chưa bị spam check xử lý
+            // Xử lý các lệnh đặc biệt
             if (spamResult.action === 'none' && !spamResult.message && !spamResult.block) {
                 if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
                     await this.startRegistration(user)
@@ -545,13 +577,17 @@ export class UnifiedBotSystem {
                 } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
                     await this.showSupportInfo(user)
                 } else {
-                    // Xử lý tin nhắn thường - CHỈ nếu chưa bị spam check xử lý
-                    await this.showWelcomeMessage(user)
+                    // Xử lý tin nhắn thường - sử dụng welcome service
+                    await welcomeService.sendWelcome(user.facebook_id, WelcomeType.NEW_USER)
                 }
             }
+
         } catch (error) {
-            console.error('Error handling new user text:', error)
-            // Không gửi welcome message nếu có lỗi để tránh spam
+            logError(error as Error, {
+                operation: 'new_user_text_handling',
+                facebook_id: user.facebook_id,
+                text
+            })
         }
     }
 
@@ -907,9 +943,12 @@ export class UnifiedBotSystem {
      */
     private static async sendErrorMessage(facebookId: string): Promise<void> {
         try {
-            await sendMessage(facebookId, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+            await sendMessage(facebookId, CONFIG.ERRORS.INTERNAL_ERROR)
         } catch (error) {
-            console.error('Error sending error message:', error)
+            logError(error as Error, {
+                operation: 'send_error_message',
+                facebook_id: facebookId
+            })
         }
     }
 
