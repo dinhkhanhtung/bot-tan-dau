@@ -331,7 +331,14 @@ export class UnifiedBotSystem {
                     await this.showMainMenu(user)
                     break
                 case 'ADMIN':
-                    await this.showAdminDashboard(user)
+                    // Admin ấn nút ADMIN PANEL - đưa vào bot mode và hiển thị dashboard
+                    if (user.facebook_id === process.env.FACEBOOK_PAGE_ID) {
+                        const { setUserBotMode } = await import('../anti-spam')
+                        await setUserBotMode(user.facebook_id)
+                        await this.showAdminDashboard(user)
+                    } else {
+                        await this.showAdminDashboard(user)
+                    }
                     break
                 case 'EXIT_BOT':
                     const { handleBotExit } = await import('../anti-spam')
@@ -705,16 +712,16 @@ export class UnifiedBotSystem {
                 const isInBotMode = await checkUserBotMode(user.facebook_id)
 
                 if (!isInBotMode) {
-                    // Admin chưa trong bot mode - hiển thị nút "VÀO BOT"
+                    // Admin chưa trong bot mode - hiển thị nút "ADMIN PANEL"
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
                     await sendMessage(user.facebook_id, '🔧 ADMIN DASHBOARD')
-                    await sendMessage(user.facebook_id, 'Chào mừng Admin! Hãy ấn nút "VÀO BOT" để sử dụng các chức năng admin.')
+                    await sendMessage(user.facebook_id, 'Chào mừng Admin! Hãy ấn nút "ADMIN PANEL" để sử dụng các chức năng quản trị.')
 
                     await sendQuickReply(
                         user.facebook_id,
                         'Chọn chức năng:',
                         [
-                            createQuickReply('🤖 VÀO BOT', 'CHAT_BOT')
+                            createQuickReply('🔧 ADMIN PANEL', 'ADMIN')
                         ]
                     )
                     return

@@ -473,7 +473,6 @@ export class AuthFlow {
                 user.facebook_id,
                 'Chọn chức năng:',
                 [
-                    createQuickReply('🤖 VÀO BOT', 'CHAT_BOT'),
                     createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
                     createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
                     createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
