@@ -155,18 +155,18 @@ export class UnifiedBotSystem {
      */
     private static async handleAdminMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
         try {
-            // Admin có toàn quyền, không bị giới hạn gì
-            if (isPostback && postback) {
-                await this.handleAdminPostback(user, postback)
-            } else if (text) {
-                await this.handleAdminTextMessage(user, text)
-            } else {
-                // Kiểm tra admin có đang trong cuộc trò chuyện không
-                const { isUserInAdminChat } = await import('../admin-chat')
-                const isInAdminChat = await isUserInAdminChat(user.facebook_id)
+            // Kiểm tra admin có đang trong cuộc trò chuyện không
+            const { isUserInAdminChat } = await import('../admin-chat')
+            const isInAdminChat = await isUserInAdminChat(user.facebook_id)
 
-                if (isInAdminChat) {
-                    // Admin đang trong cuộc trò chuyện - hiện menu
+            if (isInAdminChat) {
+                // Admin đang trong cuộc trò chuyện - xử lý theo chat mode
+                if (isPostback && postback) {
+                    await this.handleAdminPostback(user, postback)
+                } else if (text) {
+                    await this.handleAdminInChatMode(user, text)
+                } else {
+                    // Admin không có tin nhắn - hiện admin menu
                     const { getActiveAdminChatSession } = await import('../admin-chat')
                     const session = await getActiveAdminChatSession(user.facebook_id)
                     if (session) {
@@ -174,8 +174,14 @@ export class UnifiedBotSystem {
                     } else {
                         await this.showAdminDashboard(user)
                     }
+                }
+            } else {
+                // Admin không trong cuộc trò chuyện - xử lý bình thường
+                if (isPostback && postback) {
+                    await this.handleAdminPostback(user, postback)
+                } else if (text) {
+                    await this.handleAdminTextMessage(user, text)
                 } else {
-                    // Admin không trong cuộc trò chuyện - hiện dashboard
                     await this.showAdminDashboard(user)
                 }
             }
@@ -420,19 +426,9 @@ export class UnifiedBotSystem {
      */
     private static async handleAdminTextMessage(user: any, text: string): Promise<void> {
         try {
-            // Kiểm tra admin có đang trong cuộc trò chuyện với user không
-            const { isUserInAdminChat } = await import('../admin-chat')
-            const isInAdminChat = await isUserInAdminChat(user.facebook_id)
-
-            if (isInAdminChat) {
-                // Admin đang trong cuộc trò chuyện với user
-                // Gửi tin nhắn trực tiếp cho user và hiện admin menu
-                await this.handleAdminInChatMode(user, text)
-            } else {
-                // Admin không trong cuộc trò chuyện - hiện dashboard
-                const { handleAdminCommand } = await import('../handlers/admin-handlers')
-                await handleAdminCommand(user)
-            }
+            // Admin không trong cuộc trò chuyện - hiện dashboard
+            const { handleAdminCommand } = await import('../handlers/admin-handlers')
+            await handleAdminCommand(user)
         } catch (error) {
             console.error('Error handling admin text:', error)
             await this.showAdminDashboard(user)
@@ -457,7 +453,7 @@ export class UnifiedBotSystem {
             const { sendMessage } = await import('../facebook-api')
             await sendMessage(session.user_id, text)
 
-            // Hiện admin menu cho admin
+            // LUÔN hiện admin menu cho admin (không cần gõ gì)
             await this.showAdminChatMenu(user, session)
 
         } catch (error) {
