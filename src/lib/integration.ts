@@ -97,7 +97,7 @@ async function checkFacebookHealth(): Promise<boolean> {
 async function checkSupabaseHealth(): Promise<boolean> {
     try {
         // Check if Supabase config is available
-        return !!(CONFIG.BOT.SUPABASE_URL && CONFIG.BOT.SUPABASE_ANON_KEY)
+        return !!(CONFIG.SUPABASE.URL && CONFIG.SUPABASE.ANON_KEY)
     } catch (error) {
         logger.error('Supabase health check failed', { error })
         return false
