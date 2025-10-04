@@ -198,29 +198,22 @@ async function handleMessageEvent(event: any) {
             console.log('💬 User not in bot mode - processing as normal message')
 
             // Tăng counter cho mỗi tin nhắn thường
-            const { shouldShowChatBotButton, shouldBotStopCompletely, incrementNormalMessageCount } = await import('@/lib/anti-spam')
+            const { incrementNormalMessageCount, getUserChatBotOfferCount } = await import('@/lib/anti-spam')
 
             // Tăng counter trước khi kiểm tra
             incrementNormalMessageCount(senderId)
 
-            // Kiểm tra bot có nên dừng hoàn toàn không
-            if (shouldBotStopCompletely(senderId)) {
-                console.log('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 2 - không gửi gì cả')
-                return
-            }
-
             // Lấy count hiện tại để phân biệt
-            const { getUserChatBotOfferCount } = await import('@/lib/anti-spam')
             const offerData = getUserChatBotOfferCount(senderId)
             const currentCount = offerData?.count || 0
-            
+
             if (currentCount === 1) {
                 // Tin nhắn đầu tiên - chào mừng + nút
                 const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
                 await sendMessage(senderId, '🎉 Chào bạn ghé thăm Tùng!')
                 await sendMessage(senderId, '👋 Hôm nay mình có thể giúp gì cho bạn?')
                 await sendMessage(senderId, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
-                
+
                 await sendQuickReply(
                     senderId,
                     'Chọn hành động:',
@@ -233,7 +226,8 @@ async function handleMessageEvent(event: any) {
                 const { sendMessage } = await import('@/lib/facebook-api')
                 await sendMessage(senderId, '💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!')
             } else {
-                console.log('🚫 User đã nhận thông báo - bot dừng hoàn toàn, để admin xử lý')
+                // Tin nhắn thứ 3+ - bot dừng hoàn toàn
+                console.log('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 3 - không gửi gì cả')
                 // Bot dừng hoàn toàn, không gửi gì cả
             }
             return

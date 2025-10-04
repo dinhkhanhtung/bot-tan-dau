@@ -473,29 +473,22 @@ export class UnifiedBotSystem {
                 console.log('💬 New user not in bot mode - processing as normal message')
 
                 // Tăng counter cho mỗi tin nhắn thường
-                const { shouldShowChatBotButton, shouldBotStopCompletely, incrementNormalMessageCount } = await import('../anti-spam')
+                const { incrementNormalMessageCount, getUserChatBotOfferCount } = await import('../anti-spam')
 
                 // Tăng counter trước khi kiểm tra
                 incrementNormalMessageCount(user.facebook_id)
 
-                // Kiểm tra bot có nên dừng hoàn toàn không
-                if (shouldBotStopCompletely(user.facebook_id)) {
-                    console.log('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 2 - không gửi gì cả')
-                    return
-                }
-
                 // Lấy count hiện tại để phân biệt
-                const { getUserChatBotOfferCount } = await import('../anti-spam')
                 const offerData = getUserChatBotOfferCount(user.facebook_id)
                 const currentCount = offerData?.count || 0
-                
+
                 if (currentCount === 1) {
                     // Tin nhắn đầu tiên - chào mừng + nút
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
                     await sendMessage(user.facebook_id, '🎉 Chào bạn ghé thăm Tùng!')
                     await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
                     await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
-                    
+
                     await sendQuickReply(
                         user.facebook_id,
                         'Chọn hành động:',
@@ -508,7 +501,8 @@ export class UnifiedBotSystem {
                     const { sendMessage } = await import('../facebook-api')
                     await sendMessage(user.facebook_id, '💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!')
                 } else {
-                    console.log('🚫 User đã nhận thông báo - bot dừng hoàn toàn, để admin xử lý')
+                    // Tin nhắn thứ 3+ - bot dừng hoàn toàn
+                    console.log('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 3 - không gửi gì cả')
                     // Bot dừng hoàn toàn, không gửi gì cả
                 }
                 return

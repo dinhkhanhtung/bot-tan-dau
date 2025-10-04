@@ -176,27 +176,27 @@ export function exitUserBotMode(facebookId: string): void {
     console.log('🚪 User exited bot mode:', facebookId)
 }
 
-// Hàm kiểm tra và tăng số lần hiển thị nút Chat Bot
+// Hàm kiểm tra và tăng số lần hiển thị nút Chat Bot (DEPRECATED - không dùng nữa)
 export function shouldShowChatBotButton(facebookId: string): boolean {
     const offerData = userChatBotOfferCount.get(facebookId)
     const now = Date.now()
-    
+
     // Reset sau 24 giờ
     if (offerData && (now - offerData.lastOffer) > 24 * 60 * 60 * 1000) {
         userChatBotOfferCount.delete(facebookId)
         return true
     }
-    
+
     // Chỉ hiển thị nút cho lần 1
     if (!offerData) {
         return true
     }
-    
+
     // Nếu count = 1, hiển thị nút
     if (offerData.count === 1) {
         return true
     }
-    
+
     return false
 }
 
@@ -218,7 +218,7 @@ export function getUserChatBotOfferCount(facebookId: string): { count: number, l
     return userChatBotOfferCount.get(facebookId)
 }
 
-// Hàm kiểm tra bot có nên dừng hoàn toàn không (sau tin nhắn thứ 3)
+// Hàm kiểm tra bot có nên dừng hoàn toàn không (DEPRECATED - không dùng nữa)
 export function shouldBotStopCompletely(facebookId: string): boolean {
     const offerData = userChatBotOfferCount.get(facebookId)
     const now = Date.now()

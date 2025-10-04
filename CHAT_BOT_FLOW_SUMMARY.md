@@ -53,8 +53,8 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 
 ### **User chưa trong Bot Mode:**
 1. **Tin nhắn 1**: Chào mừng + nút "Chat Bot"
-2. **Tin nhắn 2**: Thông báo chuyển admin + nút "Chat Bot"
-3. **Tin nhắn 3+**: Bot dừng hoàn toàn, không gửi gì cả, ẩn nút
+2. **Tin nhắn 2**: Chỉ thông báo chuyển admin, KHÔNG có nút
+3. **Tin nhắn 3+**: Bot dừng hoàn toàn, không gửi gì cả
 4. Không áp dụng chống spam
 
 ### **User trong Bot Mode:**
@@ -86,8 +86,8 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 ## Cách test
 
 1. **Lần 1**: Gửi tin nhắn thường → Chào mừng + nút "Chat Bot"
-2. **Lần 2**: Gửi tin nhắn thường → Thông báo chuyển admin + nút "Chat Bot"
-3. **Lần 3+**: Gửi tin nhắn thường → Bot dừng hoàn toàn, không gửi gì cả, ẩn nút
+2. **Lần 2**: Gửi tin nhắn thường → Chỉ thông báo chuyển admin, KHÔNG có nút
+3. **Lần 3+**: Gửi tin nhắn thường → Bot dừng hoàn toàn, không gửi gì cả
 4. Ấn nút "Chat Bot" → Vào bot mode + hiển thị menu phù hợp
 5. Sử dụng bot bình thường → Có nút "Thoát Bot"
 6. Ấn nút "Thoát Bot" → Ra khỏi bot mode + chỉ có nút "Chat Bot"

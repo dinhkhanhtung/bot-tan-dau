@@ -2,6 +2,8 @@
 const {
     shouldShowChatBotButton,
     resetChatBotOfferCount,
+    incrementNormalMessageCount,
+    getUserChatBotOfferCount,
     setUserBotMode
 } = require('./src/lib/anti-spam.ts')
 
@@ -13,38 +15,30 @@ async function testChatBotLimit() {
     // Test 1: Lần đầu tiên - chào mừng + nút
     console.log('Test 1: First time - welcome message + button')
     incrementNormalMessageCount(testUserId) // count = 1
-    const show1 = shouldShowChatBotButton(testUserId)
-    const stop1 = shouldBotStopCompletely(testUserId)
-    console.log('Should show button:', show1)
-    console.log('Should bot stop:', stop1)
-    console.log('Expected: true, false\n')
+    const data1 = getUserChatBotOfferCount(testUserId)
+    console.log('Count:', data1?.count)
+    console.log('Expected: 1\n')
 
     // Test 2: Lần thứ 2 - chỉ thông báo admin, KHÔNG có nút
     console.log('Test 2: Second time - admin notification only, NO button')
     incrementNormalMessageCount(testUserId) // count = 2
-    const show2 = shouldShowChatBotButton(testUserId)
-    const stop2 = shouldBotStopCompletely(testUserId)
-    console.log('Should show button:', show2)
-    console.log('Should bot stop:', stop2)
-    console.log('Expected: false, false\n')
+    const data2 = getUserChatBotOfferCount(testUserId)
+    console.log('Count:', data2?.count)
+    console.log('Expected: 2\n')
 
     // Test 3: Lần thứ 3 - bot dừng hoàn toàn
     console.log('Test 3: Third time - bot should stop completely')
     incrementNormalMessageCount(testUserId) // count = 3
-    const show3 = shouldShowChatBotButton(testUserId)
-    const stop3 = shouldBotStopCompletely(testUserId)
-    console.log('Should show button:', show3)
-    console.log('Should bot stop:', stop3)
-    console.log('Expected: false, true\n')
+    const data3 = getUserChatBotOfferCount(testUserId)
+    console.log('Count:', data3?.count)
+    console.log('Expected: 3\n')
 
     // Test 4: User ấn nút Chat Bot - KHÔNG reset counter
     console.log('Test 4: User clicks Chat Bot button - NO reset')
     setUserBotMode(testUserId)
-    const show4 = shouldShowChatBotButton(testUserId)
-    const stop4 = shouldBotStopCompletely(testUserId)
-    console.log('Should show button after clicking:', show4)
-    console.log('Should bot stop after clicking:', stop4)
-    console.log('Expected: false, true (still at limit)\n')
+    const data4 = getUserChatBotOfferCount(testUserId)
+    console.log('Count after clicking:', data4?.count)
+    console.log('Expected: 3 (still at limit)\n')
 
     console.log('✅ Chat Bot Button Limit tests completed!')
 }
