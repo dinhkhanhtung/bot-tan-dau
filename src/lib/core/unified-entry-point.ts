@@ -525,12 +525,19 @@ export class UnifiedBotSystem {
 
                 if (currentCount === 1) {
                     console.log(`🎯 Executing count=1 logic for ${user.facebook_id}`)
-                    // Tin nhắn đầu tiên - chào mừng + nút "Chat Bot" (gộp thành 1 tin)
-                    const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
-                    
-                    // Gộp 3 tin nhắn thành 1
-                    const welcomeMessage = `🎉 Chào bạn ghé thăm Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?\n🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.`
+                    // Tin nhắn đầu tiên - chào mừng + câu hỏi
+                    const { sendMessage } = await import('../facebook-api')
+
+                    // Tin nhắn 1: Chào mừng + câu hỏi
+                    const welcomeMessage = `🎉 Chào bạn ghé thăm Đinh Khánh Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?`
                     await sendMessage(user.facebook_id, welcomeMessage)
+                } else if (currentCount === 2) {
+                    console.log(`🎯 Executing count=2 logic for ${user.facebook_id}`)
+                    // Tin nhắn thứ 2 - giới thiệu bot + nút "Chat Bot"
+                    const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+
+                    // Tin nhắn 2: Giới thiệu bot + nút
+                    await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
 
                     await sendQuickReply(
                         user.facebook_id,
@@ -539,15 +546,15 @@ export class UnifiedBotSystem {
                             createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
                         ]
                     )
-                } else if (currentCount === 2) {
-                    console.log(`🎯 Executing count=2 logic for ${user.facebook_id}`)
-                    // Tin nhắn thứ 2 - chỉ thông báo admin, KHÔNG có nút
+                } else if (currentCount === 3) {
+                    console.log(`🎯 Executing count=3 logic for ${user.facebook_id}`)
+                    // Tin nhắn thứ 3 - chỉ thông báo admin, KHÔNG có nút
                     const { sendMessage } = await import('../facebook-api')
-                    await sendMessage(user.facebook_id, '💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!')
+                    await sendMessage(user.facebook_id, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hối!')
                 } else {
                     console.log(`🎯 Executing count=${currentCount} logic for ${user.facebook_id} - bot stops completely`)
-                    // Tin nhắn thứ 3+ - bot dừng hoàn toàn
-                    logger.info('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 3 - không gửi gì cả', { facebook_id: user.facebook_id })
+                    // Tin nhắn thứ 4+ - bot dừng hoàn toàn
+                    logger.info('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 4 - không gửi gì cả', { facebook_id: user.facebook_id })
                     // Bot dừng hoàn toàn, không gửi gì cả
                 }
                 return

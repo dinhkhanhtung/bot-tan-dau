@@ -53,13 +53,15 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 
 ### **User chưa trong Bot Mode:**
 1. **Tin nhắn 1**: 
-   - "🎉 Chào bạn ghé thăm Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?\n🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới."
-   - Nút "🤖 CHAT BOT"
+   - "🎉 Chào bạn ghé thăm Đinh Khánh Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?"
 2. **Tin nhắn 2**: 
-   - "💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!"
+   - "🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới."
+   - Nút "🤖 CHAT BOT"
+3. **Tin nhắn 3**: 
+   - "💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hối!"
    - KHÔNG có nút
-3. **Tin nhắn 3+**: Bot dừng hoàn toàn, không gửi gì cả
-4. Không áp dụng chống spam
+4. **Tin nhắn 4+**: Bot dừng hoàn toàn, không gửi gì cả
+5. Không áp dụng chống spam
 
 ### **User trong Bot Mode:**
 1. Tin nhắn → Xử lý bởi bot
@@ -90,12 +92,14 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 ## Cách test
 
 1. **Lần 1**: Gửi tin nhắn thường → 
-   - "🎉 Chào bạn ghé thăm Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?\n🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới."
-   - Nút "🤖 CHAT BOT"
+   - "🎉 Chào bạn ghé thăm Đinh Khánh Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?"
 2. **Lần 2**: Gửi tin nhắn thường → 
-   - "💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!"
+   - "🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới."
+   - Nút "🤖 CHAT BOT"
+3. **Lần 3**: Gửi tin nhắn thường → 
+   - "💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hối!"
    - KHÔNG có nút
-3. **Lần 3+**: Gửi tin nhắn thường → Bot dừng hoàn toàn, không gửi gì cả
+4. **Lần 4+**: Gửi tin nhắn thường → Bot dừng hoàn toàn, không gửi gì cả
 4. Ấn nút "Chat Bot" → Vào bot mode + hiển thị menu phù hợp
 5. Sử dụng bot bình thường → Có nút "Thoát Bot"
 6. Ấn nút "Thoát Bot" → Ra khỏi bot mode + chỉ có nút "Chat Bot"
