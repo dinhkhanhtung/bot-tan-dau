@@ -341,7 +341,11 @@ export class UnifiedBotSystem {
                     // User ấn nút "Chat Bot" - đưa vào bot mode
                     // Kiểm tra xem có phải admin không
                     if (user.facebook_id === process.env.FACEBOOK_PAGE_ID) {
-                        // Admin không cần vào bot mode - hiện admin dashboard
+                        // Admin cũng cần vào bot mode để thấy admin dashboard
+                        const { setUserBotMode } = await import('../anti-spam')
+                        await setUserBotMode(user.facebook_id)
+
+                        // Hiện admin dashboard trong bot mode
                         await this.showAdminDashboard(user)
                     } else {
                         // User thường - đưa vào bot mode
@@ -692,16 +696,38 @@ export class UnifiedBotSystem {
      */
     private static async handleNewUserText(user: any, text: string): Promise<void> {
         try {
-            // Kiểm tra user có đang trong bot mode không
-            const { checkUserBotMode } = await import('../anti-spam')
-            const isInBotMode = await checkUserBotMode(user.facebook_id)
-
             // KIỂM TRA ADMIN TRƯỚC TIÊN - TIN NHẮN TỪ FANPAGE = ADMIN
             if (user.facebook_id === process.env.FACEBOOK_PAGE_ID) {
                 logger.info('Admin message from fanpage detected', { facebook_id: user.facebook_id })
-                await this.handleAdminMessage(user, text)
-                return
+
+                // Kiểm tra admin có đang trong bot mode không
+                const { checkUserBotMode } = await import('../anti-spam')
+                const isInBotMode = await checkUserBotMode(user.facebook_id)
+
+                if (!isInBotMode) {
+                    // Admin chưa trong bot mode - hiển thị nút "VÀO BOT"
+                    const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+                    await sendMessage(user.facebook_id, '🔧 ADMIN DASHBOARD')
+                    await sendMessage(user.facebook_id, 'Chào mừng Admin! Hãy ấn nút "VÀO BOT" để sử dụng các chức năng admin.')
+
+                    await sendQuickReply(
+                        user.facebook_id,
+                        'Chọn chức năng:',
+                        [
+                            createQuickReply('🤖 VÀO BOT', 'CHAT_BOT')
+                        ]
+                    )
+                    return
+                } else {
+                    // Admin đang trong bot mode - xử lý như bình thường
+                    await this.handleAdminMessage(user, text)
+                    return
+                }
             }
+
+            // Kiểm tra user có đang trong bot mode không
+            const { checkUserBotMode } = await import('../anti-spam')
+            const isInBotMode = await checkUserBotMode(user.facebook_id)
 
             if (!isInBotMode) {
                 logger.info('New user not in bot mode - processing as normal message', {

@@ -190,6 +190,7 @@ export class WelcomeService {
 
             case WelcomeType.ADMIN:
                 return [
+                    createQuickReply('🤖 VÀO BOT', 'CHAT_BOT'),
                     createQuickReply('👥 QUẢN LÝ NGƯỜI DÙNG', 'ADMIN_USERS'),
                     createQuickReply('💰 QUẢN LÝ THANH TOÁN', 'ADMIN_PAYMENTS'),
                     createQuickReply('🛒 QUẢN LÝ TIN ĐĂNG', 'ADMIN_LISTINGS'),
