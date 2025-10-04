@@ -78,7 +78,8 @@ export class DatabaseService {
                     .eq('facebook_id', facebookId)
                     .single()
 
-                if (error && error.code !== 'PGRST116') {
+                // Handle both "no rows" and "multiple rows" errors
+                if (error && error.code !== 'PGRST116' && !error.message.includes('Cannot coerce the result to a single JSON object')) {
                     throw error
                 }
 
