@@ -187,13 +187,13 @@ export function shouldShowChatBotButton(facebookId: string): boolean {
         return true
     }
     
-    // Chỉ hiển thị 1 lần duy nhất (count = 1)
+    // Hiển thị nút cho lần 1 và 2
     if (!offerData) {
         return true
     }
     
-    // Nếu count = 1, hiển thị nút
-    if (offerData.count === 1) {
+    // Nếu count <= 2, hiển thị nút
+    if (offerData.count <= 2) {
         return true
     }
     
@@ -204,7 +204,7 @@ export function shouldShowChatBotButton(facebookId: string): boolean {
 export function incrementNormalMessageCount(facebookId: string): void {
     const offerData = userChatBotOfferCount.get(facebookId)
     const now = Date.now()
-
+    
     if (!offerData) {
         userChatBotOfferCount.set(facebookId, { count: 1, lastOffer: now })
     } else {
@@ -213,7 +213,12 @@ export function incrementNormalMessageCount(facebookId: string): void {
     }
 }
 
-// Hàm kiểm tra bot có nên dừng hoàn toàn không (sau tin nhắn thứ 2)
+// Hàm lấy thông tin counter
+export function getUserChatBotOfferCount(facebookId: string): { count: number, lastOffer: number } | undefined {
+    return userChatBotOfferCount.get(facebookId)
+}
+
+// Hàm kiểm tra bot có nên dừng hoàn toàn không (sau tin nhắn thứ 3)
 export function shouldBotStopCompletely(facebookId: string): boolean {
     const offerData = userChatBotOfferCount.get(facebookId)
     const now = Date.now()
@@ -224,8 +229,8 @@ export function shouldBotStopCompletely(facebookId: string): boolean {
         return false
     }
     
-    // Dừng hoàn toàn sau tin nhắn thứ 2 (count >= 2)
-    if (offerData && offerData.count >= 2) {
+    // Dừng hoàn toàn sau tin nhắn thứ 3 (count >= 3)
+    if (offerData && offerData.count >= 3) {
         return true
     }
     

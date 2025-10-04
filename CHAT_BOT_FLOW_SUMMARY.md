@@ -52,9 +52,9 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 ## Logic mới
 
 ### **User chưa trong Bot Mode:**
-1. Tin nhắn → Chuyển đến admin
-2. Hiển thị nút "Chat Bot" chỉ 1 lần duy nhất
-3. Sau tin nhắn thứ 2: Bot dừng hoàn toàn, không gửi gì cả, ẩn nút
+1. **Tin nhắn 1**: Chào mừng + nút "Chat Bot"
+2. **Tin nhắn 2**: Thông báo chuyển admin + nút "Chat Bot"
+3. **Tin nhắn 3+**: Bot dừng hoàn toàn, không gửi gì cả, ẩn nút
 4. Không áp dụng chống spam
 
 ### **User trong Bot Mode:**
