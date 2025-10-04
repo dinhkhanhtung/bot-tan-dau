@@ -180,38 +180,51 @@ export function exitUserBotMode(facebookId: string): void {
 export function shouldShowChatBotButton(facebookId: string): boolean {
     const offerData = userChatBotOfferCount.get(facebookId)
     const now = Date.now()
-    
+
     // Reset sau 24 giờ
     if (offerData && (now - offerData.lastOffer) > 24 * 60 * 60 * 1000) {
         userChatBotOfferCount.delete(facebookId)
         return true
     }
-    
+
     // Chỉ hiển thị 1 lần duy nhất
     if (!offerData) {
         userChatBotOfferCount.set(facebookId, { count: 1, lastOffer: now })
         return true
     }
-    
+
     return false
+}
+
+// Hàm tăng counter cho tin nhắn thường
+export function incrementNormalMessageCount(facebookId: string): void {
+    const offerData = userChatBotOfferCount.get(facebookId)
+    const now = Date.now()
+
+    if (!offerData) {
+        userChatBotOfferCount.set(facebookId, { count: 1, lastOffer: now })
+    } else {
+        offerData.count++
+        offerData.lastOffer = now
+    }
 }
 
 // Hàm kiểm tra bot có nên dừng hoàn toàn không (sau tin nhắn thứ 2)
 export function shouldBotStopCompletely(facebookId: string): boolean {
     const offerData = userChatBotOfferCount.get(facebookId)
     const now = Date.now()
-    
+
     // Reset sau 24 giờ
     if (offerData && (now - offerData.lastOffer) > 24 * 60 * 60 * 1000) {
         userChatBotOfferCount.delete(facebookId)
         return false
     }
-    
+
     // Dừng hoàn toàn sau tin nhắn thứ 2
     if (offerData && offerData.count >= 2) {
         return true
     }
-    
+
     return false
 }
 
@@ -226,7 +239,7 @@ export async function handleBotExit(facebookId: string): Promise<void> {
     // Gửi tin nhắn xác nhận thoát bot
     await sendMessage(facebookId, '🚪 Bạn đã thoát khỏi Bot Mode!')
     await sendMessage(facebookId, '💬 Bây giờ bạn có thể chat bình thường với admin.')
-    await sendMessage(facebookId, '🤖 Nếu muốn sử dụng bot, hãy ấn nút "Chat Bot" bên dưới.')
+    await sendMessage(facebookId, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
 
     // Gửi nút để quay lại bot
     await sendQuickReply(

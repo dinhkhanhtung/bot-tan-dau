@@ -86,8 +86,9 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 ## Cách test
 
 1. **Lần 1**: Gửi tin nhắn thường → Nhận thông báo chuyển admin + nút Chat Bot
-2. **Lần 2+**: Gửi tin nhắn thường → Bot dừng hoàn toàn, không gửi gì cả
-3. Ấn nút "Chat Bot" → Vào bot mode + hiển thị menu phù hợp
-4. Sử dụng bot bình thường → Có nút "Thoát Bot"
-5. Ấn nút "Thoát Bot" → Ra khỏi bot mode + chỉ có nút "Chat Bot"
-6. Test đăng ký trong bot mode → Hoạt động bình thường
+2. **Lần 2**: Gửi tin nhắn thường → Bot dừng hoàn toàn, không gửi gì cả, ẩn nút
+3. **Lần 3+**: Gửi tin nhắn thường → Bot dừng hoàn toàn, không gửi gì cả
+4. Ấn nút "Chat Bot" → Vào bot mode + hiển thị menu phù hợp
+5. Sử dụng bot bình thường → Có nút "Thoát Bot"
+6. Ấn nút "Thoát Bot" → Ra khỏi bot mode + chỉ có nút "Chat Bot"
+7. Test đăng ký trong bot mode → Hoạt động bình thường

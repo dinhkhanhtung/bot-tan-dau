@@ -471,22 +471,25 @@ export class UnifiedBotSystem {
 
             if (!isInBotMode) {
                 console.log('💬 New user not in bot mode - processing as normal message')
-                
+
                 // Tăng counter cho mỗi tin nhắn thường
-                const { shouldShowChatBotButton, shouldBotStopCompletely } = await import('../anti-spam')
-                
+                const { shouldShowChatBotButton, shouldBotStopCompletely, incrementNormalMessageCount } = await import('../anti-spam')
+
+                // Tăng counter trước khi kiểm tra
+                incrementNormalMessageCount(user.facebook_id)
+
                 // Kiểm tra bot có nên dừng hoàn toàn không
                 if (shouldBotStopCompletely(user.facebook_id)) {
                     console.log('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 2 - không gửi gì cả')
                     return
                 }
-                
+
                 // Chỉ gửi thông báo 1 lần duy nhất
                 if (shouldShowChatBotButton(user.facebook_id)) {
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
-                    await sendMessage(user.facebook_id, '💬 Tin nhắn của bạn đã được chuyển đến admin. Họ sẽ phản hồi sớm nhất có thể!')
-                    await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng bot, hãy ấn nút "Chat Bot" bên dưới.')
-                    
+                    await sendMessage(user.facebook_id, '💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!')
+                    await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
+
                     await sendQuickReply(
                         user.facebook_id,
                         'Chọn hành động:',
