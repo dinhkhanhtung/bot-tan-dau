@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 
 // Handle CORS preflight requests
@@ -55,13 +55,15 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Verify password
-        const isPasswordValid = await bcrypt.compare(password, adminUser.password_hash)
+        // Verify password (sử dụng cùng phương thức hash như script tạo admin)
+        const salt = 'bot_tan_dau_admin_salt_2024'
+        const expectedHash = crypto.createHash('sha256').update(password + salt).digest('hex')
+        const isPasswordValid = expectedHash === adminUser.password_hash
 
         if (!isPasswordValid) {
             return NextResponse.json(
                 { success: false, message: 'Tên đăng nhập hoặc mật khẩu không đúng' },
-                { 
+                {
                     status: 401,
                     headers: {
                         'Access-Control-Allow-Origin': '*',

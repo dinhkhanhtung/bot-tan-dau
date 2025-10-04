@@ -1,8 +1,9 @@
 -- ========================================
 -- BOT Tân Dậu - DATABASE SETUP HOÀN CHỈNH
 -- ========================================
+-- Cập nhật: Thêm các trường cho Admin Dashboard Mobile-Friendly
 -- Chạy file này 1 lần duy nhất trong Supabase SQL Editor
--- Bao gồm tất cả tables + welcome tracking + admin chat sessions
+-- Bao gồm tất cả tables + welcome tracking + admin chat sessions + bot settings
 
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -625,9 +626,18 @@ COMMENT ON COLUMN chat_bot_offer_counts.last_offer IS 'Thời gian gửi tin nh�
 -- FINAL STATUS
 -- ========================================
 
--- Insert default bot status nếu chưa có
+-- Insert default bot settings nếu chưa có
 INSERT INTO bot_settings (key, value, description)
-VALUES ('bot_status', 'active', 'Trạng thái hoạt động của bot (active/stopped)')
+VALUES
+    ('bot_status', 'active', 'Trạng thái hoạt động của bot (active/stopped)'),
+    ('ai_status', 'active', 'Trạng thái hoạt động của AI (active/stopped)'),
+    ('payment_fee', '7000', 'Phí dịch vụ mỗi ngày (VNĐ)'),
+    ('trial_days', '3', 'Số ngày dùng thử miễn phí'),
+    ('max_listings_per_user', '10', 'Số tin đăng tối đa mỗi user'),
+    ('auto_approve_listings', 'false', 'Tự động duyệt tin đăng mới'),
+    ('maintenance_mode', 'false', 'Chế độ bảo trì hệ thống'),
+    ('auto_approve_payments', 'false', 'Tự động duyệt thanh toán'),
+    ('payment_approval_timeout', '24', 'Thời gian chờ duyệt thanh toán (giờ)')
 ON CONFLICT (key) DO NOTHING;
 
 SELECT 'Database setup hoàn chỉnh với PENDING_USER system, ANTI-SPAM thông minh và CHAT BOT COUNTER!' as status;
