@@ -309,9 +309,11 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
 
     // Xử lý theo level - LOGIC MỚI THEO YÊU CẦU
     if (newCount === 1) {
-        // Lần 1: Gửi welcome đầy đủ
+        // Lần 1: Gửi welcome đầy đủ - SỬ DỤNG WELCOME SERVICE
         console.log('🎉 First message - sending welcome')
-        await sendWelcomeMessage(facebookId, userStatus)
+        const { welcomeService, WelcomeType } = await import('./welcome-service')
+        const welcomeType = isRegistered(userStatus) ? WelcomeType.RETURNING_USER : WelcomeType.NEW_USER
+        await welcomeService.sendWelcome(facebookId, welcomeType)
         return { action: 'none', block: false, message: 'Welcome sent' }
     } else if (newCount >= 2) {
         // Lần 2+: Chỉ cảnh báo nhẹ, KHÔNG khóa user chưa đăng ký
