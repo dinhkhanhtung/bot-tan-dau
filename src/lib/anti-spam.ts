@@ -105,33 +105,68 @@ const userChatBotOfferCount = new Map<string, { count: number, lastOffer: number
 
 // Hàm kiểm tra user có trong bot mode không
 export async function checkUserBotMode(facebookId: string): Promise<boolean> {
-    const botMode = userBotMode.get(facebookId)
-    if (!botMode) return false
+    try {
+        // Kiểm tra từ database thay vì Map
+        const { supabaseAdmin } = await import('./supabase')
+        const { data } = await supabaseAdmin
+            .from('user_bot_modes')
+            .select('*')
+            .eq('facebook_id', facebookId)
+            .eq('in_bot', true)
+            .single()
 
-    // Auto-exit bot mode sau 24 giờ
-    const now = Date.now()
-    const twentyFourHours = 24 * 60 * 60 * 1000
-    if (now - botMode.enteredAt > twentyFourHours) {
-        userBotMode.delete(facebookId)
+        if (!data) return false
+
+        // Auto-exit bot mode sau 24 giờ
+        const now = Date.now()
+        const twentyFourHours = 24 * 60 * 60 * 1000
+        const enteredAt = new Date(data.entered_at).getTime()
+
+        if (now - enteredAt > twentyFourHours) {
+            // Xóa bot mode cũ
+            await supabaseAdmin
+                .from('user_bot_modes')
+                .delete()
+                .eq('facebook_id', facebookId)
+            return false
+        }
+
+        return true
+    } catch (error) {
+        console.error('Error checking bot mode:', error)
         return false
     }
-
-    return botMode.inBot
 }
 
 // Hàm đặt user vào bot mode (khi ấn nút "Chat Bot")
-export function setUserBotMode(facebookId: string): void {
-    userBotMode.set(facebookId, {
-        inBot: true,
-        enteredAt: Date.now()
-    })
-    console.log('✅ User entered bot mode:', facebookId)
+export async function setUserBotMode(facebookId: string): Promise<void> {
+    try {
+        const { supabaseAdmin } = await import('./supabase')
+        await supabaseAdmin
+            .from('user_bot_modes')
+            .upsert({
+                facebook_id: facebookId,
+                in_bot: true,
+                entered_at: new Date().toISOString()
+            })
+        console.log('✅ User entered bot mode:', facebookId)
+    } catch (error) {
+        console.error('Error setting bot mode:', error)
+    }
 }
 
 // Hàm đưa user ra khỏi bot mode (khi ấn nút "Thoát Bot")
-export function exitUserBotMode(facebookId: string): void {
-    userBotMode.delete(facebookId)
-    console.log('🚪 User exited bot mode:', facebookId)
+export async function exitUserBotMode(facebookId: string): Promise<void> {
+    try {
+        const { supabaseAdmin } = await import('./supabase')
+        await supabaseAdmin
+            .from('user_bot_modes')
+            .delete()
+            .eq('facebook_id', facebookId)
+        console.log('🚪 User exited bot mode:', facebookId)
+    } catch (error) {
+        console.error('Error exiting bot mode:', error)
+    }
 }
 
 // Hàm kiểm tra và tăng số lần hiển thị nút Chat Bot (DEPRECATED - không dùng nữa)
@@ -240,7 +275,7 @@ export async function handleBotExit(facebookId: string): Promise<void> {
     const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api')
 
     // Đưa user ra khỏi bot mode
-    exitUserBotMode(facebookId)
+    await exitUserBotMode(facebookId)
 
     // Gửi tin nhắn xác nhận thoát bot
     await sendMessage(facebookId, '🚪 Bạn đã thoát khỏi Bot Mode!')

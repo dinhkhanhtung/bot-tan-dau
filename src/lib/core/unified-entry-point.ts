@@ -326,6 +326,21 @@ export class UnifiedBotSystem {
                     const { handleBotExit } = await import('../anti-spam')
                     await handleBotExit(user.facebook_id)
                     break
+                case 'CHAT_BOT':
+                    // User ấn nút "Chat Bot" - đưa vào bot mode
+                    // Kiểm tra xem có phải admin không
+                    if (user.facebook_id === process.env.FACEBOOK_PAGE_ID) {
+                        // Admin không cần vào bot mode - hiện admin dashboard
+                        await this.showAdminDashboard(user)
+                    } else {
+                        // User thường - đưa vào bot mode
+                        const { setUserBotMode } = await import('../anti-spam')
+                        await setUserBotMode(user.facebook_id)
+
+                        // Hiện main menu
+                        await this.showMainMenu(user)
+                    }
+                    break
                 default:
                     await this.routeToHandler(user, postback)
             }
@@ -449,9 +464,8 @@ export class UnifiedBotSystem {
      */
     private static async handleAdminTextMessage(user: any, text: string): Promise<void> {
         try {
-            // Admin không trong cuộc trò chuyện - hiện dashboard
-            const { handleAdminCommand } = await import('../handlers/admin-handlers')
-            await handleAdminCommand(user)
+            // Admin text message - hiện admin dashboard
+            await this.showAdminDashboard(user)
         } catch (error) {
             console.error('Error handling admin text:', error)
             await this.showAdminDashboard(user)
@@ -503,12 +517,12 @@ export class UnifiedBotSystem {
             // Hiện thông tin user cho admin
             await sendMessage(user.facebook_id, `💬 Đang chat với: ${chatUser?.name || 'Unknown'} (${session.user_id})`)
 
-            // Hiện admin menu với nhiều nút
+            // Admin luôn có đầy đủ quyền - không cần kiểm tra bot mode
             const adminMenuOptions = [
-                createQuickReply('🚀 ĐĂNG KÝ', `ADMIN_SEND_REGISTER_${session.user_id}`),
-                createQuickReply('💰 THANH TOÁN', `ADMIN_SEND_PAYMENT_${session.user_id}`),
-                createQuickReply('ℹ️ THÔNG TIN', `ADMIN_SEND_INFO_${session.user_id}`),
-                createQuickReply('💬 HỖ TRỢ', `ADMIN_SEND_SUPPORT_${session.user_id}`),
+                createQuickReply('🚀 GỬI NÚT ĐĂNG KÝ', `ADMIN_SEND_REGISTER_${session.user_id}`),
+                createQuickReply('💰 GỬI NÚT THANH TOÁN', `ADMIN_SEND_PAYMENT_${session.user_id}`),
+                createQuickReply('ℹ️ GỬI NÚT THÔNG TIN', `ADMIN_SEND_INFO_${session.user_id}`),
+                createQuickReply('💬 GỬI NÚT HỖ TRỢ', `ADMIN_SEND_SUPPORT_${session.user_id}`),
                 createQuickReply('👤 THÔNG TIN USER', `ADMIN_USER_INFO_${session.user_id}`),
                 createQuickReply('📊 LỊCH SỬ', `ADMIN_USER_HISTORY_${session.user_id}`),
                 createQuickReply('📤 GỬI LINK', `ADMIN_SEND_LINK_${session.user_id}`),
@@ -592,9 +606,9 @@ export class UnifiedBotSystem {
             const isInBotMode = await checkUserBotMode(user.facebook_id)
 
             // KIỂM TRA ADMIN TRƯỚC TIÊN - TIN NHẮN TỪ FANPAGE = ADMIN
-            if (user.facebook_id === process.env.FACEBOOK_APP_ID) {
+            if (user.facebook_id === process.env.FACEBOOK_PAGE_ID) {
                 logger.info('Admin message from fanpage detected', { facebook_id: user.facebook_id })
-                await this.showAdminDashboard(user)
+                await this.handleAdminMessage(user, text)
                 return
             }
 
@@ -704,8 +718,8 @@ export class UnifiedBotSystem {
                 } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
                     await this.showSupportInfo(user)
                 } else {
-                    // Xử lý tin nhắn thường - sử dụng welcome service
-                    await welcomeService.sendWelcome(user.facebook_id, WelcomeType.NEW_USER)
+                    // Xử lý tin nhắn thường - hiện main menu
+                    await this.showMainMenu(user)
                 }
             }
 

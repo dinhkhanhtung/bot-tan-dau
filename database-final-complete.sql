@@ -548,6 +548,16 @@ CREATE TABLE IF NOT EXISTS chat_bot_offer_counts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 
+-- Table for user bot modes
+CREATE TABLE IF NOT EXISTS user_bot_modes (
+    id BIGSERIAL PRIMARY KEY,
+    facebook_id VARCHAR(255) UNIQUE NOT NULL,
+    in_bot BOOLEAN DEFAULT FALSE NOT NULL,
+    entered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
 -- Tạo index cho facebook_id để tăng tốc query
 CREATE INDEX IF NOT EXISTS idx_chat_bot_offer_counts_facebook_id ON chat_bot_offer_counts(facebook_id);
 
@@ -566,6 +576,22 @@ CREATE TRIGGER chat_bot_offer_counts_updated_at
     BEFORE UPDATE ON chat_bot_offer_counts
     FOR EACH ROW
     EXECUTE FUNCTION update_chat_bot_offer_counts_updated_at();
+
+-- Tạo function cho user_bot_modes
+CREATE OR REPLACE FUNCTION update_user_bot_modes_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Tạo trigger cho user_bot_modes
+DROP TRIGGER IF EXISTS user_bot_modes_updated_at ON user_bot_modes;
+CREATE TRIGGER user_bot_modes_updated_at
+    BEFORE UPDATE ON user_bot_modes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_user_bot_modes_updated_at();
 
 -- Tạo function để tự động xóa record cũ hơn 24 giờ
 CREATE OR REPLACE FUNCTION cleanup_old_chat_bot_offer_counts()
