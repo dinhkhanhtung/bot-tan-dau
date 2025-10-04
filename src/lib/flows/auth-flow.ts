@@ -459,7 +459,7 @@ export class AuthFlow {
         await sendTypingIndicator(user.facebook_id)
 
         // Check if user is admin first
-        const { isAdmin } = await import('../handlers/admin-handlers')
+        const { isAdmin } = await import('../utils')
         const userIsAdmin = await isAdmin(user.facebook_id)
 
         if (userIsAdmin) {
