@@ -180,19 +180,23 @@ export function exitUserBotMode(facebookId: string): void {
 export function shouldShowChatBotButton(facebookId: string): boolean {
     const offerData = userChatBotOfferCount.get(facebookId)
     const now = Date.now()
-
+    
     // Reset sau 24 giờ
     if (offerData && (now - offerData.lastOffer) > 24 * 60 * 60 * 1000) {
         userChatBotOfferCount.delete(facebookId)
         return true
     }
-
-    // Chỉ hiển thị 1 lần duy nhất
+    
+    // Chỉ hiển thị 1 lần duy nhất (count = 1)
     if (!offerData) {
-        userChatBotOfferCount.set(facebookId, { count: 1, lastOffer: now })
         return true
     }
-
+    
+    // Nếu count = 1, hiển thị nút
+    if (offerData.count === 1) {
+        return true
+    }
+    
     return false
 }
 
@@ -213,18 +217,18 @@ export function incrementNormalMessageCount(facebookId: string): void {
 export function shouldBotStopCompletely(facebookId: string): boolean {
     const offerData = userChatBotOfferCount.get(facebookId)
     const now = Date.now()
-
+    
     // Reset sau 24 giờ
     if (offerData && (now - offerData.lastOffer) > 24 * 60 * 60 * 1000) {
         userChatBotOfferCount.delete(facebookId)
         return false
     }
-
-    // Dừng hoàn toàn sau tin nhắn thứ 2
+    
+    // Dừng hoàn toàn sau tin nhắn thứ 2 (count >= 2)
     if (offerData && offerData.count >= 2) {
         return true
     }
-
+    
     return false
 }
 
