@@ -98,19 +98,19 @@ export default function AdminDashboard() {
             {/* Header */}
             <header className="bg-white shadow">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center py-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-center py-4 sm:py-6 space-y-4 sm:space-y-0">
                         <div className="flex items-center">
-                            <h1 className="text-3xl font-bold text-gray-900">
+                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                                 🤖 Admin Dashboard
                             </h1>
                         </div>
-                        <div className="flex items-center space-x-4">
-                            <span className="text-gray-700">
+                        <div className="flex items-center space-x-2 sm:space-x-4">
+                            <span className="text-sm sm:text-base text-gray-700">
                                 Xin chào, {adminInfo?.name || adminInfo?.username}
                             </span>
                             <button
                                 onClick={handleLogout}
-                                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                                className="bg-red-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-red-700 text-sm sm:text-base"
                             >
                                 Đăng xuất
                             </button>
@@ -251,42 +251,71 @@ export default function AdminDashboard() {
                         <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
                             ⚡ Chức năng nhanh
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                             <button
                                 onClick={() => router.push('/admin/payments')}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-200"
                             >
-                                💰 Quản lý thanh toán
+                                💰 Thanh toán
                             </button>
                             <button
                                 onClick={() => router.push('/admin/users')}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
                             >
-                                👥 Quản lý người dùng
+                                👥 Người dùng
                             </button>
                             <button
                                 onClick={() => router.push('/admin/listings')}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
+                                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200"
                             >
-                                🛒 Quản lý tin đăng
+                                🛒 Tin đăng
                             </button>
                             <button
                                 onClick={() => router.push('/admin/stats')}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200"
                             >
-                                📊 Thống kê chi tiết
+                                📊 Thống kê
                             </button>
                             <button
                                 onClick={() => router.push('/admin/notifications')}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700"
+                                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 transition-colors duration-200"
                             >
-                                📢 Quản lý thông báo
+                                📢 Thông báo
                             </button>
                             <button
                                 onClick={() => router.push('/admin/settings')}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700"
+                                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-200"
                             >
-                                ⚙️ Cài đặt hệ thống
+                                ⚙️ Cài đặt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* User Interaction Tools */}
+                <div className="bg-white shadow rounded-lg">
+                    <div className="px-4 py-5 sm:p-6">
+                        <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                            🚀 Công cụ tương tác
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <button className="inline-flex items-center justify-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors duration-200">
+                                📨 Gửi tin nhắn hàng loạt
+                            </button>
+                            <button className="inline-flex items-center justify-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200">
+                                🎯 Gửi nút cho user
+                            </button>
+                            <button className="inline-flex items-center justify-center px-3 py-2 border border-purple-300 text-sm font-medium rounded-md text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors duration-200">
+                                💬 Chat với user
+                            </button>
+                            <button className="inline-flex items-center justify-center px-3 py-2 border border-orange-300 text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 transition-colors duration-200">
+                                📢 Gửi thông báo
+                            </button>
+                            <button className="inline-flex items-center justify-center px-3 py-2 border border-teal-300 text-sm font-medium rounded-md text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors duration-200">
+                                🎁 Tặng điểm thưởng
+                            </button>
+                            <button className="inline-flex items-center justify-center px-3 py-2 border border-pink-300 text-sm font-medium rounded-md text-pink-700 bg-pink-50 hover:bg-pink-100 transition-colors duration-200">
+                                🔄 Đồng bộ dữ liệu
                             </button>
                         </div>
                     </div>

@@ -40,11 +40,14 @@ export async function GET(request: NextRequest) {
         // Default settings
         const defaultSettings = {
             botStatus: 'active',
+            aiStatus: 'active',
             paymentFee: 7000,
             trialDays: 3,
             maxListingsPerUser: 10,
             autoApproveListings: false,
             maintenanceMode: false,
+            autoApprovePayments: false,
+            paymentApprovalTimeout: 24,
             ...settingsObj
         }
 

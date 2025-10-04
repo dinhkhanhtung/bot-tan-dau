@@ -5,21 +5,27 @@ import { useRouter } from 'next/navigation'
 
 interface SystemSettings {
     botStatus: string
+    aiStatus: string
     paymentFee: number
     trialDays: number
     maxListingsPerUser: number
     autoApproveListings: boolean
     maintenanceMode: boolean
+    autoApprovePayments: boolean
+    paymentApprovalTimeout: number
 }
 
 export default function AdminSettings() {
     const [settings, setSettings] = useState<SystemSettings>({
         botStatus: 'active',
+        aiStatus: 'active',
         paymentFee: 7000,
         trialDays: 3,
         maxListingsPerUser: 10,
         autoApproveListings: false,
-        maintenanceMode: false
+        maintenanceMode: false,
+        autoApprovePayments: false,
+        paymentApprovalTimeout: 24
     })
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
@@ -146,11 +152,11 @@ export default function AdminSettings() {
             {/* Main Content */}
             <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Bot Settings */}
+                    {/* Bot & AI Settings */}
                     <div className="bg-white shadow rounded-lg">
                         <div className="px-4 py-5 sm:p-6">
                             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                                🤖 Cài đặt Bot
+                                🤖 Cài đặt Bot & AI
                             </h3>
                             <div className="space-y-4">
                                 <div>
@@ -161,6 +167,21 @@ export default function AdminSettings() {
                                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                         value={settings.botStatus}
                                         onChange={(e) => handleInputChange('botStatus', e.target.value)}
+                                    >
+                                        <option value="active">Đang hoạt động</option>
+                                        <option value="stopped">Tạm dừng</option>
+                                        <option value="maintenance">Bảo trì</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Trạng thái AI
+                                    </label>
+                                    <select
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                        value={settings.aiStatus}
+                                        onChange={(e) => handleInputChange('aiStatus', e.target.value)}
                                     >
                                         <option value="active">Đang hoạt động</option>
                                         <option value="stopped">Tạm dừng</option>
@@ -218,6 +239,39 @@ export default function AdminSettings() {
                                         onChange={(e) => handleInputChange('trialDays', parseInt(e.target.value))}
                                     />
                                 </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Tự động duyệt thanh toán
+                                    </label>
+                                    <div className="mt-1">
+                                        <input
+                                            type="checkbox"
+                                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                            checked={settings.autoApprovePayments}
+                                            onChange={(e) => handleInputChange('autoApprovePayments', e.target.checked)}
+                                        />
+                                        <span className="ml-2 text-sm text-gray-700">
+                                            Tự động duyệt thanh toán sau khi nhận ảnh chuyển khoản
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Thời gian chờ duyệt (giờ)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                        value={settings.paymentApprovalTimeout}
+                                        onChange={(e) => handleInputChange('paymentApprovalTimeout', parseInt(e.target.value))}
+                                        placeholder="24"
+                                    />
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        Số giờ chờ trước khi tự động duyệt thanh toán
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -257,6 +311,29 @@ export default function AdminSettings() {
                                         </span>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Admin Management */}
+                    <div className="bg-white shadow rounded-lg">
+                        <div className="px-4 py-5 sm:p-6">
+                            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                                👨‍💼 Quản lý Admin
+                            </h3>
+                            <div className="space-y-4">
+                                <button className="w-full bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
+                                    🔐 Đổi mật khẩu
+                                </button>
+                                <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                                    👥 Thêm Admin mới
+                                </button>
+                                <button className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                                    📋 Nhật ký hoạt động
+                                </button>
+                                <button className="w-full bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700">
+                                    🔄 Đồng bộ dữ liệu
+                                </button>
                             </div>
                         </div>
                     </div>
