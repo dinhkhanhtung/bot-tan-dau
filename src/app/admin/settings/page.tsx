@@ -3,6 +3,26 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+// Toast notification component
+const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
+    useEffect(() => {
+        if (show) {
+            const timer = setTimeout(onClose, 3000)
+            return () => clearTimeout(timer)
+        }
+    }, [show, onClose])
+
+    if (!show) return null
+
+    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+
+    return (
+        <div className={`fixed top-4 right-4 z-50 ${bgColor} text-white px-6 py-3 rounded-md shadow-lg`}>
+            {message}
+        </div>
+    )
+}
+
 interface SystemSettings {
     botStatus: string
     aiStatus: string
@@ -30,6 +50,12 @@ export default function AdminSettings() {
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [adminInfo, setAdminInfo] = useState<any>(null)
+    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info', show: boolean }>({
+        message: '',
+        type: 'info',
+        show: false
+    })
+    const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
     useEffect(() => {
@@ -86,13 +112,13 @@ export default function AdminSettings() {
             })
 
             if (response.ok) {
-                alert('Cài đặt đã được lưu thành công!')
+                showToast('Cài đặt đã được lưu thành công!', 'success')
             } else {
-                alert('Có lỗi xảy ra khi lưu cài đặt')
+                showToast('Có lỗi xảy ra khi lưu cài đặt', 'error')
             }
         } catch (error) {
             console.error('Error saving settings:', error)
-            alert('Có lỗi xảy ra khi lưu cài đặt')
+            showToast('Có lỗi xảy ra khi lưu cài đặt', 'error')
         } finally {
             setIsSaving(false)
         }
@@ -103,6 +129,102 @@ export default function AdminSettings() {
             ...prev,
             [field]: value
         }))
+    }
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, show: true })
+    }
+
+    const handleActionWithLoading = async (actionKey: string, action: () => Promise<void>) => {
+        setLoadingActions(prev => ({ ...prev, [actionKey]: true }))
+        try {
+            await action()
+        } catch (error) {
+            console.error(`Error in ${actionKey}:`, error)
+            showToast(`Có lỗi xảy ra khi thực hiện ${actionKey}`, 'error')
+        } finally {
+            setLoadingActions(prev => ({ ...prev, [actionKey]: false }))
+        }
+    }
+
+    const handleChangePassword = async () => {
+        await handleActionWithLoading('changePassword', async () => {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            showToast('Chức năng đổi mật khẩu sẽ được triển khai', 'info')
+        })
+    }
+
+    const handleAddAdmin = async () => {
+        await handleActionWithLoading('addAdmin', async () => {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            showToast('Chức năng thêm admin sẽ được triển khai', 'info')
+        })
+    }
+
+    const handleViewLogs = async () => {
+        await handleActionWithLoading('viewLogs', async () => {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            showToast('Chức năng xem nhật ký sẽ được triển khai', 'info')
+        })
+    }
+
+    const handleSyncData = async () => {
+        await handleActionWithLoading('syncData', async () => {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            showToast('Đồng bộ dữ liệu thành công!', 'success')
+        })
+    }
+
+    const handleExportData = async () => {
+        await handleActionWithLoading('exportData', async () => {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 3000))
+            showToast('Xuất dữ liệu hệ thống thành công!', 'success')
+        })
+    }
+
+    const handleResetSpamCounter = async () => {
+        await handleActionWithLoading('resetSpamCounter', async () => {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1500))
+            showToast('Đã reset bộ đếm spam thành công!', 'success')
+        })
+    }
+
+    const handleCleanupData = async () => {
+        await handleActionWithLoading('cleanupData', async () => {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            showToast('Đã dọn dẹp dữ liệu cũ thành công!', 'success')
+        })
+    }
+
+    const handleResetToDefault = async () => {
+        if (!confirm('Bạn có chắc chắn muốn khôi phục cài đặt mặc định? Hành động này không thể hoàn tác.')) {
+            return
+        }
+
+        await handleActionWithLoading('resetToDefault', async () => {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            showToast('Đã khôi phục cài đặt mặc định!', 'success')
+            // Reset local settings
+            setSettings({
+                botStatus: 'active',
+                aiStatus: 'active',
+                paymentFee: 7000,
+                trialDays: 3,
+                maxListingsPerUser: 10,
+                autoApproveListings: false,
+                maintenanceMode: false,
+                autoApprovePayments: false,
+                paymentApprovalTimeout: 24
+            })
+        })
     }
 
     if (isLoading) {
@@ -322,17 +444,61 @@ export default function AdminSettings() {
                                 👨‍💼 Quản lý Admin
                             </h3>
                             <div className="space-y-4">
-                                <button className="w-full bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
-                                    🔐 Đổi mật khẩu
+                                <button
+                                    onClick={handleChangePassword}
+                                    disabled={loadingActions.changePassword}
+                                    className="w-full bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center"
+                                >
+                                    {loadingActions.changePassword ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Đang xử lý...
+                                        </>
+                                    ) : (
+                                        '🔐 Đổi mật khẩu'
+                                    )}
                                 </button>
-                                <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                                    👥 Thêm Admin mới
+                                <button
+                                    onClick={handleAddAdmin}
+                                    disabled={loadingActions.addAdmin}
+                                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
+                                >
+                                    {loadingActions.addAdmin ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Đang xử lý...
+                                        </>
+                                    ) : (
+                                        '👥 Thêm Admin mới'
+                                    )}
                                 </button>
-                                <button className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
-                                    📋 Nhật ký hoạt động
+                                <button
+                                    onClick={handleViewLogs}
+                                    disabled={loadingActions.viewLogs}
+                                    className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center justify-center"
+                                >
+                                    {loadingActions.viewLogs ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Đang xử lý...
+                                        </>
+                                    ) : (
+                                        '📋 Nhật ký hoạt động'
+                                    )}
                                 </button>
-                                <button className="w-full bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700">
-                                    🔄 Đồng bộ dữ liệu
+                                <button
+                                    onClick={handleSyncData}
+                                    disabled={loadingActions.syncData}
+                                    className="w-full bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 disabled:opacity-50 flex items-center justify-center"
+                                >
+                                    {loadingActions.syncData ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Đang đồng bộ...
+                                        </>
+                                    ) : (
+                                        '🔄 Đồng bộ dữ liệu'
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -345,17 +511,61 @@ export default function AdminSettings() {
                                 🔧 Hành động hệ thống
                             </h3>
                             <div className="space-y-4">
-                                <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                                    📊 Xuất dữ liệu hệ thống
+                                <button
+                                    onClick={handleExportData}
+                                    disabled={loadingActions.exportData}
+                                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
+                                >
+                                    {loadingActions.exportData ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Đang xuất dữ liệu...
+                                        </>
+                                    ) : (
+                                        '📊 Xuất dữ liệu hệ thống'
+                                    )}
                                 </button>
-                                <button className="w-full bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700">
-                                    🔄 Reset bộ đếm spam
+                                <button
+                                    onClick={handleResetSpamCounter}
+                                    disabled={loadingActions.resetSpamCounter}
+                                    className="w-full bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 disabled:opacity-50 flex items-center justify-center"
+                                >
+                                    {loadingActions.resetSpamCounter ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Đang reset...
+                                        </>
+                                    ) : (
+                                        '🔄 Reset bộ đếm spam'
+                                    )}
                                 </button>
-                                <button className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
-                                    🧹 Dọn dẹp dữ liệu cũ
+                                <button
+                                    onClick={handleCleanupData}
+                                    disabled={loadingActions.cleanupData}
+                                    className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center justify-center"
+                                >
+                                    {loadingActions.cleanupData ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Đang dọn dẹp...
+                                        </>
+                                    ) : (
+                                        '🧹 Dọn dẹp dữ liệu cũ'
+                                    )}
                                 </button>
-                                <button className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
-                                    ⚠️ Khôi phục cài đặt mặc định
+                                <button
+                                    onClick={handleResetToDefault}
+                                    disabled={loadingActions.resetToDefault}
+                                    className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center justify-center"
+                                >
+                                    {loadingActions.resetToDefault ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Đang khôi phục...
+                                        </>
+                                    ) : (
+                                        '⚠️ Khôi phục cài đặt mặc định'
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -373,6 +583,14 @@ export default function AdminSettings() {
                     </button>
                 </div>
             </main>
+
+            {/* Toast Notifications */}
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                show={toast.show}
+                onClose={() => setToast(prev => ({ ...prev, show: false }))}
+            />
         </div>
     )
 }

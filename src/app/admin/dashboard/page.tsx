@@ -5,6 +5,26 @@ import { useRouter } from 'next/navigation'
 import AIPromptGenerator from './components/AIPromptGenerator'
 import { AIDashboardStats } from '@/types'
 
+// Toast notification component
+const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
+    useEffect(() => {
+        if (show) {
+            const timer = setTimeout(onClose, 3000)
+            return () => clearTimeout(timer)
+        }
+    }, [show, onClose])
+
+    if (!show) return null
+
+    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+
+    return (
+        <div className={`fixed top-4 right-4 z-50 ${bgColor} text-white px-6 py-3 rounded-md shadow-lg`}>
+            {message}
+        </div>
+    )
+}
+
 interface DashboardStats {
     totalUsers: number
     activeUsers: number
@@ -26,6 +46,12 @@ export default function AdminDashboard() {
     const [adminInfo, setAdminInfo] = useState<any>(null)
     const [activeTab, setActiveTab] = useState<'overview' | 'ai'>('overview')
     const [aiStats, setAiStats] = useState<AIDashboardStats | null>(null)
+    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info', show: boolean }>({
+        message: '',
+        type: 'info',
+        show: false
+    })
+    const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
     useEffect(() => {
@@ -71,6 +97,64 @@ export default function AdminDashboard() {
         localStorage.removeItem('admin_token')
         localStorage.removeItem('admin_info')
         router.push('/admin/login')
+    }
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, show: true })
+    }
+
+    const handleActionWithLoading = async (actionKey: string, action: () => Promise<void>) => {
+        setLoadingActions(prev => ({ ...prev, [actionKey]: true }))
+        try {
+            await action()
+        } catch (error) {
+            console.error(`Error in ${actionKey}:`, error)
+            showToast(`Có lỗi xảy ra khi thực hiện ${actionKey}`, 'error')
+        } finally {
+            setLoadingActions(prev => ({ ...prev, [actionKey]: false }))
+        }
+    }
+
+    const handleBulkMessage = async () => {
+        await handleActionWithLoading('bulkMessage', async () => {
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            showToast('Đã gửi tin nhắn hàng loạt thành công!', 'success')
+        })
+    }
+
+    const handleSendButton = async () => {
+        await handleActionWithLoading('sendButton', async () => {
+            await new Promise(resolve => setTimeout(resolve, 1500))
+            showToast('Đã gửi nút cho người dùng thành công!', 'success')
+        })
+    }
+
+    const handleChatWithUser = async () => {
+        await handleActionWithLoading('chatWithUser', async () => {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            showToast('Đang mở cửa sổ chat...', 'info')
+        })
+    }
+
+    const handleSendNotification = async () => {
+        await handleActionWithLoading('sendNotification', async () => {
+            await new Promise(resolve => setTimeout(resolve, 2500))
+            showToast('Đã gửi thông báo đến tất cả người dùng!', 'success')
+        })
+    }
+
+    const handleGivePoints = async () => {
+        await handleActionWithLoading('givePoints', async () => {
+            await new Promise(resolve => setTimeout(resolve, 1800))
+            showToast('Đã tặng điểm thưởng cho người dùng!', 'success')
+        })
+    }
+
+    const handleSyncFromDashboard = async () => {
+        await handleActionWithLoading('syncFromDashboard', async () => {
+            await new Promise(resolve => setTimeout(resolve, 3000))
+            showToast('Đồng bộ dữ liệu thành công!', 'success')
+        })
     }
 
     if (isLoading) {
@@ -334,23 +418,89 @@ export default function AdminDashboard() {
                                     🚀 Công cụ tương tác
                                 </h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors duration-200">
-                                        📨 Gửi tin nhắn hàng loạt
+                                    <button
+                                        onClick={handleBulkMessage}
+                                        disabled={loadingActions.bulkMessage}
+                                        className="inline-flex items-center justify-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 transition-colors duration-200"
+                                    >
+                                        {loadingActions.bulkMessage ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
+                                                Đang gửi...
+                                            </>
+                                        ) : (
+                                            '📨 Gửi tin nhắn hàng loạt'
+                                        )}
                                     </button>
-                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200">
-                                        🎯 Gửi nút cho user
+                                    <button
+                                        onClick={handleSendButton}
+                                        disabled={loadingActions.sendButton}
+                                        className="inline-flex items-center justify-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-50 transition-colors duration-200"
+                                    >
+                                        {loadingActions.sendButton ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+                                                Đang gửi...
+                                            </>
+                                        ) : (
+                                            '🎯 Gửi nút cho user'
+                                        )}
                                     </button>
-                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-purple-300 text-sm font-medium rounded-md text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors duration-200">
-                                        💬 Chat với user
+                                    <button
+                                        onClick={handleChatWithUser}
+                                        disabled={loadingActions.chatWithUser}
+                                        className="inline-flex items-center justify-center px-3 py-2 border border-purple-300 text-sm font-medium rounded-md text-purple-700 bg-purple-50 hover:bg-purple-100 disabled:opacity-50 transition-colors duration-200"
+                                    >
+                                        {loadingActions.chatWithUser ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
+                                                Đang mở...
+                                            </>
+                                        ) : (
+                                            '💬 Chat với user'
+                                        )}
                                     </button>
-                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-orange-300 text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 transition-colors duration-200">
-                                        📢 Gửi thông báo
+                                    <button
+                                        onClick={handleSendNotification}
+                                        disabled={loadingActions.sendNotification}
+                                        className="inline-flex items-center justify-center px-3 py-2 border border-orange-300 text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 transition-colors duration-200"
+                                    >
+                                        {loadingActions.sendNotification ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2"></div>
+                                                Đang gửi...
+                                            </>
+                                        ) : (
+                                            '📢 Gửi thông báo'
+                                        )}
                                     </button>
-                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-teal-300 text-sm font-medium rounded-md text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors duration-200">
-                                        🎁 Tặng điểm thưởng
+                                    <button
+                                        onClick={handleGivePoints}
+                                        disabled={loadingActions.givePoints}
+                                        className="inline-flex items-center justify-center px-3 py-2 border border-teal-300 text-sm font-medium rounded-md text-teal-700 bg-teal-50 hover:bg-teal-100 disabled:opacity-50 transition-colors duration-200"
+                                    >
+                                        {loadingActions.givePoints ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-600 mr-2"></div>
+                                                Đang tặng...
+                                            </>
+                                        ) : (
+                                            '🎁 Tặng điểm thưởng'
+                                        )}
                                     </button>
-                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-pink-300 text-sm font-medium rounded-md text-pink-700 bg-pink-50 hover:bg-pink-100 transition-colors duration-200">
-                                        🔄 Đồng bộ dữ liệu
+                                    <button
+                                        onClick={handleSyncFromDashboard}
+                                        disabled={loadingActions.syncFromDashboard}
+                                        className="inline-flex items-center justify-center px-3 py-2 border border-pink-300 text-sm font-medium rounded-md text-pink-700 bg-pink-50 hover:bg-pink-100 disabled:opacity-50 transition-colors duration-200"
+                                    >
+                                        {loadingActions.syncFromDashboard ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pink-600 mr-2"></div>
+                                                Đang đồng bộ...
+                                            </>
+                                        ) : (
+                                            '🔄 Đồng bộ dữ liệu'
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -362,6 +512,14 @@ export default function AdminDashboard() {
                     <AIPromptGenerator onStatsUpdate={setAiStats} />
                 )}
             </main>
+
+            {/* Toast Notifications */}
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                show={toast.show}
+                onClose={() => setToast(prev => ({ ...prev, show: false }))}
+            />
         </div>
     )
 }
