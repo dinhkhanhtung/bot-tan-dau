@@ -44,7 +44,9 @@ export class UnifiedBotSystem {
 
             // Step 3: Check user session and prioritize active flows
             const session = await this.getUserSession(user.facebook_id)
-            const currentFlow = session?.current_flow || null
+
+            // FIX: Handle both session data structures for compatibility
+            const currentFlow = session?.current_flow || session?.session_data?.current_flow || null
 
             logger.debug('Session check', { currentFlow, session })
 
@@ -174,20 +176,23 @@ export class UnifiedBotSystem {
      */
     private static async handleFlowMessage(user: any, text: string, session?: any): Promise<void> {
         try {
+            // FIX: Handle both session data structures for compatibility
+            const currentFlow = session?.current_flow || session?.session_data?.current_flow || null
+
             // Kiểm tra session hợp lệ
-            if (!session || !session.current_flow) {
+            if (!session || !currentFlow) {
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
 
             // Xử lý các lệnh thoát flow
             if (text && this.isExitCommand(text)) {
-                await this.handleFlowExit(user, session.current_flow)
+                await this.handleFlowExit(user, currentFlow)
                 return
             }
 
             // Route đến flow handler phù hợp
-            switch (session.current_flow) {
+            switch (currentFlow) {
                 case 'registration':
                     const { AuthFlow } = await import('../flows/auth-flow')
                     const authFlow = new AuthFlow()
@@ -569,22 +574,20 @@ export class UnifiedBotSystem {
                     return
                 }
 
+                // LOGIC MỚI: Kiểm tra có nên hiển thị nút Chat Bot không
+                const { shouldShowChatBotButton } = await import('../anti-spam')
+                const shouldShowButton = await shouldShowChatBotButton(user.facebook_id)
+
                 if (currentCount === 1) {
                     console.log(`🎯 Executing count=1 logic for ${user.facebook_id}`)
-                    // Tin nhắn đầu tiên - chào mừng + câu hỏi
-                    const { sendMessage } = await import('../facebook-api')
+                    // Tin nhắn đầu tiên - chào mừng đầy đủ + nút "Chat Bot"
+                    const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
 
                     // Tin nhắn 1: Chào mừng + câu hỏi
                     const welcomeMessage = `🎉 Chào bạn ghé thăm Đinh Khánh Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?`
                     await sendMessage(user.facebook_id, welcomeMessage)
-                } else if (currentCount === 2) {
-                    console.log(`🎯 Executing count=2 logic for ${user.facebook_id}`)
-                    // Tin nhắn thứ 2 - giới thiệu bot + nút "Chat Bot"
-                    const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
 
-                    // Tin nhắn 2: Giới thiệu bot + nút
-                    await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
-
+                    // Hiển thị nút Chat Bot
                     await sendQuickReply(
                         user.facebook_id,
                         'Chọn hành động:',
@@ -592,16 +595,50 @@ export class UnifiedBotSystem {
                             createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
                         ]
                     )
-                } else if (currentCount === 3) {
+                } else if (currentCount === 2 && shouldShowButton) {
+                    console.log(`🎯 Executing count=2 logic for ${user.facebook_id}`)
+                    // Tin nhắn thứ 2 - CHỈ hiển thị nút Chat Bot mà KHÔNG nói gì
+                    const { sendQuickReply, createQuickReply } = await import('../facebook-api')
+
+                    // Chỉ hiển thị nút mà không nói gì
+                    await sendQuickReply(
+                        user.facebook_id,
+                        'Chọn hành động:',
+                        [
+                            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
+                        ]
+                    )
+                } else if (currentCount === 3 && shouldShowButton) {
                     console.log(`🎯 Executing count=3 logic for ${user.facebook_id}`)
-                    // Tin nhắn thứ 3 - chỉ thông báo admin, KHÔNG có nút
-                    const { sendMessage } = await import('../facebook-api')
-                    await sendMessage(user.facebook_id, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hối!')
-                } else {
-                    console.log(`🎯 Executing count=${currentCount} logic for ${user.facebook_id} - bot stops completely`)
-                    // Tin nhắn thứ 4+ - bot dừng hoàn toàn
-                    logger.info('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 4 - không gửi gì cả', { facebook_id: user.facebook_id })
-                    // Bot dừng hoàn toàn, không gửi gì cả
+                    // Tin nhắn thứ 3 - thông báo admin + nút Chat Bot
+                    const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+
+                    await sendMessage(user.facebook_id, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!')
+
+                    // Vẫn hiển thị nút Chat Bot để user có thể vào bot mode
+                    await sendQuickReply(
+                        user.facebook_id,
+                        'Chọn hành động:',
+                        [
+                            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
+                        ]
+                    )
+                } else if (currentCount >= 4) {
+                    console.log(`🎯 Executing count=${currentCount} logic for ${user.facebook_id} - chỉ hiển thị nút nếu được phép`)
+                    // Tin nhắn thứ 4+ - chỉ hiển thị nút nếu shouldShowButton = true
+                    if (shouldShowButton) {
+                        const { sendQuickReply, createQuickReply } = await import('../facebook-api')
+                        await sendQuickReply(
+                            user.facebook_id,
+                            'Chọn hành động:',
+                            [
+                                createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
+                            ]
+                        )
+                    } else {
+                        logger.info('🚫 Không hiển thị nút Chat Bot nữa', { facebook_id: user.facebook_id })
+                        // Không hiển thị gì cả
+                    }
                 }
                 return
             }

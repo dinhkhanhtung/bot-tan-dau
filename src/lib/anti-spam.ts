@@ -171,27 +171,53 @@ export async function exitUserBotMode(facebookId: string): Promise<void> {
     }
 }
 
-// Hàm kiểm tra và tăng số lần hiển thị nút Chat Bot (DEPRECATED - không dùng nữa)
-export function shouldShowChatBotButton(facebookId: string): boolean {
-    const offerData = userChatBotOfferCount.get(facebookId)
+// Hàm kiểm tra và tăng số lần hiển thị nút Chat Bot - LOGIC MỚI với biến môi trường
+export async function shouldShowChatBotButton(facebookId: string): Promise<boolean> {
+    const { supabaseAdmin } = await import('./supabase')
     const now = Date.now()
 
-    // Reset sau 24 giờ
-    if (offerData && (now - offerData.lastOffer) > 24 * 60 * 60 * 1000) {
-        userChatBotOfferCount.delete(facebookId)
-        return true
-    }
+    // Lấy cấu hình từ biến môi trường
+    const RESET_HOURS = parseInt(process.env.CHAT_BOT_COUNTER_RESET_HOURS || '24')
+    const MAX_DISPLAYS = parseInt(process.env.CHAT_BOT_COUNTER_MAX_DISPLAYS || '3')
+    const WELCOME_FULL_DISPLAYS = parseInt(process.env.CHAT_BOT_WELCOME_FULL_DISPLAYS || '1')
 
-    // Chỉ hiển thị nút cho lần 1
+    // Lấy dữ liệu từ database
+    const { data: offerData } = await supabaseAdmin
+        .from('chat_bot_offer_counts')
+        .select('*')
+        .eq('facebook_id', facebookId)
+        .single()
+
+    // Nếu không có dữ liệu, đây là lần đầu tiên - hiển thị nút
     if (!offerData) {
         return true
     }
 
-    // Nếu count = 1, hiển thị nút
-    if (offerData.count === 1) {
+    // Kiểm tra thời gian reset để cho phép gửi tin chào mừng đầy đủ lần nữa
+    const resetTimeMs = RESET_HOURS * 60 * 60 * 1000
+    if ((now - new Date(offerData.last_offer).getTime()) > resetTimeMs) {
+        // Reset counter để cho phép gửi tin chào mừng đầy đủ lần nữa
+        await supabaseAdmin
+            .from('chat_bot_offer_counts')
+            .update({
+                count: 0,
+                last_offer: new Date(now).toISOString()
+            })
+            .eq('facebook_id', facebookId)
         return true
     }
 
+    // Nếu count < WELCOME_FULL_DISPLAYS, đây là lần hiển thị tin chào mừng đầy đủ
+    if (offerData.count < WELCOME_FULL_DISPLAYS) {
+        return true
+    }
+
+    // Nếu count >= WELCOME_FULL_DISPLAYS và < MAX_DISPLAYS, chỉ hiển thị nút mà không nói gì
+    if (offerData.count >= WELCOME_FULL_DISPLAYS && offerData.count < MAX_DISPLAYS) {
+        return true
+    }
+
+    // Nếu count >= MAX_DISPLAYS, tạm dừng hiển thị nút
     return false
 }
 
