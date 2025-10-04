@@ -471,13 +471,22 @@ export class UnifiedBotSystem {
 
             if (!isInBotMode) {
                 console.log('💬 New user not in bot mode - processing as normal message')
-
+                
+                // Tăng counter cho mỗi tin nhắn thường
+                const { shouldShowChatBotButton, shouldBotStopCompletely } = await import('../anti-spam')
+                
+                // Kiểm tra bot có nên dừng hoàn toàn không
+                if (shouldBotStopCompletely(user.facebook_id)) {
+                    console.log('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 2 - không gửi gì cả')
+                    return
+                }
+                
                 // Chỉ gửi thông báo 1 lần duy nhất
                 if (shouldShowChatBotButton(user.facebook_id)) {
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
                     await sendMessage(user.facebook_id, '💬 Tin nhắn của bạn đã được chuyển đến admin. Họ sẽ phản hồi sớm nhất có thể!')
                     await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng bot, hãy ấn nút "Chat Bot" bên dưới.')
-
+                    
                     await sendQuickReply(
                         user.facebook_id,
                         'Chọn hành động:',
@@ -577,7 +586,7 @@ export class UnifiedBotSystem {
             const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
 
             await sendMessage(user.facebook_id, 'ℹ️ THÔNG TIN VỀ BOT Tân Dậu - Hỗ Trợ Chéo')
-            await sendMessage(user.facebook_id, '🤖 Bot này được thiết kế đặc biệt cho cộng đồng Tân Dậu - Hỗ Trợ Chéo')
+            await sendMessage(user.facebook_id, '🤖 Bot này được thiết kế đặc biệt cho cộng đồng Tân Dậu')
             await sendMessage(user.facebook_id, '🎯 Chức năng chính:\n• Niêm yết sản phẩm/dịch vụ\n• Tìm kiếm & kết nối mua bán\n• Cộng đồng Tân Dậu - hỗ trợ chéo\n• Tử vi hàng ngày\n• Điểm thưởng & quà tặng')
             await sendMessage(user.facebook_id, '💰 Phí sử dụng:\n• Trial 7 ngày miễn phí\n• Phí duy trì: 2,000đ/ngày\n• Gói tối thiểu: 7 ngày = 14,000đ')
             await sendMessage(user.facebook_id, '🔒 Bảo mật:\n• Chỉ dành cho Tân Dậu - Hỗ Trợ Chéo\n• Thông tin được mã hóa bảo mật\n• Lưu trữ để tìm kiếm & kết nối hiệu quả')

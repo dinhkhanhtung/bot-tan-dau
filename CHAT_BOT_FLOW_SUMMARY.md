@@ -53,8 +53,9 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 
 ### **User chưa trong Bot Mode:**
 1. Tin nhắn → Chuyển đến admin
-2. Hiển thị nút "Chat Bot" chỉ 1 lần duy nhất, sau đó bot dừng hoàn toàn
-3. Không áp dụng chống spam
+2. Hiển thị nút "Chat Bot" chỉ 1 lần duy nhất
+3. Sau tin nhắn thứ 2: Bot dừng hoàn toàn, không gửi gì cả, ẩn nút
+4. Không áp dụng chống spam
 
 ### **User trong Bot Mode:**
 1. Tin nhắn → Xử lý bởi bot

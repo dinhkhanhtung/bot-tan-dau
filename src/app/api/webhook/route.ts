@@ -196,13 +196,22 @@ async function handleMessageEvent(event: any) {
 
         if (!isInBotMode) {
             console.log('💬 User not in bot mode - processing as normal message')
-
+            
+            // Tăng counter cho mỗi tin nhắn thường
+            const { shouldShowChatBotButton, shouldBotStopCompletely } = await import('@/lib/anti-spam')
+            
+            // Kiểm tra bot có nên dừng hoàn toàn không
+            if (shouldBotStopCompletely(senderId)) {
+                console.log('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 2 - không gửi gì cả')
+                return
+            }
+            
             // Chỉ gửi thông báo 1 lần duy nhất
             if (shouldShowChatBotButton(senderId)) {
                 const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
                 await sendMessage(senderId, '💬 Tin nhắn của bạn đã được chuyển đến admin. Họ sẽ phản hồi sớm nhất có thể!')
                 await sendMessage(senderId, '🤖 Nếu muốn sử dụng bot, hãy ấn nút "Chat Bot" bên dưới.')
-
+                
                 await sendQuickReply(
                     senderId,
                     'Chọn hành động:',

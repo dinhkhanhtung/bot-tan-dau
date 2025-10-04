@@ -16,24 +16,30 @@ async function testChatBotLimit() {
     console.log('Should show button:', show1)
     console.log('Expected: true\n')
 
-    // Test 2: Lần thứ 2 - không nên hiển thị nút
-    console.log('Test 2: Second time - should NOT show button')
+    // Test 2: Lần thứ 2 - bot dừng hoàn toàn
+    console.log('Test 2: Second time - bot should stop completely')
     const show2 = shouldShowChatBotButton(testUserId)
+    const stop2 = shouldBotStopCompletely(testUserId)
     console.log('Should show button:', show2)
-    console.log('Expected: false\n')
+    console.log('Should bot stop:', stop2)
+    console.log('Expected: false, true\n')
 
-    // Test 3: Lần thứ 3 - vẫn không nên hiển thị nút
-    console.log('Test 3: Third time - should still NOT show button')
+    // Test 3: Lần thứ 3 - vẫn dừng hoàn toàn
+    console.log('Test 3: Third time - should still stop completely')
     const show3 = shouldShowChatBotButton(testUserId)
+    const stop3 = shouldBotStopCompletely(testUserId)
     console.log('Should show button:', show3)
-    console.log('Expected: false\n')
+    console.log('Should bot stop:', stop3)
+    console.log('Expected: false, true\n')
 
     // Test 4: User ấn nút Chat Bot - KHÔNG reset counter
     console.log('Test 4: User clicks Chat Bot button - NO reset')
     setUserBotMode(testUserId)
     const show4 = shouldShowChatBotButton(testUserId)
+    const stop4 = shouldBotStopCompletely(testUserId)
     console.log('Should show button after clicking:', show4)
-    console.log('Expected: false (still at limit)\n')
+    console.log('Should bot stop after clicking:', stop4)
+    console.log('Expected: false, true (still at limit)\n')
 
     console.log('✅ Chat Bot Button Limit tests completed!')
 }
