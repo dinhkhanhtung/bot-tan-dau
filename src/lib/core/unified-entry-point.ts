@@ -32,7 +32,7 @@ export class UnifiedBotSystem {
             }
 
             // Bước 2: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất) - TIN NHẮN TỪ FANPAGE = ADMIN
-            if (user.facebook_id === process.env.FACEBOOK_APP_ID) {
+            if (user.facebook_id === process.env.FACEBOOK_PAGE_ID) {
                 logger.info('Admin message from fanpage detected', { facebook_id: user.facebook_id })
                 await this.handleAdminMessage(user, text, isPostback, postback)
                 return
@@ -176,7 +176,30 @@ export class UnifiedBotSystem {
                     }
                 }
             } else {
-                // Admin không trong cuộc trò chuyện - xử lý bình thường
+                // Admin không trong cuộc trò chuyện - TỰ ĐỘNG TẠO ADMIN CHAT SESSION
+                // Lấy user_id từ cuộc trò chuyện hiện tại (giả sử là user cuối cùng admin chat)
+                const adminChatModule = await import('../admin-chat')
+                const recentUser = await adminChatModule.getRecentUserForAdmin(user.facebook_id)
+
+                if (recentUser) {
+                    // Tạo admin chat session với user gần đây nhất
+                    const { startAdminChatSession, adminTakeOverChat } = await import('../admin-chat')
+                    const result = await startAdminChatSession(recentUser)
+
+                    if (result.success) {
+                        const success = await adminTakeOverChat(result.sessionId!, user.facebook_id)
+                        if (success) {
+                            const session = {
+                                id: result.sessionId,
+                                user_id: recentUser
+                            }
+                            await this.showAdminChatMenu(user, session)
+                            return
+                        }
+                    }
+                }
+
+                // Fallback - hiện admin dashboard
                 if (isPostback && postback) {
                     await this.handleAdminPostback(user, postback)
                 } else if (text) {
@@ -351,7 +374,7 @@ export class UnifiedBotSystem {
     private static async analyzeUserContext(user: any): Promise<{ userType: UserType, user?: any }> {
         try {
             // 1. Kiểm tra Admin trước (ưu tiên cao nhất) - TIN NHẮN TỪ FANPAGE = ADMIN
-            if (user.facebook_id === process.env.FACEBOOK_APP_ID) {
+            if (user.facebook_id === process.env.FACEBOOK_PAGE_ID) {
                 return { userType: UserType.ADMIN }
             }
 
@@ -1006,11 +1029,6 @@ export class UnifiedBotSystem {
                 await handleAdminEndChat(user, sessionId)
             } else if (postback === 'ADMIN') {
                 await this.showAdminDashboard(user)
-            } else if (postback === 'ADMIN_ENTER_CHAT') {
-                await this.handleAdminEnterChat(user)
-            } else if (postback.startsWith('ADMIN_CHAT_WITH_')) {
-                const userId = postback.replace('ADMIN_CHAT_WITH_', '')
-                await this.handleAdminChatWithUser(user, userId)
             } else {
                 // Fallback to admin command handler
                 const { handleAdminCommand } = await import('../handlers/admin-handlers')
@@ -1019,90 +1037,6 @@ export class UnifiedBotSystem {
         } catch (error) {
             console.error('Error handling admin postback:', error)
             await this.showAdminDashboard(user)
-        }
-    }
-
-    /**
-     * Xử lý admin vào cuộc trò chuyện
-     */
-    private static async handleAdminEnterChat(user: any): Promise<void> {
-        try {
-            const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
-            
-            // Lấy danh sách user gần đây
-            const { supabaseAdmin } = await import('../supabase')
-            const { data: recentUsers } = await supabaseAdmin
-                .from('users')
-                .select('facebook_id, name, phone, status, created_at')
-                .order('updated_at', { ascending: false })
-                .limit(10)
-            
-            if (!recentUsers || recentUsers.length === 0) {
-                await sendMessage(user.facebook_id, '❌ Không có user nào để chat')
-                return
-            }
-            
-            // Hiện danh sách user để chọn
-            const userOptions = recentUsers.map((u, index) => 
-                createQuickReply(
-                    `${u.name || 'Unknown'} (${u.facebook_id.slice(-4)})`, 
-                    `ADMIN_CHAT_WITH_${u.facebook_id}`
-                )
-            )
-            
-            await sendMessage(user.facebook_id, '👥 Chọn user để vào cuộc trò chuyện:')
-            await sendQuickReply(user.facebook_id, 'Danh sách user:', userOptions)
-            
-        } catch (error) {
-            console.error('Error handling admin enter chat:', error)
-            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi lấy danh sách user')
-        }
-    }
-
-    /**
-     * Xử lý admin chat với user cụ thể
-     */
-    private static async handleAdminChatWithUser(user: any, userId: string): Promise<void> {
-        try {
-            const { sendMessage } = await import('../facebook-api')
-            
-            // Tạo admin chat session với user
-            const { startAdminChatSession } = await import('../admin-chat')
-            const result = await startAdminChatSession(userId)
-            
-            if (result.success) {
-                // Admin nhận chat session
-                const { adminTakeOverChat } = await import('../admin-chat')
-                const success = await adminTakeOverChat(result.sessionId!, user.facebook_id)
-                
-                if (success) {
-                    // Lấy thông tin user
-                    const { supabaseAdmin } = await import('../supabase')
-                    const { data: chatUser } = await supabaseAdmin
-                        .from('users')
-                        .select('name, phone, status, membership_expires_at')
-                        .eq('facebook_id', userId)
-                        .single()
-                    
-                    // Hiện admin menu cho admin
-                    const session = {
-                        id: result.sessionId,
-                        user_id: userId
-                    }
-                    await this.showAdminChatMenu(user, session)
-                    
-                    // Thông báo cho user
-                    await sendMessage(userId, '✅ Admin đã vào chat! Bạn có thể bắt đầu trò chuyện.')
-                } else {
-                    await sendMessage(user.facebook_id, '❌ Không thể nhận chat với user này')
-                }
-            } else {
-                await sendMessage(user.facebook_id, '❌ Không thể tạo cuộc trò chuyện với user này')
-            }
-            
-        } catch (error) {
-            console.error('Error handling admin chat with user:', error)
-            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi chat với user')
         }
     }
 

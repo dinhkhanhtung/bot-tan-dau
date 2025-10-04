@@ -211,3 +211,34 @@ export async function handleAdminMessageToUser(adminId: string, sessionId: strin
         console.error('Error handling admin message to user:', error)
     }
 }
+
+// Lấy user gần đây nhất cho admin
+export async function getRecentUserForAdmin(adminId: string): Promise<string | null> {
+    try {
+        // Lấy user gần đây nhất từ admin_chat_sessions
+        const { data: recentSession } = await supabaseAdmin
+            .from('admin_chat_sessions')
+            .select('user_id')
+            .eq('admin_id', adminId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+        if (recentSession) {
+            return recentSession.user_id
+        }
+
+        // Fallback: Lấy user gần đây nhất từ users table
+        const { data: recentUser } = await supabaseAdmin
+            .from('users')
+            .select('facebook_id')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .single()
+
+        return recentUser?.facebook_id || null
+    } catch (error) {
+        console.error('Error getting recent user for admin:', error)
+        return null
+    }
+}

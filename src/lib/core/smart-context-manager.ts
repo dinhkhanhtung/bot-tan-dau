@@ -235,31 +235,11 @@ export class SmartContextManager {
     }
 
     /**
-     * Phát hiện admin user
+     * Phát hiện admin user - DEPRECATED: Now handled by FACEBOOK_PAGE_ID check
      */
     private static async detectAdmin(facebookId: string): Promise<boolean> {
-        // Kiểm tra environment variables trước
-        const adminIds = process.env.ADMIN_IDS || ''
-        const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
-
-        if (envAdmins.includes(facebookId)) {
-            return true
-        }
-
-        // Kiểm tra database
-        try {
-            const { data } = await supabaseAdmin
-                .from('admin_users')
-                .select('is_active')
-                .eq('facebook_id', facebookId)
-                .eq('is_active', true)
-                .maybeSingle()
-
-            return !!data?.is_active
-        } catch (error) {
-            console.error('Error checking admin status:', error)
-            return false
-        }
+        // New logic: Only fanpage messages are admin
+        return facebookId === process.env.FACEBOOK_PAGE_ID
     }
 
     /**

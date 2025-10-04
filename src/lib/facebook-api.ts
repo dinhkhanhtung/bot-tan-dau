@@ -76,30 +76,23 @@ export function sendTypingIndicatorInstant(recipientId: string) {
 
 // Send quick reply buttons
 export async function sendQuickReply(recipientId: string, text: string, quickReplies: any[]) {
-    const messageData = {
-        recipient: { id: recipientId },
-        message: {
-            text: text,
-            quick_replies: quickReplies
-        }
-    }
-
     try {
-        const response = await fetch(`${FACEBOOK_API_URL}/me/messages?access_token=${process.env.FACEBOOK_PAGE_ACCESS_TOKEN}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(messageData)
-        })
+        const response = await axios.post(
+            `${FACEBOOK_API_URL}/me/messages`,
+            {
+                recipient: { id: recipientId },
+                message: {
+                    text: text,
+                    quick_replies: quickReplies
+                }
+            },
+            {
+                params: { access_token: FACEBOOK_ACCESS_TOKEN },
+                headers: { 'Content-Type': 'application/json' }
+            }
+        )
 
-        if (!response.ok) {
-            const errorData = await response.json()
-            console.error('Quick reply error:', errorData)
-            throw new Error(`Quick reply failed: ${errorData.error?.message || 'Unknown error'}`)
-        }
-
-        const result = await response.json()
-        console.log('Quick reply sent successfully')
-        return result
+        return response.data
     } catch (error) {
         console.error('Error sending quick reply:', error)
         throw error

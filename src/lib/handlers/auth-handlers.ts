@@ -25,25 +25,8 @@ import {
 export async function handleRegistration(user: any) {
     await sendTypingIndicator(user.facebook_id)
 
-    // Check if user is admin first
-    const { isAdmin } = await import('./admin-handlers')
-    const userIsAdmin = await isAdmin(user.facebook_id)
-
-    if (userIsAdmin) {
-        await sendMessage(user.facebook_id, '🔧 ADMIN DASHBOARD\nChào admin! 👋\nBạn có quyền truy cập đầy đủ mà không cần đăng ký.')
-
-        await sendQuickReply(
-            user.facebook_id,
-            'Chọn chức năng:',
-            [
-                createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
-                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
-                createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
-                createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
-            ]
-        )
-        return
-    }
+    // Admin check is now handled at higher level (FACEBOOK_APP_ID)
+    // This function only handles regular user registration
 
     // Use smart user status checking
     const userStatusInfo = getUserStatusInfo(user)
@@ -358,29 +341,8 @@ async function handleRegistrationKeywords(user: any, text: string, data: any) {
 
 // Handle default message for new users - GIẢM SPAM
 export async function handleDefaultMessage(user: any) {
-    // Check if user is admin first
-    const { isAdmin } = await import('./admin-handlers')
-    const userIsAdmin = await isAdmin(user.facebook_id)
-
-    if (userIsAdmin) {
-        await sendMessagesWithTyping(user.facebook_id, [
-            '🔧 ADMIN DASHBOARD',
-            'Chào admin! 👋',
-            'Bạn có quyền truy cập đầy đủ.'
-        ])
-
-        await sendQuickReply(
-            user.facebook_id,
-            'Chọn chức năng:',
-            [
-                createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
-                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
-                createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
-                createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
-            ]
-        )
-        return
-    }
+    // Admin check is now handled at higher level (FACEBOOK_APP_ID)
+    // This function only handles regular user messages
 
     // Kiểm tra xem đã gửi thông báo chào mừng chưa
     const { data: existingUser } = await supabaseAdmin

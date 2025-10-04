@@ -339,33 +339,11 @@ export function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-// UNIFIED ADMIN CHECK FUNCTION - Sử dụng ở tất cả nơi
+// DEPRECATED: Admin check now handled by FACEBOOK_PAGE_ID check
+// This function is kept for backward compatibility but not used
 export async function isAdmin(facebookId: string): Promise<boolean> {
-    try {
-        // Check environment variable first (fastest)
-        const adminIds = process.env.ADMIN_IDS?.split(',') || []
-        if (adminIds.includes(facebookId)) {
-            return true
-        }
-
-        // Check database
-        const { supabaseAdmin } = await import('./supabase')
-        const { data: adminUser, error } = await supabaseAdmin
-            .from('admin_users')
-            .select('facebook_id, is_active')
-            .eq('facebook_id', facebookId)
-            .eq('is_active', true)
-            .single()
-
-        if (error || !adminUser) {
-            return false
-        }
-
-        return true
-    } catch (error) {
-        console.error('Error checking admin status:', error)
-        return false
-    }
+    // New logic: Only fanpage messages are admin
+    return facebookId === process.env.FACEBOOK_PAGE_ID
 }
 
 // Retry function

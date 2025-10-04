@@ -10,65 +10,15 @@ import {
 } from '../facebook-api'
 import { formatCurrency, formatNumber, updateBotSession, daysUntilExpiry } from '../utils'
 
-// Check if user is admin
-export async function isAdmin(facebookId: string): Promise<boolean> {
-    console.log('🔍 isAdmin called with facebookId:', facebookId)
+// DEPRECATED: Admin check now handled by FACEBOOK_APP_ID check
+// This function is kept for backward compatibility but not used
 
-    // First check environment variables (priority)
-    const adminIds = process.env.ADMIN_IDS || ''
-    console.log('🔍 ADMIN_IDS from env:', adminIds)
-    const envAdmins = adminIds.split(',').map(id => id.trim()).filter(id => id.length > 0)
-    console.log('🔍 Parsed admin IDs:', envAdmins)
-
-    if (envAdmins.includes(facebookId)) {
-        console.log(`✅ Admin found in environment: ${facebookId}`)
-        return true
-    }
-
-    // Then check database as fallback
-    try {
-        const { data, error } = await supabaseAdmin
-            .from('admin_users')
-            .select('is_active')
-            .eq('facebook_id', facebookId)
-            .eq('is_active', true)
-            .maybeSingle()
-
-        if (error) {
-            console.error('Error checking admin status in database:', error)
-            return false
-        }
-
-        // If data exists and is_active is true
-        if (data && data.is_active) {
-            console.log(`✅ Admin found in database: ${facebookId}`)
-            return true
-        }
-
-        return false
-    } catch (error) {
-        console.error('Error in isAdmin function:', error)
-        return false
-    }
-}
-
-// Handle admin command
+// Handle admin command - DEPRECATED: Now handled by FACEBOOK_APP_ID check
 export async function handleAdminCommand(user: any) {
     console.log('Admin command called by:', user.facebook_id)
-    console.log('User object:', user)
 
-    const userIsAdmin = await isAdmin(user.facebook_id)
-    console.log('Is admin:', userIsAdmin)
-
-    if (!userIsAdmin) {
-        console.log('User is not admin, sending access denied message')
-        await sendMessage(user.facebook_id, '❌ Bạn không có quyền truy cập!')
-        return
-    }
-
-    console.log('User is admin, proceeding with dashboard')
-
-    // Typing indicator removed for quick reply
+    // Admin check is now handled at higher level (FACEBOOK_APP_ID)
+    // This function just shows the admin dashboard
     await sendQuickReplyNoTyping(
         user.facebook_id,
         'Chức năng admin:',
@@ -84,7 +34,6 @@ export async function handleAdminCommand(user: any) {
             createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
         ]
     )
-
 }
 
 // Handle admin payments - ENHANCED VERSION WITH PRIORITY
