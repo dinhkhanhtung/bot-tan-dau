@@ -369,9 +369,11 @@ CREATE TRIGGER update_admin_chat_sessions_updated_at BEFORE UPDATE ON admin_chat
 -- 7. DEFAULT DATA
 -- ========================================
 
--- Insert default admin user
-INSERT INTO admin_users (facebook_id, name, role, permissions, is_active)
-VALUES ('31268544269455564', 'Default Admin', 'super_admin', '{"all": true}', true)
+-- Insert default admin users (matching Vercel ADMIN_IDS)
+INSERT INTO admin_users (facebook_id, name, role, permissions, is_active) VALUES
+('100074107869848', 'Admin 1', 'super_admin', '{"all": true}', true),
+('100026336745820', 'Admin 2', 'super_admin', '{"all": true}', true),
+('100000699238053', 'Admin 3', 'super_admin', '{"all": true}', true)
 ON CONFLICT (facebook_id) DO NOTHING;
 
 -- Update existing users to have welcome_message_sent = true
