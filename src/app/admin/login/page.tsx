@@ -52,8 +52,8 @@ export default function AdminLogin() {
                 console.log('🔄 Redirecting to dashboard...')
                 console.log('🔗 Token stored:', data.token.substring(0, 20) + '...')
 
-                // Use window.location for more reliable redirect
-                window.location.href = '/admin/dashboard'
+                // Use router for more reliable redirect
+                router.push('/admin/dashboard')
             } else {
                 console.log('❌ Login failed:', data.message)
                 setError(data.message || 'Đăng nhập thất bại')
