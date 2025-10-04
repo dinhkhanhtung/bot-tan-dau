@@ -5,6 +5,7 @@ import { logger, logUserAction, logBotEvent, logError } from '../logger'
 import { errorHandler, createUserError, ErrorType } from '../error-handler'
 import { getUserByFacebookId, getBotSession, updateBotSession, getBotStatus } from '../database-service'
 import { welcomeService, WelcomeType } from '../welcome-service'
+import { messageProcessor } from './message-processor'
 
 // Unified Bot System - Hệ thống bot thống nhất, thay thế cả Unified Entry Point và Message Router
 export class UnifiedBotSystem {

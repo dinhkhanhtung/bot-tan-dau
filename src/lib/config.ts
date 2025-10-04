@@ -20,7 +20,7 @@ function validateEnvironment(): void {
     if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
         return
     }
-    
+
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName])
 
     if (missingVars.length > 0) {
