@@ -31,15 +31,20 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Bước 2: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất) - TIN NHẮN TỪ FANPAGE = ADMIN
+            // Bước 2: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất)
+            const adminIds = [
+                '2571120902929642', // FACEBOOK_PAGE_ID
+                '31298980306415271'  // Admin test ID
+            ]
+
             console.log('🔍 Checking admin:', {
                 user_facebook_id: user.facebook_id,
-                env_page_id: process.env.FACEBOOK_PAGE_ID,
-                is_admin: user.facebook_id === process.env.FACEBOOK_PAGE_ID
+                admin_ids: adminIds,
+                is_admin: adminIds.includes(user.facebook_id)
             })
 
-            if (user.facebook_id === process.env.FACEBOOK_PAGE_ID) {
-                logger.info('Admin message from fanpage detected', { facebook_id: user.facebook_id })
+            if (adminIds.includes(user.facebook_id)) {
+                logger.info('Admin message detected', { facebook_id: user.facebook_id })
                 await this.handleAdminMessage(user, text, isPostback, postback)
                 return
             }
@@ -171,6 +176,12 @@ export class UnifiedBotSystem {
 
             // Xử lý text message
             if (text) {
+                // Kiểm tra lệnh admin
+                if (text.toLowerCase().includes('/admin') || text.toLowerCase().includes('admin')) {
+                    await this.showAdminDashboard(user)
+                    return
+                }
+
                 // Kiểm tra admin có đang trong bot mode không
                 const { checkUserBotMode } = await import('../anti-spam')
                 const isInBotMode = await checkUserBotMode(user.facebook_id)
@@ -720,6 +731,19 @@ export class UnifiedBotSystem {
                 logger.info('New user not in bot mode - processing as normal message', {
                     facebook_id: user.facebook_id
                 })
+
+                // KIỂM TRA LỆNH ADMIN TRƯỚC KHI XỬ LÝ COUNTER
+                if (text && (text.toLowerCase().includes('/admin') || text.toLowerCase().includes('admin'))) {
+                    const adminIds = ['2571120902929642', '31298980306415271']
+                    if (adminIds.includes(user.facebook_id)) {
+                        logger.info('Admin command detected', { facebook_id: user.facebook_id })
+                        await this.showAdminDashboard(user)
+                        return
+                    } else {
+                        await sendMessage(user.facebook_id, '❌ Bạn không có quyền truy cập admin dashboard!')
+                        return
+                    }
+                }
 
                 // Tăng counter cho mỗi tin nhắn thường
                 const { incrementNormalMessageCount, getUserChatBotOfferCount } = await import('../anti-spam')
