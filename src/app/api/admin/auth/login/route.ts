@@ -3,6 +3,18 @@ import { supabaseAdmin } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
+// Handle CORS preflight requests
+export async function OPTIONS(request: NextRequest) {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+    })
+}
+
 export async function POST(request: NextRequest) {
     try {
         const { username, password } = await request.json()
@@ -10,7 +22,14 @@ export async function POST(request: NextRequest) {
         if (!username || !password) {
             return NextResponse.json(
                 { success: false, message: 'Vui lòng nhập đầy đủ thông tin' },
-                { status: 400 }
+                { 
+                    status: 400,
+                    headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    }
+                }
             )
         }
 
@@ -25,7 +44,14 @@ export async function POST(request: NextRequest) {
         if (error || !adminUser) {
             return NextResponse.json(
                 { success: false, message: 'Tên đăng nhập hoặc mật khẩu không đúng' },
-                { status: 401 }
+                { 
+                    status: 401,
+                    headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    }
+                }
             )
         }
 
@@ -35,7 +61,14 @@ export async function POST(request: NextRequest) {
         if (!isPasswordValid) {
             return NextResponse.json(
                 { success: false, message: 'Tên đăng nhập hoặc mật khẩu không đúng' },
-                { status: 401 }
+                { 
+                    status: 401,
+                    headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    }
+                }
             )
         }
 
@@ -59,7 +92,7 @@ export async function POST(request: NextRequest) {
             .update({ last_login: new Date().toISOString() })
             .eq('id', adminUser.id)
 
-        // Return success response
+        // Return success response with CORS headers
         return NextResponse.json({
             success: true,
             message: 'Đăng nhập thành công',
@@ -71,13 +104,26 @@ export async function POST(request: NextRequest) {
                 role: adminUser.role,
                 permissions: adminUser.permissions
             }
+        }, {
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            }
         })
 
     } catch (error) {
         console.error('Admin login error:', error)
         return NextResponse.json(
             { success: false, message: 'Có lỗi xảy ra khi đăng nhập' },
-            { status: 500 }
+            { 
+                status: 500,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                }
+            }
         )
     }
 }

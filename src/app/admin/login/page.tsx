@@ -12,26 +12,36 @@ export default function AdminLogin() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        console.log('Form submitted with:', { username, password })
+        console.log('🔄 Form submitted with:', { username, password })
         setIsLoading(true)
         setError('')
 
+        // Validate input
+        if (!username.trim() || !password.trim()) {
+            setError('Vui lòng nhập đầy đủ thông tin')
+            setIsLoading(false)
+            return
+        }
+
         try {
-            console.log('Attempting login for user:', username)
+            console.log('🚀 Attempting login for user:', username)
             const response = await fetch('/api/admin/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({
+                    username: username.trim(),
+                    password: password.trim()
+                }),
             })
 
-            console.log('Response status:', response.status)
+            console.log('📡 Response status:', response.status)
             const data = await response.json()
-            console.log('Response data:', data)
+            console.log('📦 Response data:', data)
 
             if (response.ok && data.success) {
-                console.log('Login successful, redirecting...')
+                console.log('✅ Login successful, storing token and redirecting...')
                 // Store admin session in localStorage and cookies
                 localStorage.setItem('admin_token', data.token)
                 localStorage.setItem('admin_info', JSON.stringify(data.admin))
@@ -39,15 +49,18 @@ export default function AdminLogin() {
                 // Set cookie for server-side authentication
                 document.cookie = `admin_token=${data.token}; path=/; max-age=${24 * 60 * 60}; samesite=strict`
 
-                // Redirect to dashboard
-                router.push('/admin/dashboard')
+                console.log('🔄 Redirecting to dashboard...')
+                console.log('🔗 Token stored:', data.token.substring(0, 20) + '...')
+
+                // Use window.location for more reliable redirect
+                window.location.href = '/admin/dashboard'
             } else {
-                console.log('Login failed:', data.message)
+                console.log('❌ Login failed:', data.message)
                 setError(data.message || 'Đăng nhập thất bại')
             }
         } catch (error) {
-            console.error('Login error:', error)
-            setError('Có lỗi xảy ra khi đăng nhập')
+            console.error('💥 Login error:', error)
+            setError('Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.')
         } finally {
             setIsLoading(false)
         }
