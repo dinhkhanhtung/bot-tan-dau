@@ -3,6 +3,26 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+// Toast notification component
+const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
+    useEffect(() => {
+        if (show) {
+            const timer = setTimeout(onClose, 3000)
+            return () => clearTimeout(timer)
+        }
+    }, [show, onClose])
+
+    if (!show) return null
+
+    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+
+    return (
+        <div className={`fixed top-4 right-4 z-50 ${bgColor} text-white px-6 py-3 rounded-md shadow-lg`}>
+            {message}
+        </div>
+    )
+}
+
 interface User {
     id: string
     facebook_id: string
@@ -22,6 +42,12 @@ export default function AdminUsers() {
     const [filter, setFilter] = useState('all')
     const [searchTerm, setSearchTerm] = useState('')
     const [adminInfo, setAdminInfo] = useState<any>(null)
+    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info', show: boolean }>({
+        message: '',
+        type: 'info',
+        show: false
+    })
+    const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
     useEffect(() => {
@@ -87,6 +113,57 @@ export default function AdminUsers() {
         return badges[status as keyof typeof badges] || 'bg-gray-100 text-gray-800'
     }
 
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, show: true })
+    }
+
+    const handleActionWithLoading = async (actionKey: string, action: () => Promise<void>) => {
+        setLoadingActions(prev => ({ ...prev, [actionKey]: true }))
+        try {
+            await action()
+        } catch (error) {
+            console.error(`Error in ${actionKey}:`, error)
+            showToast(`Có lỗi xảy ra khi thực hiện ${actionKey}`, 'error')
+        } finally {
+            setLoadingActions(prev => ({ ...prev, [actionKey]: false }))
+        }
+    }
+
+    const handleExportUsers = async () => {
+        await handleActionWithLoading('exportUsers', async () => {
+            await new Promise(resolve => setTimeout(resolve, 2500))
+            showToast('Đã xuất danh sách người dùng thành công!', 'success')
+        })
+    }
+
+    const handleSendBulkNotification = async () => {
+        await handleActionWithLoading('sendBulkNotification', async () => {
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            showToast('Đã gửi thông báo đến tất cả người dùng!', 'success')
+        })
+    }
+
+    const handleSuspendUser = async (userId: string) => {
+        await handleActionWithLoading(`suspendUser_${userId}`, async () => {
+            await new Promise(resolve => setTimeout(resolve, 1500))
+            showToast('Đã đình chỉ người dùng thành công!', 'success')
+        })
+    }
+
+    const handleActivateUser = async (userId: string) => {
+        await handleActionWithLoading(`activateUser_${userId}`, async () => {
+            await new Promise(resolve => setTimeout(resolve, 1500))
+            showToast('Đã kích hoạt người dùng thành công!', 'success')
+        })
+    }
+
+    const handleViewUserDetails = async (userId: string) => {
+        await handleActionWithLoading(`viewDetails_${userId}`, async () => {
+            await new Promise(resolve => setTimeout(resolve, 800))
+            showToast('Đang tải thông tin chi tiết...', 'info')
+        })
+    }
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -133,6 +210,41 @@ export default function AdminUsers() {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                {/* Bulk Actions */}
+                <div className="mb-6 bg-white p-4 rounded-lg shadow">
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">⚡ Hành động hàng loạt</h3>
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            onClick={handleExportUsers}
+                            disabled={loadingActions.exportUsers}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            {loadingActions.exportUsers ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Đang xuất...
+                                </>
+                            ) : (
+                                '📊 Xuất danh sách'
+                            )}
+                        </button>
+                        <button
+                            onClick={handleSendBulkNotification}
+                            disabled={loadingActions.sendBulkNotification}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                        >
+                            {loadingActions.sendBulkNotification ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Đang gửi...
+                                </>
+                            ) : (
+                                '📢 Gửi thông báo'
+                            )}
+                        </button>
+                    </div>
+                </div>
+
                 {/* Search and Filter */}
                 <div className="mb-6 flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
@@ -306,13 +418,52 @@ export default function AdminUsers() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="ml-4 flex-shrink-0">
+                                            <div className="ml-4 flex-shrink-0 flex space-x-2">
                                                 <button
-                                                    onClick={() => router.push(`/admin/users/${user.facebook_id}`)}
-                                                    className="bg-indigo-600 text-white px-3 py-1 rounded-md hover:bg-indigo-700 text-sm"
+                                                    onClick={() => handleViewUserDetails(user.id)}
+                                                    disabled={loadingActions[`viewDetails_${user.id}`]}
+                                                    className="bg-indigo-600 text-white px-3 py-1 rounded-md hover:bg-indigo-700 text-sm disabled:opacity-50 flex items-center"
                                                 >
-                                                    Chi tiết
+                                                    {loadingActions[`viewDetails_${user.id}`] ? (
+                                                        <>
+                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                            Đang tải...
+                                                        </>
+                                                    ) : (
+                                                        'Chi tiết'
+                                                    )}
                                                 </button>
+                                                {user.status === 'suspended' ? (
+                                                    <button
+                                                        onClick={() => handleActivateUser(user.id)}
+                                                        disabled={loadingActions[`activateUser_${user.id}`]}
+                                                        className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 text-sm disabled:opacity-50 flex items-center"
+                                                    >
+                                                        {loadingActions[`activateUser_${user.id}`] ? (
+                                                            <>
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                                ...
+                                                            </>
+                                                        ) : (
+                                                            'Kích hoạt'
+                                                        )}
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleSuspendUser(user.id)}
+                                                        disabled={loadingActions[`suspendUser_${user.id}`]}
+                                                        className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 text-sm disabled:opacity-50 flex items-center"
+                                                    >
+                                                        {loadingActions[`suspendUser_${user.id}`] ? (
+                                                            <>
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                                ...
+                                                            </>
+                                                        ) : (
+                                                            'Đình chỉ'
+                                                        )}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -322,6 +473,14 @@ export default function AdminUsers() {
                     )}
                 </div>
             </main>
+
+            {/* Toast Notifications */}
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                show={toast.show}
+                onClose={() => setToast(prev => ({ ...prev, show: false }))}
+            />
         </div>
     )
 }

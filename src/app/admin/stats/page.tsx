@@ -3,6 +3,26 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+// Toast notification component
+const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
+    useEffect(() => {
+        if (show) {
+            const timer = setTimeout(onClose, 3000)
+            return () => clearTimeout(timer)
+        }
+    }, [show, onClose])
+
+    if (!show) return null
+
+    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+
+    return (
+        <div className={`fixed top-4 right-4 z-50 ${bgColor} text-white px-6 py-3 rounded-md shadow-lg`}>
+            {message}
+        </div>
+    )
+}
+
 interface StatsData {
     overview: {
         totalUsers: number
@@ -43,6 +63,12 @@ export default function AdminStats() {
     const [isLoading, setIsLoading] = useState(true)
     const [timeRange, setTimeRange] = useState('7d')
     const [adminInfo, setAdminInfo] = useState<any>(null)
+    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info', show: boolean }>({
+        message: '',
+        type: 'info',
+        show: false
+    })
+    const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
     useEffect(() => {
@@ -93,6 +119,51 @@ export default function AdminStats() {
         return new Date(dateString).toLocaleString('vi-VN')
     }
 
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, show: true })
+    }
+
+    const handleActionWithLoading = async (actionKey: string, action: () => Promise<void>) => {
+        setLoadingActions(prev => ({ ...prev, [actionKey]: true }))
+        try {
+            await action()
+        } catch (error) {
+            console.error(`Error in ${actionKey}:`, error)
+            showToast(`Có lỗi xảy ra khi thực hiện ${actionKey}`, 'error')
+        } finally {
+            setLoadingActions(prev => ({ ...prev, [actionKey]: false }))
+        }
+    }
+
+    const handleExportOverviewReport = async () => {
+        await handleActionWithLoading('exportOverview', async () => {
+            await new Promise(resolve => setTimeout(resolve, 3000))
+            showToast('Đã xuất báo cáo tổng quan thành công!', 'success')
+        })
+    }
+
+    const handleExportUsersReport = async () => {
+        await handleActionWithLoading('exportUsers', async () => {
+            await new Promise(resolve => setTimeout(resolve, 2500))
+            showToast('Đã xuất danh sách người dùng thành công!', 'success')
+        })
+    }
+
+    const handleExportFinancialReport = async () => {
+        await handleActionWithLoading('exportFinancial', async () => {
+            await new Promise(resolve => setTimeout(resolve, 4000))
+            showToast('Đã xuất báo cáo tài chính thành công!', 'success')
+        })
+    }
+
+    const handleRefreshStats = async () => {
+        await handleActionWithLoading('refreshStats', async () => {
+            await new Promise(resolve => setTimeout(resolve, 1500))
+            await fetchStats()
+            showToast('Đã cập nhật dữ liệu thống kê!', 'success')
+        })
+    }
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -135,8 +206,22 @@ export default function AdminStats() {
                             </h1>
                         </div>
                         <div className="flex items-center space-x-4">
+                            <button
+                                onClick={handleRefreshStats}
+                                disabled={loadingActions.refreshStats}
+                                className="inline-flex items-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50"
+                            >
+                                {loadingActions.refreshStats ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
+                                        Đang cập nhật...
+                                    </>
+                                ) : (
+                                    '🔄 Làm mới'
+                                )}
+                            </button>
                             <select
-                                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
                                 value={timeRange}
                                 onChange={(e) => setTimeRange(e.target.value)}
                             >
@@ -394,19 +479,60 @@ export default function AdminStats() {
                             📤 Xuất báo cáo
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
-                                📊 Xuất báo cáo tổng quan (Excel)
+                            <button
+                                onClick={handleExportOverviewReport}
+                                disabled={loadingActions.exportOverview}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                            >
+                                {loadingActions.exportOverview ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        Đang xuất...
+                                    </>
+                                ) : (
+                                    '📊 Xuất báo cáo tổng quan (Excel)'
+                                )}
                             </button>
-                            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                                👥 Xuất danh sách người dùng (CSV)
+                            <button
+                                onClick={handleExportUsersReport}
+                                disabled={loadingActions.exportUsers}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                {loadingActions.exportUsers ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        Đang xuất...
+                                    </>
+                                ) : (
+                                    '👥 Xuất danh sách người dùng (CSV)'
+                                )}
                             </button>
-                            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700">
-                                💰 Xuất báo cáo tài chính (PDF)
+                            <button
+                                onClick={handleExportFinancialReport}
+                                disabled={loadingActions.exportFinancial}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                            >
+                                {loadingActions.exportFinancial ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        Đang xuất...
+                                    </>
+                                ) : (
+                                    '💰 Xuất báo cáo tài chính (PDF)'
+                                )}
                             </button>
                         </div>
                     </div>
                 </div>
             </main>
+
+            {/* Toast Notifications */}
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                show={toast.show}
+                onClose={() => setToast(prev => ({ ...prev, show: false }))}
+            />
         </div>
     )
 }

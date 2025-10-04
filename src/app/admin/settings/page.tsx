@@ -286,7 +286,7 @@ export default function AdminSettings() {
                                         Trạng thái Bot
                                     </label>
                                     <select
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
                                         value={settings.botStatus}
                                         onChange={(e) => handleInputChange('botStatus', e.target.value)}
                                     >
@@ -301,7 +301,7 @@ export default function AdminSettings() {
                                         Trạng thái AI
                                     </label>
                                     <select
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
                                         value={settings.aiStatus}
                                         onChange={(e) => handleInputChange('aiStatus', e.target.value)}
                                     >
@@ -344,7 +344,7 @@ export default function AdminSettings() {
                                     </label>
                                     <input
                                         type="number"
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
                                         value={settings.paymentFee}
                                         onChange={(e) => handleInputChange('paymentFee', parseInt(e.target.value))}
                                     />
@@ -356,7 +356,7 @@ export default function AdminSettings() {
                                     </label>
                                     <input
                                         type="number"
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
                                         value={settings.trialDays}
                                         onChange={(e) => handleInputChange('trialDays', parseInt(e.target.value))}
                                     />
@@ -411,7 +411,7 @@ export default function AdminSettings() {
                                     </label>
                                     <input
                                         type="number"
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
                                         value={settings.maxListingsPerUser}
                                         onChange={(e) => handleInputChange('maxListingsPerUser', parseInt(e.target.value))}
                                     />

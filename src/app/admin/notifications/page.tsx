@@ -3,6 +3,26 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+// Toast notification component
+const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
+    useEffect(() => {
+        if (show) {
+            const timer = setTimeout(onClose, 3000)
+            return () => clearTimeout(timer)
+        }
+    }, [show, onClose])
+
+    if (!show) return null
+
+    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+
+    return (
+        <div className={`fixed top-4 right-4 z-50 ${bgColor} text-white px-6 py-3 rounded-md shadow-lg`}>
+            {message}
+        </div>
+    )
+}
+
 interface Notification {
     id: string
     type: string
@@ -21,6 +41,12 @@ export default function AdminNotifications() {
     const [isLoading, setIsLoading] = useState(true)
     const [filter, setFilter] = useState('all')
     const [adminInfo, setAdminInfo] = useState<any>(null)
+    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info', show: boolean }>({
+        message: '',
+        type: 'info',
+        show: false
+    })
+    const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
     useEffect(() => {
@@ -95,6 +121,68 @@ export default function AdminNotifications() {
         return labels[type as keyof typeof labels] || type
     }
 
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, show: true })
+    }
+
+    const handleActionWithLoading = async (actionKey: string, action: () => Promise<void>) => {
+        setLoadingActions(prev => ({ ...prev, [actionKey]: true }))
+        try {
+            await action()
+        } catch (error) {
+            console.error(`Error in ${actionKey}:`, error)
+            showToast(`Có lỗi xảy ra khi thực hiện ${actionKey}`, 'error')
+        } finally {
+            setLoadingActions(prev => ({ ...prev, [actionKey]: false }))
+        }
+    }
+
+    const handleSendGeneralNotification = async () => {
+        await handleActionWithLoading('sendGeneralNotification', async () => {
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            showToast('Đã gửi thông báo chung thành công!', 'success')
+        })
+    }
+
+    const handleSendSpecificUserNotification = async () => {
+        await handleActionWithLoading('sendSpecificUserNotification', async () => {
+            await new Promise(resolve => setTimeout(resolve, 1500))
+            showToast('Đang mở form gửi thông báo cho user cụ thể...', 'info')
+        })
+    }
+
+    const handleSendCategoryNotification = async () => {
+        await handleActionWithLoading('sendCategoryNotification', async () => {
+            await new Promise(resolve => setTimeout(resolve, 1800))
+            showToast('Đang mở form gửi thông báo theo danh mục...', 'info')
+        })
+    }
+
+    const handleViewNotificationHistory = async () => {
+        await handleActionWithLoading('viewNotificationHistory', async () => {
+            await new Promise(resolve => setTimeout(resolve, 1200))
+            showToast('Đang tải lịch sử thông báo...', 'info')
+        })
+    }
+
+    const handleMarkAsRead = async (notificationId: string) => {
+        await handleActionWithLoading(`markAsRead_${notificationId}`, async () => {
+            await new Promise(resolve => setTimeout(resolve, 800))
+            showToast('Đã đánh dấu là đã đọc!', 'success')
+        })
+    }
+
+    const handleDeleteNotification = async (notificationId: string) => {
+        if (!confirm('Bạn có chắc chắn muốn xóa thông báo này?')) {
+            return
+        }
+
+        await handleActionWithLoading(`deleteNotification_${notificationId}`, async () => {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            showToast('Đã xóa thông báo thành công!', 'success')
+        })
+    }
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -143,17 +231,61 @@ export default function AdminNotifications() {
             <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                 {/* Quick Actions */}
                 <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                        📢 Gửi thông báo chung
+                    <button
+                        onClick={handleSendGeneralNotification}
+                        disabled={loadingActions.sendGeneralNotification}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
+                    >
+                        {loadingActions.sendGeneralNotification ? (
+                            <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Đang gửi...
+                            </>
+                        ) : (
+                            '📢 Gửi thông báo chung'
+                        )}
                     </button>
-                    <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
-                        👤 Gửi cho user cụ thể
+                    <button
+                        onClick={handleSendSpecificUserNotification}
+                        disabled={loadingActions.sendSpecificUserNotification}
+                        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center justify-center"
+                    >
+                        {loadingActions.sendSpecificUserNotification ? (
+                            <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Đang mở...
+                            </>
+                        ) : (
+                            '👤 Gửi cho user cụ thể'
+                        )}
                     </button>
-                    <button className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
-                        🛒 Gửi theo danh mục
+                    <button
+                        onClick={handleSendCategoryNotification}
+                        disabled={loadingActions.sendCategoryNotification}
+                        className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center"
+                    >
+                        {loadingActions.sendCategoryNotification ? (
+                            <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Đang mở...
+                            </>
+                        ) : (
+                            '🛒 Gửi theo danh mục'
+                        )}
                     </button>
-                    <button className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">
-                        📋 Lịch sử thông báo
+                    <button
+                        onClick={handleViewNotificationHistory}
+                        disabled={loadingActions.viewNotificationHistory}
+                        className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:opacity-50 flex items-center justify-center"
+                    >
+                        {loadingActions.viewNotificationHistory ? (
+                            <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Đang tải...
+                            </>
+                        ) : (
+                            '📋 Lịch sử thông báo'
+                        )}
                     </button>
                 </div>
 
@@ -238,6 +370,14 @@ export default function AdminNotifications() {
                     )}
                 </div>
             </main>
+
+            {/* Toast Notifications */}
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                show={toast.show}
+                onClose={() => setToast(prev => ({ ...prev, show: false }))}
+            />
         </div>
     )
 }

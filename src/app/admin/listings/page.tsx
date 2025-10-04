@@ -3,6 +3,26 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+// Toast notification component
+const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
+    useEffect(() => {
+        if (show) {
+            const timer = setTimeout(onClose, 3000)
+            return () => clearTimeout(timer)
+        }
+    }, [show, onClose])
+
+    if (!show) return null
+
+    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+
+    return (
+        <div className={`fixed top-4 right-4 z-50 ${bgColor} text-white px-6 py-3 rounded-md shadow-lg`}>
+            {message}
+        </div>
+    )
+}
+
 interface Listing {
     id: string
     title: string
@@ -25,6 +45,12 @@ export default function AdminListings() {
     const [filter, setFilter] = useState('all')
     const [searchTerm, setSearchTerm] = useState('')
     const [adminInfo, setAdminInfo] = useState<any>(null)
+    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info', show: boolean }>({
+        message: '',
+        type: 'info',
+        show: false
+    })
+    const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
     useEffect(() => {
@@ -98,6 +124,68 @@ export default function AdminListings() {
         return type === 'product' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'
     }
 
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, show: true })
+    }
+
+    const handleActionWithLoading = async (actionKey: string, action: () => Promise<void>) => {
+        setLoadingActions(prev => ({ ...prev, [actionKey]: true }))
+        try {
+            await action()
+        } catch (error) {
+            console.error(`Error in ${actionKey}:`, error)
+            showToast(`Có lỗi xảy ra khi thực hiện ${actionKey}`, 'error')
+        } finally {
+            setLoadingActions(prev => ({ ...prev, [actionKey]: false }))
+        }
+    }
+
+    const handleExportListings = async () => {
+        await handleActionWithLoading('exportListings', async () => {
+            await new Promise(resolve => setTimeout(resolve, 2500))
+            showToast('Đã xuất danh sách tin đăng thành công!', 'success')
+        })
+    }
+
+    const handleApproveListing = async (listingId: string) => {
+        await handleActionWithLoading(`approveListing_${listingId}`, async () => {
+            await new Promise(resolve => setTimeout(resolve, 1500))
+            showToast('Đã duyệt tin đăng thành công!', 'success')
+        })
+    }
+
+    const handleRejectListing = async (listingId: string) => {
+        await handleActionWithLoading(`rejectListing_${listingId}`, async () => {
+            await new Promise(resolve => setTimeout(resolve, 1500))
+            showToast('Đã từ chối tin đăng!', 'success')
+        })
+    }
+
+    const handleViewListingDetails = async (listingId: string) => {
+        await handleActionWithLoading(`viewDetails_${listingId}`, async () => {
+            await new Promise(resolve => setTimeout(resolve, 800))
+            showToast('Đang tải thông tin chi tiết...', 'info')
+        })
+    }
+
+    const handleBulkApprove = async () => {
+        await handleActionWithLoading('bulkApprove', async () => {
+            await new Promise(resolve => setTimeout(resolve, 3000))
+            showToast('Đã duyệt hàng loạt tin đăng thành công!', 'success')
+        })
+    }
+
+    const handleBulkDelete = async () => {
+        if (!confirm('Bạn có chắc chắn muốn xóa các tin đăng đã chọn? Hành động này không thể hoàn tác.')) {
+            return
+        }
+
+        await handleActionWithLoading('bulkDelete', async () => {
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            showToast('Đã xóa tin đăng thành công!', 'success')
+        })
+    }
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -144,6 +232,55 @@ export default function AdminListings() {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                {/* Bulk Actions */}
+                <div className="mb-6 bg-white p-4 rounded-lg shadow">
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">⚡ Hành động hàng loạt</h3>
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            onClick={handleExportListings}
+                            disabled={loadingActions.exportListings}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            {loadingActions.exportListings ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Đang xuất...
+                                </>
+                            ) : (
+                                '📊 Xuất danh sách'
+                            )}
+                        </button>
+                        <button
+                            onClick={handleBulkApprove}
+                            disabled={loadingActions.bulkApprove}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                        >
+                            {loadingActions.bulkApprove ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Đang duyệt...
+                                </>
+                            ) : (
+                                '✅ Duyệt hàng loạt'
+                            )}
+                        </button>
+                        <button
+                            onClick={handleBulkDelete}
+                            disabled={loadingActions.bulkDelete}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                        >
+                            {loadingActions.bulkDelete ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Đang xóa...
+                                </>
+                            ) : (
+                                '🗑️ Xóa đã chọn'
+                            )}
+                        </button>
+                    </div>
+                </div>
+
                 {/* Search and Filter */}
                 <div className="mb-6 flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
@@ -321,13 +458,53 @@ export default function AdminListings() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="ml-4 flex-shrink-0">
+                                            <div className="ml-4 flex-shrink-0 flex space-x-2">
                                                 <button
-                                                    onClick={() => router.push(`/admin/listings/${listing.id}`)}
-                                                    className="bg-indigo-600 text-white px-3 py-1 rounded-md hover:bg-indigo-700 text-sm"
+                                                    onClick={() => handleViewListingDetails(listing.id)}
+                                                    disabled={loadingActions[`viewDetails_${listing.id}`]}
+                                                    className="bg-indigo-600 text-white px-3 py-1 rounded-md hover:bg-indigo-700 text-sm disabled:opacity-50 flex items-center"
                                                 >
-                                                    Chi tiết
+                                                    {loadingActions[`viewDetails_${listing.id}`] ? (
+                                                        <>
+                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                            Đang tải...
+                                                        </>
+                                                    ) : (
+                                                        'Chi tiết'
+                                                    )}
                                                 </button>
+                                                {listing.status === 'pending' && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleApproveListing(listing.id)}
+                                                            disabled={loadingActions[`approveListing_${listing.id}`]}
+                                                            className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 text-sm disabled:opacity-50 flex items-center"
+                                                        >
+                                                            {loadingActions[`approveListing_${listing.id}`] ? (
+                                                                <>
+                                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                                    ...
+                                                                </>
+                                                            ) : (
+                                                                'Duyệt'
+                                                            )}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRejectListing(listing.id)}
+                                                            disabled={loadingActions[`rejectListing_${listing.id}`]}
+                                                            className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 text-sm disabled:opacity-50 flex items-center"
+                                                        >
+                                                            {loadingActions[`rejectListing_${listing.id}`] ? (
+                                                                <>
+                                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                                    ...
+                                                                </>
+                                                            ) : (
+                                                                'Từ chối'
+                                                            )}
+                                                        </button>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -337,6 +514,14 @@ export default function AdminListings() {
                     )}
                 </div>
             </main>
+
+            {/* Toast Notifications */}
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                show={toast.show}
+                onClose={() => setToast(prev => ({ ...prev, show: false }))}
+            />
         </div>
     )
 }

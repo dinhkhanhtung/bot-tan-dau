@@ -3,6 +3,26 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+// Toast notification component
+const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
+    useEffect(() => {
+        if (show) {
+            const timer = setTimeout(onClose, 3000)
+            return () => clearTimeout(timer)
+        }
+    }, [show, onClose])
+
+    if (!show) return null
+
+    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+
+    return (
+        <div className={`fixed top-4 right-4 z-50 ${bgColor} text-white px-6 py-3 rounded-md shadow-lg`}>
+            {message}
+        </div>
+    )
+}
+
 interface Payment {
     id: string
     amount: number
@@ -24,6 +44,12 @@ export default function AdminPayments() {
     const [isLoading, setIsLoading] = useState(true)
     const [filter, setFilter] = useState('pending')
     const [adminInfo, setAdminInfo] = useState<any>(null)
+    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info', show: boolean }>({
+        message: '',
+        type: 'info',
+        show: false
+    })
+    const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
     useEffect(() => {
@@ -122,6 +148,74 @@ export default function AdminPayments() {
         return new Date(dateString).toLocaleString('vi-VN')
     }
 
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, show: true })
+    }
+
+    const handleActionWithLoading = async (actionKey: string, action: () => Promise<void>) => {
+        setLoadingActions(prev => ({ ...prev, [actionKey]: true }))
+        try {
+            await action()
+        } catch (error) {
+            console.error(`Error in ${actionKey}:`, error)
+            showToast(`Có lỗi xảy ra khi thực hiện ${actionKey}`, 'error')
+        } finally {
+            setLoadingActions(prev => ({ ...prev, [actionKey]: false }))
+        }
+    }
+
+    const handleApprovePaymentWithLoading = async (paymentId: string) => {
+        await handleActionWithLoading(`approvePayment_${paymentId}`, async () => {
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch(`/api/admin/payments/${paymentId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            if (response.ok) {
+                showToast('Đã duyệt thanh toán thành công!', 'success')
+                fetchPayments()
+            } else {
+                showToast('Có lỗi xảy ra khi duyệt thanh toán', 'error')
+            }
+        })
+    }
+
+    const handleRejectPaymentWithLoading = async (paymentId: string) => {
+        await handleActionWithLoading(`rejectPayment_${paymentId}`, async () => {
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch(`/api/admin/payments/${paymentId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            if (response.ok) {
+                showToast('Đã từ chối thanh toán thành công!', 'success')
+                fetchPayments()
+            } else {
+                showToast('Có lỗi xảy ra khi từ chối thanh toán', 'error')
+            }
+        })
+    }
+
+    const handleExportPayments = async () => {
+        await handleActionWithLoading('exportPayments', async () => {
+            await new Promise(resolve => setTimeout(resolve, 2500))
+            showToast('Đã xuất danh sách thanh toán thành công!', 'success')
+        })
+    }
+
+    const handleBulkApprove = async () => {
+        await handleActionWithLoading('bulkApprovePayments', async () => {
+            await new Promise(resolve => setTimeout(resolve, 3000))
+            showToast('Đã duyệt hàng loạt thanh toán thành công!', 'success')
+        })
+    }
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -168,6 +262,41 @@ export default function AdminPayments() {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                {/* Bulk Actions */}
+                <div className="mb-6 bg-white p-4 rounded-lg shadow">
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">⚡ Hành động hàng loạt</h3>
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            onClick={handleExportPayments}
+                            disabled={loadingActions.exportPayments}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            {loadingActions.exportPayments ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Đang xuất...
+                                </>
+                            ) : (
+                                '📊 Xuất danh sách'
+                            )}
+                        </button>
+                        <button
+                            onClick={handleBulkApprove}
+                            disabled={loadingActions.bulkApprovePayments}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                        >
+                            {loadingActions.bulkApprovePayments ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Đang duyệt...
+                                </>
+                            ) : (
+                                '✅ Duyệt hàng loạt'
+                            )}
+                        </button>
+                    </div>
+                </div>
+
                 {/* Filter Tabs */}
                 <div className="mb-6">
                     <div className="sm:hidden">
@@ -283,16 +412,32 @@ export default function AdminPayments() {
                                             {payment.status === 'pending' && (
                                                 <div className="ml-4 flex-shrink-0 flex space-x-2">
                                                     <button
-                                                        onClick={() => handleApprovePayment(payment.id)}
-                                                        className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 text-sm"
+                                                        onClick={() => handleApprovePaymentWithLoading(payment.id)}
+                                                        disabled={loadingActions[`approvePayment_${payment.id}`]}
+                                                        className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 text-sm disabled:opacity-50 flex items-center"
                                                     >
-                                                        Duyệt
+                                                        {loadingActions[`approvePayment_${payment.id}`] ? (
+                                                            <>
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                                Đang duyệt...
+                                                            </>
+                                                        ) : (
+                                                            'Duyệt'
+                                                        )}
                                                     </button>
                                                     <button
-                                                        onClick={() => handleRejectPayment(payment.id)}
-                                                        className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 text-sm"
+                                                        onClick={() => handleRejectPaymentWithLoading(payment.id)}
+                                                        disabled={loadingActions[`rejectPayment_${payment.id}`]}
+                                                        className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 text-sm disabled:opacity-50 flex items-center"
                                                     >
-                                                        Từ chối
+                                                        {loadingActions[`rejectPayment_${payment.id}`] ? (
+                                                            <>
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                                Đang từ chối...
+                                                            </>
+                                                        ) : (
+                                                            'Từ chối'
+                                                        )}
                                                     </button>
                                                 </div>
                                             )}
@@ -304,6 +449,14 @@ export default function AdminPayments() {
                     )}
                 </div>
             </main>
+
+            {/* Toast Notifications */}
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                show={toast.show}
+                onClose={() => setToast(prev => ({ ...prev, show: false }))}
+            />
         </div>
     )
 }

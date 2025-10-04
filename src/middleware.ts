@@ -4,23 +4,22 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
     console.log('🔍 Middleware checking path:', request.nextUrl.pathname)
 
-    // Check if accessing admin routes
-    if (request.nextUrl.pathname.startsWith('/admin')) {
-        // Allow login page
-        if (request.nextUrl.pathname === '/admin/login') {
-            console.log('✅ Allowing access to login page')
+    // Check if accessing admin API routes (not page routes)
+    if (request.nextUrl.pathname.startsWith('/api/admin') || (request.nextUrl.pathname.startsWith('/admin') && request.nextUrl.pathname.includes('/api/'))) {
+        // Allow login API
+        if (request.nextUrl.pathname === '/api/admin/auth/login') {
+            console.log('✅ Allowing access to login API')
             return NextResponse.next()
         }
 
-        // Check for admin token
-        const token = request.cookies.get('admin_token')?.value ||
-                     request.headers.get('authorization')?.replace('Bearer ', '')
+        // Check for admin token in header (API requests should send token in Authorization header)
+        const token = request.headers.get('authorization')?.replace('Bearer ', '')
 
         console.log('🔑 Token found:', !!token)
 
         if (!token) {
-            console.log('❌ No token found, redirecting to login')
-            return NextResponse.redirect(new URL('/admin/login', request.url))
+            console.log('❌ No token found in API request, returning 401')
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
         }
 
         try {
@@ -28,7 +27,7 @@ export function middleware(request: NextRequest) {
             // In production, you might want to implement proper JWT verification
             if (token && token.length > 10) {
                 console.log('✅ Token validation passed')
-                
+
                 // Add admin info to request headers for API routes
                 const response = NextResponse.next()
                 response.headers.set('x-admin-id', '1')
@@ -40,14 +39,14 @@ export function middleware(request: NextRequest) {
             }
         } catch (error) {
             console.log('❌ Token verification failed:', error)
-            // Invalid token, redirect to login
-            return NextResponse.redirect(new URL('/admin/login', request.url))
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
         }
     }
 
+    // For page routes, let client-side handle authentication
     return NextResponse.next()
 }
 
 export const config = {
-    matcher: ['/admin/:path*']
+    matcher: ['/admin/:path*', '/api/admin/:path*']
 }
