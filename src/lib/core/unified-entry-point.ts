@@ -517,7 +517,14 @@ export class UnifiedBotSystem {
                 const offerData = getUserChatBotOfferCount(user.facebook_id)
                 const currentCount = offerData?.count || 0
 
+                console.log(`📊 Counter check for ${user.facebook_id}:`, {
+                    offerData,
+                    currentCount,
+                    message: text
+                })
+
                 if (currentCount === 1) {
+                    console.log(`🎯 Executing count=1 logic for ${user.facebook_id}`)
                     // Tin nhắn đầu tiên - chào mừng + nút "Chat Bot"
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
                     await sendMessage(user.facebook_id, '🎉 Chào bạn ghé thăm Tùng!')
@@ -532,10 +539,12 @@ export class UnifiedBotSystem {
                         ]
                     )
                 } else if (currentCount === 2) {
+                    console.log(`🎯 Executing count=2 logic for ${user.facebook_id}`)
                     // Tin nhắn thứ 2 - chỉ thông báo admin, KHÔNG có nút
                     const { sendMessage } = await import('../facebook-api')
                     await sendMessage(user.facebook_id, '💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!')
                 } else {
+                    console.log(`🎯 Executing count=${currentCount} logic for ${user.facebook_id} - bot stops completely`)
                     // Tin nhắn thứ 3+ - bot dừng hoàn toàn
                     logger.info('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 3 - không gửi gì cả', { facebook_id: user.facebook_id })
                     // Bot dừng hoàn toàn, không gửi gì cả

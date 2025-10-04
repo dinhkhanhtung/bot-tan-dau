@@ -161,12 +161,24 @@ export function incrementNormalMessageCount(facebookId: string): void {
     const offerData = userChatBotOfferCount.get(facebookId)
     const now = Date.now()
 
+    console.log(`🔢 incrementNormalMessageCount for ${facebookId}:`, {
+        before: offerData,
+        mapSize: userChatBotOfferCount.size
+    })
+
     if (!offerData) {
         userChatBotOfferCount.set(facebookId, { count: 1, lastOffer: now })
+        console.log(`✅ Created new counter for ${facebookId}: count=1`)
     } else {
         offerData.count++
         offerData.lastOffer = now
+        console.log(`✅ Incremented counter for ${facebookId}: count=${offerData.count}`)
     }
+
+    console.log(`🔢 After increment:`, {
+        current: userChatBotOfferCount.get(facebookId),
+        mapSize: userChatBotOfferCount.size
+    })
 }
 
 // Hàm lấy thông tin counter
