@@ -51,6 +51,8 @@ export async function POST(request: NextRequest) {
             { expiresIn: '24h' }
         )
 
+        console.log('JWT token created successfully for admin:', adminUser.username)
+
         // Update last login
         await supabaseAdmin
             .from('admin_users')

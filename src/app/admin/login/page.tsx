@@ -12,10 +12,12 @@ export default function AdminLogin() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        console.log('Form submitted with:', { username, password })
         setIsLoading(true)
         setError('')
 
         try {
+            console.log('Attempting login for user:', username)
             const response = await fetch('/api/admin/auth/login', {
                 method: 'POST',
                 headers: {
@@ -24,9 +26,12 @@ export default function AdminLogin() {
                 body: JSON.stringify({ username, password }),
             })
 
+            console.log('Response status:', response.status)
             const data = await response.json()
+            console.log('Response data:', data)
 
             if (response.ok && data.success) {
+                console.log('Login successful, redirecting...')
                 // Store admin session in localStorage and cookies
                 localStorage.setItem('admin_token', data.token)
                 localStorage.setItem('admin_info', JSON.stringify(data.admin))
@@ -37,9 +42,11 @@ export default function AdminLogin() {
                 // Redirect to dashboard
                 router.push('/admin/dashboard')
             } else {
+                console.log('Login failed:', data.message)
                 setError(data.message || 'Đăng nhập thất bại')
             }
         } catch (error) {
+            console.error('Login error:', error)
             setError('Có lỗi xảy ra khi đăng nhập')
         } finally {
             setIsLoading(false)
