@@ -177,29 +177,40 @@ export class UnifiedBotSystem {
                 }
             } else {
                 // Admin không trong cuộc trò chuyện - TỰ ĐỘNG TẠO ADMIN CHAT SESSION
+                console.log('🔧 Admin not in chat mode, creating new session for:', user.facebook_id)
+
                 // Lấy user_id từ cuộc trò chuyện hiện tại (giả sử là user cuối cùng admin chat)
                 const adminChatModule = await import('../admin-chat')
                 const recentUser = await adminChatModule.getRecentUserForAdmin(user.facebook_id)
 
                 if (recentUser) {
+                    console.log('📋 Found recent user for admin:', recentUser)
                     // Tạo admin chat session với user gần đây nhất
                     const { startAdminChatSession, adminTakeOverChat } = await import('../admin-chat')
                     const result = await startAdminChatSession(recentUser)
 
                     if (result.success) {
+                        console.log('✅ Admin chat session created:', result.sessionId)
                         const success = await adminTakeOverChat(result.sessionId!, user.facebook_id)
                         if (success) {
                             const session = {
                                 id: result.sessionId,
                                 user_id: recentUser
                             }
+                            console.log('🎯 Admin took over chat session:', session.id)
                             await this.showAdminChatMenu(user, session)
                             return
+                        } else {
+                            console.error('❌ Failed to take over chat session')
                         }
+                    } else {
+                        console.error('❌ Failed to create admin chat session:', result.error)
                     }
+                } else {
+                    console.log('⚠️ No recent user found for admin')
                 }
 
-                // Fallback - hiện admin dashboard
+                // Fallback - hiện admin dashboard với thông báo
                 if (isPostback && postback) {
                     await this.handleAdminPostback(user, postback)
                 } else if (text) {
@@ -473,72 +484,141 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý admin trong cuộc trò chuyện với user
+     * Xử lý admin trong cuộc trò chuyện với user - CẢI THIỆN ĐỂ LUÔN HIỂN THỊ MENU
      */
     private static async handleAdminInChatMode(user: any, text: string): Promise<void> {
         try {
+            console.log('💬 Admin sending message in chat mode:', user.facebook_id, 'Text:', text)
+
             // Lấy thông tin cuộc trò chuyện admin
             const { getActiveAdminChatSession } = await import('../admin-chat')
             const session = await getActiveAdminChatSession(user.facebook_id)
 
             if (!session) {
+                console.error('❌ No active session found for admin:', user.facebook_id)
                 await this.showAdminDashboard(user)
                 return
             }
 
+            console.log('✅ Found active session:', session.id, 'User:', session.user_id)
+
             // Gửi tin nhắn trực tiếp cho user
             const { sendMessage } = await import('../facebook-api')
-            await sendMessage(session.user_id, text)
+            await sendMessage(session.user_id, `👨‍💼 Admin: ${text}`)
+            console.log('✅ Message sent to user:', session.user_id)
 
-            // LUÔN hiện admin menu cho admin (không cần gõ gì)
+            // Cập nhật thời gian tin nhắn cuối
+            try {
+                const { updateLastMessageTime } = await import('../admin-chat')
+                await updateLastMessageTime(session.id)
+                console.log('✅ Updated last message time for session:', session.id)
+            } catch (error) {
+                console.error('❌ Error updating last message time:', error)
+            }
+
+            // LUÔN hiện admin menu cho admin (không cần gõ gì) - ĐẢM BẢO LUÔN HIỂN THỊ
+            console.log('🔧 Showing admin menu after message...')
             await this.showAdminChatMenu(user, session)
 
         } catch (error) {
-            console.error('Error handling admin in chat mode:', error)
-            await this.showAdminDashboard(user)
+            console.error('❌ Error handling admin in chat mode:', error)
+            try {
+                await this.showAdminDashboard(user)
+            } catch (dashboardError) {
+                console.error('❌ Cannot show dashboard either:', dashboardError)
+            }
         }
     }
 
     /**
-     * Hiện admin menu trong cuộc trò chuyện
+     * Hiện admin menu trong cuộc trò chuyện - CẢI THIỆN ĐỂ LUÔN HIỂN THỊ NÚT CHỨC NĂNG
      */
     private static async showAdminChatMenu(user: any, session: any): Promise<void> {
         try {
+            console.log('🔧 Showing admin chat menu for:', user.facebook_id, 'Session:', session?.id)
+
             const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
 
-            // Lấy thông tin user
-            const { supabaseAdmin } = await import('../supabase')
-            const { data: chatUser } = await supabaseAdmin
-                .from('users')
-                .select('name, phone, status, membership_expires_at')
-                .eq('facebook_id', session.user_id)
-                .single()
+            // Đảm bảo session tồn tại
+            if (!session || !session.user_id) {
+                console.error('❌ Invalid session in showAdminChatMenu:', session)
+                await sendMessage(user.facebook_id, '❌ Lỗi session không hợp lệ')
+                return
+            }
 
-            // Hiện thông tin user cho admin
-            await sendMessage(user.facebook_id, `💬 Đang chat với: ${chatUser?.name || 'Unknown'} (${session.user_id})`)
+            // Lấy thông tin user với error handling tốt hơn
+            let chatUser = null
+            try {
+                const { supabaseAdmin } = await import('../supabase')
+                const { data: userData, error: userError } = await supabaseAdmin
+                    .from('users')
+                    .select('name, phone, status, membership_expires_at')
+                    .eq('facebook_id', session.user_id)
+                    .single()
 
-            // Admin luôn có đầy đủ quyền - không cần kiểm tra bot mode
+                if (userError) {
+                    console.error('Error fetching user data:', userError)
+                } else {
+                    chatUser = userData
+                }
+            } catch (error) {
+                console.error('Error in user data fetch:', error)
+            }
+
+            // Hiện thông tin user cho admin (có fallback)
+            const userName = chatUser?.name || 'Unknown'
+            const userPhone = chatUser?.phone || 'N/A'
+            await sendMessage(user.facebook_id, `💬 Đang chat với: ${userName} (${session.user_id})`)
+            await sendMessage(user.facebook_id, `📱 SĐT: ${userPhone}`)
+
+            // ĐẢM BẢO LUÔN CÓ NÚT CHỨC NĂNG CHO ADMIN
             const adminMenuOptions = [
-                createQuickReply('🚀 GỬI NÚT ĐĂNG KÝ', `ADMIN_SEND_REGISTER_${session.user_id}`),
-                createQuickReply('💰 GỬI NÚT THANH TOÁN', `ADMIN_SEND_PAYMENT_${session.user_id}`),
-                createQuickReply('ℹ️ GỬI NÚT THÔNG TIN', `ADMIN_SEND_INFO_${session.user_id}`),
-                createQuickReply('💬 GỬI NÚT HỖ TRỢ', `ADMIN_SEND_SUPPORT_${session.user_id}`),
-                createQuickReply('👤 THÔNG TIN USER', `ADMIN_USER_INFO_${session.user_id}`),
-                createQuickReply('📊 LỊCH SỬ', `ADMIN_USER_HISTORY_${session.user_id}`),
+                createQuickReply('🚀 GỬI ĐĂNG KÝ', `ADMIN_SEND_REGISTER_${session.user_id}`),
+                createQuickReply('💰 GỬI THANH TOÁN', `ADMIN_SEND_PAYMENT_${session.user_id}`),
+                createQuickReply('ℹ️ GỬI THÔNG TIN', `ADMIN_SEND_INFO_${session.user_id}`),
+                createQuickReply('💬 GỬI HỖ TRỢ', `ADMIN_SEND_SUPPORT_${session.user_id}`),
+                createQuickReply('👤 XEM USER INFO', `ADMIN_USER_INFO_${session.user_id}`),
+                createQuickReply('📊 XEM LỊCH SỬ', `ADMIN_USER_HISTORY_${session.user_id}`),
                 createQuickReply('📤 GỬI LINK', `ADMIN_SEND_LINK_${session.user_id}`),
-                createQuickReply('🔔 THÔNG BÁO', `ADMIN_SEND_NOTIFICATION_${session.user_id}`),
+                createQuickReply('🔔 GỬI THÔNG BÁO', `ADMIN_SEND_NOTIFICATION_${session.user_id}`),
                 createQuickReply('❌ KẾT THÚC CHAT', `ADMIN_END_CHAT_${session.id}`),
-                createQuickReply('🏠 VỀ DASHBOARD', 'ADMIN')
+                createQuickReply('🏠 DASHBOARD', 'ADMIN')
             ]
 
-            await sendQuickReply(
-                user.facebook_id,
-                '🔧 Admin Menu - Chọn hành động:',
-                adminMenuOptions
-            )
+            // Gửi menu với error handling
+            try {
+                await sendQuickReply(
+                    user.facebook_id,
+                    '🔧 ADMIN MENU - Chọn chức năng:',
+                    adminMenuOptions
+                )
+                console.log('✅ Admin menu sent successfully to:', user.facebook_id)
+            } catch (error) {
+                console.error('❌ Error sending admin menu:', error)
+                // Thử gửi lại với ít nút hơn nếu có lỗi
+                try {
+                    const basicOptions = [
+                        createQuickReply('🚀 ĐĂNG KÝ', `ADMIN_SEND_REGISTER_${session.user_id}`),
+                        createQuickReply('💰 THANH TOÁN', `ADMIN_SEND_PAYMENT_${session.user_id}`),
+                        createQuickReply('❌ KẾT THÚC', `ADMIN_END_CHAT_${session.id}`),
+                        createQuickReply('🏠 DASHBOARD', 'ADMIN')
+                    ]
+                    await sendQuickReply(user.facebook_id, '🔧 ADMIN MENU:', basicOptions)
+                    console.log('✅ Basic admin menu sent as fallback')
+                } catch (fallbackError) {
+                    console.error('❌ Even basic menu failed:', fallbackError)
+                    await sendMessage(user.facebook_id, '❌ Không thể hiển thị menu. Vui lòng thử lại.')
+                }
+            }
 
         } catch (error) {
-            console.error('Error showing admin chat menu:', error)
+            console.error('❌ Critical error in showAdminChatMenu:', error)
+            try {
+                const { sendMessage } = await import('../facebook-api')
+                await sendMessage(user.facebook_id, '❌ Lỗi hệ thống khi hiển thị menu admin')
+            } catch (msgError) {
+                console.error('❌ Cannot even send error message:', msgError)
+            }
         }
     }
 
