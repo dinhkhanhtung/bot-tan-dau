@@ -130,10 +130,10 @@ async function handleMessageEvent(event: any) {
         const senderId = event.sender.id
         const message = event.message
 
-        // Skip if message is from bot
-        if (senderId === CONFIG.BOT.APP_ID) {
-            return
-        }
+        // Tin nhắn từ fanpage = admin, không skip
+        // if (senderId === CONFIG.BOT.APP_ID) {
+        //     return
+        // }
 
         // Check for duplicate message processing
         const messageId = message.mid || `${senderId}_${Date.now()}`

@@ -31,23 +31,11 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Bước 2: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất)
-            const isAdminUser = await this.checkAdminStatus(user.facebook_id)
-
-            if (isAdminUser) {
-                logger.info('Admin user detected', { facebook_id: user.facebook_id })
+            // Bước 2: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất) - TIN NHẮN TỪ FANPAGE = ADMIN
+            if (user.facebook_id === process.env.FACEBOOK_APP_ID) {
+                logger.info('Admin message from fanpage detected', { facebook_id: user.facebook_id })
                 await this.handleAdminMessage(user, text, isPostback, postback)
                 return
-            }
-
-            // Kiểm tra lệnh admin đặc biệt
-            if (text && (text.toLowerCase().includes('/admin') || text.toLowerCase().includes('admin'))) {
-                const isAdminUser2 = await this.checkAdminStatus(user.facebook_id)
-                if (isAdminUser2) {
-                    logger.info('Admin command detected', { facebook_id: user.facebook_id })
-                    await this.showAdminDashboard(user)
-                    return
-                }
             }
 
             // Bước 3: KIỂM TRA ADMIN CHAT MODE
@@ -106,20 +94,6 @@ export class UnifiedBotSystem {
         }
     }
 
-    /**
-     * Kiểm tra trạng thái admin
-     */
-    private static async checkAdminStatus(facebookId: string): Promise<boolean> {
-        try {
-            const { isAdmin } = await import('../utils')
-            const result = await isAdmin(facebookId)
-            logger.debug('Admin status check', { facebook_id: facebookId, isAdmin: result })
-            return result
-        } catch (error) {
-            logError(error as Error, { operation: 'admin_status_check', facebook_id: facebookId })
-            return false
-        }
-    }
 
     /**
      * Kiểm tra admin chat mode
@@ -354,9 +328,8 @@ export class UnifiedBotSystem {
      */
     private static async analyzeUserContext(user: any): Promise<{ userType: UserType, user?: any }> {
         try {
-            // 1. Kiểm tra Admin trước (ưu tiên cao nhất)
-            const isAdminUser = await this.checkAdminStatus(user.facebook_id)
-            if (isAdminUser) {
+            // 1. Kiểm tra Admin trước (ưu tiên cao nhất) - TIN NHẮN TỪ FANPAGE = ADMIN
+            if (user.facebook_id === process.env.FACEBOOK_APP_ID) {
                 return { userType: UserType.ADMIN }
             }
 
@@ -502,23 +475,17 @@ export class UnifiedBotSystem {
             const { checkUserBotMode } = await import('../anti-spam')
             const isInBotMode = await checkUserBotMode(user.facebook_id)
 
+            // KIỂM TRA ADMIN TRƯỚC TIÊN - TIN NHẮN TỪ FANPAGE = ADMIN
+            if (user.facebook_id === process.env.FACEBOOK_APP_ID) {
+                logger.info('Admin message from fanpage detected', { facebook_id: user.facebook_id })
+                await this.showAdminDashboard(user)
+                return
+            }
+
             if (!isInBotMode) {
                 logger.info('New user not in bot mode - processing as normal message', {
                     facebook_id: user.facebook_id
                 })
-
-                // KIỂM TRA LỆNH ADMIN TRƯỚC KHI XỬ LÝ COUNTER
-                if (text && (text.toLowerCase().includes('/admin') || text.toLowerCase().includes('admin'))) {
-                    const isAdminUser = await this.checkAdminStatus(user.facebook_id)
-                    if (isAdminUser) {
-                        logger.info('Admin command detected', { facebook_id: user.facebook_id })
-                        await this.showAdminDashboard(user)
-                        return
-                    } else {
-                        await sendMessage(user.facebook_id, '❌ Bạn không có quyền truy cập admin dashboard!')
-                        return
-                    }
-                }
 
                 // Tăng counter cho mỗi tin nhắn thường
                 const { incrementNormalMessageCount, getUserChatBotOfferCount } = await import('../anti-spam')
