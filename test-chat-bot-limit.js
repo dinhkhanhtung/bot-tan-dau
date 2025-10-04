@@ -19,14 +19,14 @@ async function testChatBotLimit() {
     console.log('Should bot stop:', stop1)
     console.log('Expected: true, false\n')
 
-    // Test 2: Lần thứ 2 - thông báo admin + nút
-    console.log('Test 2: Second time - admin notification + button')
+    // Test 2: Lần thứ 2 - chỉ thông báo admin, KHÔNG có nút
+    console.log('Test 2: Second time - admin notification only, NO button')
     incrementNormalMessageCount(testUserId) // count = 2
     const show2 = shouldShowChatBotButton(testUserId)
     const stop2 = shouldBotStopCompletely(testUserId)
     console.log('Should show button:', show2)
     console.log('Should bot stop:', stop2)
-    console.log('Expected: true, false\n')
+    console.log('Expected: false, false\n')
 
     // Test 3: Lần thứ 3 - bot dừng hoàn toàn
     console.log('Test 3: Third time - bot should stop completely')

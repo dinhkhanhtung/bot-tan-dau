@@ -484,25 +484,17 @@ export class UnifiedBotSystem {
                     return
                 }
 
-                // Phân biệt tin nhắn đầu tiên và thứ 2
-                if (shouldShowChatBotButton(user.facebook_id)) {
+                // Lấy count hiện tại để phân biệt
+                const { getUserChatBotOfferCount } = await import('../anti-spam')
+                const offerData = getUserChatBotOfferCount(user.facebook_id)
+                const currentCount = offerData?.count || 0
+                
+                if (currentCount === 1) {
+                    // Tin nhắn đầu tiên - chào mừng + nút
                     const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
-                    
-                    // Lấy count hiện tại để phân biệt
-                    const { getUserChatBotOfferCount } = await import('../anti-spam')
-                    const offerData = getUserChatBotOfferCount(user.facebook_id)
-                    const currentCount = offerData?.count || 0
-                    
-                    if (currentCount === 1) {
-                        // Tin nhắn đầu tiên - chào mừng
-                        await sendMessage(user.facebook_id, '🎉 Chào bạn ghé thăm Tùng!')
-                        await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
-                        await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
-                    } else if (currentCount === 2) {
-                        // Tin nhắn thứ 2 - thông báo chuyển admin
-                        await sendMessage(user.facebook_id, '💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!')
-                        await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
-                    }
+                    await sendMessage(user.facebook_id, '🎉 Chào bạn ghé thăm Tùng!')
+                    await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
+                    await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
                     
                     await sendQuickReply(
                         user.facebook_id,
@@ -511,6 +503,10 @@ export class UnifiedBotSystem {
                             createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
                         ]
                     )
+                } else if (currentCount === 2) {
+                    // Tin nhắn thứ 2 - chỉ thông báo admin, KHÔNG có nút
+                    const { sendMessage } = await import('../facebook-api')
+                    await sendMessage(user.facebook_id, '💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!')
                 } else {
                     console.log('🚫 User đã nhận thông báo - bot dừng hoàn toàn, để admin xử lý')
                     // Bot dừng hoàn toàn, không gửi gì cả

@@ -209,25 +209,17 @@ async function handleMessageEvent(event: any) {
                 return
             }
 
-            // Phân biệt tin nhắn đầu tiên và thứ 2
-            if (shouldShowChatBotButton(senderId)) {
+            // Lấy count hiện tại để phân biệt
+            const { getUserChatBotOfferCount } = await import('@/lib/anti-spam')
+            const offerData = getUserChatBotOfferCount(senderId)
+            const currentCount = offerData?.count || 0
+            
+            if (currentCount === 1) {
+                // Tin nhắn đầu tiên - chào mừng + nút
                 const { sendMessage, sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
-                
-                // Lấy count hiện tại để phân biệt
-                const { getUserChatBotOfferCount } = await import('@/lib/anti-spam')
-                const offerData = getUserChatBotOfferCount(senderId)
-                const currentCount = offerData?.count || 0
-                
-                if (currentCount === 1) {
-                    // Tin nhắn đầu tiên - chào mừng
-                    await sendMessage(senderId, '🎉 Chào bạn ghé thăm Tùng!')
-                    await sendMessage(senderId, '👋 Hôm nay mình có thể giúp gì cho bạn?')
-                    await sendMessage(senderId, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
-                } else if (currentCount === 2) {
-                    // Tin nhắn thứ 2 - thông báo chuyển admin
-                    await sendMessage(senderId, '💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!')
-                    await sendMessage(senderId, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
-                }
+                await sendMessage(senderId, '🎉 Chào bạn ghé thăm Tùng!')
+                await sendMessage(senderId, '👋 Hôm nay mình có thể giúp gì cho bạn?')
+                await sendMessage(senderId, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
                 
                 await sendQuickReply(
                     senderId,
@@ -236,6 +228,10 @@ async function handleMessageEvent(event: any) {
                         createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
                     ]
                 )
+            } else if (currentCount === 2) {
+                // Tin nhắn thứ 2 - chỉ thông báo admin, KHÔNG có nút
+                const { sendMessage } = await import('@/lib/facebook-api')
+                await sendMessage(senderId, '💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!')
             } else {
                 console.log('🚫 User đã nhận thông báo - bot dừng hoàn toàn, để admin xử lý')
                 // Bot dừng hoàn toàn, không gửi gì cả
