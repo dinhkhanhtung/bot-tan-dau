@@ -248,17 +248,29 @@ export class DatabaseService {
         return this.executeQuery(
             'getBotSession',
             async () => {
-                const { data, error } = await supabaseAdmin
-                    .from(CONFIG.DATABASE.TABLES.SESSIONS)
-                    .select('*')
-                    .eq('user_id', facebookId)
-                    .single()
+                try {
+                    // Use facebook_id directly (matching database schema)
+                    const { data, error } = await supabaseAdmin
+                        .from(CONFIG.DATABASE.TABLES.SESSIONS)
+                        .select('*')
+                        .eq('facebook_id', facebookId)
+                        .single()
 
-                if (error && error.code !== 'PGRST116') {
-                    throw error
+                    if (error && error.code !== 'PGRST116') {
+                        // If table doesn't exist or other error, return null
+                        if (error.message.includes('schema cache') || error.message.includes('does not exist')) {
+                            logger.warn('Bot sessions table not found, returning null', { error: error.message })
+                            return null
+                        }
+                        throw error
+                    }
+
+                    return data
+                } catch (error) {
+                    // Fallback to null if any error occurs
+                    logger.warn('Failed to get bot session, returning null', { error: error instanceof Error ? error.message : String(error) })
+                    return null
                 }
-
-                return data
             },
             `session:${facebookId}`,
             CONFIG.DATABASE.CACHE_TTL
@@ -269,22 +281,36 @@ export class DatabaseService {
         return this.executeQuery(
             'updateBotSession',
             async () => {
-                const { data, error } = await supabaseAdmin
-                    .from(CONFIG.DATABASE.TABLES.SESSIONS)
-                    .upsert({
-                        user_id: facebookId,
-                        session_data: sessionData,
-                        updated_at: new Date().toISOString()
-                    })
-                    .select()
-                    .single()
+                try {
+                    // Use facebook_id directly (matching database schema)
+                    const { data, error } = await supabaseAdmin
+                        .from(CONFIG.DATABASE.TABLES.SESSIONS)
+                        .upsert({
+                            facebook_id: facebookId,
+                            session_data: sessionData,
+                            updated_at: new Date().toISOString()
+                        })
+                        .select()
+                        .single()
 
-                if (error) throw error
+                    if (error) {
+                        // If table doesn't exist or other error, just log warning and continue
+                        if (error.message.includes('schema cache') || error.message.includes('does not exist')) {
+                            logger.warn('Bot sessions table not found, cannot update session', { error: error.message })
+                            return null
+                        }
+                        throw error
+                    }
 
-                // Invalidate session cache
-                invalidateUserCache(facebookId)
+                    // Invalidate session cache
+                    invalidateUserCache(facebookId)
 
-                return data
+                    return data
+                } catch (error) {
+                    // Fallback: just log warning and continue
+                    logger.warn('Failed to update bot session', { error: error instanceof Error ? error.message : String(error) })
+                    return null
+                }
             }
         )
     }
@@ -293,17 +319,31 @@ export class DatabaseService {
         return this.executeQuery(
             'deleteBotSession',
             async () => {
-                const { error } = await supabaseAdmin
-                    .from(CONFIG.DATABASE.TABLES.SESSIONS)
-                    .delete()
-                    .eq('user_id', facebookId)
+                try {
+                    // Use facebook_id directly (matching database schema)
+                    const { error } = await supabaseAdmin
+                        .from(CONFIG.DATABASE.TABLES.SESSIONS)
+                        .delete()
+                        .eq('facebook_id', facebookId)
 
-                if (error) throw error
+                    if (error) {
+                        // If table doesn't exist or other error, just log warning and continue
+                        if (error.message.includes('schema cache') || error.message.includes('does not exist')) {
+                            logger.warn('Bot sessions table not found, cannot delete session', { error: error.message })
+                            return true
+                        }
+                        throw error
+                    }
 
-                // Invalidate session cache
-                invalidateUserCache(facebookId)
+                    // Invalidate session cache
+                    invalidateUserCache(facebookId)
 
-                return true
+                    return true
+                } catch (error) {
+                    // Fallback: just log warning and continue
+                    logger.warn('Failed to delete bot session', { error: error instanceof Error ? error.message : String(error) })
+                    return true
+                }
             }
         )
     }

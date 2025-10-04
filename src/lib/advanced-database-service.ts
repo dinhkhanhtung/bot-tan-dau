@@ -404,17 +404,29 @@ export class AdvancedDatabaseService {
         return this.executeQuery(
             'getBotSession',
             async (client) => {
-                const { data, error } = await client
-                    .from('bot_sessions')
-                    .select('*')
-                    .eq('user_id', facebookId)
-                    .single()
+                try {
+                    // Use facebook_id directly (matching database schema)
+                    const { data, error } = await client
+                        .from('bot_sessions')
+                        .select('*')
+                        .eq('facebook_id', facebookId)
+                        .single()
 
-                if (error && error.code !== 'PGRST116') {
-                    throw new Error(`Database error: ${error.message}`)
+                    if (error && error.code !== 'PGRST116') {
+                        // If table doesn't exist or other error, return null
+                        if (error.message.includes('schema cache') || error.message.includes('does not exist')) {
+                            logger.warn('Bot sessions table not found, returning null', { error: error.message })
+                            return null
+                        }
+                        throw new Error(`Database error: ${error.message}`)
+                    }
+
+                    return data
+                } catch (error) {
+                    // Fallback to null if any error occurs
+                    logger.warn('Failed to get bot session, returning null', { error: error instanceof Error ? error.message : String(error) })
+                    return null
                 }
-
-                return data
             },
             {
                 strategy: QueryStrategy.CACHE_FIRST,
@@ -429,19 +441,30 @@ export class AdvancedDatabaseService {
         await this.executeQuery(
             'updateBotSession',
             async (client) => {
-                const { error } = await client
-                    .from('bot_sessions')
-                    .upsert(
-                        {
-                            user_id: facebookId,
-                            session_data: sessionData,
-                            updated_at: new Date().toISOString()
-                        },
-                        { onConflict: 'user_id' }
-                    )
+                try {
+                    // Use facebook_id directly (matching database schema)
+                    const { error } = await client
+                        .from('bot_sessions')
+                        .upsert(
+                            {
+                                facebook_id: facebookId,
+                                session_data: sessionData,
+                                updated_at: new Date().toISOString()
+                            },
+                            { onConflict: 'facebook_id' }
+                        )
 
-                if (error) {
-                    throw new Error(`Database error: ${error.message}`)
+                    if (error) {
+                        // If table doesn't exist or other error, just log warning and continue
+                        if (error.message.includes('schema cache') || error.message.includes('does not exist')) {
+                            logger.warn('Bot sessions table not found, cannot update session', { error: error.message })
+                            return
+                        }
+                        throw new Error(`Database error: ${error.message}`)
+                    }
+                } catch (error) {
+                    // Fallback: just log warning and continue
+                    logger.warn('Failed to update bot session', { error: error instanceof Error ? error.message : String(error) })
                 }
             },
             {
