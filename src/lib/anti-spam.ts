@@ -685,7 +685,7 @@ export async function trackNonButtonMessage(facebookId: string, message: string)
     reason?: string
 }> {
     // Check if user is admin - skip tracking for admin
-    const { isAdmin } = await import('./handlers/admin-handlers')
+    const { isAdmin } = await import('./utils')
     const userIsAdmin = await isAdmin(facebookId)
 
     if (userIsAdmin) {
