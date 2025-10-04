@@ -198,7 +198,7 @@ export class DatabaseService {
 
                     if (error) {
                         // If table doesn't exist or other error, return default status
-                        if (error.code === 'PGRST116' || error.message.includes('schema cache')) {
+                        if (error.code === 'PGRST116' || error.message.includes('schema cache') || error.message.includes('Cannot coerce the result to a single JSON object')) {
                             logger.warn('Bot settings table not found, using default status', { error: error.message })
                             return 'running'
                         }

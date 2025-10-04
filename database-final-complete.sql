@@ -673,6 +673,54 @@ CREATE INDEX IF NOT EXISTS idx_users_facebook_id ON users(facebook_id);
 CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 
+-- ========================================
+-- CREATE BOT_SETTINGS TABLE (FIX DATABASE ERROR)
+-- ========================================
+
+-- Tạo bảng bot_settings nếu chưa có (để fix lỗi "Bot settings table not found")
+CREATE TABLE IF NOT EXISTS bot_settings (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(100) UNIQUE NOT NULL,
+    value TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Tạo index cho bot_settings
+CREATE INDEX IF NOT EXISTS idx_bot_settings_key ON bot_settings(key);
+
+-- Insert default bot status nếu chưa có
+INSERT INTO bot_settings (key, value, description)
+VALUES ('bot_status', 'active', 'Trạng thái hoạt động của bot (active/stopped)')
+ON CONFLICT (key) DO NOTHING;
+
+-- Insert additional bot settings
+INSERT INTO bot_settings (key, value, description)
+VALUES 
+    ('maintenance_mode', 'false', 'Chế độ bảo trì (true/false)'),
+    ('max_users_per_hour', '1000', 'Số user tối đa mỗi giờ'),
+    ('welcome_message_enabled', 'true', 'Tin nhắn chào mừng (true/false)')
+ON CONFLICT (key) DO NOTHING;
+
+-- Tạo trigger để update updated_at cho bot_settings
+CREATE OR REPLACE FUNCTION update_bot_settings_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop trigger cũ nếu có
+DROP TRIGGER IF EXISTS update_bot_settings_updated_at ON bot_settings;
+
+-- Tạo trigger mới
+CREATE TRIGGER update_bot_settings_updated_at
+    BEFORE UPDATE ON bot_settings
+    FOR EACH ROW
+    EXECUTE FUNCTION update_bot_settings_updated_at();
+
 SELECT 'Database setup hoàn chỉnh với PENDING_USER system, ANTI-SPAM thông minh và CHAT BOT COUNTER!' as status;
 SELECT COUNT(*) as total_tables FROM information_schema.tables
 WHERE table_schema = 'public'
