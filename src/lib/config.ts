@@ -8,6 +8,7 @@ const requiredEnvVars = [
     'FACEBOOK_APP_ID',
     'FACEBOOK_APP_SECRET',
     'FACEBOOK_VERIFY_TOKEN',
+    'FACEBOOK_PAGE_ACCESS_TOKEN',
     'SUPABASE_URL',
     'SUPABASE_ANON_KEY',
     'SUPABASE_SERVICE_ROLE_KEY'
@@ -31,6 +32,7 @@ export const BOT_CONFIG = {
     APP_ID: process.env.FACEBOOK_APP_ID!,
     APP_SECRET: process.env.FACEBOOK_APP_SECRET!,
     VERIFY_TOKEN: process.env.FACEBOOK_VERIFY_TOKEN!,
+    PAGE_ACCESS_TOKEN: process.env.FACEBOOK_PAGE_ACCESS_TOKEN!,
 
     // Database settings
     SUPABASE_URL: process.env.SUPABASE_URL!,
@@ -298,6 +300,10 @@ export type ValidationRules = typeof VALIDATION_RULES
 export type CacheKeys = typeof CACHE_KEYS
 export type EventTypes = typeof EVENT_TYPES
 export type Config = typeof CONFIG
+
+// Export individual configs for easier access
+export { ERROR_MESSAGES as ErrorMessages }
+export { CACHE_KEYS as CacheKeys }
 
 // Utility functions
 export const ConfigUtils = {

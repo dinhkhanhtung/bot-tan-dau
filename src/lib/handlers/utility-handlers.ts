@@ -9,7 +9,7 @@ import {
     hideButtons
 } from '../facebook-api'
 import { formatCurrency, formatNumber, generateId } from '../utils'
-import { generateHoroscope } from '../core/ai-manager'
+// AI Manager removed - using simple horoscope logic
 
 // Handle horoscope
 export async function handleHoroscope(user: any) {
@@ -18,7 +18,15 @@ export async function handleHoroscope(user: any) {
     // Hide previous buttons first to avoid button clutter
     await hideButtons(user.facebook_id)
 
-    const horoscope = generateHoroscope()
+    // Simple horoscope generation (AI removed)
+    const horoscope = {
+        fortune: 'Tài lộc khá tốt, có cơ hội đầu tư',
+        love: 'Tình cảm ổn định, nên quan tâm gia đình',
+        health: 'Sức khỏe tốt, nên tập thể dục thường xuyên',
+        advice: 'Hôm nay nên tập trung vào công việc chính',
+        luckyColor: 'Vàng',
+        luckyNumber: '8'
+    }
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🔮 TỬ VI TÂN DẬU HÔM NAY',
@@ -54,7 +62,15 @@ export async function handleHoroscopeDetail(user: any) {
     // Hide previous buttons first to avoid button clutter
     await hideButtons(user.facebook_id)
 
-    const horoscope = generateHoroscope()
+    // Simple horoscope generation (AI removed)
+    const horoscope = {
+        fortune: 'Tài lộc khá tốt, có cơ hội đầu tư',
+        love: 'Tình cảm ổn định, nên quan tâm gia đình',
+        health: 'Sức khỏe tốt, nên tập thể dục thường xuyên',
+        advice: 'Hôm nay nên tập trung vào công việc chính',
+        luckyColor: 'Vàng',
+        luckyNumber: '8'
+    }
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🔮 TỬ VI CHI TIẾT TÂN DẬU',
@@ -461,15 +477,15 @@ export async function handleReferralStats(user: any) {
             await sendMessage(user.facebook_id, recentText)
         }
 
-            await sendQuickReply(
-                user.facebook_id,
-                'Tùy chọn:',
-                [
-                    createQuickReply('💰 RÚT THƯỞNG', 'REFERRAL_WITHDRAW'),
-                    createQuickReply('📤 CHIA SẺ MÃ', 'REFERRAL_SHARE'),
-                    createQuickReply('🔙 QUAY LẠI', 'REFERRAL')
-                ]
-            )
+        await sendQuickReply(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createQuickReply('💰 RÚT THƯỞNG', 'REFERRAL_WITHDRAW'),
+                createQuickReply('📤 CHIA SẺ MÃ', 'REFERRAL_SHARE'),
+                createQuickReply('🔙 QUAY LẠI', 'REFERRAL')
+            ]
+        )
 
     } catch (error) {
         console.error('Error in handleReferralStats:', error)
@@ -528,14 +544,14 @@ export async function handleReferralWithdraw(user: any) {
             `• Nội dung: THUONG ${user.phone || user.facebook_id.slice(-6)}`
         ])
 
-            await sendQuickReply(
-                user.facebook_id,
-                'Sau khi chuyển khoản:',
-                [
-                    createQuickReply('📸 GỬI BIÊN LAI', 'REFERRAL_WITHDRAW_CONFIRM'),
-                    createQuickReply('❌ HỦY', 'REFERRAL')
-                ]
-            )
+        await sendQuickReply(
+            user.facebook_id,
+            'Sau khi chuyển khoản:',
+            [
+                createQuickReply('📸 GỬI BIÊN LAI', 'REFERRAL_WITHDRAW_CONFIRM'),
+                createQuickReply('❌ HỦY', 'REFERRAL')
+            ]
+        )
 
     } catch (error) {
         console.error('Error in handleReferralWithdraw:', error)

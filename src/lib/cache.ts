@@ -164,7 +164,7 @@ export class Cache {
         const now = Date.now()
         let cleanedCount = 0
 
-        for (const [key, entry] of this.cache.entries()) {
+        for (const [key, entry] of Array.from(this.cache.entries())) {
             if (now > entry.expiresAt) {
                 this.cache.delete(key)
                 cleanedCount++
@@ -290,7 +290,7 @@ export class DatabaseCache {
         const regex = new RegExp(pattern)
         let invalidatedCount = 0
 
-        for (const key of this.cache['cache'].keys()) {
+        for (const key of Array.from(this.cache['cache'].keys())) {
             if (regex.test(key)) {
                 this.cache.delete(key)
                 invalidatedCount++

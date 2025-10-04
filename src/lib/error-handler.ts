@@ -315,7 +315,7 @@ export class ErrorHandler {
     public getErrorStats(): Record<string, any> {
         const stats: Record<string, any> = {}
 
-        for (const [key, count] of this.errorCounts.entries()) {
+        for (const [key, count] of Array.from(this.errorCounts.entries())) {
             const lastTime = this.lastErrorTime.get(key)
             stats[key] = {
                 count,
@@ -373,13 +373,13 @@ export const createTimeoutError = (message: string, context?: Record<string, any
     createBotError(message, ErrorType.TIMEOUT_ERROR, ErrorSeverity.MEDIUM, undefined, context)
 
 export const createUserError = (message: string, type: ErrorType, context?: Record<string, any>, userId?: string) =>
-    createBotError(message, type, ErrorSeverity.LOW, undefined, context, true, userId)
+    createBotError(message, type, ErrorSeverity.LOW, undefined, context, userId)
 
 export const createValidationError = (message: string, context?: Record<string, any>) =>
     createBotError(message, ErrorType.VALIDATION_ERROR, ErrorSeverity.LOW, undefined, context)
 
 export const createSpamError = (message: string, type: ErrorType, context?: Record<string, any>, userId?: string) =>
-    createBotError(message, type, ErrorSeverity.LOW, undefined, context, true, userId)
+    createBotError(message, type, ErrorSeverity.LOW, undefined, context, userId)
 
 export const createApiError = (message: string, type: ErrorType, context?: Record<string, any>) =>
     createBotError(message, type, ErrorSeverity.MEDIUM, undefined, context)

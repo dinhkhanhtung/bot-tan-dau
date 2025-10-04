@@ -13,8 +13,7 @@ import {
 } from '../facebook-api'
 import { formatCurrency, formatNumber, generateId, updateBotSession, getBotSession } from '../utils'
 import { CATEGORIES, LOCATIONS, DISTRICTS, PRICE_RANGES, SEARCH_HELPERS, HASHTAG_MAPPING, POPULAR_HASHTAGS } from '../constants'
-import { aiManager } from '../core/ai-manager'
-import { SearchContext } from '../ai/types/ai-types'
+// AI Manager removed - using simple search logic
 
 export class MarketplaceFlow {
     /**
@@ -241,41 +240,11 @@ export class MarketplaceFlow {
             let searchMessage = ''
             let aiUsed = false
 
-            // Step 1: Try AI Smart Search first (nếu bật AI)
-            try {
-                const aiManagerInstance = aiManager
-                if (aiManagerInstance.isAvailable()) {
-                    console.log('[MarketplaceFlow] Using AI Smart Search for:', query)
+            // Step 1: Simple search logic (AI removed)
+            console.log('[MarketplaceFlow] Using simple search for:', query)
 
-                    const searchContext: SearchContext = {
-                        query: query,
-                        category: data.category,
-                        location: data.location,
-                        userHistory: [user.facebook_id]
-                    }
-
-                    // Gọi AI Smart Search với timeout
-                    const aiResults = await Promise.race([
-                        aiManagerInstance.smartSearchEnhanced(searchContext),
-                        new Promise<string[]>((_, reject) =>
-                            setTimeout(() => reject(new Error('AI timeout')), 5000)
-                        )
-                    ])
-
-                    if (aiResults && aiResults.length > 0) {
-                        // AI trả về suggestions, cần convert thành listings thật
-                        listings = await this.convertAISuggestionsToListings(aiResults, query)
-                        searchMessage = `🤖 AI tìm thấy ${listings.length} kết quả phù hợp cho "${query}"`
-                        aiUsed = true
-                        console.log('[MarketplaceFlow] AI Smart Search successful')
-                    }
-                }
-            } catch (aiError) {
-                console.log('[MarketplaceFlow] AI Smart Search failed, using fallback:', (aiError as Error).message)
-            }
-
-            // Step 2: Fallback to traditional search nếu AI không có kết quả
-            if (listings.length === 0) {
+            // Direct traditional search
+            if (true) {
                 console.log('[MarketplaceFlow] Using traditional search for:', query)
 
                 // Check if query contains hashtags
@@ -371,16 +340,8 @@ export class MarketplaceFlow {
             console.error('[MarketplaceFlow] Search error:', error)
             await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại sau!')
 
-            // Log error for monitoring
-            if (aiManager.isAvailable()) {
-                aiManager.logAIMonitoringEvent({
-                    type: 'error',
-                    provider: 'marketplace_search',
-                    requestId: `search_${Date.now()}`,
-                    timestamp: new Date(),
-                    metadata: { error: (error as Error).message, query: text }
-                })
-            }
+            // Log error for monitoring (AI removed)
+            console.error('[MarketplaceFlow] Search error logged:', { error: (error as Error).message, query: text })
         }
     }
 

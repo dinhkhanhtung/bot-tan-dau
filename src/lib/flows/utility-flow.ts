@@ -8,13 +8,21 @@ import {
     sendMessagesWithTyping
 } from '../facebook-api'
 import { formatCurrency, formatNumber, generateId } from '../utils'
-import { generateHoroscope } from '../core/ai-manager'
+// AI Manager removed - using simple horoscope logic
 
 export class UtilityFlow {
     async handleHoroscope(user: any): Promise<void> {
         await sendTypingIndicator(user.facebook_id)
 
-        const horoscope = generateHoroscope()
+        // Simple horoscope generation (AI removed)
+        const horoscope = {
+            fortune: 'Tài lộc khá tốt, có cơ hội đầu tư',
+            love: 'Tình cảm ổn định, nên quan tâm gia đình',
+            health: 'Sức khỏe tốt, nên tập thể dục thường xuyên',
+            advice: 'Hôm nay nên tập trung vào công việc chính',
+            luckyColor: 'Vàng',
+            luckyNumber: '8'
+        }
 
         await sendMessagesWithTyping(user.facebook_id, [
             '🔮 TỬ VI TÂN DẬU HÔM NAY',

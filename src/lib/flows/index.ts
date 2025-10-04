@@ -12,14 +12,4 @@ export { MarketplaceFlow as MarketplaceHandlers } from './marketplace-flow'
 export { PaymentFlow as PaymentHandlers } from './payment-flow'
 export { AdminFlow as AdminExtra } from './admin-flow'
 
-// Export core components
-export { MessageRouter, messageRouter } from '../core/message-router'
-export { SessionManager, sessionManager } from '../core/session-manager'
-export type { SessionData } from '../core/session-manager'
-
-// Export AI components
-export { AIManager, aiManager } from '../core/ai-manager'
-export { generateHoroscope } from '../core/ai-manager'
-
-// Export adapter
-export { FlowAdapter } from '../core/flow-adapter'
+// Core components removed - using simplified architecture

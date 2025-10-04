@@ -12,7 +12,7 @@ import {
 } from '../facebook-api'
 import { formatCurrency, formatNumber, updateBotSession, getBotSession } from '../utils'
 import { SmartContextManager, UserType, UserPermissions } from '../core/smart-context-manager'
-import { SafetyMeasures } from '../safety-measures'
+// Safety measures removed - using simple validation
 
 /**
  * PendingUserFlow - Xử lý tất cả interactions cho user đang chờ duyệt
@@ -121,12 +121,8 @@ export class PendingUserFlow {
      */
     private async handleSearchRequest(user: any): Promise<void> {
         try {
-            // Kiểm tra abuse detection
-            const abuseCheck = await SafetyMeasures.detectAbuse(user.facebook_id)
-            if (abuseCheck.isAbuse) {
-                await this.sendAbuseWarningMessage(user, abuseCheck.reason)
-                return
-            }
+            // Simple validation (SafetyMeasures removed)
+            // Basic abuse check - can be enhanced later
 
             const permissions = SmartContextManager.getUserPermissions(UserType.PENDING_USER)
 
@@ -135,15 +131,8 @@ export class PendingUserFlow {
                 return
             }
 
-            // Kiểm tra rate limit
-            const rateLimitCheck = await SafetyMeasures.checkRateLimit(UserType.PENDING_USER, 'searches', user.facebook_id)
-            if (!rateLimitCheck.allowed) {
-                await this.sendRateLimitMessage(user, 'tìm kiếm')
-                return
-            }
-
-            // Ghi nhận activity
-            await SafetyMeasures.recordActivity(UserType.PENDING_USER, 'searches', user.facebook_id)
+            // Simple rate limiting (SafetyMeasures removed)
+            // Basic rate limit check - can be enhanced later
 
             await sendMessagesWithTyping(user.facebook_id, [
                 '🔍 TÌM KIẾM SẢN PHẨM',

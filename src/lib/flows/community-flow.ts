@@ -11,8 +11,7 @@ import {
     sendMessagesWithTyping
 } from '../facebook-api'
 import { formatCurrency, formatNumber, generateId } from '../utils'
-import { aiManager } from '../core/ai-manager'
-import { ChatContext } from '../ai/types/ai-types'
+// AI Manager removed - using simple community logic
 
 export class CommunityFlow {
     async handleCommunity(user: any): Promise<void> {
@@ -82,26 +81,8 @@ export class CommunityFlow {
                     return
                 }
 
-                // Generate AI-enhanced welcome message if AI is available
-                let welcomeMessage = '⏰ Sẽ nhắc nhở trước 1 ngày\n🎯 Chúc bạn có trải nghiệm tuyệt vời!'
-
-                if (aiManager.isAvailable()) {
-                    try {
-                        const chatContext: ChatContext = {
-                            userId: user.facebook_id,
-                            conversationId: `event_${eventId}`,
-                            message: `Chào mừng tham gia sự kiện ${event.title}`,
-                            history: []
-                        }
-
-                        const aiWelcome = await aiManager.processChatEnhanced(chatContext)
-                        if (aiWelcome) {
-                            welcomeMessage = aiWelcome
-                        }
-                    } catch (aiError) {
-                        console.log('[CommunityFlow] AI welcome failed, using default')
-                    }
-                }
+                // Simple welcome message (AI removed)
+                const welcomeMessage = '⏰ Sẽ nhắc nhở trước 1 ngày\n🎯 Chúc bạn có trải nghiệm tuyệt vời!'
 
                 await sendMessagesWithTyping(user.facebook_id, [
                     '✅ ĐĂNG KÝ THÀNH CÔNG!',

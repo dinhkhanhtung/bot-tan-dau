@@ -7,7 +7,7 @@ import { supabaseAdmin } from './supabase'
 import { CONFIG, DatabaseConfig } from './config'
 import { logger, logDatabaseQuery, logPerformance } from './logger'
 import { errorHandler, createDatabaseError, ErrorType } from './error-handler'
-import { cacheQuery, invalidateUserCache, invalidateBotCache } from './cache'
+import { cacheQuery, invalidateUserCache, invalidateBotCache, invalidatePattern } from './cache'
 
 // Database service class
 export class DatabaseService {
@@ -487,5 +487,8 @@ export const getDatabaseStats = () =>
 
 export const resetDatabaseStats = () =>
     dbService.resetStats()
+
+// Export the service instance
+export { dbService as databaseService }
 
 export default dbService

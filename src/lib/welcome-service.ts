@@ -376,7 +376,7 @@ export class WelcomeService {
     public getWelcomeStats(): Record<string, any> {
         const stats: Record<string, any> = {}
 
-        for (const [userId, count] of this.welcomeCounts.entries()) {
+        for (const [userId, count] of Array.from(this.welcomeCounts.entries())) {
             const lastTime = this.lastWelcomeTime.get(userId)
             stats[userId] = {
                 count,
