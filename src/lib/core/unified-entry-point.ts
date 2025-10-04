@@ -507,6 +507,19 @@ export class UnifiedBotSystem {
                     facebook_id: user.facebook_id
                 })
 
+                // KIỂM TRA LỆNH ADMIN TRƯỚC KHI XỬ LÝ COUNTER
+                if (text && (text.toLowerCase().includes('/admin') || text.toLowerCase().includes('admin'))) {
+                    const isAdminUser = await this.checkAdminStatus(user.facebook_id)
+                    if (isAdminUser) {
+                        logger.info('Admin command detected', { facebook_id: user.facebook_id })
+                        await this.showAdminDashboard(user)
+                        return
+                    } else {
+                        await sendMessage(user.facebook_id, '❌ Bạn không có quyền truy cập admin dashboard!')
+                        return
+                    }
+                }
+
                 // Tăng counter cho mỗi tin nhắn thường
                 const { incrementNormalMessageCount, getUserChatBotOfferCount } = await import('../anti-spam')
 
