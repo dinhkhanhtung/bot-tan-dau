@@ -391,7 +391,22 @@ CREATE TRIGGER update_admin_chat_sessions_updated_at BEFORE UPDATE ON admin_chat
 UPDATE users SET welcome_message_sent = TRUE WHERE welcome_message_sent IS NULL OR welcome_message_sent = FALSE;
 
 -- ========================================
--- 8. PENDING_USER SYSTEM TABLES
+-- 8. ADMIN CONFIGURATION UPDATE
+-- ========================================
+
+-- Cập nhật bot settings với cấu hình admin
+INSERT INTO bot_settings (key, value, description) 
+VALUES (
+    'admin_config', 
+    '{"fanpage_admin_enabled": true, "personal_admins_enabled": false, "fanpage_id": "2571120902929642"}',
+    'Admin configuration settings'
+) 
+ON CONFLICT (key) DO UPDATE SET 
+    value = EXCLUDED.value,
+    updated_at = NOW();
+
+-- ========================================
+-- 9. PENDING_USER SYSTEM TABLES
 -- ========================================
 
 -- User Activities Table (for rate limiting and monitoring)

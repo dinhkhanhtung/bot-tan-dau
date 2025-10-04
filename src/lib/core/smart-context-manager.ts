@@ -235,11 +235,28 @@ export class SmartContextManager {
     }
 
     /**
-     * Phát hiện admin user - DEPRECATED: Now handled by FACEBOOK_PAGE_ID check
+     * Phát hiện admin user - DEPRECATED: Now handled by UnifiedBotSystem.isAdminUser
      */
     private static async detectAdmin(facebookId: string): Promise<boolean> {
-        // New logic: Only fanpage messages are admin
-        return facebookId === process.env.FACEBOOK_PAGE_ID
+        // New logic: Check both fanpage and personal admins
+        if (facebookId === process.env.FACEBOOK_PAGE_ID) {
+            return true
+        }
+
+        const enablePersonalAdmins = process.env.ENABLE_PERSONAL_ADMINS === 'true'
+        if (enablePersonalAdmins) {
+            const { supabaseAdmin } = await import('../supabase')
+            const { data: adminUser } = await supabaseAdmin
+                .from('admin_users')
+                .select('facebook_id, is_active')
+                .eq('facebook_id', facebookId)
+                .eq('is_active', true)
+                .single()
+
+            return !!adminUser
+        }
+
+        return false
     }
 
     /**
