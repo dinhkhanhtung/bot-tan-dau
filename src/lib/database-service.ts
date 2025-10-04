@@ -79,11 +79,7 @@ export class DatabaseService {
                     .single()
 
                 // Handle both "no rows" and "multiple rows" errors
-                if (error) {
-                    if (error.code === 'PGRST116' || error.message.includes('Cannot coerce the result to a single JSON object')) {
-                        // No user found - return null
-                        return null
-                    }
+                if (error && error.code !== 'PGRST116' && !error.message.includes('Cannot coerce the result to a single JSON object')) {
                     throw error
                 }
 
@@ -198,7 +194,7 @@ export class DatabaseService {
 
                     if (error) {
                         // If table doesn't exist or other error, return default status
-                        if (error.code === 'PGRST116' || error.message.includes('schema cache') || error.message.includes('Cannot coerce the result to a single JSON object')) {
+                        if (error.code === 'PGRST116' || error.message.includes('schema cache')) {
                             logger.warn('Bot settings table not found, using default status', { error: error.message })
                             return 'running'
                         }

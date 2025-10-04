@@ -378,15 +378,14 @@ CREATE TRIGGER update_admin_chat_sessions_updated_at BEFORE UPDATE ON admin_chat
 -- ========================================
 -- 7. DEFAULT DATA
 -- ========================================
--- ADMIN SYSTEM UPDATE - FANPAGE-BASED
--- ========================================
 
--- Drop admin_users table if it exists (no longer needed)
-DROP TABLE IF EXISTS admin_users CASCADE;
-
--- Admin system now uses FACEBOOK_PAGE_ID environment variable
--- Messages from fanpage (FACEBOOK_PAGE_ID) are automatically treated as admin
--- No need for admin_users table anymore
+-- DEPRECATED: Admin users table no longer needed
+-- Logic changed: Messages from fanpage (FACEBOOK_APP_ID) are automatically treated as admin
+-- INSERT INTO admin_users (facebook_id, name, role, permissions, is_active) VALUES
+-- ('100074107869848', 'Admin 1', 'super_admin', '{"all": true}', true),
+-- ('100026336745820', 'Admin 2', 'super_admin', '{"all": true}', true),
+-- ('100000699238053', 'Admin 3', 'super_admin', '{"all": true}', true)
+-- ON CONFLICT (facebook_id) DO NOTHING;
 
 -- Update existing users to have welcome_message_sent = true
 UPDATE users SET welcome_message_sent = TRUE WHERE welcome_message_sent IS NULL OR welcome_message_sent = FALSE;
@@ -627,99 +626,6 @@ COMMENT ON COLUMN chat_bot_offer_counts.last_offer IS 'Thời gian gửi tin nh�
 INSERT INTO bot_settings (key, value, description)
 VALUES ('bot_status', 'active', 'Trạng thái hoạt động của bot (active/stopped)')
 ON CONFLICT (key) DO NOTHING;
-
--- Insert additional bot settings
-INSERT INTO bot_settings (key, value, description)
-VALUES 
-    ('maintenance_mode', 'false', 'Chế độ bảo trì (true/false)'),
-    ('max_users_per_hour', '1000', 'Số user tối đa mỗi giờ'),
-    ('welcome_message_enabled', 'true', 'Tin nhắn chào mừng (true/false)')
-ON CONFLICT (key) DO NOTHING;
-
--- ========================================
--- FIX DATABASE ERRORS
--- ========================================
-
--- Tạo index cho bot_settings nếu chưa có
-CREATE INDEX IF NOT EXISTS idx_bot_settings_key ON bot_settings(key);
-
--- Tạo trigger để update updated_at cho bot_settings
-CREATE OR REPLACE FUNCTION update_bot_settings_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Drop trigger cũ nếu có
-DROP TRIGGER IF EXISTS update_bot_settings_updated_at ON bot_settings;
-
--- Tạo trigger mới
-CREATE TRIGGER update_bot_settings_updated_at
-    BEFORE UPDATE ON bot_settings
-    FOR EACH ROW
-    EXECUTE FUNCTION update_bot_settings_updated_at();
-
--- Kiểm tra và sửa lỗi users table nếu cần
--- Đảm bảo users table có đầy đủ columns
-ALTER TABLE users ADD COLUMN IF NOT EXISTS welcome_message_sent BOOLEAN DEFAULT FALSE;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS welcome_interaction_count INTEGER DEFAULT 0;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-
--- Tạo index cho users table nếu chưa có
-CREATE INDEX IF NOT EXISTS idx_users_facebook_id ON users(facebook_id);
-CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
-CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
-
--- ========================================
--- CREATE BOT_SETTINGS TABLE (FIX DATABASE ERROR)
--- ========================================
-
--- Tạo bảng bot_settings nếu chưa có (để fix lỗi "Bot settings table not found")
-CREATE TABLE IF NOT EXISTS bot_settings (
-    id SERIAL PRIMARY KEY,
-    key VARCHAR(100) UNIQUE NOT NULL,
-    value TEXT NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Tạo index cho bot_settings
-CREATE INDEX IF NOT EXISTS idx_bot_settings_key ON bot_settings(key);
-
--- Insert default bot status nếu chưa có
-INSERT INTO bot_settings (key, value, description)
-VALUES ('bot_status', 'active', 'Trạng thái hoạt động của bot (active/stopped)')
-ON CONFLICT (key) DO NOTHING;
-
--- Insert additional bot settings
-INSERT INTO bot_settings (key, value, description)
-VALUES 
-    ('maintenance_mode', 'false', 'Chế độ bảo trì (true/false)'),
-    ('max_users_per_hour', '1000', 'Số user tối đa mỗi giờ'),
-    ('welcome_message_enabled', 'true', 'Tin nhắn chào mừng (true/false)')
-ON CONFLICT (key) DO NOTHING;
-
--- Tạo trigger để update updated_at cho bot_settings
-CREATE OR REPLACE FUNCTION update_bot_settings_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Drop trigger cũ nếu có
-DROP TRIGGER IF EXISTS update_bot_settings_updated_at ON bot_settings;
-
--- Tạo trigger mới
-CREATE TRIGGER update_bot_settings_updated_at
-    BEFORE UPDATE ON bot_settings
-    FOR EACH ROW
-    EXECUTE FUNCTION update_bot_settings_updated_at();
 
 SELECT 'Database setup hoàn chỉnh với PENDING_USER system, ANTI-SPAM thông minh và CHAT BOT COUNTER!' as status;
 SELECT COUNT(*) as total_tables FROM information_schema.tables

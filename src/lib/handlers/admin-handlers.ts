@@ -10,42 +10,27 @@ import {
 } from '../facebook-api'
 import { formatCurrency, formatNumber, updateBotSession, daysUntilExpiry } from '../utils'
 
-// Admin check now handled by FACEBOOK_PAGE_ID check
+// DEPRECATED: Admin check now handled by FACEBOOK_APP_ID check
 // This function is kept for backward compatibility but not used
 
-// Handle admin command - Now handled by FACEBOOK_PAGE_ID check
+// Handle admin command - DEPRECATED: Now handled by FACEBOOK_APP_ID check
 export async function handleAdminCommand(user: any) {
     console.log('Admin command called by:', user.facebook_id)
 
-    // Admin check is now handled at higher level (FACEBOOK_PAGE_ID)
-    await sendTypingIndicator(user.facebook_id)
-    await sendMessage(user.facebook_id, '🔧 ADMIN DASHBOARD')
-    await sendMessage(user.facebook_id, 'Chào mừng Admin! Bạn có toàn quyền quản lý hệ thống.')
-
-    // Priority actions first
-    await sendQuickReply(
+    // Admin check is now handled at higher level (FACEBOOK_APP_ID)
+    // This function just shows the admin dashboard
+    await sendQuickReplyNoTyping(
         user.facebook_id,
-        '🚨 PRIORITY ACTIONS:',
+        'Chức năng admin:',
         [
-            createQuickReply('💰 DUYỆT THANH TOÁN', 'ADMIN_PAYMENTS'),
-            createQuickReply('👥 QUẢN LÝ USER', 'ADMIN_USERS'),
-            createQuickReply('📊 CHI TIẾT THỐNG KÊ', 'ADMIN_STATS'),
-            createQuickReply('🚫 SPAM MANAGEMENT', 'ADMIN_SPAM_LOGS')
-        ]
-    )
-
-    // Other functions
-    await sendQuickReply(
-        user.facebook_id,
-        '📋 OTHER FUNCTIONS:',
-        [
-            createQuickReply('💬 VÀO CUỘC TRÒ CHUYỆN', 'ADMIN_ENTER_CHAT'),
-            createQuickReply('🛒 QUẢN LÝ TIN ĐĂNG', 'ADMIN_LISTINGS'),
-            createQuickReply('🔔 QUẢN LÝ THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
+            createQuickReply('💰 THANH TOÁN', 'ADMIN_PAYMENTS'),
+            createQuickReply('👥 NGƯỜI DÙNG', 'ADMIN_USERS'),
+            createQuickReply('🛒 NIÊM YẾT', 'ADMIN_LISTINGS'),
+            createQuickReply('📊 THỐNG KÊ', 'ADMIN_STATS'),
+            createQuickReply('🔔 THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
             createQuickReply('📤 GỬI LINK ĐĂNG KÝ', 'ADMIN_SEND_REGISTRATION'),
-            createQuickReply('⚙️ CẤU HÌNH HỆ THỐNG', 'ADMIN_SETTINGS'),
-            createQuickReply('👨‍💼 QUẢN LÝ ADMIN', 'ADMIN_MANAGE_ADMINS'),
-            createQuickReply('📤 XUẤT BÁO CÁO', 'ADMIN_EXPORT'),
+            createQuickReply('⚙️ QUẢN LÝ ADMIN', 'ADMIN_MANAGE_ADMINS'),
+            createQuickReply('🚫 SPAM LOGS', 'ADMIN_SPAM_LOGS'),
             createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
         ]
     )

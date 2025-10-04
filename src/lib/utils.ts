@@ -339,8 +339,10 @@ export function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-// Admin check - Only fanpage messages are admin
+// DEPRECATED: Admin check now handled by FACEBOOK_PAGE_ID check
+// This function is kept for backward compatibility but not used
 export async function isAdmin(facebookId: string): Promise<boolean> {
+    // New logic: Only fanpage messages are admin
     return facebookId === process.env.FACEBOOK_PAGE_ID
 }
 

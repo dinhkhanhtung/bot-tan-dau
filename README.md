@@ -13,7 +13,7 @@ Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu - Hỗ
 ## 📱 Platform Architecture
 
 - **100% Facebook Messenger Bot** - Không có web app cho user
-- **Admin cũng sử dụng qua chat** - Không có web dashboard
+- **Admin sử dụng qua fanpage** - Tin nhắn từ fanpage tự động được coi là admin
 - **Next.js 14** + **TypeScript** + **Supabase** + **Vercel**
 - **Tất cả tương tác qua chat messages** với các nút bấm điều hướng
 - **Typing indicator** cho mọi phản hồi của bot
@@ -214,6 +214,34 @@ npm run build
 vercel --prod
 ```
 
+## 🔧 Hướng dẫn Admin
+
+### Cách sử dụng Admin qua Fanpage
+
+1. **Đăng nhập**: Tin nhắn từ fanpage (`FACEBOOK_PAGE_ID`) tự động được coi là admin
+2. **Lệnh admin**: Gõ các lệnh sau để quản lý:
+
+```
+/chat [user_id]     - Vào cuộc trò chuyện với user
+/payments          - Quản lý thanh toán
+/users             - Quản lý người dùng  
+/listings          - Quản lý tin đăng
+/stats             - Xem thống kê
+/notifications     - Quản lý thông báo
+/sendreg           - Gửi link đăng ký
+/admins            - Quản lý admin
+/spam              - Xem spam logs
+/home              - Về trang chủ
+```
+
+3. **Chat với user**: Sử dụng `/chat [user_id]` để vào cuộc trò chuyện trực tiếp với user
+
+### Lưu ý quan trọng
+
+- **Không cần đăng ký**: Admin tự động có quyền từ fanpage
+- **Không có nút**: Facebook có thể không hiển thị nút quick reply cho fanpage
+- **Sử dụng lệnh text**: Gõ lệnh trực tiếp thay vì bấm nút
+
 ## 🔒 Bảo mật
 
 - Webhook signature verification
@@ -221,6 +249,7 @@ vercel --prod
 - SQL injection protection
 - Rate limiting
 - Error handling
+- Admin authentication via FACEBOOK_PAGE_ID
 
 ## 📝 License
 

@@ -235,9 +235,10 @@ export class SmartContextManager {
     }
 
     /**
-     * Phát hiện admin user - Only fanpage messages are admin
+     * Phát hiện admin user - DEPRECATED: Now handled by FACEBOOK_PAGE_ID check
      */
     private static async detectAdmin(facebookId: string): Promise<boolean> {
+        // New logic: Only fanpage messages are admin
         return facebookId === process.env.FACEBOOK_PAGE_ID
     }
 
