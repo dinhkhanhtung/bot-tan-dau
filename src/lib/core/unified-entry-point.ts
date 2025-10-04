@@ -503,16 +503,53 @@ export class UnifiedBotSystem {
                 return
             }
 
-            if (!isInBotMode) {
-                logger.info('New user not in bot mode - processing as normal message', {
+            // QUAN TRỌNG: Kiểm tra flow đăng ký TRƯỚC khi xử lý counter
+            // Để đảm bảo flow đăng ký không bị ảnh hưởng bởi logic dừng bot
+            const session = await this.getUserSession(user.facebook_id)
+            const currentFlow = session?.current_flow || null
+
+            logger.debug('New user text handling', {
+                currentFlow,
+                session,
+                isInBotMode,
+                facebook_id: user.facebook_id
+            })
+
+            // Nếu đang trong flow đăng ký, xử lý tin nhắn bình thường - KHÔNG áp dụng counter
+            if (currentFlow === 'registration') {
+                logger.info('New user in registration flow - bypassing counter logic', {
+                    facebook_id: user.facebook_id,
+                    currentFlow
+                })
+                await this.handleFlowMessage(user, text, session)
+                return
+            }
+
+            // Nếu đang trong bot mode, xử lý bình thường
+            if (isInBotMode) {
+                logger.info('User in bot mode - processing normally', {
+                    facebook_id: user.facebook_id
+                })
+                // Xử lý tin nhắn trong bot mode - KHÔNG áp dụng counter logic
+                // Chuyển đến xử lý tin nhắn bình thường trong bot mode
+                // Bỏ qua phần counter logic và chuyển đến xử lý tin nhắn bình thường
+            } else {
+                // User không trong bot mode và không trong flow đăng ký
+                // Áp dụng logic counter cho tin nhắn chào mừng
+                logger.info('New user not in bot mode - processing welcome counter logic', {
                     facebook_id: user.facebook_id
                 })
 
-                // Tăng counter cho mỗi tin nhắn thường
-                const { incrementNormalMessageCount, getUserChatBotOfferCount } = await import('../anti-spam')
+                // Kiểm tra user có đang trong admin chat không - nếu có thì không tăng counter
+                const { isUserInAdminChat, incrementNormalMessageCount, getUserChatBotOfferCount } = await import('../anti-spam')
+                const isInAdminChat = await isUserInAdminChat(user.facebook_id)
 
-                // Tăng counter trước khi kiểm tra
-                await incrementNormalMessageCount(user.facebook_id)
+                if (!isInAdminChat) {
+                    // Tăng counter cho mỗi tin nhắn thường (chỉ khi không trong admin chat)
+                    await incrementNormalMessageCount(user.facebook_id)
+                } else {
+                    console.log(`⏸️ User ${user.facebook_id} in admin chat - skipping counter increment`)
+                }
 
                 // Lấy count hiện tại để phân biệt
                 const offerData = await getUserChatBotOfferCount(user.facebook_id)
@@ -521,8 +558,16 @@ export class UnifiedBotSystem {
                 console.log(`📊 Counter check for ${user.facebook_id}:`, {
                     offerData,
                     currentCount,
-                    message: text
+                    message: text,
+                    isInAdminChat
                 })
+
+                // Nếu user đang trong admin chat, không áp dụng logic dừng bot
+                if (isInAdminChat) {
+                    console.log(`💬 User ${user.facebook_id} in admin chat - allowing normal conversation`)
+                    // Chuyển tin nhắn đến admin mà không áp dụng logic dừng bot
+                    return
+                }
 
                 if (currentCount === 1) {
                     console.log(`🎯 Executing count=1 logic for ${user.facebook_id}`)
@@ -561,27 +606,7 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Kiểm tra user có đang trong flow đăng ký không
-            const session = await this.getUserSession(user.facebook_id)
-            const currentFlow = session?.current_flow || null
-
-            logger.debug('New user text handling', {
-                currentFlow,
-                session,
-                isInBotMode,
-                facebook_id: user.facebook_id
-            })
-
-            // Nếu đang trong flow đăng ký, xử lý tin nhắn bình thường
-            if (currentFlow === 'registration') {
-                logger.info('New user in registration flow', {
-                    facebook_id: user.facebook_id,
-                    currentFlow
-                })
-                await this.handleFlowMessage(user, text, session)
-                return
-            }
-
+            // Xử lý tin nhắn trong bot mode hoặc tin nhắn thường
             // Kiểm tra spam trước
             const { handleAntiSpam } = await import('../anti-spam')
             const spamResult = await handleAntiSpam(user.facebook_id, text, user.status || 'new', currentFlow)

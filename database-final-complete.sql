@@ -713,3 +713,20 @@ AND table_name IN (
     'user_activities', 'user_activity_logs', 'system_metrics', 'chat_bot_offer_counts',
     'user_bot_modes', 'bot_settings'
 );
+
+-- ========================================
+-- MIGRATION: Thêm cột paused_for_admin vào user_bot_modes
+-- ========================================
+-- Cập nhật: Thêm cột mới cho tính năng tạm dừng counter khi admin chat
+
+-- Thêm cột paused_for_admin vào bảng user_bot_modes
+ALTER TABLE user_bot_modes 
+ADD COLUMN IF NOT EXISTS paused_for_admin BOOLEAN DEFAULT FALSE;
+
+-- Tạo index cho cột mới để tăng tốc query
+CREATE INDEX IF NOT EXISTS idx_user_bot_modes_paused_for_admin 
+ON user_bot_modes(paused_for_admin) 
+WHERE paused_for_admin = TRUE;
+
+-- Cập nhật comment cho bảng
+COMMENT ON COLUMN user_bot_modes.paused_for_admin IS 'Đánh dấu user đang trong admin chat để tạm dừng welcome counter';

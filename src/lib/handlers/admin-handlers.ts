@@ -750,6 +750,10 @@ export async function handleAdminTakeChat(user: any, sessionId: string) {
                     '📝 Gửi tin nhắn để trả lời user.'
                 ])
 
+                // Tạm dừng welcome counter khi admin vào chat
+                const { pauseWelcomeCounter } = await import('../anti-spam')
+                await pauseWelcomeCounter(session.user_id)
+
                 // Notify user that admin has joined
                 await sendMessage(session.user_id, '✅ Admin đã vào chat! Bạn có thể bắt đầu trò chuyện.')
 
@@ -800,6 +804,10 @@ export async function handleAdminEndChat(user: any, sessionId: string) {
 
         if (!error) {
             await sendMessage(user.facebook_id, '✅ Đã kết thúc chat với user!')
+
+            // Reset welcome counter để user có thể chat lại bình thường
+            const { resetWelcomeCounter } = await import('../anti-spam')
+            await resetWelcomeCounter(session.user_id)
 
             // Notify user
             await sendMessagesWithTyping(session.user_id, [

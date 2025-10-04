@@ -294,6 +294,66 @@ export async function handleBotExit(facebookId: string): Promise<void> {
     )
 }
 
+// Hàm reset counter khi admin kết thúc chat - cho phép user chat lại bình thường
+export async function resetWelcomeCounter(facebookId: string): Promise<void> {
+    try {
+        const { supabaseAdmin } = await import('./supabase')
+
+        // Xóa counter hiện tại để reset về 0
+        const { error } = await supabaseAdmin
+            .from('chat_bot_offer_counts')
+            .delete()
+            .eq('facebook_id', facebookId)
+
+        if (error) {
+            console.error('Error resetting welcome counter:', error)
+        } else {
+            console.log(`✅ Reset welcome counter for ${facebookId}`)
+        }
+    } catch (error) {
+        console.error('Error in resetWelcomeCounter:', error)
+    }
+}
+
+// Hàm tạm dừng counter khi admin vào chat - không tăng counter trong thời gian admin chat
+export async function pauseWelcomeCounter(facebookId: string): Promise<void> {
+    try {
+        const { supabaseAdmin } = await import('./supabase')
+
+        // Đánh dấu user đang trong admin chat để tạm dừng counter
+        await supabaseAdmin
+            .from('user_bot_modes')
+            .upsert({
+                facebook_id: facebookId,
+                in_bot: false,
+                entered_at: new Date().toISOString(),
+                paused_for_admin: true
+            })
+
+        console.log(`⏸️ Paused welcome counter for ${facebookId} - admin chat active`)
+    } catch (error) {
+        console.error('Error pausing welcome counter:', error)
+    }
+}
+
+// Hàm kiểm tra user có đang trong admin chat không
+export async function isUserInAdminChat(facebookId: string): Promise<boolean> {
+    try {
+        const { supabaseAdmin } = await import('./supabase')
+        const { data } = await supabaseAdmin
+            .from('user_bot_modes')
+            .select('paused_for_admin')
+            .eq('facebook_id', facebookId)
+            .eq('paused_for_admin', true)
+            .single()
+
+        return !!data
+    } catch (error) {
+        console.error('Error checking admin chat status:', error)
+        return false
+    }
+}
+
 // Hàm chống spam THÔNG MINH chính - thay thế checkSpam cũ
 export async function handleAntiSpam(facebookId: string, message: string, userStatus: string, currentFlow: string | null = null): Promise<{
     action: 'none' | 'warning' | 'block',
