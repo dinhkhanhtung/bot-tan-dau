@@ -339,28 +339,9 @@ export function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-// DEPRECATED: Admin check now handled by UnifiedBotSystem.isAdminUser
-// This function is kept for backward compatibility but not used
+// Admin check - Only fanpage messages are admin
 export async function isAdmin(facebookId: string): Promise<boolean> {
-    // New logic: Check both fanpage and personal admins
-    if (facebookId === process.env.FACEBOOK_PAGE_ID) {
-        return true
-    }
-
-    const enablePersonalAdmins = process.env.ENABLE_PERSONAL_ADMINS === 'true'
-    if (enablePersonalAdmins) {
-        const { supabaseAdmin } = await import('./supabase')
-        const { data: adminUser } = await supabaseAdmin
-            .from('admin_users')
-            .select('facebook_id, is_active')
-            .eq('facebook_id', facebookId)
-            .eq('is_active', true)
-            .single()
-
-        return !!adminUser
-    }
-
-    return false
+    return facebookId === process.env.FACEBOOK_PAGE_ID
 }
 
 // Retry function
