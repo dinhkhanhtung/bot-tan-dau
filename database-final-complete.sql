@@ -281,14 +281,17 @@ DROP TRIGGER IF EXISTS update_spam_tracking_updated_at ON spam_tracking;
 CREATE TRIGGER update_spam_tracking_updated_at BEFORE UPDATE ON spam_tracking
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Admin users table
+-- Admin users table (UPDATED FOR WEB ADMIN)
 CREATE TABLE IF NOT EXISTS admin_users (
     id SERIAL PRIMARY KEY,
-    facebook_id VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
     name VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'admin',
+    email VARCHAR(255) UNIQUE,
+    role VARCHAR(50) DEFAULT 'admin' CHECK (role IN ('admin', 'super_admin')),
     permissions JSONB DEFAULT '{}',
     is_active BOOLEAN DEFAULT TRUE,
+    last_login TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
