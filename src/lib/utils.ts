@@ -441,7 +441,7 @@ export async function createNewUserWithFallback(facebookId: string): Promise<any
 // Get Facebook display name from Facebook API
 export async function getFacebookDisplayName(facebookId: string): Promise<string | null> {
     try {
-        const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN
+        const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN
 
         // Check if access token exists
         if (!FACEBOOK_ACCESS_TOKEN) {

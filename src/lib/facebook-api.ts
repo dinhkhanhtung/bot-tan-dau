@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN!
+const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN!
 const FACEBOOK_API_URL = 'https://graph.facebook.com/v18.0'
 
 // Send text message
@@ -329,7 +329,7 @@ export async function sendQuickReplyNoTyping(recipientId: string, text: string, 
     }
 
     try {
-        const response = await fetch(`https://graph.facebook.com/v18.0/me/messages?access_token=${process.env.FACEBOOK_ACCESS_TOKEN}`, {
+        const response = await fetch(`https://graph.facebook.com/v18.0/me/messages?access_token=${process.env.FACEBOOK_PAGE_ACCESS_TOKEN}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(messageData)
