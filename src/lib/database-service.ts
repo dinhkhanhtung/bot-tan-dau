@@ -79,7 +79,11 @@ export class DatabaseService {
                     .single()
 
                 // Handle both "no rows" and "multiple rows" errors
-                if (error && error.code !== 'PGRST116' && !error.message.includes('Cannot coerce the result to a single JSON object')) {
+                if (error) {
+                    if (error.code === 'PGRST116' || error.message.includes('Cannot coerce the result to a single JSON object')) {
+                        // No user found - return null
+                        return null
+                    }
                     throw error
                 }
 

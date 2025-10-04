@@ -628,6 +628,51 @@ INSERT INTO bot_settings (key, value, description)
 VALUES ('bot_status', 'active', 'Trạng thái hoạt động của bot (active/stopped)')
 ON CONFLICT (key) DO NOTHING;
 
+-- Insert additional bot settings
+INSERT INTO bot_settings (key, value, description)
+VALUES 
+    ('maintenance_mode', 'false', 'Chế độ bảo trì (true/false)'),
+    ('max_users_per_hour', '1000', 'Số user tối đa mỗi giờ'),
+    ('welcome_message_enabled', 'true', 'Tin nhắn chào mừng (true/false)')
+ON CONFLICT (key) DO NOTHING;
+
+-- ========================================
+-- FIX DATABASE ERRORS
+-- ========================================
+
+-- Tạo index cho bot_settings nếu chưa có
+CREATE INDEX IF NOT EXISTS idx_bot_settings_key ON bot_settings(key);
+
+-- Tạo trigger để update updated_at cho bot_settings
+CREATE OR REPLACE FUNCTION update_bot_settings_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop trigger cũ nếu có
+DROP TRIGGER IF EXISTS update_bot_settings_updated_at ON bot_settings;
+
+-- Tạo trigger mới
+CREATE TRIGGER update_bot_settings_updated_at
+    BEFORE UPDATE ON bot_settings
+    FOR EACH ROW
+    EXECUTE FUNCTION update_bot_settings_updated_at();
+
+-- Kiểm tra và sửa lỗi users table nếu cần
+-- Đảm bảo users table có đầy đủ columns
+ALTER TABLE users ADD COLUMN IF NOT EXISTS welcome_message_sent BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS welcome_interaction_count INTEGER DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
+-- Tạo index cho users table nếu chưa có
+CREATE INDEX IF NOT EXISTS idx_users_facebook_id ON users(facebook_id);
+CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
+
 SELECT 'Database setup hoàn chỉnh với PENDING_USER system, ANTI-SPAM thông minh và CHAT BOT COUNTER!' as status;
 SELECT COUNT(*) as total_tables FROM information_schema.tables
 WHERE table_schema = 'public'
