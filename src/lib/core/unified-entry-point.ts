@@ -571,16 +571,27 @@ export class UnifiedBotSystem {
             await sendMessage(user.facebook_id, `💬 Đang chat với: ${userName} (${session.user_id})`)
             await sendMessage(user.facebook_id, `📱 SĐT: ${userPhone}`)
 
-            // ĐẢM BẢO LUÔN CÓ NÚT CHỨC NĂNG CHO ADMIN
+            // ĐẢM BẢO LUÔN CÓ NÚT CHỨC NĂNG CHO ADMIN - BAO GỒM DUYỆT THANH TOÁN
             const adminMenuOptions = [
+                // Các nút cơ bản
                 createQuickReply('🚀 GỬI ĐĂNG KÝ', `ADMIN_SEND_REGISTER_${session.user_id}`),
                 createQuickReply('💰 GỬI THANH TOÁN', `ADMIN_SEND_PAYMENT_${session.user_id}`),
                 createQuickReply('ℹ️ GỬI THÔNG TIN', `ADMIN_SEND_INFO_${session.user_id}`),
                 createQuickReply('💬 GỬI HỖ TRỢ', `ADMIN_SEND_SUPPORT_${session.user_id}`),
+
+                // Các nút quản lý user
                 createQuickReply('👤 XEM USER INFO', `ADMIN_USER_INFO_${session.user_id}`),
                 createQuickReply('📊 XEM LỊCH SỬ', `ADMIN_USER_HISTORY_${session.user_id}`),
                 createQuickReply('📤 GỬI LINK', `ADMIN_SEND_LINK_${session.user_id}`),
                 createQuickReply('🔔 GỬI THÔNG BÁO', `ADMIN_SEND_NOTIFICATION_${session.user_id}`),
+
+                // Các nút QUAN TRỌNG - DUYỆT THANH TOÁN
+                createQuickReply('✅ DUYỆT THANH TOÁN', `ADMIN_APPROVE_USER_${session.user_id}`),
+                createQuickReply('❌ TỪ CHỐI THANH TOÁN', `ADMIN_REJECT_USER_${session.user_id}`),
+                createQuickReply('💳 XEM THANH TOÁN', `ADMIN_VIEW_PAYMENTS_${session.user_id}`),
+                createQuickReply('📋 DUYỆT HÀNG LOẠT', 'ADMIN_BULK_APPROVE'),
+
+                // Các nút hệ thống
                 createQuickReply('❌ KẾT THÚC CHAT', `ADMIN_END_CHAT_${session.id}`),
                 createQuickReply('🏠 DASHBOARD', 'ADMIN')
             ]
@@ -1108,10 +1119,12 @@ export class UnifiedBotSystem {
 
 
     /**
-     * Xử lý admin postback
+     * Xử lý admin postback - CẢI THIỆN ĐỂ XỬ LÝ DUYỆT THANH TOÁN
      */
     private static async handleAdminPostback(user: any, postback: string): Promise<void> {
         try {
+            console.log('🔧 Admin postback received:', postback)
+
             // Xử lý các nút admin gửi cho user
             if (postback.startsWith('ADMIN_SEND_')) {
                 await this.handleAdminSendToUser(user, postback)
@@ -1121,6 +1134,22 @@ export class UnifiedBotSystem {
                 const sessionId = postback.replace('ADMIN_END_CHAT_', '')
                 const { handleAdminEndChat } = await import('../handlers/admin-handlers')
                 await handleAdminEndChat(user, sessionId)
+            } else if (postback.startsWith('ADMIN_APPROVE_USER_')) {
+                // Xử lý duyệt thanh toán cho user cụ thể
+                const userId = postback.replace('ADMIN_APPROVE_USER_', '')
+                await this.handleAdminApproveUserPayment(user, userId)
+            } else if (postback.startsWith('ADMIN_REJECT_USER_')) {
+                // Xử lý từ chối thanh toán cho user cụ thể
+                const userId = postback.replace('ADMIN_REJECT_USER_', '')
+                await this.handleAdminRejectUserPayment(user, userId)
+            } else if (postback.startsWith('ADMIN_VIEW_PAYMENTS_')) {
+                // Xử lý xem thanh toán của user cụ thể
+                const userId = postback.replace('ADMIN_VIEW_PAYMENTS_', '')
+                await this.handleAdminViewUserPayments(user, userId)
+            } else if (postback === 'ADMIN_BULK_APPROVE') {
+                // Xử lý duyệt hàng loạt
+                const { handleAdminBulkApprove } = await import('../handlers/admin-handlers')
+                await handleAdminBulkApprove(user)
             } else if (postback === 'ADMIN') {
                 await this.showAdminDashboard(user)
             } else {
@@ -1333,6 +1362,124 @@ export class UnifiedBotSystem {
             )
         } catch (error) {
             console.error('Error sending spam blocked message:', error)
+        }
+    }
+
+    /**
+     * Xử lý duyệt thanh toán cho user cụ thể
+     */
+    private static async handleAdminApproveUserPayment(adminUser: any, userId: string): Promise<void> {
+        try {
+            console.log('💰 Approving payment for user:', userId)
+
+            // Lấy thanh toán gần đây nhất của user
+            const { supabaseAdmin } = await import('../supabase')
+            const { data: payment, error } = await supabaseAdmin
+                .from('payments')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single()
+
+            if (error || !payment) {
+                await sendMessage(adminUser.facebook_id, '❌ Không tìm thấy thanh toán chờ duyệt cho user này!')
+                return
+            }
+
+            // Sử dụng hàm duyệt thanh toán từ admin-handlers
+            const { handleAdminApprovePayment } = await import('../handlers/admin-handlers')
+            await handleAdminApprovePayment(adminUser, payment.id)
+
+        } catch (error) {
+            console.error('Error approving user payment:', error)
+            await sendMessage(adminUser.facebook_id, '❌ Có lỗi xảy ra khi duyệt thanh toán!')
+        }
+    }
+
+    /**
+     * Xử lý từ chối thanh toán cho user cụ thể
+     */
+    private static async handleAdminRejectUserPayment(adminUser: any, userId: string): Promise<void> {
+        try {
+            console.log('❌ Rejecting payment for user:', userId)
+
+            // Lấy thanh toán gần đây nhất của user
+            const { supabaseAdmin } = await import('../supabase')
+            const { data: payment, error } = await supabaseAdmin
+                .from('payments')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single()
+
+            if (error || !payment) {
+                await sendMessage(adminUser.facebook_id, '❌ Không tìm thấy thanh toán chờ duyệt cho user này!')
+                return
+            }
+
+            // Sử dụng hàm từ chối thanh toán từ admin-handlers
+            const { handleAdminRejectPayment } = await import('../handlers/admin-handlers')
+            await handleAdminRejectPayment(adminUser, payment.id)
+
+        } catch (error) {
+            console.error('Error rejecting user payment:', error)
+            await sendMessage(adminUser.facebook_id, '❌ Có lỗi xảy ra khi từ chối thanh toán!')
+        }
+    }
+
+    /**
+     * Xử lý xem thanh toán của user cụ thể
+     */
+    private static async handleAdminViewUserPayments(adminUser: any, userId: string): Promise<void> {
+        try {
+            console.log('💳 Viewing payments for user:', userId)
+
+            // Lấy thông tin thanh toán của user
+            const { supabaseAdmin } = await import('../supabase')
+            const { data: payments, error } = await supabaseAdmin
+                .from('payments')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false })
+                .limit(5)
+
+            if (error || !payments || payments.length === 0) {
+                await sendMessage(adminUser.facebook_id, '❌ Không tìm thấy lịch sử thanh toán cho user này!')
+                return
+            }
+
+            // Hiển thị danh sách thanh toán
+            await sendMessage(adminUser.facebook_id, `💳 LỊCH SỬ THANH TOÁN (${payments.length} giao dịch gần nhất):`)
+
+            for (const payment of payments) {
+                const status = payment.status === 'approved' ? '✅' : payment.status === 'rejected' ? '❌' : '⏳'
+                const date = new Date(payment.created_at).toLocaleDateString('vi-VN')
+                const amount = payment.amount ? `${Math.round(payment.amount / 1000)} ngày` : 'N/A'
+
+                await sendMessage(adminUser.facebook_id,
+                    `${status} ${amount} - ${date} (ID: ${payment.id.slice(-8)})`
+                )
+            }
+
+            // Hiển thị các nút hành động
+            await sendQuickReply(
+                adminUser.facebook_id,
+                'Chọn hành động:',
+                [
+                    createQuickReply('✅ DUYỆT CHỜ DUYỆT', `ADMIN_APPROVE_USER_${userId}`),
+                    createQuickReply('❌ TỪ CHỐI CHỜ DUYỆT', `ADMIN_REJECT_USER_${userId}`),
+                    createQuickReply('👤 XEM USER INFO', `ADMIN_USER_INFO_${userId}`),
+                    createQuickReply('🏠 DASHBOARD', 'ADMIN')
+                ]
+            )
+
+        } catch (error) {
+            console.error('Error viewing user payments:', error)
+            await sendMessage(adminUser.facebook_id, '❌ Có lỗi xảy ra khi xem thanh toán!')
         }
     }
 

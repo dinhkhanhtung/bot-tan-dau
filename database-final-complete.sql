@@ -293,6 +293,16 @@ CREATE TABLE IF NOT EXISTS admin_users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Bot settings table (QUAN TRỌNG - để lưu trạng thái bot active/stopped)
+CREATE TABLE IF NOT EXISTS bot_settings (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(100) UNIQUE NOT NULL,
+    value TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ========================================
 -- 4. NEW TABLES (Từ migration)
 -- ========================================
@@ -612,6 +622,11 @@ COMMENT ON COLUMN chat_bot_offer_counts.last_offer IS 'Thời gian gửi tin nh�
 -- FINAL STATUS
 -- ========================================
 
+-- Insert default bot status nếu chưa có
+INSERT INTO bot_settings (key, value, description)
+VALUES ('bot_status', 'active', 'Trạng thái hoạt động của bot (active/stopped)')
+ON CONFLICT (key) DO NOTHING;
+
 SELECT 'Database setup hoàn chỉnh với PENDING_USER system, ANTI-SPAM thông minh và CHAT BOT COUNTER!' as status;
 SELECT COUNT(*) as total_tables FROM information_schema.tables
 WHERE table_schema = 'public'
@@ -620,5 +635,6 @@ AND table_name IN (
     'events', 'event_participants', 'notifications', 'ads', 'search_requests',
     'referrals', 'user_points', 'point_transactions', 'bot_sessions',
     'user_messages', 'spam_logs', 'spam_tracking', 'admin_users', 'admin_chat_sessions',
-    'user_activities', 'user_activity_logs', 'system_metrics', 'chat_bot_offer_counts'
+    'user_activities', 'user_activity_logs', 'system_metrics', 'chat_bot_offer_counts',
+    'user_bot_modes', 'bot_settings'
 );
