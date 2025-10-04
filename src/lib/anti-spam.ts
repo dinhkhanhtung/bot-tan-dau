@@ -99,6 +99,8 @@ const userBotStops = new Map<string, { stopped: boolean, stopTime: number, reaso
 const userBotMode = new Map<string, { inBot: boolean, enteredAt: number }>()
 
 // Tracking số lần hiển thị nút Chat Bot cho mỗi user
+// NOTE: Trong production (Vercel), Map có thể bị reset giữa các request
+// Giải pháp tạm thời: Lưu vào Supabase để persistent
 const userChatBotOfferCount = new Map<string, { count: number, lastOffer: number }>()
 
 // Hàm kiểm tra user có trong bot mode không
@@ -156,34 +158,61 @@ export function shouldShowChatBotButton(facebookId: string): boolean {
     return false
 }
 
-// Hàm tăng counter cho tin nhắn thường
-export function incrementNormalMessageCount(facebookId: string): void {
-    const offerData = userChatBotOfferCount.get(facebookId)
+// Hàm tăng counter cho tin nhắn thường - LƯU VÀO DATABASE
+export async function incrementNormalMessageCount(facebookId: string): Promise<void> {
     const now = Date.now()
 
+    // Lấy counter từ database
+    const { supabaseAdmin } = await import('./supabase')
+    const { data: existingData } = await supabaseAdmin
+        .from('chat_bot_offer_counts')
+        .select('*')
+        .eq('facebook_id', facebookId)
+        .single()
+
     console.log(`🔢 incrementNormalMessageCount for ${facebookId}:`, {
-        before: offerData,
-        mapSize: userChatBotOfferCount.size
+        before: existingData,
+        timestamp: now
     })
 
-    if (!offerData) {
-        userChatBotOfferCount.set(facebookId, { count: 1, lastOffer: now })
+    if (!existingData) {
+        // Tạo mới
+        await supabaseAdmin
+            .from('chat_bot_offer_counts')
+            .insert({
+                facebook_id: facebookId,
+                count: 1,
+                last_offer: new Date(now).toISOString()
+            })
         console.log(`✅ Created new counter for ${facebookId}: count=1`)
     } else {
-        offerData.count++
-        offerData.lastOffer = now
-        console.log(`✅ Incremented counter for ${facebookId}: count=${offerData.count}`)
+        // Tăng counter
+        await supabaseAdmin
+            .from('chat_bot_offer_counts')
+            .update({
+                count: existingData.count + 1,
+                last_offer: new Date(now).toISOString()
+            })
+            .eq('facebook_id', facebookId)
+        console.log(`✅ Incremented counter for ${facebookId}: count=${existingData.count + 1}`)
     }
-
-    console.log(`🔢 After increment:`, {
-        current: userChatBotOfferCount.get(facebookId),
-        mapSize: userChatBotOfferCount.size
-    })
 }
 
-// Hàm lấy thông tin counter
-export function getUserChatBotOfferCount(facebookId: string): { count: number, lastOffer: number } | undefined {
-    return userChatBotOfferCount.get(facebookId)
+// Hàm lấy thông tin counter - LẤY TỪ DATABASE
+export async function getUserChatBotOfferCount(facebookId: string): Promise<{ count: number, lastOffer: number } | undefined> {
+    const { supabaseAdmin } = await import('./supabase')
+    const { data } = await supabaseAdmin
+        .from('chat_bot_offer_counts')
+        .select('*')
+        .eq('facebook_id', facebookId)
+        .single()
+
+    if (!data) return undefined
+
+    return {
+        count: data.count,
+        lastOffer: new Date(data.last_offer).getTime()
+    }
 }
 
 // Hàm kiểm tra bot có nên dừng hoàn toàn không (DEPRECATED - không dùng nữa)

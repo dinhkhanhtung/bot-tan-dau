@@ -511,10 +511,10 @@ export class UnifiedBotSystem {
                 const { incrementNormalMessageCount, getUserChatBotOfferCount } = await import('../anti-spam')
 
                 // Tăng counter trước khi kiểm tra
-                incrementNormalMessageCount(user.facebook_id)
+                await incrementNormalMessageCount(user.facebook_id)
 
                 // Lấy count hiện tại để phân biệt
-                const offerData = getUserChatBotOfferCount(user.facebook_id)
+                const offerData = await getUserChatBotOfferCount(user.facebook_id)
                 const currentCount = offerData?.count || 0
 
                 console.log(`📊 Counter check for ${user.facebook_id}:`, {

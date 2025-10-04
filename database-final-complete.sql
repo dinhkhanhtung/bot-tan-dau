@@ -277,6 +277,7 @@ CREATE INDEX IF NOT EXISTS idx_spam_tracking_user_id ON spam_tracking(user_id);
 CREATE INDEX IF NOT EXISTS idx_spam_tracking_locked_until ON spam_tracking(locked_until) WHERE locked_until IS NOT NULL;
 
 -- Thêm trigger để tự động cập nhật updated_at cho spam_tracking
+DROP TRIGGER IF EXISTS update_spam_tracking_updated_at ON spam_tracking;
 CREATE TRIGGER update_spam_tracking_updated_at BEFORE UPDATE ON spam_tracking
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -352,12 +353,15 @@ END;
 $$ language 'plpgsql';
 
 -- Apply triggers
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_listings_updated_at ON listings;
 CREATE TRIGGER update_listings_updated_at BEFORE UPDATE ON listings
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_admin_chat_sessions_updated_at ON admin_chat_sessions;
 CREATE TRIGGER update_admin_chat_sessions_updated_at BEFORE UPDATE ON admin_chat_sessions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -527,7 +531,59 @@ $$ language 'plpgsql';
 -- 11. VERIFICATION
 -- ========================================
 
-SELECT 'Database setup hoàn chỉnh với PENDING_USER system và ANTI-SPAM thông minh!' as status;
+-- ========================================
+-- CHAT BOT OFFER COUNTS TABLE
+-- ========================================
+
+-- Tạo bảng để lưu số lần hiển thị nút Chat Bot
+CREATE TABLE IF NOT EXISTS chat_bot_offer_counts (
+    id BIGSERIAL PRIMARY KEY,
+    facebook_id VARCHAR(255) UNIQUE NOT NULL,
+    count INTEGER DEFAULT 1 NOT NULL,
+    last_offer TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+-- Tạo index cho facebook_id để tăng tốc query
+CREATE INDEX IF NOT EXISTS idx_chat_bot_offer_counts_facebook_id ON chat_bot_offer_counts(facebook_id);
+
+-- Tạo function để tự động cập nhật updated_at
+CREATE OR REPLACE FUNCTION update_chat_bot_offer_counts_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Tạo trigger để tự động cập nhật updated_at
+DROP TRIGGER IF EXISTS chat_bot_offer_counts_updated_at ON chat_bot_offer_counts;
+CREATE TRIGGER chat_bot_offer_counts_updated_at
+    BEFORE UPDATE ON chat_bot_offer_counts
+    FOR EACH ROW
+    EXECUTE FUNCTION update_chat_bot_offer_counts_updated_at();
+
+-- Tạo function để tự động xóa record cũ hơn 24 giờ
+CREATE OR REPLACE FUNCTION cleanup_old_chat_bot_offer_counts()
+RETURNS void AS $$
+BEGIN
+    DELETE FROM chat_bot_offer_counts
+    WHERE last_offer < NOW() - INTERVAL '24 hours';
+END;
+$$ LANGUAGE plpgsql;
+
+-- Comment
+COMMENT ON TABLE chat_bot_offer_counts IS 'Lưu số lần hiển thị nút Chat Bot cho mỗi user';
+COMMENT ON COLUMN chat_bot_offer_counts.facebook_id IS 'Facebook ID của user';
+COMMENT ON COLUMN chat_bot_offer_counts.count IS 'Số lần đã gửi tin nhắn thường';
+COMMENT ON COLUMN chat_bot_offer_counts.last_offer IS 'Thời gian gửi tin nhắn cuối cùng';
+
+-- ========================================
+-- FINAL STATUS
+-- ========================================
+
+SELECT 'Database setup hoàn chỉnh với PENDING_USER system, ANTI-SPAM thông minh và CHAT BOT COUNTER!' as status;
 SELECT COUNT(*) as total_tables FROM information_schema.tables
 WHERE table_schema = 'public'
 AND table_name IN (
@@ -535,5 +591,5 @@ AND table_name IN (
     'events', 'event_participants', 'notifications', 'ads', 'search_requests',
     'referrals', 'user_points', 'point_transactions', 'bot_sessions',
     'user_messages', 'spam_logs', 'spam_tracking', 'admin_users', 'admin_chat_sessions',
-    'user_activities', 'user_activity_logs', 'system_metrics'
+    'user_activities', 'user_activity_logs', 'system_metrics', 'chat_bot_offer_counts'
 );
