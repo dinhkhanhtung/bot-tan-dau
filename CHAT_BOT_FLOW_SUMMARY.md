@@ -52,8 +52,14 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 ## Logic mới
 
 ### **User chưa trong Bot Mode:**
-1. **Tin nhắn 1**: Chào mừng + nút "Chat Bot"
-2. **Tin nhắn 2**: Chỉ thông báo chuyển admin, KHÔNG có nút
+1. **Tin nhắn 1**: 
+   - "🎉 Chào bạn ghé thăm Tùng!"
+   - "👋 Hôm nay mình có thể giúp gì cho bạn?"
+   - "🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới."
+   - Nút "🤖 CHAT BOT"
+2. **Tin nhắn 2**: 
+   - "💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!"
+   - KHÔNG có nút
 3. **Tin nhắn 3+**: Bot dừng hoàn toàn, không gửi gì cả
 4. Không áp dụng chống spam
 
@@ -85,8 +91,14 @@ Tạo nút "Chat Bot" để phân biệt rõ ràng giữa tin nhắn thường v
 
 ## Cách test
 
-1. **Lần 1**: Gửi tin nhắn thường → Chào mừng + nút "Chat Bot"
-2. **Lần 2**: Gửi tin nhắn thường → Chỉ thông báo chuyển admin, KHÔNG có nút
+1. **Lần 1**: Gửi tin nhắn thường → 
+   - "🎉 Chào bạn ghé thăm Tùng!"
+   - "👋 Hôm nay mình có thể giúp gì cho bạn?"
+   - "🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới."
+   - Nút "🤖 CHAT BOT"
+2. **Lần 2**: Gửi tin nhắn thường → 
+   - "💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!"
+   - KHÔNG có nút
 3. **Lần 3+**: Gửi tin nhắn thường → Bot dừng hoàn toàn, không gửi gì cả
 4. Ấn nút "Chat Bot" → Vào bot mode + hiển thị menu phù hợp
 5. Sử dụng bot bình thường → Có nút "Thoát Bot"

@@ -518,14 +518,27 @@ export class UnifiedBotSystem {
                 const currentCount = offerData?.count || 0
 
                 if (currentCount === 1) {
-                    // Tin nhắn đầu tiên - sử dụng welcome service
-                    await welcomeService.sendWelcome(user.facebook_id, WelcomeType.NEW_USER)
+                    // Tin nhắn đầu tiên - chào mừng + nút "Chat Bot"
+                    const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+                    await sendMessage(user.facebook_id, '🎉 Chào bạn ghé thăm Tùng!')
+                    await sendMessage(user.facebook_id, '👋 Hôm nay mình có thể giúp gì cho bạn?')
+                    await sendMessage(user.facebook_id, '🤖 Nếu muốn sử dụng Bot Tân Dậu - Hỗ Trợ Chéo, hãy ấn nút "Chat Bot" bên dưới.')
+
+                    await sendQuickReply(
+                        user.facebook_id,
+                        'Chọn hành động:',
+                        [
+                            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
+                        ]
+                    )
                 } else if (currentCount === 2) {
-                    // Tin nhắn thứ 2 - chỉ thông báo admin
+                    // Tin nhắn thứ 2 - chỉ thông báo admin, KHÔNG có nút
+                    const { sendMessage } = await import('../facebook-api')
                     await sendMessage(user.facebook_id, '💬 Tùng đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể!')
                 } else {
                     // Tin nhắn thứ 3+ - bot dừng hoàn toàn
-                    logger.info('Bot stopped after 3rd message', { facebook_id: user.facebook_id })
+                    logger.info('🚫 Bot dừng hoàn toàn sau tin nhắn thứ 3 - không gửi gì cả', { facebook_id: user.facebook_id })
+                    // Bot dừng hoàn toàn, không gửi gì cả
                 }
                 return
             }
