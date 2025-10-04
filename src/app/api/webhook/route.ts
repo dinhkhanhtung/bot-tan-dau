@@ -434,6 +434,15 @@ async function handleMessageEvent(event: any) {
 
         // SỬ DỤNG UNIFIED BOT SYSTEM CHO TẤT CẢ CÁC LOẠI MESSAGE
         try {
+            // Kiểm tra user có trong bot mode không trước khi gọi UnifiedBotSystem
+            const { checkUserBotMode } = await import('@/lib/anti-spam')
+            const isInBotMode = await checkUserBotMode(senderId)
+
+            if (!isInBotMode) {
+                console.log('🚫 User not in bot mode - skipping UnifiedBotSystem')
+                return
+            }
+
             // Tạo user object chuẩn cho UnifiedBotSystem
             const userObj = user || {
                 facebook_id: senderId,
