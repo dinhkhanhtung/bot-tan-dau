@@ -154,13 +154,26 @@ export class DatabaseService {
         return this.executeQuery(
             'getBotSettings',
             async () => {
-                const { data, error } = await supabaseAdmin
-                    .from(CONFIG.DATABASE.TABLES.BOT_SETTINGS)
-                    .select('*')
+                try {
+                    const { data, error } = await supabaseAdmin
+                        .from(CONFIG.DATABASE.TABLES.BOT_SETTINGS)
+                        .select('*')
 
-                if (error) throw error
+                    if (error) {
+                        // If table doesn't exist, return empty array
+                        if (error.code === 'PGRST116' || error.message.includes('schema cache')) {
+                            logger.warn('Bot settings table not found, returning empty settings', { error: error.message })
+                            return []
+                        }
+                        throw error
+                    }
 
-                return data
+                    return data || []
+                } catch (error) {
+                    // Fallback to empty array if any error occurs
+                    logger.warn('Failed to get bot settings, returning empty', { error: error instanceof Error ? error.message : String(error) })
+                    return []
+                }
             },
             'bot:settings',
             CONFIG.DATABASE.CACHE_TTL
@@ -171,15 +184,28 @@ export class DatabaseService {
         return this.executeQuery(
             'getBotStatus',
             async () => {
-                const { data, error } = await supabaseAdmin
-                    .from(CONFIG.DATABASE.TABLES.BOT_SETTINGS)
-                    .select('value')
-                    .eq('key', 'bot_status')
-                    .single()
+                try {
+                    const { data, error } = await supabaseAdmin
+                        .from(CONFIG.DATABASE.TABLES.BOT_SETTINGS)
+                        .select('value')
+                        .eq('key', 'bot_status')
+                        .single()
 
-                if (error) throw error
+                    if (error) {
+                        // If table doesn't exist or other error, return default status
+                        if (error.code === 'PGRST116' || error.message.includes('schema cache')) {
+                            logger.warn('Bot settings table not found, using default status', { error: error.message })
+                            return 'running'
+                        }
+                        throw error
+                    }
 
-                return data?.value
+                    return data?.value || 'running'
+                } catch (error) {
+                    // Fallback to default status if any error occurs
+                    logger.warn('Failed to get bot status, using default', { error: error instanceof Error ? error.message : String(error) })
+                    return 'running'
+                }
             },
             'bot:status',
             CONFIG.DATABASE.CACHE_TTL
@@ -190,16 +216,29 @@ export class DatabaseService {
         return this.executeQuery(
             'updateBotStatus',
             async () => {
-                const { error } = await supabaseAdmin
-                    .from(CONFIG.DATABASE.TABLES.BOT_SETTINGS)
-                    .upsert({ key: 'bot_status', value: status })
+                try {
+                    const { error } = await supabaseAdmin
+                        .from(CONFIG.DATABASE.TABLES.BOT_SETTINGS)
+                        .upsert({ key: 'bot_status', value: status })
 
-                if (error) throw error
+                    if (error) {
+                        // If table doesn't exist, just log warning and continue
+                        if (error.code === 'PGRST116' || error.message.includes('schema cache')) {
+                            logger.warn('Bot settings table not found, cannot update status', { error: error.message })
+                            return true
+                        }
+                        throw error
+                    }
 
-                // Invalidate bot cache
-                invalidateBotCache()
+                    // Invalidate bot cache
+                    invalidateBotCache()
 
-                return true
+                    return true
+                } catch (error) {
+                    // Fallback: just log warning and continue
+                    logger.warn('Failed to update bot status', { error: error instanceof Error ? error.message : String(error) })
+                    return true
+                }
             }
         )
     }

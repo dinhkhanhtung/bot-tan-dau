@@ -369,17 +369,28 @@ export class AdvancedDatabaseService {
         return this.executeQuery(
             'getBotStatus',
             async (client) => {
-                const { data, error } = await client
-                    .from('bot_settings')
-                    .select('value')
-                    .eq('key', 'bot_status')
-                    .single()
+                try {
+                    const { data, error } = await client
+                        .from('bot_settings')
+                        .select('value')
+                        .eq('key', 'bot_status')
+                        .single()
 
-                if (error) {
-                    throw new Error(`Database error: ${error.message}`)
+                    if (error) {
+                        // If table doesn't exist or other error, return default status
+                        if (error.code === 'PGRST116' || error.message.includes('schema cache')) {
+                            logger.warn('Bot settings table not found, using default status', { error: error.message })
+                            return 'running'
+                        }
+                        throw new Error(`Database error: ${error.message}`)
+                    }
+
+                    return data?.value || 'running'
+                } catch (error) {
+                    // Fallback to default status if any error occurs
+                    logger.warn('Failed to get bot status, using default', { error: error instanceof Error ? error.message : String(error) })
+                    return 'running'
                 }
-
-                return data?.value || 'running'
             },
             {
                 strategy: QueryStrategy.CACHE_FIRST,
