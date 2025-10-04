@@ -75,32 +75,32 @@ export class SecurityManager {
             // SQL injection patterns
             /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/i,
             /(;|\-\-|\/\*|\*\/)/,
-            
+
             // XSS patterns
             /<script[^>]*>.*?<\/script>/gi,
             /javascript:/gi,
             /on\w+\s*=/gi,
-            
+
             // Command injection patterns
             /[;&|`$()]/,
             /\b(cat|ls|pwd|whoami|id|uname|ps|netstat|ifconfig)\b/i,
-            
+
             // Path traversal patterns
             /\.\.\//,
             /\.\.\\/,
-            
+
             // NoSQL injection patterns
             /\$where|\$ne|\$gt|\$lt|\$regex/i,
-            
+
             // LDAP injection patterns
             /[()=*!&|]/,
-            
+
             // XML injection patterns
             /<!\[CDATA\[|<!DOCTYPE|<!ENTITY/i,
-            
+
             // Spam patterns
             /(viagra|cialis|casino|poker|lottery|winner|free money)/i,
-            
+
             // Phishing patterns
             /(click here|verify account|update information|urgent action)/i
         ]
@@ -260,7 +260,7 @@ export class SecurityManager {
                 resetTime: now + config.windowMs
             })
 
-            recordCounter('rate_limit_check', 1, { identifier, allowed: true })
+            recordCounter('rate_limit_check', 1, { identifier, allowed: 'true' })
             return { allowed: true, remaining: config.maxRequests - 1, resetTime: now + config.windowMs }
         }
 
@@ -278,7 +278,7 @@ export class SecurityManager {
         limiter.count++
         this.rateLimiters.set(key, limiter)
 
-        recordCounter('rate_limit_check', 1, { identifier, allowed: true })
+        recordCounter('rate_limit_check', 1, { identifier, allowed: 'true' })
         return { allowed: true, remaining: config.maxRequests - limiter.count, resetTime: limiter.resetTime }
     }
 
@@ -326,7 +326,7 @@ export class SecurityManager {
         const suspicious = score >= 50
 
         if (suspicious) {
-            this.recordSecurityEvent(SecurityEventType.SUSPICIOUS_ACTIVITY, 
+            this.recordSecurityEvent(SecurityEventType.SUSPICIOUS_ACTIVITY,
                 score >= 80 ? ThreatLevel.HIGH : ThreatLevel.MEDIUM, {
                 userId,
                 activity: activity.substring(0, 100),
@@ -343,7 +343,7 @@ export class SecurityManager {
     private getRecentRequests(userId: string, timeWindow: number): number {
         const now = Date.now()
         const cutoff = now - timeWindow
-        
+
         // This would typically query a database or cache
         // For now, we'll use a simple approximation
         return Math.floor(Math.random() * 10) // Placeholder
@@ -354,13 +354,13 @@ export class SecurityManager {
         // Check for repetitive patterns
         const words = activity.toLowerCase().split(/\s+/)
         const wordCounts = new Map<string, number>()
-        
+
         for (const word of words) {
             wordCounts.set(word, (wordCounts.get(word) || 0) + 1)
         }
 
         // If any word appears more than 5 times, it's suspicious
-        for (const count of wordCounts.values()) {
+        for (const count of Array.from(wordCounts.values())) {
             if (count > 5) {
                 return true
             }
@@ -383,7 +383,7 @@ export class SecurityManager {
     // Block user
     blockUser(userId: string, reason: string, duration: number = 0): void {
         this.blockedUsers.add(userId)
-        
+
         this.recordSecurityEvent(SecurityEventType.UNAUTHORIZED_ACCESS, ThreatLevel.HIGH, {
             userId,
             reason,
@@ -415,7 +415,7 @@ export class SecurityManager {
     // Add suspicious IP
     addSuspiciousIP(ipAddress: string, reason: string): void {
         this.suspiciousIPs.add(ipAddress)
-        
+
         this.recordSecurityEvent(SecurityEventType.SUSPICIOUS_ACTIVITY, ThreatLevel.MEDIUM, {
             ipAddress,
             reason,
@@ -506,7 +506,7 @@ export class SecurityManager {
     // Reset rate limiters
     private resetRateLimiters(): void {
         const now = Date.now()
-        for (const [key, limiter] of this.rateLimiters) {
+        for (const [key, limiter] of Array.from(this.rateLimiters)) {
             if (now > limiter.resetTime) {
                 this.rateLimiters.delete(key)
             }

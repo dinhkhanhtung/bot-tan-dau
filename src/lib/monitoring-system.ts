@@ -248,14 +248,14 @@ export class MonitoringSystem {
         // Calculate message processing time
         const messageProcessingMetrics = this.getMetricsInRange('message_processing_time', oneMinuteAgo, now)
         if (messageProcessingMetrics.length > 0) {
-            this.performanceMetrics.messageProcessingTime = 
+            this.performanceMetrics.messageProcessingTime =
                 messageProcessingMetrics.reduce((sum, m) => sum + m.value, 0) / messageProcessingMetrics.length
         }
 
         // Calculate database query time
         const databaseQueryMetrics = this.getMetricsInRange('database_query_time', oneMinuteAgo, now)
         if (databaseQueryMetrics.length > 0) {
-            this.performanceMetrics.databaseQueryTime = 
+            this.performanceMetrics.databaseQueryTime =
                 databaseQueryMetrics.reduce((sum, m) => sum + m.value, 0) / databaseQueryMetrics.length
         }
 
@@ -275,9 +275,9 @@ export class MonitoringSystem {
         // Calculate cache hit rate
         const cacheHitMetrics = this.getMetricsInRange('cache_hit', oneMinuteAgo, now)
         const cacheMissMetrics = this.getMetricsInRange('cache_miss', oneMinuteAgo, now)
-        const totalCacheRequests = cacheHitMetrics.reduce((sum, m) => sum + m.value, 0) + 
-                                 cacheMissMetrics.reduce((sum, m) => sum + m.value, 0)
-        this.performanceMetrics.cacheHitRate = totalCacheRequests > 0 ? 
+        const totalCacheRequests = cacheHitMetrics.reduce((sum, m) => sum + m.value, 0) +
+            cacheMissMetrics.reduce((sum, m) => sum + m.value, 0)
+        this.performanceMetrics.cacheHitRate = totalCacheRequests > 0 ?
             cacheHitMetrics.reduce((sum, m) => sum + m.value, 0) / totalCacheRequests : 0
 
         // Memory usage percentage
@@ -293,7 +293,7 @@ export class MonitoringSystem {
 
     // Check alerts
     private checkAlerts(): void {
-        for (const [alertName, config] of this.alertConfigs) {
+        for (const [alertName, config] of Array.from(this.alertConfigs)) {
             if (!config.enabled) continue
 
             const currentValue = this.getCurrentMetricValue(config.metric)
@@ -382,7 +382,7 @@ export class MonitoringSystem {
     private cleanupOldMetrics(): void {
         const cutoffTime = Date.now() - (24 * 60 * 60 * 1000) // 24 hours ago
 
-        for (const [name, metrics] of this.metrics) {
+        for (const [name, metrics] of Array.from(this.metrics)) {
             const filteredMetrics = metrics.filter(m => m.timestamp > cutoffTime)
             this.metrics.set(name, filteredMetrics)
         }
@@ -405,7 +405,7 @@ export class MonitoringSystem {
     getMetricsSummary(): Record<string, any> {
         const summary: Record<string, any> = {}
 
-        for (const [name, metrics] of this.metrics) {
+        for (const [name, metrics] of Array.from(this.metrics)) {
             if (metrics.length === 0) continue
 
             const latest = metrics[metrics.length - 1]
@@ -470,17 +470,17 @@ export class MonitoringSystem {
 export const monitoringSystem = MonitoringSystem.getInstance()
 
 // Convenience functions
-export const recordMetric = (name: string, type: MetricType, value: number, labels?: Record<string, string>) => 
+export const recordMetric = (name: string, type: MetricType, value: number, labels?: Record<string, string>) =>
     monitoringSystem.recordMetric(name, type, value, labels)
 
-export const recordCounter = (name: string, value?: number, labels?: Record<string, string>) => 
+export const recordCounter = (name: string, value?: number, labels?: Record<string, string>) =>
     monitoringSystem.recordCounter(name, value, labels)
 
-export const recordGauge = (name: string, value: number, labels?: Record<string, string>) => 
+export const recordGauge = (name: string, value: number, labels?: Record<string, string>) =>
     monitoringSystem.recordGauge(name, value, labels)
 
-export const recordTimer = (name: string, duration: number, labels?: Record<string, string>) => 
+export const recordTimer = (name: string, duration: number, labels?: Record<string, string>) =>
     monitoringSystem.recordTimer(name, duration, labels)
 
-export const timeFunction = <T>(name: string, fn: () => Promise<T>, labels?: Record<string, string>) => 
+export const timeFunction = <T>(name: string, fn: () => Promise<T>, labels?: Record<string, string>) =>
     monitoringSystem.timeFunction(name, fn, labels)

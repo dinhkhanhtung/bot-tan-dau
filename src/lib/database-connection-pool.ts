@@ -4,8 +4,8 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { logger, logPerformance } from '../logger'
-import { CONFIG } from '../config'
+import { logger, logPerformance } from './logger'
+import { CONFIG } from './config'
 
 // Connection pool configuration
 interface PoolConfig {
@@ -62,7 +62,7 @@ export class DatabaseConnectionPool {
         reject: (error: Error) => void
         timestamp: number
     }> = []
-    
+
     private readonly config: PoolConfig
     private readonly supabaseUrl: string
     private readonly supabaseKey: string
@@ -76,10 +76,10 @@ export class DatabaseConnectionPool {
             idleTimeoutMillis: 300000, // 5 minutes
             maxLifetimeMillis: 1800000 // 30 minutes
         }
-        
+
         this.supabaseUrl = CONFIG.BOT.SUPABASE_URL
         this.supabaseKey = CONFIG.BOT.SUPABASE_SERVICE_ROLE_KEY
-        
+
         this.startCleanupInterval()
     }
 
@@ -95,30 +95,32 @@ export class DatabaseConnectionPool {
         // Try to get available connection
         if (this.availableConnections.size > 0) {
             const connectionId = this.availableConnections.values().next().value
-            this.availableConnections.delete(connectionId)
-            
-            const connection = this.connections.get(connectionId)!
-            connection.markUsed()
-            
-            logger.debug('Connection acquired from pool', { 
-                connectionId, 
-                poolSize: this.connections.size,
-                availableCount: this.availableConnections.size 
-            })
-            
-            return connection
+            if (connectionId) {
+                this.availableConnections.delete(connectionId)
+
+                const connection = this.connections.get(connectionId)!
+                connection.markUsed()
+
+                logger.debug('Connection acquired from pool', {
+                    connectionId,
+                    poolSize: this.connections.size,
+                    availableCount: this.availableConnections.size
+                })
+
+                return connection
+            }
         }
 
         // Create new connection if under limit
         if (this.connections.size < this.config.maxConnections) {
             const connection = await this.createConnection()
             connection.markUsed()
-            
-            logger.debug('New connection created', { 
+
+            logger.debug('New connection created', {
                 connectionId: connection.id,
-                poolSize: this.connections.size 
+                poolSize: this.connections.size
             })
-            
+
             return connection
         }
 
@@ -133,10 +135,10 @@ export class DatabaseConnectionPool {
         }
 
         this.availableConnections.add(connection.id)
-        
-        logger.debug('Connection released to pool', { 
+
+        logger.debug('Connection released to pool', {
             connectionId: connection.id,
-            availableCount: this.availableConnections.size 
+            availableCount: this.availableConnections.size
         })
     }
 
@@ -188,13 +190,17 @@ export class DatabaseConnectionPool {
     private processWaitingQueue(): void {
         while (this.waitingQueue.length > 0 && this.availableConnections.size > 0) {
             const connectionId = this.availableConnections.values().next().value
-            this.availableConnections.delete(connectionId)
-            
-            const connection = this.connections.get(connectionId)!
-            connection.markUsed()
-            
-            const waiter = this.waitingQueue.shift()!
-            waiter.resolve(connection)
+            if (connectionId) {
+                this.availableConnections.delete(connectionId)
+
+                const connection = this.connections.get(connectionId)!
+                connection.markUsed()
+
+                const waiter = this.waitingQueue.shift()!
+                waiter.resolve(connection)
+            } else {
+                break
+            }
         }
     }
 
@@ -210,7 +216,7 @@ export class DatabaseConnectionPool {
         const now = Date.now()
         const toRemove: string[] = []
 
-        for (const [id, connection] of this.connections) {
+        for (const [id, connection] of Array.from(this.connections)) {
             if (!connection.isActive) {
                 toRemove.push(id)
                 continue
@@ -225,7 +231,7 @@ export class DatabaseConnectionPool {
             }
 
             // Remove idle connections (but keep minimum)
-            if (connection.isIdle(this.config.idleTimeoutMillis) && 
+            if (connection.isIdle(this.config.idleTimeoutMillis) &&
                 this.connections.size > this.config.minConnections) {
                 logger.info('Removing idle connection', { connectionId: id })
                 connection.close()
@@ -263,7 +269,7 @@ export class DatabaseConnectionPool {
         try {
             connection = await this.getConnection()
             const result = await queryFn(connection.client)
-            
+
             const duration = Date.now() - startTime
             logPerformance(`Query executed: ${queryName}`, duration, {
                 connectionId: connection.id,
@@ -308,13 +314,13 @@ export class DatabaseConnectionPool {
             this.cleanupInterval = null
         }
 
-        for (const connection of this.connections.values()) {
+        for (const connection of Array.from(this.connections.values())) {
             connection.close()
         }
 
         this.connections.clear()
         this.availableConnections.clear()
-        
+
         // Reject all waiting requests
         for (const waiter of this.waitingQueue) {
             waiter.reject(new Error('Pool is closing'))

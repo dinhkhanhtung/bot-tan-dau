@@ -78,7 +78,7 @@ export class CircuitBreaker {
     private onFailure() {
         this.failureCount++
         this.lastFailureTime = Date.now()
-        
+
         if (this.failureCount >= this.threshold) {
             this.state = CircuitState.OPEN
         }
@@ -97,7 +97,7 @@ export class MessageProcessor {
     private readonly maxConcurrentProcessing = 10
     private currentProcessingCount = 0
 
-    private constructor() {}
+    private constructor() { }
 
     public static getInstance(): MessageProcessor {
         if (!MessageProcessor.instance) {
@@ -123,7 +123,7 @@ export class MessageProcessor {
     ): Promise<void> {
         const startTime = Date.now()
         const messageId = `${user.facebook_id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        
+
         const context: MessageContext = {
             userId: user.facebook_id,
             messageId,
@@ -145,9 +145,9 @@ export class MessageProcessor {
 
         // Rate limiting check
         if (this.currentProcessingCount >= this.maxConcurrentProcessing) {
-            logger.warn('Processing queue full', { 
+            logger.warn('Processing queue full', {
                 currentCount: this.currentProcessingCount,
-                maxCount: this.maxConcurrentProcessing 
+                maxCount: this.maxConcurrentProcessing
             })
             throw new Error('Processing queue is full')
         }
@@ -180,20 +180,20 @@ export class MessageProcessor {
 
         for (const { stage, handler } of stages) {
             context.stage = stage
-            
+
             try {
                 await this.executeWithRetry(context, user, handler)
                 logger.debug(`Stage completed: ${stage}`, { messageId: context.messageId })
             } catch (error) {
-                logger.error(`Stage failed: ${stage}`, { 
-                    messageId: context.messageId, 
-                    error: error instanceof Error ? error.message : String(error) 
+                logger.error(`Stage failed: ${stage}`, {
+                    messageId: context.messageId,
+                    error: error instanceof Error ? error.message : String(error)
                 })
-                
+
                 if (this.isRetryableError(error)) {
-                    await this.handleRetry(context, user, error)
+                    await this.handleRetry(context, user, error as Error)
                 } else {
-                    await this.handleFinalError(context, user, error)
+                    await this.handleFinalError(context, user, error as Error)
                     break
                 }
             }
@@ -202,12 +202,12 @@ export class MessageProcessor {
 
     // Execute stage with retry logic
     private async executeWithRetry(
-        context: MessageContext, 
-        user: any, 
+        context: MessageContext,
+        user: any,
         handler: (context: MessageContext, user: any) => Promise<void>
     ): Promise<void> {
         let lastError: Error | null = null
-        
+
         for (let attempt = 0; attempt <= context.maxRetries; attempt++) {
             try {
                 context.retryCount = attempt
@@ -215,7 +215,7 @@ export class MessageProcessor {
                 return
             } catch (error) {
                 lastError = error as Error
-                
+
                 if (attempt < context.maxRetries && this.isRetryableError(error)) {
                     const delay = this.calculateRetryDelay(attempt)
                     logger.warn(`Retry attempt ${attempt + 1}/${context.maxRetries}`, {
@@ -230,7 +230,7 @@ export class MessageProcessor {
                 }
             }
         }
-        
+
         throw lastError
     }
 
@@ -297,7 +297,7 @@ export class MessageProcessor {
                 'Database connection failed',
                 'Network error'
             ]
-            
+
             return retryableErrors.some(pattern => error.message.includes(pattern))
         }
         return false
@@ -334,9 +334,9 @@ export class MessageProcessor {
             const { sendMessage } = await import('../facebook-api')
             await sendMessage(context.userId, CONFIG.ERRORS.INTERNAL_ERROR)
         } catch (sendError) {
-            logger.error('Failed to send error message', { 
-                userId: context.userId, 
-                error: sendError instanceof Error ? sendError.message : String(sendError) 
+            logger.error('Failed to send error message', {
+                userId: context.userId,
+                error: sendError instanceof Error ? sendError.message : String(sendError)
             })
         }
     }

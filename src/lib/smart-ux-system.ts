@@ -318,19 +318,19 @@ export class SmartUXManager {
     // Response style adjustments
     private makeFormal(text: string): string {
         return text.replace(/bạn/g, 'quý khách')
-                  .replace(/mình/g, 'chúng tôi')
-                  .replace(/tôi/g, 'chúng tôi')
+            .replace(/mình/g, 'chúng tôi')
+            .replace(/tôi/g, 'chúng tôi')
     }
 
     private makeCasual(text: string): string {
         return text.replace(/quý khách/g, 'bạn')
-                  .replace(/chúng tôi/g, 'mình')
+            .replace(/chúng tôi/g, 'mình')
     }
 
     private makeFriendly(text: string): string {
         return text.replace(/quý khách/g, 'bạn')
-                  .replace(/chúng tôi/g, 'mình')
-                  .replace(/xin chào/g, 'chào bạn')
+            .replace(/chúng tôi/g, 'mình')
+            .replace(/xin chào/g, 'chào bạn')
     }
 
     // Add contextual guidance
@@ -383,7 +383,7 @@ export class SmartUXManager {
         const now = Date.now()
         const inactiveThreshold = 7 * 24 * 60 * 60 * 1000 // 7 days
 
-        for (const [userId, profile] of this.userProfiles) {
+        for (const [userId, profile] of Array.from(this.userProfiles)) {
             const daysSinceLastInteraction = (now - profile.behavior.lastInteraction) / (1000 * 60 * 60 * 24)
 
             if (daysSinceLastInteraction > 7) {
@@ -392,7 +392,7 @@ export class SmartUXManager {
             }
         }
 
-        logger.debug('User profiles analyzed', { 
+        logger.debug('User profiles analyzed', {
             totalProfiles: this.userProfiles.size,
             inactiveUsers: Array.from(this.userProfiles.values()).filter(p => p.uxState === UXState.INACTIVE).length
         })
@@ -416,11 +416,11 @@ export class SmartUXManager {
         }
 
         const engagementLevel = profile.uxState === UXState.EXPERT ? 'expert' :
-                              profile.uxState === UXState.ENGAGED ? 'engaged' :
-                              profile.uxState === UXState.LEARNING ? 'learning' : 'beginner'
+            profile.uxState === UXState.ENGAGED ? 'engaged' :
+                profile.uxState === UXState.LEARNING ? 'learning' : 'beginner'
 
         const interactionPattern = profile.behavior.averageSessionLength > 300000 ? 'long_sessions' :
-                                 profile.behavior.averageSessionLength > 60000 ? 'medium_sessions' : 'short_sessions'
+            profile.behavior.averageSessionLength > 60000 ? 'medium_sessions' : 'short_sessions'
 
         const recommendations = this.getPersonalizedRecommendations(profile)
 
@@ -474,8 +474,8 @@ export class SmartUXManager {
             userStates[p.uxState]++
         })
 
-        const averageEngagement = profiles.length > 0 
-            ? profiles.reduce((sum, p) => sum + p.behavior.engagementScore, 0) / profiles.length 
+        const averageEngagement = profiles.length > 0
+            ? profiles.reduce((sum, p) => sum + p.behavior.engagementScore, 0) / profiles.length
             : 0
 
         return {

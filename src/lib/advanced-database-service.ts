@@ -95,8 +95,8 @@ export class AdvancedDatabaseService {
     ): Promise<T> {
         // Try cache first
         if (context.cacheKey) {
-            const cached = this.getFromCache(context.cacheKey)
-            if (cached) {
+            const cached = this.getFromCache<T>(context.cacheKey)
+            if (cached !== null) {
                 recordCounter('database_cache_hit', 1, { operation: context.operation })
                 return cached
             }
@@ -139,9 +139,10 @@ export class AdvancedDatabaseService {
 
         // Add cache promise if cache key exists
         if (context.cacheKey) {
+            const cacheKey = context.cacheKey
             promises.push(
-                this.getFromCache(context.cacheKey).then(cached => {
-                    if (cached) {
+                Promise.resolve(this.getFromCache<T>(cacheKey)).then(cached => {
+                    if (cached !== null) {
                         recordCounter('database_cache_hit', 1, { operation: context.operation })
                         return cached
                     }
@@ -155,8 +156,8 @@ export class AdvancedDatabaseService {
 
         try {
             // Wait for first successful result
-            const result = await Promise.any(promises)
-            
+            const result = await this.promiseAny(promises)
+
             // Cache the result if it came from database
             if (context.cacheKey && result) {
                 this.setCache(context.cacheKey, result, context.ttl!)
@@ -242,7 +243,7 @@ export class AdvancedDatabaseService {
         const now = Date.now()
         const toDelete: string[] = []
 
-        for (const [key, cached] of this.queryCache) {
+        for (const [key, cached] of Array.from(this.queryCache)) {
             if (now - cached.timestamp > cached.ttl) {
                 toDelete.push(key)
             }
@@ -261,13 +262,13 @@ export class AdvancedDatabaseService {
     }
 
     private async processBatchQueue(): Promise<void> {
-        for (const [operation, queries] of this.batchQueue) {
+        for (const [operation, queries] of Array.from(this.batchQueue)) {
             if (queries.length === 0) continue
 
             try {
                 // Execute all queries in parallel
                 const results = await Promise.all(queries.map(q => q.query()))
-                
+
                 // Resolve all promises
                 queries.forEach((q, index) => {
                     q.resolve(results[index])
@@ -420,11 +421,11 @@ export class AdvancedDatabaseService {
                 const { error } = await client
                     .from('bot_sessions')
                     .upsert(
-                        { 
-                            user_id: facebookId, 
-                            session_data: sessionData, 
-                            updated_at: new Date().toISOString() 
-                        }, 
+                        {
+                            user_id: facebookId,
+                            session_data: sessionData,
+                            updated_at: new Date().toISOString()
+                        },
                         { onConflict: 'user_id' }
                     )
 
@@ -470,9 +471,9 @@ export class AdvancedDatabaseService {
 
                 results.push(result)
             } catch (error) {
-                logger.error('Batch update failed', { 
-                    table: update.table, 
-                    error: error instanceof Error ? error.message : String(error) 
+                logger.error('Batch update failed', {
+                    table: update.table,
+                    error: error instanceof Error ? error.message : String(error)
                 })
                 results.push(null)
             }
@@ -486,7 +487,7 @@ export class AdvancedDatabaseService {
         const regex = new RegExp(pattern)
         const toDelete: string[] = []
 
-        for (const key of this.queryCache.keys()) {
+        for (const key of Array.from(this.queryCache.keys())) {
             if (regex.test(key)) {
                 toDelete.push(key)
             }
@@ -528,6 +529,26 @@ export class AdvancedDatabaseService {
     clearAllCaches(): void {
         this.queryCache.clear()
         logger.info('All caches cleared')
+    }
+
+    // Promise.any polyfill for older TypeScript targets
+    private async promiseAny<T>(promises: Promise<T>[]): Promise<T> {
+        return new Promise((resolve, reject) => {
+            let rejectedCount = 0
+            const errors: Error[] = []
+
+            for (const promise of promises) {
+                promise
+                    .then(resolve)
+                    .catch(error => {
+                        errors.push(error)
+                        rejectedCount++
+                        if (rejectedCount === promises.length) {
+                            reject(new Error('All promises rejected'))
+                        }
+                    })
+            }
+        })
     }
 }
 
