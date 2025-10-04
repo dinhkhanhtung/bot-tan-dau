@@ -607,6 +607,68 @@ CREATE TRIGGER user_bot_modes_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_user_bot_modes_updated_at();
 
+-- ========================================
+-- AI TABLES FOR ADMIN DASHBOARD
+-- ========================================
+
+-- AI Templates table - Lưu trữ các template prompt cho admin
+CREATE TABLE IF NOT EXISTS ai_templates (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    admin_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    prompt TEXT NOT NULL,
+    tone VARCHAR(20) NOT NULL CHECK (tone IN ('friendly', 'professional', 'casual')),
+    context VARCHAR(20) NOT NULL CHECK (context IN ('user_type', 'situation', 'goal')),
+    category VARCHAR(100) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    usage_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- AI Analytics table - Theo dõi việc sử dụng AI
+CREATE TABLE IF NOT EXISTS ai_analytics (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    admin_id VARCHAR(255) NOT NULL,
+    template_id UUID REFERENCES ai_templates(id) ON DELETE SET NULL,
+    prompt TEXT NOT NULL,
+    response TEXT NOT NULL,
+    tone VARCHAR(20) NOT NULL,
+    context VARCHAR(20) NOT NULL,
+    model_used VARCHAR(50) NOT NULL,
+    tokens_used INTEGER NOT NULL,
+    response_time INTEGER NOT NULL, -- milliseconds
+    success BOOLEAN NOT NULL,
+    error_message TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for AI tables
+CREATE INDEX IF NOT EXISTS idx_ai_templates_admin_id ON ai_templates(admin_id);
+CREATE INDEX IF NOT EXISTS idx_ai_templates_category ON ai_templates(category);
+CREATE INDEX IF NOT EXISTS idx_ai_templates_is_active ON ai_templates(is_active);
+
+CREATE INDEX IF NOT EXISTS idx_ai_analytics_admin_id ON ai_analytics(admin_id);
+CREATE INDEX IF NOT EXISTS idx_ai_analytics_template_id ON ai_analytics(template_id);
+CREATE INDEX IF NOT EXISTS idx_ai_analytics_created_at ON ai_analytics(created_at);
+CREATE INDEX IF NOT EXISTS idx_ai_analytics_model_used ON ai_analytics(model_used);
+CREATE INDEX IF NOT EXISTS idx_ai_analytics_success ON ai_analytics(success);
+
+-- Triggers for AI tables
+DROP TRIGGER IF EXISTS update_ai_templates_updated_at ON ai_templates;
+CREATE TRIGGER update_ai_templates_updated_at BEFORE UPDATE ON ai_templates
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Insert default AI templates
+INSERT INTO ai_templates (admin_id, name, prompt, tone, context, category)
+VALUES
+    ('admin', 'Chào mừng người dùng mới', 'Tạo lời chào mừng thân thiện cho người dùng mới gia nhập cộng đồng Tân Dậu', 'friendly', 'situation', 'welcome'),
+    ('admin', 'Hỗ trợ tìm kiếm sản phẩm', 'Giúp người dùng tìm kiếm sản phẩm phù hợp với nhu cầu của họ', 'professional', 'goal', 'search'),
+    ('admin', 'Tư vấn bán hàng', 'Đưa ra lời khuyên hữu ích cho người bán về cách đăng tin hiệu quả', 'professional', 'user_type', 'selling'),
+    ('admin', 'Xử lý khiếu nại', 'Tạo phản hồi chuyên nghiệp để xử lý khiếu nại của khách hàng', 'professional', 'situation', 'support'),
+    ('admin', 'Khuyến khích tương tác', 'Tạo nội dung khuyến khích người dùng tương tác với cộng đồng', 'friendly', 'goal', 'engagement')
+ON CONFLICT DO NOTHING;
+
 -- Tạo function để tự động xóa record cũ hơn 24 giờ
 CREATE OR REPLACE FUNCTION cleanup_old_chat_bot_offer_counts()
 RETURNS void AS $$

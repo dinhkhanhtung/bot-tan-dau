@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import AIPromptGenerator from './components/AIPromptGenerator'
+import { AIDashboardStats } from '@/types'
 
 interface DashboardStats {
     totalUsers: number
@@ -22,6 +24,8 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [adminInfo, setAdminInfo] = useState<any>(null)
+    const [activeTab, setActiveTab] = useState<'overview' | 'ai'>('overview')
+    const [aiStats, setAiStats] = useState<AIDashboardStats | null>(null)
     const router = useRouter()
 
     useEffect(() => {
@@ -292,34 +296,71 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* User Interaction Tools */}
-                <div className="bg-white shadow rounded-lg">
-                    <div className="px-4 py-5 sm:p-6">
-                        <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                            🚀 Công cụ tương tác
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            <button className="inline-flex items-center justify-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors duration-200">
-                                📨 Gửi tin nhắn hàng loạt
+                {/* Tab Navigation */}
+                <div className="bg-white shadow rounded-lg mb-6">
+                    <div className="border-b border-gray-200">
+                        <nav className="-mb-px flex space-x-8 px-6">
+                            <button
+                                onClick={() => setActiveTab('overview')}
+                                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                                    activeTab === 'overview'
+                                        ? 'border-indigo-500 text-indigo-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                            >
+                                📊 Tổng quan
                             </button>
-                            <button className="inline-flex items-center justify-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200">
-                                🎯 Gửi nút cho user
+                            <button
+                                onClick={() => setActiveTab('ai')}
+                                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                                    activeTab === 'ai'
+                                        ? 'border-indigo-500 text-indigo-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                            >
+                                🤖 AI Assistant
                             </button>
-                            <button className="inline-flex items-center justify-center px-3 py-2 border border-purple-300 text-sm font-medium rounded-md text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors duration-200">
-                                💬 Chat với user
-                            </button>
-                            <button className="inline-flex items-center justify-center px-3 py-2 border border-orange-300 text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 transition-colors duration-200">
-                                📢 Gửi thông báo
-                            </button>
-                            <button className="inline-flex items-center justify-center px-3 py-2 border border-teal-300 text-sm font-medium rounded-md text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors duration-200">
-                                🎁 Tặng điểm thưởng
-                            </button>
-                            <button className="inline-flex items-center justify-center px-3 py-2 border border-pink-300 text-sm font-medium rounded-md text-pink-700 bg-pink-50 hover:bg-pink-100 transition-colors duration-200">
-                                🔄 Đồng bộ dữ liệu
-                            </button>
-                        </div>
+                        </nav>
                     </div>
                 </div>
+
+                {/* Tab Content */}
+                {activeTab === 'overview' && (
+                    <>
+                        {/* User Interaction Tools */}
+                        <div className="bg-white shadow rounded-lg">
+                            <div className="px-4 py-5 sm:p-6">
+                                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                                    🚀 Công cụ tương tác
+                                </h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors duration-200">
+                                        📨 Gửi tin nhắn hàng loạt
+                                    </button>
+                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200">
+                                        🎯 Gửi nút cho user
+                                    </button>
+                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-purple-300 text-sm font-medium rounded-md text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors duration-200">
+                                        💬 Chat với user
+                                    </button>
+                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-orange-300 text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 transition-colors duration-200">
+                                        📢 Gửi thông báo
+                                    </button>
+                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-teal-300 text-sm font-medium rounded-md text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors duration-200">
+                                        🎁 Tặng điểm thưởng
+                                    </button>
+                                    <button className="inline-flex items-center justify-center px-3 py-2 border border-pink-300 text-sm font-medium rounded-md text-pink-700 bg-pink-50 hover:bg-pink-100 transition-colors duration-200">
+                                        🔄 Đồng bộ dữ liệu
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {activeTab === 'ai' && (
+                    <AIPromptGenerator onStatsUpdate={setAiStats} />
+                )}
             </main>
         </div>
     )

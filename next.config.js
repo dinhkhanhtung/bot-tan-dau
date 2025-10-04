@@ -10,6 +10,14 @@ const nextConfig = {
         FACEBOOK_PAGE_ACCESS_TOKEN: process.env.FACEBOOK_PAGE_ACCESS_TOKEN,
         FACEBOOK_PAGE_ID: process.env.FACEBOOK_PAGE_ID,
         FACEBOOK_VERIFY_TOKEN: process.env.FACEBOOK_VERIFY_TOKEN,
+        // AI API Keys - Exposed for client-side usage
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+        GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
+        // AI Configuration
+        OPENAI_ENABLED: process.env.OPENAI_ENABLED,
+        GOOGLE_AI_ENABLED: process.env.GOOGLE_AI_ENABLED,
+        OPENAI_MODEL: process.env.OPENAI_MODEL,
+        GOOGLE_AI_MODEL: process.env.GOOGLE_AI_MODEL,
     },
 }
 

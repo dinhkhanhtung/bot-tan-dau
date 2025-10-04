@@ -281,3 +281,94 @@ export interface AdminStats {
     weekly_revenue: number
     monthly_revenue: number
 }
+
+// AI-related types
+export interface AITemplate {
+    id: string
+    admin_id: string
+    name: string
+    prompt: string
+    tone: 'friendly' | 'professional' | 'casual'
+    context: 'user_type' | 'situation' | 'goal'
+    category: string
+    is_active: boolean
+    usage_count: number
+    created_at: string
+    updated_at: string
+}
+
+export interface AIAnalytics {
+    id: string
+    admin_id: string
+    template_id?: string
+    prompt: string
+    response: string
+    tone: string
+    context: string
+    model_used: string
+    tokens_used: number
+    response_time: number
+    success: boolean
+    error_message?: string
+    created_at: string
+}
+
+export interface AIUsageStats {
+    total_requests: number
+    successful_requests: number
+    failed_requests: number
+    total_tokens: number
+    average_response_time: number
+    popular_templates: Array<{
+        template_id: string
+        name: string
+        usage_count: number
+    }>
+    daily_usage: Array<{
+        date: string
+        requests: number
+        tokens: number
+    }>
+}
+
+export interface AIGenerateRequest {
+    prompt: string
+    tone: 'friendly' | 'professional' | 'casual'
+    context: 'user_type' | 'situation' | 'goal'
+    maxTokens?: number
+    temperature?: number
+    model?: 'openai' | 'google'
+}
+
+export interface AIGenerateResponse {
+    response: string
+    model_used: string
+    tokens_used: number
+    response_time: number
+    metadata?: {
+        tone: string
+        context: string
+        prompt_length: number
+        response_length: number
+    }
+}
+
+// AI Form types
+export interface AIPromptForm {
+    prompt: string
+    tone: 'friendly' | 'professional' | 'casual'
+    context: 'user_type' | 'situation' | 'goal'
+    category: string
+    templateName?: string
+}
+
+// AI Dashboard integration types
+export interface AIDashboardStats {
+    today_requests: number
+    weekly_requests: number
+    monthly_requests: number
+    total_templates: number
+    active_templates: number
+    average_response_time: number
+    success_rate: number
+}
