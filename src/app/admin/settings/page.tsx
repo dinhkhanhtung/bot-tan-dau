@@ -173,33 +173,104 @@ export default function AdminSettings() {
 
     const handleSyncData = async () => {
         await handleActionWithLoading('syncData', async () => {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            showToast('Đồng bộ dữ liệu thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'sync' })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast(`Đồng bộ dữ liệu thành công! ${data.data.users} users, ${data.data.listings} listings`, 'success')
+            } else {
+                showToast(`Lỗi đồng bộ: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleExportData = async () => {
         await handleActionWithLoading('exportData', async () => {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 3000))
-            showToast('Xuất dữ liệu hệ thống thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'export' })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Download the exported data as JSON file
+                const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `bot-data-export-${new Date().toISOString().split('T')[0]}.json`
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+                
+                showToast(`Xuất dữ liệu thành công! ${data.data.summary.totalUsers} users, ${data.data.summary.totalListings} listings`, 'success')
+            } else {
+                showToast(`Lỗi xuất dữ liệu: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleResetSpamCounter = async () => {
         await handleActionWithLoading('resetSpamCounter', async () => {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500))
-            showToast('Đã reset bộ đếm spam thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'resetSpam' })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast(`Đã reset bộ đếm spam thành công! ${data.details.spamTrackingCleared ? 'Spam tracking cleared' : ''}`, 'success')
+            } else {
+                showToast(`Lỗi reset spam: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleCleanupData = async () => {
+        if (!confirm('⚠️ CẢNH BÁO: Thao tác này sẽ xóa TẤT CẢ dữ liệu trong database!\n\nBạn có chắc chắn muốn tiếp tục?')) {
+            return
+        }
+
         await handleActionWithLoading('cleanupData', async () => {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            showToast('Đã dọn dẹp dữ liệu cũ thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'cleanup' })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast(`Đã làm sạch dữ liệu thành công! Cleaned ${data.details.cleanedTables} tables`, 'success')
+            } else {
+                showToast(`Lỗi cleanup: ${data.message}`, 'error')
+            }
         })
     }
 
