@@ -397,7 +397,6 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
             current_flow: sessionData.current_flow || 'registration',
             step: sessionData.step || 'name',
             data: sessionData.data || {},
-            started_at: sessionData.started_at || new Date().toISOString(),
             updated_at: new Date().toISOString()
         }
 
@@ -467,7 +466,6 @@ export async function getBotSession(facebookId: string) {
                 current_flow: data.current_flow,
                 step: data.step,
                 data: data.data || {},
-                started_at: data.started_at,
                 updated_at: data.updated_at
             }
         }

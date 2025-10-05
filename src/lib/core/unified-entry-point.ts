@@ -280,9 +280,9 @@ export class UnifiedBotSystem {
                     await updateBotSession(user.facebook_id, {
                         current_flow: 'registration',
                         step: 'name',
-                        data: {},
-                        started_at: new Date().toISOString(),
-                        skip_welcome: true // Cờ này để tránh xung đột với welcome message
+                        data: {
+                            skip_welcome: true // Cờ này để tránh xung đột với welcome message
+                        }
                     })
 
                     await this.startRegistration(user)

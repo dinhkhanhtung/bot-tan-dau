@@ -144,8 +144,7 @@ export class PendingUserFlow {
             await updateBotSession(user.facebook_id, {
                 current_flow: 'search',
                 step: 'keyword',
-                data: { userType: 'pending' },
-                started_at: new Date().toISOString()
+                data: { userType: 'pending' }
             })
 
         } catch (error) {

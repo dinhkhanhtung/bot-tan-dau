@@ -82,8 +82,7 @@ export class AuthFlow {
         const sessionData = {
             current_flow: 'registration',
             step: 'phone',
-            data: { name: text.trim() },
-            started_at: new Date().toISOString()
+            data: { name: text.trim() }
         }
 
         await updateBotSession(user.facebook_id, sessionData)
@@ -128,8 +127,7 @@ export class AuthFlow {
             data: {
                 ...session.data,
                 phone: phone
-            },
-            started_at: new Date().toISOString()
+            }
         }
 
         await updateBotSession(user.facebook_id, sessionData)
@@ -238,8 +236,7 @@ export class AuthFlow {
         await updateBotSession(user.facebook_id, {
             current_flow: 'registration',
             step: 'name',
-            data: {},
-            started_at: new Date().toISOString()
+            data: {}
         })
 
         // Send welcome message
