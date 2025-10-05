@@ -19,6 +19,7 @@ import {
     shouldSendTrialNotification,
     getTrialNotificationMessage
 } from '../utils'
+import { LOCATIONS, DISTRICTS } from '../constants'
 
 /**
  * Handle registration flow - Optimized version
@@ -186,18 +187,31 @@ async function handleRegistrationPhone(user: any, text: string, data: any) {
 
     await sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n📝 Bước 3/4: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:`)
 
+    // Tạo danh sách vị trí thông minh - hiển thị các thành phố lớn trước
+    const majorCities = ['HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ']
+    const locationButtons = []
+
+    // Thêm các thành phố lớn với icon đặc biệt
+    majorCities.forEach((city, index) => {
+        const icons = ['🏠', '🏢', '🏖️', '🌊', '🏔️']
+        locationButtons.push(createQuickReply(`${icons[index]} ${city}`, `REG_LOCATION_${city.replace(/[^A-Z0-9]/g, '_')}`))
+    })
+
+    // Thêm một số tỉnh lớn khác
+    const majorProvinces = ['BÌNH DƯƠNG', 'ĐỒNG NAI', 'KHÁNH HÒA', 'LÂM ĐỒNG', 'BẮC NINH', 'THỪA THIÊN HUẾ']
+    majorProvinces.forEach(province => {
+        if (!majorCities.includes(province)) {
+            locationButtons.push(createQuickReply(`🏘️ ${province}`, `REG_LOCATION_${province.replace(/[^A-Z0-9]/g, '_')}`))
+        }
+    })
+
+    // Thêm nút "Khác" để hiển thị thêm tùy chọn
+    locationButtons.push(createQuickReply('🏞️ XEM THÊM TỈNH KHÁC', 'REG_LOCATION_MORE'))
+
     await sendQuickReply(
         user.facebook_id,
-        'Chọn vị trí:',
-        [
-            createQuickReply('🏠 HÀ NỘI', 'REG_LOCATION_HANOI'),
-            createQuickReply('🏢 TP.HCM', 'REG_LOCATION_HCM'),
-            createQuickReply('🏖️ ĐÀ NẴNG', 'REG_LOCATION_DANANG'),
-            createQuickReply('🌊 HẢI PHÒNG', 'REG_LOCATION_HAIPHONG'),
-            createQuickReply('🏔️ CẦN THƠ', 'REG_LOCATION_CANTHO'),
-            createQuickReply('🌾 AN GIANG', 'REG_LOCATION_ANGIANG'),
-            createQuickReply('🏞️ KHÁC...', 'REG_LOCATION_OTHER')
-        ]
+        'Chọn tỉnh/thành phố bạn đang sinh sống:',
+        locationButtons
     )
 
     await updateBotSession(user.facebook_id, {
