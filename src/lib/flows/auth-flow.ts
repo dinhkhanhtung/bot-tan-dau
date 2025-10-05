@@ -40,28 +40,40 @@ export class AuthFlow {
      */
     async handleStep(user: any, text: string, session: any): Promise<void> {
         try {
-            console.log('🔍 Processing step:', session?.step, 'for user:', user.facebook_id)
-            console.log('[DEBUG] handleStep: currentStep=${session?.step}, input=${text}')
+            console.log('🔍 Processing step for user:', user.facebook_id)
+            console.log('[DEBUG] handleStep: session=${JSON.stringify(session)}, input=${text}')
 
-            // Get current step from session - handle both old and new session format
-            const currentStep = session?.step || (session as any)?.current_step || 0
+            // Get current step from session - ensure consistent numeric comparison
+            let currentStep: number
+
+            if (session?.step !== undefined) {
+                currentStep = typeof session.step === 'string' ? parseInt(session.step) || 0 : session.step
+            } else if (session?.current_step !== undefined) {
+                currentStep = typeof session.current_step === 'string' ? parseInt(session.current_step) || 0 : session.current_step
+            } else {
+                currentStep = 0
+            }
 
             console.log('🔍 Current step value:', currentStep, 'Type:', typeof currentStep)
 
             // Handle name step (step 0)
-            if (currentStep === 0 || currentStep === '0' || currentStep === 'name') {
+            if (currentStep === 0) {
+                console.log('📝 Processing name step')
                 await this.handleNameStep(user, text, session)
             }
-            // Handle phone step (step 1) - FIXED: should be step 1, not step 2
-            else if (currentStep === 1 || currentStep === '1' || currentStep === 'phone') {
+            // Handle phone step (step 1)
+            else if (currentStep === 1) {
+                console.log('📱 Processing phone step')
                 await this.handlePhoneStep(user, text, session)
             }
             // Handle location step (step 2) - expects postback, not text
-            else if (currentStep === 2 || currentStep === '2' || currentStep === 'location') {
+            else if (currentStep === 2) {
+                console.log('📍 Processing location step')
                 await this.handleLocationStep(user, text, session)
             }
             // Handle birthday step (step 3) - expects postback, not text
-            else if (currentStep === 3 || currentStep === '3' || currentStep === 'birthday') {
+            else if (currentStep === 3) {
+                console.log('🎂 Processing birthday step')
                 await this.handleBirthdayStep(user, text, session)
             }
             else {

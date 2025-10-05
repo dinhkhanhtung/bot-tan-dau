@@ -373,7 +373,8 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
             facebookId,
             hasSessionData: !!sessionData,
             currentFlow: sessionData?.current_flow,
-            step: sessionData?.step
+            step: sessionData?.step,
+            stepType: typeof sessionData?.step
         })
 
         // Nếu sessionData là null, xóa session
@@ -391,14 +392,27 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
             return
         }
 
-        // Đơn giản hóa: chỉ lưu những gì cần thiết
+        // Đơn giản hóa: chỉ lưu những gì cần thiết - FIX STEP HANDLING
+        let stepValue: number = 0
+        if (sessionData?.step !== undefined) {
+            stepValue = typeof sessionData.step === 'string' ? parseInt(sessionData.step) || 0 : sessionData.step
+        }
+
         const sessionToSave = {
             facebook_id: facebookId,
             current_flow: sessionData.current_flow || 'registration',
-            current_step: sessionData.step ? parseInt(sessionData.step) || 0 : 0,
+            current_step: stepValue,  // Always save as number
+            step: stepValue,  // Keep both fields for compatibility
             data: sessionData.data || {},
             updated_at: new Date().toISOString()
         }
+
+        console.log('💾 Saving session data:', {
+            facebookId,
+            currentFlow: sessionToSave.current_flow,
+            step: sessionToSave.step,
+            current_step: sessionToSave.current_step
+        })
 
         // Sử dụng upsert đơn giản
         const { error } = await supabaseAdmin
@@ -419,7 +433,8 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
         console.log('✅ updateBotSession success:', {
             facebookId,
             currentFlow: sessionToSave.current_flow,
-            step: sessionToSave.current_step
+            step: sessionToSave.step,
+            current_step: sessionToSave.current_step
         })
 
     } catch (error) {
@@ -454,17 +469,28 @@ export async function getBotSession(facebookId: string) {
 
         // Đơn giản hóa: chỉ trả về data nếu có
         if (data) {
+            // FIX STEP HANDLING - ensure numeric step value
+            let stepValue: number = 0
+            if (data.step !== undefined && data.step !== null) {
+                stepValue = typeof data.step === 'string' ? parseInt(data.step) || 0 : data.step
+            } else if (data.current_step !== undefined && data.current_step !== null) {
+                stepValue = typeof data.current_step === 'string' ? parseInt(data.current_step) || 0 : data.current_step
+            }
+
             console.log('✅ getBotSession success:', {
                 facebookId,
                 currentFlow: data.current_flow,
-                step: data.current_step
+                step: stepValue,
+                originalStep: data.step,
+                originalCurrentStep: data.current_step
             })
 
             // Đảm bảo cấu trúc dữ liệu nhất quán
             return {
                 facebook_id: data.facebook_id,
                 current_flow: data.current_flow,
-                step: data.current_step?.toString() || '0',
+                step: stepValue,  // Return as number for consistent comparison
+                current_step: stepValue,  // Keep both for compatibility
                 data: data.data || {},
                 updated_at: data.updated_at
             }

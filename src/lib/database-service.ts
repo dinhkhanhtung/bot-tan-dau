@@ -268,14 +268,22 @@ export class DatabaseService {
 
                     // STANDARDIZE SESSION DATA FORMAT
                     if (data) {
-                        // Ensure consistent session data structure
+                        // Ensure consistent session data structure - FIX STEP HANDLING
+                        let stepValue: number = 0
+
+                        if (data.step !== undefined && data.step !== null) {
+                            stepValue = typeof data.step === 'string' ? parseInt(data.step) || 0 : data.step
+                        } else if (data.current_step !== undefined && data.current_step !== null) {
+                            stepValue = typeof data.current_step === 'string' ? parseInt(data.current_step) || 0 : data.current_step
+                        }
+
                         const standardizedSession = {
                             id: data.id,
                             facebook_id: data.facebook_id,
                             session_data: data.session_data || {},
                             current_flow: data.current_flow || null,
-                            step: data.step || data.current_step || 0,  // Map both old and new formats
-                            current_step: data.current_step || data.step || 0,
+                            step: stepValue,  // Always use numeric step
+                            current_step: stepValue,  // Keep both for compatibility
                             data: data.data || {},  // Ensure data field exists
                             created_at: data.created_at,
                             updated_at: data.updated_at
@@ -285,7 +293,9 @@ export class DatabaseService {
                             facebook_id: facebookId,
                             current_flow: standardizedSession.current_flow,
                             step: standardizedSession.step,
-                            current_step: standardizedSession.current_step
+                            current_step: standardizedSession.current_step,
+                            original_step: data.step,
+                            original_current_step: data.current_step
                         })
 
                         return standardizedSession
