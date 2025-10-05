@@ -244,7 +244,7 @@ export class DatabaseService {
         )
     }
 
-    // Session operations
+    // Session operations - FIXED VERSION
     public async getBotSession(facebookId: string) {
         return this.executeQuery(
             'getBotSession',
@@ -266,7 +266,29 @@ export class DatabaseService {
                         throw error
                     }
 
-                    return data
+                    // STANDARDIZE SESSION DATA FORMAT
+                    if (data) {
+                        // Ensure consistent session data structure
+                        const standardizedSession = {
+                            id: data.id,
+                            facebook_id: data.facebook_id,
+                            session_data: data.session_data || {},
+                            current_flow: data.current_flow || null,
+                            current_step: data.current_step || 0,
+                            created_at: data.created_at,
+                            updated_at: data.updated_at
+                        }
+
+                        logger.debug('Standardized session data', {
+                            facebook_id: facebookId,
+                            current_flow: standardizedSession.current_flow,
+                            session_data: standardizedSession.session_data
+                        })
+
+                        return standardizedSession
+                    }
+
+                    return null
                 } catch (error) {
                     // Fallback to null if any error occurs
                     logger.warn('Failed to get bot session, returning null', { error: error instanceof Error ? error.message : String(error) })

@@ -223,16 +223,20 @@ CREATE TABLE IF NOT EXISTS point_transactions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Bot sessions table
+-- Bot sessions table - FIXED VERSION
 CREATE TABLE IF NOT EXISTS bot_sessions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     facebook_id VARCHAR(255) UNIQUE NOT NULL,
     session_data JSONB DEFAULT '{}',
-    current_flow VARCHAR(100),
+    current_flow VARCHAR(100) DEFAULT NULL,
     current_step INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Create index for better performance
+CREATE INDEX IF NOT EXISTS idx_bot_sessions_facebook_id ON bot_sessions(facebook_id);
+CREATE INDEX IF NOT EXISTS idx_bot_sessions_current_flow ON bot_sessions(current_flow) WHERE current_flow IS NOT NULL;
 
 -- ========================================
 -- 3. ANTI-SPAM TABLES

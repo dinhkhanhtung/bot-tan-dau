@@ -160,12 +160,10 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý tin nhắn của admin - ĐÃ LOẠI BỎ
-     * TẤT CẢ QUẢN LÝ BÂY GIỜ QUA TRANG WEB ADMIN
+     * Xử lý tin nhắn của admin - FANPAGE = ADMIN
      */
     private static async handleAdminMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
-        // ADMIN SYSTEM ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
-        // TẤT CẢ QUẢN LÝ QUA TRANG WEB: https://bot-tan-dau.vercel.app/admin/login
+        // TIN NHẮN TỪ FANPAGE = ADMIN - CHUYỂN HƯỚNG ĐẾN WEB DASHBOARD
         await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
         await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
         await this.sendMessage(user.facebook_id, '📧 Liên hệ admin để được cấp tài khoản quản lý.')

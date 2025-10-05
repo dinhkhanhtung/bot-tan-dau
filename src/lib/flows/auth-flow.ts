@@ -922,20 +922,33 @@ export class AuthFlow {
     }
 
     /**
-     * Complete registration process
+     * Complete registration process - FIXED VERSION
      */
     private async completeRegistration(user: any, data: any): Promise<void> {
         try {
-            // Check if user already exists (from welcome message tracking)
-            const { data: existingUser } = await supabaseAdmin
+            console.log('🔄 Completing registration for user:', user.facebook_id, 'Data:', data)
+
+            // Validate required data
+            if (!data.name || !data.phone || !data.location) {
+                console.error('❌ Missing required registration data:', data)
+                await sendMessage(user.facebook_id, '❌ Thiếu thông tin bắt buộc. Vui lòng đăng ký lại!')
+                return
+            }
+
+            // Check if user already exists
+            const { data: existingUser, error: fetchError } = await supabaseAdmin
                 .from('users')
                 .select('*')
                 .eq('facebook_id', user.facebook_id)
                 .single()
 
-            let userError = null
+            if (fetchError && fetchError.code !== 'PGRST116') {
+                console.error('❌ Error fetching existing user:', fetchError)
+                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi kiểm tra thông tin. Vui lòng thử lại!')
+                return
+            }
 
-            // Kiểm tra bot settings để xác định có auto trial không
+            // Get bot settings for trial configuration
             const { data: botSettings } = await supabaseAdmin
                 .from('bot_settings')
                 .select('value')
@@ -945,91 +958,105 @@ export class AuthFlow {
             const trialDays = botSettings?.value ? parseInt(botSettings.value) : 3
             const shouldAutoTrial = trialDays > 0
 
-            if (existingUser) {
-                // Update existing user record
-                const updateData: any = {
-                    name: data.name,
-                    phone: data.phone,
-                    location: data.location,
-                    birthday: data.birth_year || 1981,
-                    email: data.email || null,
-                    product_service: data.product_service || null,
-                    welcome_message_sent: true,
-                    updated_at: new Date().toISOString()
-                }
+            console.log('🔧 Bot settings:', { trialDays, shouldAutoTrial })
 
-                if (shouldAutoTrial) {
-                    // Auto trial: Set status trial và membership_expires_at
-                    updateData.status = 'trial'
-                    updateData.membership_expires_at = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString()
-                } else {
-                    // Không auto trial: Set status pending để chờ admin duyệt
-                    updateData.status = 'pending'
-                    updateData.membership_expires_at = null
+            const baseUserData = {
+                name: data.name,
+                phone: data.phone,
+                location: data.location,
+                birthday: data.birth_year || 1981,
+                email: data.email || null,
+                product_service: data.product_service || null,
+                referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
+                welcome_message_sent: true,
+                updated_at: new Date().toISOString()
+            }
+
+            let userData: any = { ...baseUserData }
+
+            let saveError = null
+
+            if (existingUser) {
+                // Update existing user - ensure all required fields are present
+                console.log('🔄 Updating existing user:', existingUser.id)
+
+                if (shouldAutoTrial && existingUser.status !== 'trial' && existingUser.status !== 'registered') {
+                    userData.status = 'trial'
+                    userData.membership_expires_at = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString()
                 }
 
                 const { error } = await supabaseAdmin
                     .from('users')
-                    .update(updateData)
+                    .update(userData)
                     .eq('facebook_id', user.facebook_id)
-                userError = error
+                saveError = error
             } else {
-                // Create new user record
-                const insertData: any = {
+                // Create new user - ensure all required fields are present
+                console.log('🆕 Creating new user')
+
+                const insertData = {
                     id: generateId(),
                     facebook_id: user.facebook_id,
-                    name: data.name,
-                    phone: data.phone,
-                    location: data.location,
-                    birthday: data.birth_year || 1981,
-                    email: data.email || null,
-                    product_service: data.product_service || null,
-                    referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
-                    welcome_message_sent: true,
-                    created_at: new Date().toISOString()
+                    status: shouldAutoTrial ? 'trial' : 'pending',
+                    membership_expires_at: shouldAutoTrial ?
+                        new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString() : null,
+                    created_at: new Date().toISOString(),
+                    ...userData
                 }
 
-                if (shouldAutoTrial) {
-                    // Auto trial: Set status trial và membership_expires_at
-                    insertData.status = 'trial'
-                    insertData.membership_expires_at = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString()
-                } else {
-                    // Không auto trial: Set status pending để chờ admin duyệt
-                    insertData.status = 'pending'
-                    insertData.membership_expires_at = null
-                }
+                console.log('📝 Insert data:', insertData)
 
                 const { error } = await supabaseAdmin
                     .from('users')
                     .insert(insertData)
-                userError = error
+                saveError = error
             }
 
-            if (userError) {
-                console.error('Error creating user:', userError)
-                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau!')
+            if (saveError) {
+                console.error('❌ Error saving user:', saveError)
+                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại sau!')
                 return
             }
 
-            // Clear session
+            // Clear session after successful registration
             await updateBotSession(user.facebook_id, null)
+            console.log('✅ Session cleared after registration')
 
-            // Send success message - CHỜ ADMIN DUYỆT
-            await sendMessage(user.facebook_id, `📝 ĐĂNG KÝ HOÀN TẤT!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.email ? `✅ Email: ${data.email}` : '✅ Chưa có email'}\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí ${BOT_CONFIG.TRIAL_DAYS} ngày!\n💰 ${BOT_INFO.PRICING_MESSAGE}\n💳 Phí duy trì: ${BOT_INFO.DAILY_FEE_FORMATTED}\n📅 Gói tối thiểu: ${BOT_CONFIG.MINIMUM_DAYS} ngày = ${formatCurrency(BOT_CONFIG.MINIMUM_DAYS * BOT_CONFIG.DAILY_FEE)}\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang chờ Admin duyệt...\n📢 Bạn sẽ nhận được thông báo khi tài khoản được kích hoạt!\n━━━━━━━━━━━━━━━━━━━━`)
+            // Send success message based on user status
+            if (shouldAutoTrial) {
+                // Auto trial - user can use immediately
+                await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.email ? `✅ Email: ${data.email}` : ''}\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : ''}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí ${trialDays} ngày!\n💰 Phí duy trì: ${formatCurrency(BOT_CONFIG.DAILY_FEE)}/ngày\n📅 Gói tối thiểu: ${BOT_CONFIG.MINIMUM_DAYS} ngày = ${formatCurrency(BOT_CONFIG.MINIMUM_DAYS * BOT_CONFIG.DAILY_FEE)}\n━━━━━━━━━━━━━━━━━━━━\n🚀 Bạn có thể bắt đầu sử dụng ngay bây giờ!`)
 
-            await sendQuickReply(
-                user.facebook_id,
-                `${BOT_INFO.WELCOME_MESSAGE}\n${BOT_INFO.SLOGAN}`,
-                [
-                    createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU'),
-                    createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
-                    createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN')
-                ]
-            )
+                await sendQuickReply(
+                    user.facebook_id,
+                    'Chọn chức năng để bắt đầu:',
+                    [
+                        createQuickReply('🛒 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                        createQuickReply('📝 ĐĂNG BÁN', 'LISTING'),
+                        createQuickReply('📊 THỐNG KÊ', 'STATS'),
+                        createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
+                    ]
+                )
+            } else {
+                // Manual approval - user needs to wait for admin
+                await sendMessage(user.facebook_id, `📝 ĐĂNG KÝ HOÀN TẤT!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.email ? `✅ Email: ${data.email}` : ''}\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : ''}\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang chờ Admin duyệt...\n📢 Bạn sẽ nhận được thông báo khi tài khoản được kích hoạt!\n━━━━━━━━━━━━━━━━━━━━`)
+
+                await sendQuickReply(
+                    user.facebook_id,
+                    'Trong thời gian chờ duyệt:',
+                    [
+                        createQuickReply('🔍 XEM SẢN PHẨM', 'VIEW_LISTINGS'),
+                        createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
+                        createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN')
+                    ]
+                )
+            }
+
+            console.log('✅ Registration completed successfully for user:', user.facebook_id)
 
         } catch (error) {
-            console.error('Error in complete registration:', error)
-            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+            console.error('❌ Error in complete registration:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi hoàn tất đăng ký. Vui lòng thử lại sau!')
         }
     }
 
