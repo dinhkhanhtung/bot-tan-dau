@@ -888,7 +888,6 @@ export class UnifiedBotSystem {
             console.log('Starting new registration flow for user:', user.facebook_id)
             const { AuthFlow } = await import('../flows/auth-flow')
             const authFlow = new AuthFlow()
-            // Gọi handleRegistration để bắt đầu flow
             await authFlow.handleRegistration(user)
         } catch (error) {
             console.error('Error starting registration:', error)

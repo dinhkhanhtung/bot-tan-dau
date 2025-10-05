@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         await supabaseAdmin
             .from('bot_sessions')
             .insert({
-                user_id: user.id,
+                facebook_id: user.facebook_id,
                 session_data: {},
                 current_flow: 'registration',
                 current_step: 0

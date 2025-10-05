@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { AIGenerateRequest, AIPromptForm, AITemplate, AIDashboardStats } from '@/types'
 
 interface AIPromptGeneratorProps {
@@ -26,7 +26,12 @@ export default function AIPromptGenerator({ onStatsUpdate }: AIPromptGeneratorPr
     const [success, setSuccess] = useState('')
 
     // Load templates and stats on component mount
-    const loadStats = useCallback(async () => {
+    useEffect(() => {
+        loadTemplates()
+        loadStats()
+    }, [])
+
+    const loadStats = async () => {
         try {
             const token = localStorage.getItem('admin_token')
             const adminInfo = JSON.parse(localStorage.getItem('admin_info') || '{}')
@@ -48,12 +53,7 @@ export default function AIPromptGenerator({ onStatsUpdate }: AIPromptGeneratorPr
         } catch (error) {
             console.error('Error loading AI stats:', error)
         }
-    }, [onStatsUpdate])
-
-    useEffect(() => {
-        loadTemplates()
-        loadStats()
-    }, [loadStats])
+    }
 
     const loadTemplates = async () => {
         setIsLoadingTemplates(true)

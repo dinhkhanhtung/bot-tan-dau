@@ -491,18 +491,7 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
     // Xử lý theo level - LOGIC MỚI THEO YÊU CẦU
     if (newCount === 1) {
         // Lần 1: Gửi welcome đầy đủ - SỬ DỤNG WELCOME SERVICE
-        // QUAN TRỌNG: Chỉ gửi welcome nếu KHÔNG đang trong registration flow
-        console.log('🎉 First message - checking if should send welcome')
-
-        // Kiểm tra xem user có đang trong registration flow không
-        const { getBotSession } = await import('./utils')
-        const session = await getBotSession(facebookId)
-
-        if (session && session.current_flow === 'registration') {
-            console.log('🔄 User đang trong registration flow - KHÔNG gửi welcome từ anti-spam')
-            return { action: 'none', block: false, message: 'Registration flow active - no welcome sent' }
-        }
-
+        console.log('🎉 First message - sending welcome')
         const { welcomeService, WelcomeType } = await import('./welcome-service')
         const welcomeType = isRegistered(userStatus) ? WelcomeType.RETURNING_USER : WelcomeType.NEW_USER
         await welcomeService.sendWelcome(facebookId, welcomeType)

@@ -395,7 +395,7 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
         const sessionToSave = {
             facebook_id: facebookId,
             current_flow: sessionData.current_flow || 'registration',
-            step: sessionData.step || 'name',
+            current_step: sessionData.step ? parseInt(sessionData.step) || 0 : 0,
             data: sessionData.data || {},
             updated_at: new Date().toISOString()
         }
@@ -419,7 +419,7 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
         console.log('✅ updateBotSession success:', {
             facebookId,
             currentFlow: sessionToSave.current_flow,
-            step: sessionToSave.step
+            step: sessionToSave.current_step
         })
 
     } catch (error) {
@@ -457,14 +457,14 @@ export async function getBotSession(facebookId: string) {
             console.log('✅ getBotSession success:', {
                 facebookId,
                 currentFlow: data.current_flow,
-                step: data.step
+                step: data.current_step
             })
 
             // Đảm bảo cấu trúc dữ liệu nhất quán
             return {
                 facebook_id: data.facebook_id,
                 current_flow: data.current_flow,
-                step: data.step,
+                step: data.current_step?.toString() || '0',
                 data: data.data || {},
                 updated_at: data.updated_at
             }

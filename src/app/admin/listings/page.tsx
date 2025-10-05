@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 // Toast notification component
@@ -57,10 +57,10 @@ export default function AdminListings() {
     useEffect(() => {
         checkAuth()
         fetchListings()
-    }, [filter, checkAuth, fetchListings])
+    }, [filter])
 
     // Move functions outside useEffect to fix dependency warnings
-    const checkAuth = useCallback(() => {
+    const checkAuth = () => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')
 
@@ -70,9 +70,9 @@ export default function AdminListings() {
         }
 
         setAdminInfo(JSON.parse(adminInfoStr))
-    }, [router])
+    }
 
-    const fetchListings = useCallback(async () => {
+    const fetchListings = async () => {
         try {
             const token = localStorage.getItem('admin_token')
             const response = await fetch(`/api/admin/listings?status=${filter}`, {
@@ -93,7 +93,7 @@ export default function AdminListings() {
         } finally {
             setIsLoading(false)
         }
-    }, [filter])
+    }
 
     const filteredListings = listings.filter(listing => {
         if (!searchTerm) return true
@@ -153,7 +153,7 @@ export default function AdminListings() {
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 // Download listings data as JSON file
                 const blob = new Blob([JSON.stringify(data.listings, null, 2)], { type: 'application/json' })
@@ -165,7 +165,7 @@ export default function AdminListings() {
                 a.click()
                 document.body.removeChild(a)
                 URL.revokeObjectURL(url)
-                
+
                 showToast(`Đã xuất danh sách ${data.listings.length} tin đăng thành công!`, 'success')
             } else {
                 showToast(`Lỗi xuất danh sách tin đăng: ${data.message}`, 'error')
@@ -184,7 +184,7 @@ export default function AdminListings() {
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast('Đã duyệt tin đăng thành công!', 'success')
                 // Refresh listings
@@ -197,7 +197,7 @@ export default function AdminListings() {
 
     const handleRejectListing = async (listingId: string) => {
         const reason = prompt('Nhập lý do từ chối (tùy chọn):')
-        
+
         await handleActionWithLoading(`rejectListing_${listingId}`, async () => {
             const token = localStorage.getItem('admin_token')
             const response = await fetch(`/api/admin/listings/${listingId}/reject`, {
@@ -210,7 +210,7 @@ export default function AdminListings() {
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast('Đã từ chối tin đăng!', 'success')
                 // Refresh listings
@@ -232,7 +232,7 @@ export default function AdminListings() {
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 // Open details in new window
                 const detailsWindow = window.open('', '_blank', 'width=800,height=600')
@@ -269,7 +269,7 @@ export default function AdminListings() {
 
         await handleActionWithLoading('bulkApprove', async () => {
             const token = localStorage.getItem('admin_token')
-            
+
             // Get all pending listings
             const response = await fetch('/api/admin/listings?status=pending', {
                 method: 'GET',
@@ -279,7 +279,7 @@ export default function AdminListings() {
             })
 
             const data = await response.json()
-            
+
             if (data.success && data.listings.length > 0) {
                 // Approve all pending listings
                 let approvedCount = 0
@@ -293,7 +293,7 @@ export default function AdminListings() {
                                 'Authorization': `Bearer ${token}`
                             }
                         })
-                        
+
                         if (approveResponse.ok) {
                             approvedCount++
                         } else {
@@ -320,10 +320,10 @@ export default function AdminListings() {
 
         await handleActionWithLoading('bulkDelete', async () => {
             const token = localStorage.getItem('admin_token')
-            
+
             // Get selected listings (assuming we have a selection mechanism)
             const selectedListings = selectedItems || [] // This should come from component state
-            
+
             if (selectedListings.length === 0) {
                 showToast('Vui lòng chọn tin đăng cần xóa!', 'error')
                 return
@@ -340,7 +340,7 @@ export default function AdminListings() {
                             'Authorization': `Bearer ${token}`
                         }
                     })
-                    
+
                     if (response.ok) {
                         deletedCount++
                     } else {
@@ -594,8 +594,8 @@ export default function AdminListings() {
                                                         </span>
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(listing.status)}`}>
                                                             {listing.status === 'active' ? 'Đang hoạt động' :
-                                                             listing.status === 'inactive' ? 'Không hoạt động' :
-                                                             listing.status === 'sold' ? 'Đã bán' : 'Chờ duyệt'}
+                                                                listing.status === 'inactive' ? 'Không hoạt động' :
+                                                                    listing.status === 'sold' ? 'Đã bán' : 'Chờ duyệt'}
                                                         </span>
                                                     </div>
                                                 </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 // Toast notification component
@@ -49,8 +49,13 @@ export default function AdminNotifications() {
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
+    useEffect(() => {
+        checkAuth()
+        fetchNotifications()
+    }, [filter])
+
     // Move functions outside useEffect to fix dependency warnings
-    const checkAuth = useCallback(() => {
+    const checkAuth = () => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')
 
@@ -60,9 +65,9 @@ export default function AdminNotifications() {
         }
 
         setAdminInfo(JSON.parse(adminInfoStr))
-    }, [router])
+    }
 
-    const fetchNotifications = useCallback(async () => {
+    const fetchNotifications = async () => {
         try {
             const token = localStorage.getItem('admin_token')
             const response = await fetch(`/api/admin/notifications?filter=${filter}`, {
@@ -83,12 +88,7 @@ export default function AdminNotifications() {
         } finally {
             setIsLoading(false)
         }
-    }, [filter])
-
-    useEffect(() => {
-        checkAuth()
-        fetchNotifications()
-    }, [checkAuth, fetchNotifications])
+    }
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString('vi-VN')
@@ -150,14 +150,14 @@ export default function AdminNotifications() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     action: 'sendGeneral',
                     message: message
                 })
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast(`Đã gửi thông báo chung đến ${data.sentCount} người dùng!`, 'success')
             } else {
@@ -169,7 +169,7 @@ export default function AdminNotifications() {
     const handleSendSpecificUserNotification = async () => {
         const userId = prompt('Nhập User ID:')
         if (!userId) return
-        
+
         const message = prompt('Nhập nội dung thông báo:')
         if (!message) return
 
@@ -181,7 +181,7 @@ export default function AdminNotifications() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     action: 'sendSpecific',
                     userId: userId,
                     message: message
@@ -189,7 +189,7 @@ export default function AdminNotifications() {
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast('Đã gửi thông báo cá nhân thành công!', 'success')
             } else {
@@ -201,7 +201,7 @@ export default function AdminNotifications() {
     const handleSendCategoryNotification = async () => {
         const category = prompt('Nhập danh mục (ví dụ: bất động sản, xe cộ, việc làm):')
         if (!category) return
-        
+
         const message = prompt('Nhập nội dung thông báo:')
         if (!message) return
 
@@ -213,7 +213,7 @@ export default function AdminNotifications() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     action: 'sendCategory',
                     category: category,
                     message: message
@@ -221,7 +221,7 @@ export default function AdminNotifications() {
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast(`Đã gửi thông báo danh mục "${category}" đến ${data.sentCount} người dùng!`, 'success')
             } else {
@@ -243,7 +243,7 @@ export default function AdminNotifications() {
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 // Open history in new window
                 const historyWindow = window.open('', '_blank', 'width=1000,height=700')
@@ -257,7 +257,7 @@ export default function AdminNotifications() {
                             ${notif.is_read ? '<span style="color: green;">✓ Read</span>' : '<span style="color: red;">✗ Unread</span>'}
                         </div>
                     `).join('')
-                    
+
                     historyWindow.document.write(`
                         <html>
                             <head><title>Notification History</title></head>
@@ -284,14 +284,14 @@ export default function AdminNotifications() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     action: 'markAsRead',
                     notificationId: notificationId
                 })
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast('Đã đánh dấu là đã đọc!', 'success')
             } else {
@@ -313,14 +313,14 @@ export default function AdminNotifications() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     action: 'delete',
                     notificationId: notificationId
                 })
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast('Đã xóa thông báo thành công!', 'success')
             } else {
@@ -449,11 +449,10 @@ export default function AdminNotifications() {
                                 <button
                                     key={tab.key}
                                     onClick={() => setFilter(tab.key)}
-                                    className={`${
-                                        filter === tab.key
+                                    className={`${filter === tab.key
                                             ? 'border-indigo-500 text-indigo-600'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                    } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm`}
+                                        } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm`}
                                 >
                                     {tab.label}
                                 </button>

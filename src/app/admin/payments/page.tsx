@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 // Toast notification component
@@ -52,8 +52,13 @@ export default function AdminPayments() {
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
+    useEffect(() => {
+        checkAuth()
+        fetchPayments()
+    }, [filter])
+
     // Move functions outside useEffect to fix dependency warnings
-    const checkAuth = useCallback(() => {
+    const checkAuth = () => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')
 
@@ -63,9 +68,9 @@ export default function AdminPayments() {
         }
 
         setAdminInfo(JSON.parse(adminInfoStr))
-    }, [router])
+    }
 
-    const fetchPayments = useCallback(async () => {
+    const fetchPayments = async () => {
         try {
             const token = localStorage.getItem('admin_token')
             const response = await fetch(`/api/admin/payments?status=${filter}`, {
@@ -86,12 +91,7 @@ export default function AdminPayments() {
         } finally {
             setIsLoading(false)
         }
-    }, [filter])
-
-    useEffect(() => {
-        checkAuth()
-        fetchPayments()
-    }, [checkAuth, fetchPayments])
+    }
 
     const handleApprovePayment = async (paymentId: string) => {
         if (!confirm('Bạn có chắc chắn muốn duyệt thanh toán này?')) return
@@ -214,7 +214,7 @@ export default function AdminPayments() {
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 // Download payments data as JSON file
                 const blob = new Blob([JSON.stringify(data.payments, null, 2)], { type: 'application/json' })
@@ -226,7 +226,7 @@ export default function AdminPayments() {
                 a.click()
                 document.body.removeChild(a)
                 URL.revokeObjectURL(url)
-                
+
                 showToast(`Đã xuất danh sách ${data.payments.length} thanh toán thành công!`, 'success')
             } else {
                 showToast(`Lỗi xuất danh sách thanh toán: ${data.message}`, 'error')
@@ -241,7 +241,7 @@ export default function AdminPayments() {
 
         await handleActionWithLoading('bulkApprovePayments', async () => {
             const token = localStorage.getItem('admin_token')
-            
+
             // Get all pending payments
             const response = await fetch('/api/admin/payments?status=pending', {
                 method: 'GET',
@@ -251,7 +251,7 @@ export default function AdminPayments() {
             })
 
             const data = await response.json()
-            
+
             if (data.success && data.payments.length > 0) {
                 // Approve all pending payments
                 let approvedCount = 0
@@ -265,7 +265,7 @@ export default function AdminPayments() {
                                 'Authorization': `Bearer ${token}`
                             }
                         })
-                        
+
                         if (approveResponse.ok) {
                             approvedCount++
                         } else {
@@ -393,18 +393,16 @@ export default function AdminPayments() {
                                     <button
                                         key={tab.key}
                                         onClick={() => setFilter(tab.key)}
-                                        className={`${
-                                            filter === tab.key
+                                        className={`${filter === tab.key
                                                 ? 'border-indigo-500 text-indigo-600'
                                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                        } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center`}
+                                            } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center`}
                                     >
                                         {tab.label}
-                                        <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
-                                            filter === tab.key
+                                        <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${filter === tab.key
                                                 ? 'bg-indigo-100 text-indigo-600'
                                                 : 'bg-gray-100 text-gray-600'
-                                        }`}>
+                                            }`}>
                                             {tab.count}
                                         </span>
                                     </button>
@@ -432,15 +430,14 @@ export default function AdminPayments() {
                                                         Thanh toán #{payment.id.slice(-8)}
                                                     </p>
                                                     <div className="ml-2 flex-shrink-0 flex">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                            payment.status === 'pending'
+                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${payment.status === 'pending'
                                                                 ? 'bg-yellow-100 text-yellow-800'
                                                                 : payment.status === 'approved'
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : 'bg-red-100 text-red-800'
-                                                        }`}>
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : 'bg-red-100 text-red-800'
+                                                            }`}>
                                                             {payment.status === 'pending' ? 'Chờ duyệt' :
-                                                             payment.status === 'approved' ? 'Đã duyệt' : 'Đã từ chối'}
+                                                                payment.status === 'approved' ? 'Đã duyệt' : 'Đã từ chối'}
                                                         </span>
                                                     </div>
                                                 </div>

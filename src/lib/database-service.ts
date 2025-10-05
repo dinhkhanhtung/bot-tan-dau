@@ -252,7 +252,7 @@ export class DatabaseService {
                 try {
                     // Use facebook_id directly (matching database schema)
                     const { data, error } = await supabaseAdmin
-                        .from(CONFIG.DATABASE.TABLES.SESSIONS)
+                        .from('bot_sessions')
                         .select('*')
                         .eq('facebook_id', facebookId)
                         .single()
@@ -308,7 +308,7 @@ export class DatabaseService {
                 try {
                     // Use facebook_id directly (matching database schema)
                     const { data, error } = await supabaseAdmin
-                        .from(CONFIG.DATABASE.TABLES.SESSIONS)
+                        .from('bot_sessions')
                         .upsert({
                             facebook_id: facebookId,
                             session_data: sessionData,
@@ -346,7 +346,7 @@ export class DatabaseService {
                 try {
                     // Use facebook_id directly (matching database schema)
                     const { error } = await supabaseAdmin
-                        .from(CONFIG.DATABASE.TABLES.SESSIONS)
+                        .from('bot_sessions')
                         .delete()
                         .eq('facebook_id', facebookId)
 
