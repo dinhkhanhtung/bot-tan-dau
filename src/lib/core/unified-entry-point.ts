@@ -769,7 +769,7 @@ export class UnifiedBotSystem {
             await sendMessage(user.facebook_id, 'ℹ️ THÔNG TIN VỀ BOT Tân Dậu - Hỗ Trợ Chéo')
             await sendMessage(user.facebook_id, '🤖 Bot này được thiết kế đặc biệt cho cộng đồng Tân Dậu')
             await sendMessage(user.facebook_id, '🎯 Chức năng chính:\n• Niêm yết sản phẩm/dịch vụ\n• Tìm kiếm & kết nối mua bán\n• Cộng đồng Tân Dậu - hỗ trợ chéo\n• Tử vi hàng ngày\n• Điểm thưởng & quà tặng')
-            await sendMessage(user.facebook_id, '💰 Phí sử dụng:\n• Trial 7 ngày miễn phí\n• Phí duy trì: 2,000đ/ngày\n• Gói tối thiểu: 7 ngày = 14,000đ')
+            await sendMessage(user.facebook_id, '💰 Phí sử dụng:\n• Trial 3 ngày miễn phí\n• Phí duy trì: 3,000đ/ngày\n• Gói tối thiểu: 3 ngày = 9.000 ₫')
             await sendMessage(user.facebook_id, '🔒 Bảo mật:\n• Chỉ dành cho Tân Dậu - Hỗ Trợ Chéo\n• Thông tin được mã hóa bảo mật\n• Lưu trữ để tìm kiếm & kết nối hiệu quả')
 
             await sendQuickReply(
@@ -821,7 +821,12 @@ export class UnifiedBotSystem {
             const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
 
             await sendMessage(user.facebook_id, '🏠 TRANG CHỦ - Bot Tân Dậu - Hỗ Trợ Chéo')
-            await sendMessage(user.facebook_id, 'Chào mừng bạn đến với cộng đồng Tân Dậu!')
+            await sendMessage(user.facebook_id, 'Chào mừng bạn đến với cộng đồng Tân Dậu Việt!')
+            await sendMessage(user.facebook_id, 'Cùng nhau kết nối - cùng nhau thịnh vượng')
+            await sendMessage(user.facebook_id, '🎁 QUYỀN LỢI: Trial 3 ngày miễn phí')
+            await sendMessage(user.facebook_id, '💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu')
+            await sendMessage(user.facebook_id, '💳 Phí duy trì: 3,000đ/ngày')
+            await sendMessage(user.facebook_id, '📅 Gói tối thiểu: 3 ngày = 9.000 ₫')
 
             await sendQuickReply(
                 user.facebook_id,
@@ -1208,7 +1213,7 @@ export class UnifiedBotSystem {
             const { BOT_INFO } = await import('../constants')
 
             // Gửi thông báo chào mừng hấp dẫn
-            await sendMessage(user.facebook_id, '🌟 CHÀO MỪNG BẠN ĐẾN VỚI CỘNG ĐỒNG TÂN DẬU! 🌟')
+            await sendMessage(user.facebook_id, '🌟 CHÀO MỪNG BẠN ĐẾN VỚI BOT TÂN DẬU - HỖ TRỢ CHÉO! 🌟')
             await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
             await sendMessage(user.facebook_id, `💰 ${BOT_INFO.PRICING_MESSAGE}`)
             await sendMessage(user.facebook_id, `🏆 ${BOT_INFO.SLOGAN}`)

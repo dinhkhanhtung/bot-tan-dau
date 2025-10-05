@@ -9,8 +9,8 @@ export const BOT_CONFIG = {
 
 // Bot Information
 export const BOT_INFO = {
-    SLOGAN: 'Tân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng',
-    WELCOME_MESSAGE: 'Chào mừng bạn đến với cộng đồng Tân Dậu!',
+    SLOGAN: 'Cùng nhau kết nối - cùng nhau thịnh vượng',
+    WELCOME_MESSAGE: 'Chào mừng bạn đến với cộng đồng Tân Dậu Việt!',
     PRICING_MESSAGE: 'Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu',
     COMMUNITY_SIZE: '2 triệu Tân Dậu',
     DAILY_FEE_FORMATTED: '3,000đ/ngày',

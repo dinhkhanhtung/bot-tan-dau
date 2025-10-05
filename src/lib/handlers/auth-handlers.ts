@@ -78,7 +78,7 @@ export async function handleRegistration(user: any) {
 
     await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
 
-    await sendMessage(user.facebook_id, `🎁 QUYỀN LỢI: Trial 7 ngày miễn phí\n💰 ${BOT_INFO.PRICING_MESSAGE}\n━━━━━━━━━━━━━━━━━━━━`)
+    await sendMessage(user.facebook_id, `🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 ${BOT_INFO.PRICING_MESSAGE}\n━━━━━━━━━━━━━━━━━━━━`)
 
     // Create session for registration flow
     const sessionData = {
@@ -441,7 +441,7 @@ export async function sendExpiredMessage(facebookId: string) {
     await sendMessagesWithTyping(facebookId, [
         '⏰ TÀI KHOẢN ĐÃ HẾT HẠN!',
         'Tài khoản của bạn đã hết hạn sử dụng.',
-        `💳 ${BOT_INFO.PRICING_MESSAGE}\n📅 Gói tối thiểu: 7 ngày = 21,000đ`
+        `💳 ${BOT_INFO.PRICING_MESSAGE}\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫`
     ])
 
     await sendQuickReply(
@@ -463,13 +463,13 @@ export async function sendTrialExpiringMessage(facebookId: string, daysLeft: num
         await sendMessagesWithTyping(facebookId, [
             '🚨 CẢNH BÁO TRIAL SẮP HẾT!',
             'Trial của bạn còn 24 giờ!',
-            '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
+            '💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫'
         ])
     } else {
         await sendMessagesWithTyping(facebookId, [
             '⏰ THÔNG BÁO QUAN TRỌNG',
             `Trial của bạn còn ${daysLeft} ngày!`,
-            '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
+            '💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫'
         ])
     }
 
@@ -618,7 +618,7 @@ async function completeRegistration(user: any, data: any) {
                     birthday: data.birth_year || 1981,
                     product_service: data.product_service || null,
                     status: 'trial',
-                    membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    membership_expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
                     referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
                     welcome_message_sent: true,
                     updated_at: new Date().toISOString()
@@ -638,7 +638,7 @@ async function completeRegistration(user: any, data: any) {
                     birthday: data.birth_year || 1981,
                     product_service: data.product_service || null,
                     status: 'trial',
-                    membership_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    membership_expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
                     referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
                     welcome_message_sent: true,
                     created_at: new Date().toISOString()
@@ -656,7 +656,7 @@ async function completeRegistration(user: any, data: any) {
         await updateBotSession(user.facebook_id, null)
 
         // Send success message - UPDATED WITH NEW PRICING
-        await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 7 ngày!\n${BOT_INFO.PRICING_MESSAGE}\n━━━━━━━━━━━━━━━━━━━━`)
+        await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 3 ngày!\n${BOT_INFO.PRICING_MESSAGE}\n━━━━━━━━━━━━━━━━━━━━`)
 
         await sendQuickReply(
             user.facebook_id,
