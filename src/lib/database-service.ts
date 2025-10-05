@@ -274,6 +274,7 @@ export class DatabaseService {
                             facebook_id: data.facebook_id,
                             session_data: data.session_data || {},
                             current_flow: data.current_flow || null,
+                            step: data.current_step || 0,  // Map current_step to step for backward compatibility
                             current_step: data.current_step || 0,
                             created_at: data.created_at,
                             updated_at: data.updated_at

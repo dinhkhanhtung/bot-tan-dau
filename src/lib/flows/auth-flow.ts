@@ -40,10 +40,10 @@ export class AuthFlow {
      */
     async handleStep(user: any, text: string, session: any): Promise<void> {
         try {
-            console.log('🔍 Processing step:', session?.step, 'for user:', user.facebook_id)
+            console.log('🔍 Processing step:', session?.current_step, 'for user:', user.facebook_id)
 
             // Get current step from session
-            const currentStep = session?.step || 'name'
+            const currentStep = session?.current_step || 'name'
 
             switch (currentStep) {
                 case 'name':
@@ -84,7 +84,7 @@ export class AuthFlow {
         // Save name and move to phone step
         const sessionData = {
             current_flow: 'registration',
-            step: 'phone',
+            current_step: 'phone',
             data: { name: text.trim() }
         }
 
@@ -126,7 +126,7 @@ export class AuthFlow {
         // Update session with phone data
         const sessionData = {
             current_flow: 'registration',
-            step: 'location',
+            current_step: 'location',
             data: {
                 ...session.data,
                 phone: phone
@@ -173,7 +173,7 @@ export class AuthFlow {
 
             // Get current session
             const session = await getBotSession(user.facebook_id)
-            if (!session || session.step !== 'location') {
+            if (!session || session.current_step !== 'location') {
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
@@ -181,7 +181,7 @@ export class AuthFlow {
             // Move to final step - birthday verification
             const sessionData = {
                 current_flow: 'registration',
-                step: 'birthday',
+                current_step: 'birthday',
                 data: {
                     ...session.data,
                     location: location
@@ -258,7 +258,7 @@ export class AuthFlow {
         // Create initial session
         await updateBotSession(user.facebook_id, {
             current_flow: 'registration',
-            step: 'name',
+            current_step: 'name',
             data: {}
         })
 
