@@ -11,39 +11,43 @@ import { formatCurrency, isTrialUser, isExpiredUser, daysUntilExpiry, generateId
 
 export class PaymentFlow {
     async handlePayment(user: any): Promise<void> {
-        await sendTypingIndicator(user.facebook_id)
+        try {
+            await sendTypingIndicator(user.facebook_id)
 
-        // Check user status
-        if (isExpiredUser(user.membership_expires_at)) {
-            await this.sendExpiredPaymentMessage(user)
-            return
+            // Check user status
+            if (isExpiredUser(user.membership_expires_at)) {
+                await this.sendExpiredPaymentMessage(user)
+                return
+            }
+
+            if (isTrialUser(user.membership_expires_at)) {
+                const daysLeft = daysUntilExpiry(user.membership_expires_at!)
+                await this.sendTrialPaymentMessage(user, daysLeft)
+                return
+            }
+
+            // Enhanced regular payment flow
+            await sendMessage(user.facebook_id, '💰 THANH TOÁN - Tân Dậu Hỗ Trợ Chéo')
+
+            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n💳 PHÍ DUY TRÌ:\n• 2,000đ/ngày\n• Gói tối thiểu: 7 ngày\n• Gia hạn tự động\n━━━━━━━━━━━━━━━━━━━━\n🎯 LỢI ÍCH:\n• Tìm kiếm bởi 2 triệu Tân Dậu\n• Kết nối mua bán nội bộ\n• Hỗ trợ cộng đồng 24/7\n━━━━━━━━━━━━━━━━━━━━')
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Chọn gói thanh toán:',
+                [
+                    createQuickReply('📅 7 NGÀY - ₫7,000', 'PAYMENT_PACKAGE_7'),
+                    createQuickReply('📅 15 NGÀY - ₫15,000', 'PAYMENT_PACKAGE_15'),
+                    createQuickReply('📅 30 NGÀY - ₫30,000', 'PAYMENT_PACKAGE_30'),
+                    createQuickReply('📅 90 NGÀY - ₫90,000', 'PAYMENT_PACKAGE_90'),
+                    createQuickReply('📊 LỊCH SỬ THANH TOÁN', 'PAYMENT_HISTORY'),
+                    createQuickReply('ℹ️ HƯỚNG DẪN', 'PAYMENT_GUIDE')
+                ]
+            )
+
+        } catch (error) {
+            console.error('Error in handlePayment:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải thanh toán. Vui lòng thử lại!')
         }
-
-        if (isTrialUser(user.membership_expires_at)) {
-            const daysLeft = daysUntilExpiry(user.membership_expires_at!)
-            await this.sendTrialPaymentMessage(user, daysLeft)
-            return
-        }
-
-        // Regular payment flow
-        await sendMessagesWithTyping(user.facebook_id, [
-            '💰 THANH TOÁN',
-            'Chọn gói thanh toán phù hợp với bạn:',
-            '💡 Với số tiền này bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu!'
-        ])
-
-        await sendQuickReply(
-            user.facebook_id,
-            'Gói dịch vụ:',
-            [
-                createQuickReply('📅 7 NGÀY - ₫7,000', 'PAYMENT_PACKAGE_7'),
-                createQuickReply('📅 15 NGÀY - ₫15,000', 'PAYMENT_PACKAGE_15'),
-                createQuickReply('📅 30 NGÀY - ₫30,000', 'PAYMENT_PACKAGE_30'),
-                createQuickReply('📅 90 NGÀY - ₫90,000', 'PAYMENT_PACKAGE_90'),
-                createQuickReply('📊 LỊCH SỬ THANH TOÁN', 'PAYMENT_HISTORY'),
-                createQuickReply('ℹ️ HƯỚNG DẪN', 'PAYMENT_GUIDE')
-            ]
-        )
     }
 
     private async sendExpiredPaymentMessage(user: any): Promise<void> {

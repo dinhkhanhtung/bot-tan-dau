@@ -83,48 +83,61 @@ export class MarketplaceFlow {
     }
 
     /**
-     * Handle search flow
+     * Handle search flow - ENHANCED VERSION
      */
     async handleSearch(user: any): Promise<void> {
-        // Kiểm tra permission trước khi cho phép tìm kiếm
-        const { SmartContextManager, UserType } = await import('../core/smart-context-manager')
-        const context = await SmartContextManager.analyzeUserContext(user)
-        const permissions = SmartContextManager.getUserPermissions(context.userType)
+        try {
+            await sendTypingIndicator(user.facebook_id)
 
-        if (!permissions.canSearch) {
-            await sendMessagesWithTyping(user.facebook_id, [
-                '🚫 CHƯA THỂ TÌM KIẾM',
-                'Tài khoản của bạn chưa được kích hoạt đầy đủ.',
-                'Vui lòng liên hệ admin để được hỗ trợ.'
-            ])
+            // Kiểm tra permission trước khi cho phép tìm kiếm
+            const { SmartContextManager, UserType } = await import('../core/smart-context-manager')
+            const context = await SmartContextManager.analyzeUserContext(user)
+            const permissions = SmartContextManager.getUserPermissions(context.userType)
 
-            await sendQuickReply(
+            if (!permissions.canSearch) {
+                await sendMessagesWithTyping(user.facebook_id, [
+                    '🚫 CHƯA THỂ TÌM KIẾM',
+                    'Tài khoản của bạn chưa được kích hoạt đầy đủ.',
+                    'Vui lòng liên hệ admin để được hỗ trợ.'
+                ])
+
+                await sendQuickReply(
+                    user.facebook_id,
+                    'Tùy chọn:',
+                    [
+                        createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
+                        createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
+                        createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                    ]
+                )
+                return
+            }
+
+            // Enhanced welcome message with progress indicator
+            await sendMessage(user.facebook_id, '🔍 TÌM KIẾM SẢN PHẨM - Tân Dậu Hỗ Trợ Chéo')
+
+            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n💡 TÌM KIẾM THÔNG MINH:\n• Theo danh mục sản phẩm\n• Theo vị trí địa lý\n• Theo từ khóa\n• Tìm kiếm nâng cao\n━━━━━━━━━━━━━━━━━━━━')
+
+            // Typing indicator removed for quick reply
+            await sendQuickReplyNoTyping(
                 user.facebook_id,
-                'Tùy chọn:',
+                'Chọn danh mục tìm kiếm:',
                 [
-                    createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
-                    createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
-                    createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+                    createQuickReply('🏠 BẤT ĐỘNG SẢN', 'SEARCH_CATEGORY_REAL_ESTATE'),
+                    createQuickReply('🚗 Ô TÔ', 'SEARCH_CATEGORY_CAR'),
+                    createQuickReply('📱 ĐIỆN TỬ', 'SEARCH_CATEGORY_ELECTRONICS'),
+                    createQuickReply('👕 THỜI TRANG', 'SEARCH_CATEGORY_FASHION'),
+                    createQuickReply('🍽️ ẨM THỰC', 'SEARCH_CATEGORY_FOOD'),
+                    createQuickReply('🔧 DỊCH VỤ', 'SEARCH_CATEGORY_SERVICE'),
+                    createQuickReply('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
+                    createQuickReply('🔍 TÌM THEO TỪ KHÓA', 'SEARCH_KEYWORD')
                 ]
             )
-            return
-        }
 
-        // Typing indicator removed for quick reply
-        await sendQuickReplyNoTyping(
-            user.facebook_id,
-            'Chọn danh mục:',
-            [
-                createQuickReply('🏠 BẤT ĐỘNG SẢN', 'SEARCH_CATEGORY_REAL_ESTATE'),
-                createQuickReply('🚗 Ô TÔ', 'SEARCH_CATEGORY_CAR'),
-                createQuickReply('📱 ĐIỆN TỬ', 'SEARCH_CATEGORY_ELECTRONICS'),
-                createQuickReply('👕 THỜI TRANG', 'SEARCH_CATEGORY_FASHION'),
-                createQuickReply('🍽️ ẨM THỰC', 'SEARCH_CATEGORY_FOOD'),
-                createQuickReply('🔧 DỊCH VỤ', 'SEARCH_CATEGORY_SERVICE'),
-                createQuickReply('🎯 TÌM KIẾM NÂNG CAO', 'SEARCH_ADVANCED'),
-                createQuickReply('🔍 TÌM THEO TỪ KHÓA', 'SEARCH_KEYWORD')
-            ]
-        )
+        } catch (error) {
+            console.error('Error in handleSearch:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi bắt đầu tìm kiếm. Vui lòng thử lại!')
+        }
     }
 
     /**

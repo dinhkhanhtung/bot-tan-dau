@@ -15,21 +15,34 @@ import { formatCurrency, formatNumber, generateId } from '../utils'
 
 export class CommunityFlow {
     async handleCommunity(user: any): Promise<void> {
-        // Typing indicator removed for quick reply
-        await sendQuickReplyNoTyping(
-            user.facebook_id,
-            'Tính năng cộng đồng:',
-            [
-                createQuickReply('🎂 SINH NHẬT', 'COMMUNITY_BIRTHDAY'),
-                createQuickReply('🏆 TOP SELLER', 'COMMUNITY_TOP_SELLER'),
-                createQuickReply('📖 KỶ NIỆM', 'COMMUNITY_MEMORIES'),
-                createQuickReply('🎪 SỰ KIỆN', 'COMMUNITY_EVENTS'),
-                createQuickReply('⭐ THÀNH TÍCH', 'COMMUNITY_ACHIEVEMENTS'),
-                createQuickReply('🔮 TỬ VI', 'COMMUNITY_HOROSCOPE'),
-                createQuickReply('🤝 HỖ TRỢ CHÉO', 'COMMUNITY_SUPPORT'),
-                createQuickReply('💬 CHAT NHÓM', 'COMMUNITY_CHAT')
-            ]
-        )
+        try {
+            await sendTypingIndicator(user.facebook_id)
+
+            // Enhanced welcome message
+            await sendMessage(user.facebook_id, '👥 CỘNG ĐỒNG TÂN DẬU - Hỗ Trợ Chéo')
+
+            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n🎯 KẾT NỐI CÙNG TUỔI:\n• Chia sẻ kỷ niệm tuổi trẻ\n• Hỗ trợ mua bán nội bộ\n• Kết nối bạn bè cùng trang lứa\n• Tổ chức sự kiện cộng đồng\n━━━━━━━━━━━━━━━━━━━━')
+
+            // Typing indicator removed for quick reply
+            await sendQuickReplyNoTyping(
+                user.facebook_id,
+                'Chọn hoạt động cộng đồng:',
+                [
+                    createQuickReply('🎂 SINH NHẬT', 'COMMUNITY_BIRTHDAY'),
+                    createQuickReply('🏆 TOP SELLER', 'COMMUNITY_TOP_SELLER'),
+                    createQuickReply('📖 KỶ NIỆM', 'COMMUNITY_MEMORIES'),
+                    createQuickReply('🎪 SỰ KIỆN', 'COMMUNITY_EVENTS'),
+                    createQuickReply('⭐ THÀNH TÍCH', 'COMMUNITY_ACHIEVEMENTS'),
+                    createQuickReply('🔮 TỬ VI', 'COMMUNITY_HOROSCOPE'),
+                    createQuickReply('🤝 HỖ TRỢ CHÉO', 'COMMUNITY_SUPPORT'),
+                    createQuickReply('💬 CHAT NHÓM', 'COMMUNITY_CHAT')
+                ]
+            )
+
+        } catch (error) {
+            console.error('Error in handleCommunity:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải cộng đồng. Vui lòng thử lại!')
+        }
     }
 
     async handleEventRegistration(user: any, eventId: string): Promise<void> {

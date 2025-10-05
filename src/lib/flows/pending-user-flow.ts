@@ -412,7 +412,7 @@ export class PendingUserFlow {
     }
 
     /**
-     * Hiển thị menu chính cho pending user
+     * Hiển thị menu chính cho pending user - ENHANCED VERSION
      */
     async showPendingUserMenu(user: any, context?: any): Promise<void> {
         try {
@@ -424,15 +424,10 @@ export class PendingUserFlow {
             const facebookName = await getFacebookDisplayName(user.facebook_id)
             const displayName = facebookName || user.name || 'bạn'
 
-            await sendMessagesWithTyping(user.facebook_id, [
-                `⏳ CHÀO MỪNG ${displayName.toUpperCase()}!`,
-                '',
-                `📋 Trạng thái: Đang chờ Admin duyệt (${pendingDays} ngày)`,
-                '🔍 Bạn có thể tìm kiếm và xem sản phẩm',
-                '🚫 Chưa thể niêm yết hoặc liên hệ người bán',
-                '',
-                '💡 Admin sẽ duyệt sớm nhất có thể!'
-            ])
+            // Enhanced welcome message with better formatting
+            await sendMessage(user.facebook_id, `⏳ CHÀO MỪNG ${displayName.toUpperCase()}!`)
+
+            await sendMessage(user.facebook_id, `━━━━━━━━━━━━━━━━━━━━\n📋 TRẠNG THÁI: Đang chờ Admin duyệt\n⏰ Thời gian chờ: ${pendingDays} ngày\n━━━━━━━━━━━━━━━━━━━━\n🔍 QUYỀN HẠN HIỆN TẠI:\n✅ Tìm kiếm sản phẩm\n✅ Xem tin đăng\n✅ Liên hệ admin\n❌ Niêm yết sản phẩm\n❌ Liên hệ người bán\n━━━━━━━━━━━━━━━━━━━━`)
 
             const menuOptions = [
                 createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),

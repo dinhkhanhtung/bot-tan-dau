@@ -12,43 +12,49 @@ import { formatCurrency, formatNumber, generateId } from '../utils'
 
 export class UtilityFlow {
     async handleHoroscope(user: any): Promise<void> {
-        await sendTypingIndicator(user.facebook_id)
+        try {
+            await sendTypingIndicator(user.facebook_id)
 
-        // Simple horoscope generation (AI removed)
-        const horoscope = {
-            fortune: 'Tài lộc khá tốt, có cơ hội đầu tư',
-            love: 'Tình cảm ổn định, nên quan tâm gia đình',
-            health: 'Sức khỏe tốt, nên tập thể dục thường xuyên',
-            advice: 'Hôm nay nên tập trung vào công việc chính',
-            luckyColor: 'Vàng',
-            luckyNumber: '8'
+            // Enhanced horoscope with better presentation
+            await sendMessage(user.facebook_id, '🔮 TỬ VI TÂN DẬU - Hỗ Trợ Chéo')
+
+            await sendMessage(user.facebook_id, `━━━━━━━━━━━━━━━━━━━━\n📅 Hôm nay: ${new Date().toLocaleDateString('vi-VN')}\n🐓 Tuổi: Tân Dậu (1981)\n⭐ Đánh giá: 4/5 sao\n━━━━━━━━━━━━━━━━━━━━`)
+
+            // Simple horoscope generation (AI removed)
+            const horoscope = {
+                fortune: 'Tài lộc khá tốt, có cơ hội đầu tư',
+                love: 'Tình cảm ổn định, nên quan tâm gia đình',
+                health: 'Sức khỏe tốt, nên tập thể dục thường xuyên',
+                advice: 'Hôm nay nên tập trung vào công việc chính',
+                luckyColor: 'Vàng',
+                luckyNumber: '8'
+            }
+
+            await sendMessagesWithTyping(user.facebook_id, [
+                `💰 Tài lộc: ${horoscope.fortune}`,
+                `❤️ Tình cảm: ${horoscope.love}`,
+                `🏥 Sức khỏe: ${horoscope.health}`,
+                '',
+                `🎯 Lời khuyên: ${horoscope.advice}`,
+                `🎨 Màu may mắn: ${horoscope.luckyColor}`,
+                `🔢 Số may mắn: ${horoscope.luckyNumber}`
+            ])
+
+            await sendQuickReply(
+                user.facebook_id,
+                'Tùy chọn:',
+                [
+                    createQuickReply('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
+                    createQuickReply('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
+                    createQuickReply('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
+                    createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
+                ]
+            )
+
+        } catch (error) {
+            console.error('Error in handleHoroscope:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải tử vi. Vui lòng thử lại!')
         }
-
-        await sendMessagesWithTyping(user.facebook_id, [
-            '🔮 TỬ VI TÂN DẬU HÔM NAY',
-            `📅 ${new Date().toLocaleDateString('vi-VN')}`,
-            `🐓 Tuổi: Tân Dậu (1981)`,
-            `⭐ Tổng quan: 4/5 sao`,
-            '',
-            `💰 Tài lộc: ${horoscope.fortune}`,
-            `❤️ Tình cảm: ${horoscope.love}`,
-            `🏥 Sức khỏe: ${horoscope.health}`,
-            '',
-            `🎯 Lời khuyên: ${horoscope.advice}`,
-            `🎨 Màu may mắn: ${horoscope.luckyColor}`,
-            `🔢 Số may mắn: ${horoscope.luckyNumber}`
-        ])
-
-        await sendQuickReply(
-            user.facebook_id,
-            'Tùy chọn:',
-            [
-                createQuickReply('🎲 XEM CHI TIẾT', 'HOROSCOPE_DETAIL'),
-                createQuickReply('📅 XEM TUẦN', 'HOROSCOPE_WEEK'),
-                createQuickReply('🔮 XEM THÁNG', 'HOROSCOPE_MONTH'),
-                createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
-            ]
-        )
     }
 
     async handlePoints(user: any): Promise<void> {
