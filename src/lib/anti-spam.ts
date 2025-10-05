@@ -746,7 +746,7 @@ export async function isUserBlocked(facebookId: string): Promise<boolean> {
     try {
         const { getBotSession } = await import('./utils')
         const sessionData = await getBotSession(facebookId)
-        const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow || null
+        const currentFlow = sessionData?.current_flow || null
 
         if (currentFlow) {
             // Don't block users during active flows as they need to type information
@@ -821,7 +821,7 @@ export async function trackNonButtonMessage(facebookId: string, message: string)
     const sessionData = await getBotSession(facebookId)
 
     // Handle both possible session data structures
-    const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow
+    const currentFlow = sessionData?.current_flow
 
     console.log('Anti-spam check for user:', facebookId, 'Flow:', currentFlow, 'Session:', sessionData)
 
@@ -944,7 +944,7 @@ export async function isBotStoppedForUser(facebookId: string): Promise<boolean> 
     try {
         const { getBotSession } = await import('./utils')
         const sessionData = await getBotSession(facebookId)
-        const currentFlow = sessionData?.session_data?.current_flow || sessionData?.current_flow || null
+        const currentFlow = sessionData?.current_flow || null
 
         if (currentFlow) {
             // Don't stop bot during active flows as users need to type information

@@ -53,7 +53,7 @@ export class UnifiedBotSystem {
                 session,
                 facebook_id: user.facebook_id,
                 hasSession: !!session,
-                sessionData: session?.session_data
+                sessionData: session?.data
             })
 
             // If user is in an active flow, handle flow first - ƯU TIÊN CAO NHẤT
@@ -61,7 +61,7 @@ export class UnifiedBotSystem {
                 logger.info('User in active flow - PRIORITIZING FLOW', {
                     currentFlow,
                     facebook_id: user.facebook_id,
-                    step: session?.session_data?.step || session?.current_step
+                    step: session?.step
                 })
                 await this.handleFlowMessage(user, text, session)
                 return
@@ -217,7 +217,7 @@ export class UnifiedBotSystem {
                 case 'registration':
                     logger.info('Routing to registration flow', {
                         facebook_id: user.facebook_id,
-                        step: session?.session_data?.step
+                    step: session?.step
                     })
                     const { AuthFlow } = await import('../flows/auth-flow')
                     const authFlow = new AuthFlow()
@@ -270,7 +270,7 @@ export class UnifiedBotSystem {
                     const { getBotSession } = await import('../utils')
                     const existingSession = await getBotSession(user.facebook_id)
 
-                    if (existingSession && existingSession.session_data?.current_flow === 'registration') {
+                    if (existingSession && existingSession.current_flow === 'registration') {
                         // User đã trong flow registration, không gửi lại welcome
                         console.log('User already in registration flow, skipping duplicate welcome')
                         return
@@ -592,7 +592,7 @@ export class UnifiedBotSystem {
                 logger.info('New user in registration flow - BYPASSING COUNTER LOGIC', {
                     facebook_id: user.facebook_id,
                     currentFlow,
-                    step: session?.session_data?.step
+                    step: session?.step
                 })
                 await this.handleFlowMessage(user, text, session)
                 return
@@ -850,7 +850,7 @@ export class UnifiedBotSystem {
             const { getBotSession } = await import('../utils')
             const existingSession = await getBotSession(user.facebook_id)
 
-            if (existingSession && existingSession.session_data?.current_flow === 'registration') {
+            if (existingSession && existingSession.current_flow === 'registration') {
                 // User đã trong flow registration, chỉ gửi lại hướng dẫn hiện tại
                 console.log('User already in registration flow, resuming current step')
                 const { AuthFlow } = await import('../flows/auth-flow')

@@ -1139,7 +1139,7 @@ export async function handleListingImages(user: any, imageUrl?: string) {
         const session = await getBotSession(user.facebook_id)
         if (!session) return
 
-        const sessionData = session.session_data || {}
+const sessionData = session.data || {}
 
         if (imageUrl) {
             // Add image to session data

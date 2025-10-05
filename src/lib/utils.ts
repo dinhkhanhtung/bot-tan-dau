@@ -364,7 +364,7 @@ export function deepClone<T>(obj: T): T {
     return JSON.parse(JSON.stringify(obj))
 }
 
-// Update bot session
+// Update bot session - Simplified version
 export async function updateBotSession(facebookId: string, sessionData: any) {
     try {
         const { supabaseAdmin } = await import('./supabase')
@@ -373,49 +373,54 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
             facebookId,
             hasSessionData: !!sessionData,
             currentFlow: sessionData?.current_flow,
-            step: sessionData?.step,
-            dataKeys: sessionData?.data ? Object.keys(sessionData.data) : []
+            step: sessionData?.step
         })
 
-        // CHUẨN HÓA: Luôn lưu current_flow vào cả 2 nơi để đảm bảo tương thích
-        const currentFlow = sessionData?.current_flow || null
+        // Nếu sessionData là null, xóa session
+        if (sessionData === null) {
+            const { error } = await supabaseAdmin
+                .from('bot_sessions')
+                .delete()
+                .eq('facebook_id', facebookId)
 
-        // Validate session data before saving
-        if (sessionData && !currentFlow) {
-            console.warn('⚠️ updateBotSession: No current_flow provided, setting to registration')
-            sessionData.current_flow = 'registration'
+            if (error) {
+                console.error('❌ Error deleting session:', error)
+            } else {
+                console.log('✅ Session deleted for user:', facebookId)
+            }
+            return
         }
 
-        // Sử dụng upsert với onConflict để đảm bảo chỉ có 1 record per facebook_id
-        const { data, error } = await supabaseAdmin
+        // Đơn giản hóa: chỉ lưu những gì cần thiết
+        const sessionToSave = {
+            facebook_id: facebookId,
+            current_flow: sessionData.current_flow || 'registration',
+            step: sessionData.step || 'name',
+            data: sessionData.data || {},
+            started_at: sessionData.started_at || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        }
+
+        // Sử dụng upsert đơn giản
+        const { error } = await supabaseAdmin
             .from('bot_sessions')
-            .upsert({
-                facebook_id: facebookId,
-                session_data: sessionData,
-                current_flow: currentFlow, // Lưu vào cột riêng để dễ query
-                updated_at: new Date().toISOString()
-            }, {
+            .upsert(sessionToSave, {
                 onConflict: 'facebook_id'
             })
-            .select()
 
         if (error) {
             console.error('❌ updateBotSession error:', {
                 facebookId,
                 error: error.message,
-                code: error.code,
-                details: error.details,
-                sessionData
+                sessionData: sessionToSave
             })
             return
         }
 
         console.log('✅ updateBotSession success:', {
             facebookId,
-            updated: !!data,
-            recordId: data?.[0]?.id,
-            currentFlow: data?.[0]?.current_flow,
-            sessionDataStep: data?.[0]?.session_data?.step
+            currentFlow: sessionToSave.current_flow,
+            step: sessionToSave.step
         })
 
     } catch (error) {
@@ -423,7 +428,7 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
     }
 }
 
-// Get bot session
+// Get bot session - Simplified version
 export async function getBotSession(facebookId: string) {
     try {
         const { supabaseAdmin } = await import('./supabase')
@@ -437,79 +442,37 @@ export async function getBotSession(facebookId: string) {
             .single()
 
         if (error) {
-            console.log('❌ getBotSession error:', {
-                facebookId,
-                error: error.message,
-                code: error.code,
-                details: error.details
-            })
-
-            // Nếu bảng không tồn tại, trả về null
-            if (error.code === 'PGRST116' || error.message.includes('relation "bot_sessions" does not exist')) {
-                console.log('❌ bot_sessions table does not exist')
-                return null
-            }
-
             // Nếu không tìm thấy record, trả về null (bình thường)
             if (error.code === 'PGRST116') {
-                console.log('❌ No session found for user:', facebookId)
+                console.log('ℹ️ No session found for user:', facebookId)
                 return null
             }
 
             // Các lỗi khác cũng trả về null
-            console.log('❌ Other error in getBotSession:', error)
+            console.error('❌ getBotSession error:', error)
             return null
         }
 
-        console.log('✅ getBotSession success:', {
-            facebookId,
-            hasData: !!data,
-            currentFlow: data?.current_flow,
-            sessionDataStep: data?.session_data?.step,
-            sessionDataKeys: data?.session_data?.data ? Object.keys(data.session_data.data) : [],
-            directStep: data?.step,
-            directDataKeys: data?.data ? Object.keys(data.data) : []
-        })
-
-        // CHUẨN HÓA: Đảm bảo current_flow có sẵn ở cả 2 nơi
+        // Đơn giản hóa: chỉ trả về data nếu có
         if (data) {
-            const currentFlow = data.current_flow || data.session_data?.current_flow || null
+            console.log('✅ getBotSession success:', {
+                facebookId,
+                currentFlow: data.current_flow,
+                step: data.step
+            })
 
-            // Nếu current_flow chỉ có trong session_data, copy ra ngoài
-            if (!data.current_flow && data.session_data?.current_flow) {
-                data.current_flow = data.session_data.current_flow
-                console.log('🔧 Copied current_flow from session_data to main field')
-            }
-
-            // Nếu current_flow chỉ có ở ngoài, copy vào session_data
-            if (data.current_flow && !data.session_data?.current_flow) {
-                data.session_data = data.session_data || {}
-                data.session_data.current_flow = data.current_flow
-                console.log('🔧 Copied current_flow from main field to session_data')
-            }
-
-            // Ensure step consistency between formats
-            if (data.session_data?.step && !data.step) {
-                data.step = data.session_data.step
-                console.log('🔧 Copied step from session_data to main field')
-            } else if (data.step && !data.session_data?.step) {
-                data.session_data = data.session_data || {}
-                data.session_data.step = data.step
-                console.log('🔧 Copied step from main field to session_data')
-            }
-
-            // Ensure data consistency between formats
-            if (data.session_data?.data && !data.data) {
-                data.data = data.session_data.data
-                console.log('🔧 Copied data from session_data to main field')
-            } else if (data.data && !data.session_data?.data) {
-                data.session_data = data.session_data || {}
-                data.session_data.data = data.data
-                console.log('🔧 Copied data from main field to session_data')
+            // Đảm bảo cấu trúc dữ liệu nhất quán
+            return {
+                facebook_id: data.facebook_id,
+                current_flow: data.current_flow,
+                step: data.step,
+                data: data.data || {},
+                started_at: data.started_at,
+                updated_at: data.updated_at
             }
         }
 
-        return data
+        return null
     } catch (error) {
         console.error('❌ Exception in getBotSession:', error)
         return null
