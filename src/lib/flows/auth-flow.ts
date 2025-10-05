@@ -487,12 +487,21 @@ export class AuthFlow {
             started_at: new Date().toISOString()
         }
 
-        console.log('🔄 Updating session:', sessionUpdate)
+        console.log('🔄 Updating session after name input:', sessionUpdate)
         await updateBotSession(user.facebook_id, sessionUpdate)
 
-        // Verify session was updated
+        // Verify session was updated - CRITICAL STEP
         const sessionCheck = await getBotSession(user.facebook_id)
         console.log('✅ Session after name update:', sessionCheck)
+
+        // CRITICAL: Ensure session was actually updated
+        if (!sessionCheck || sessionCheck.step !== 'phone') {
+            console.error('❌ SESSION UPDATE FAILED! Session not updated correctly:', sessionCheck)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại!')
+            return
+        }
+
+        console.log('✅ Session verified - step is now:', sessionCheck.step)
     }
 
     /**
@@ -596,9 +605,18 @@ export class AuthFlow {
         console.log('🔄 Updating session after phone:', sessionUpdate)
         await updateBotSession(user.facebook_id, sessionUpdate)
 
-        // Verify session was updated
+        // Verify session was updated - CRITICAL STEP
         const sessionCheck = await getBotSession(user.facebook_id)
         console.log('✅ Session after phone update:', sessionCheck)
+
+        // CRITICAL: Ensure session was actually updated
+        if (!sessionCheck || sessionCheck.step !== 'location') {
+            console.error('❌ SESSION UPDATE FAILED! Session not updated correctly:', sessionCheck)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại!')
+            return
+        }
+
+        console.log('✅ Session verified - step is now:', sessionCheck.step)
     }
 
     /**
