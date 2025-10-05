@@ -40,10 +40,10 @@ export class AuthFlow {
      */
     async handleStep(user: any, text: string, session: any): Promise<void> {
         try {
-            console.log('🔍 Processing step:', session?.current_step, 'for user:', user.facebook_id)
+            console.log('🔍 Processing step:', session?.step, 'for user:', user.facebook_id)
 
             // Get current step from session
-            const currentStep = session?.current_step || 'name'
+            const currentStep = session?.step || 'name'
 
             switch (currentStep) {
                 case 'name':
@@ -173,7 +173,7 @@ export class AuthFlow {
 
             // Get current session
             const session = await getBotSession(user.facebook_id)
-            if (!session || session.current_step !== 'location') {
+            if (!session || session.step !== 'location') {
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
