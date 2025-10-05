@@ -223,11 +223,10 @@ CREATE TABLE IF NOT EXISTS point_transactions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Bot sessions table - FIXED VERSION với cột data
+-- Bot sessions table - STANDARDIZED VERSION
 CREATE TABLE IF NOT EXISTS bot_sessions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     facebook_id VARCHAR(255) UNIQUE NOT NULL,
-    session_data JSONB DEFAULT '{}',
     current_flow VARCHAR(100) DEFAULT NULL,
     current_step INTEGER DEFAULT 0,
     data JSONB DEFAULT '{}',

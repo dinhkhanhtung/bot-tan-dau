@@ -89,9 +89,9 @@ export async function POST(request: NextRequest) {
             .from('bot_sessions')
             .insert({
                 facebook_id: user.facebook_id,
-                session_data: {},
                 current_flow: 'registration',
-                current_step: 0
+                current_step: 0,
+                data: {}
             })
 
         // Send welcome notification

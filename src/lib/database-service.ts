@@ -274,8 +274,8 @@ export class DatabaseService {
                             facebook_id: data.facebook_id,
                             session_data: data.session_data || {},
                             current_flow: data.current_flow || null,
-                            step: data.current_step || 0,  // Map current_step to step for backward compatibility
-                            current_step: data.current_step || 0,
+                            step: data.step || data.current_step || 0,  // Map both old and new formats
+                            current_step: data.current_step || data.step || 0,
                             created_at: data.created_at,
                             updated_at: data.updated_at
                         }
@@ -283,7 +283,8 @@ export class DatabaseService {
                         logger.debug('Standardized session data', {
                             facebook_id: facebookId,
                             current_flow: standardizedSession.current_flow,
-                            session_data: standardizedSession.session_data
+                            step: standardizedSession.step,
+                            current_step: standardizedSession.current_step
                         })
 
                         return standardizedSession
@@ -311,7 +312,9 @@ export class DatabaseService {
                         .from('bot_sessions')
                         .upsert({
                             facebook_id: facebookId,
-                            session_data: sessionData,
+                            current_flow: sessionData?.current_flow || null,
+                            current_step: sessionData?.step ? parseInt(sessionData.step) || 0 : 0,
+                            data: sessionData?.data || {},
                             updated_at: new Date().toISOString()
                         })
                         .select()
