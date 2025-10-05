@@ -82,7 +82,7 @@ export class AuthFlow {
 
         await sendMessage(user.facebook_id, '🎁 QUYỀN LỢI: Trial 7 ngày miễn phí\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━')
 
-        // Create session for registration flow
+        // Create session for registration flow - CHUẨN HÓA CẤU TRÚC
         const sessionData = {
             current_flow: 'registration',
             step: 'name',
@@ -90,6 +90,7 @@ export class AuthFlow {
             started_at: new Date().toISOString()
         }
 
+        console.log('🔄 Creating registration session:', sessionData)
         await updateBotSession(user.facebook_id, sessionData)
 
         // Start with first step - SIMPLIFIED
@@ -185,11 +186,21 @@ export class AuthFlow {
             }
         }
 
-        // CHUẨN HÓA: Sử dụng session data đã được chuẩn hóa
-        const currentStep = session.session_data?.step || session.step || 'name'
-        const sessionData = session.session_data?.data || session.data || {}
+        // CHUẨN HÓA: Xử lý cả 2 cấu trúc session (flat và nested)
+        const currentStep = session.step || session.session_data?.step || 'name'
+        const sessionData = session.data || session.session_data?.data || {}
 
         console.log('🔄 Processing step:', currentStep, 'with data:', sessionData)
+        console.log('🔍 Session structure:', {
+            session: session,
+            sessionData: session.session_data,
+            currentStep: currentStep,
+            hasData: !!sessionData,
+            stepFromSession: session.step,
+            stepFromNested: session.session_data?.step,
+            dataFromSession: session.data,
+            dataFromNested: session.session_data?.data
+        })
 
         switch (currentStep) {
             case 'name':
@@ -229,6 +240,12 @@ export class AuthFlow {
     private async handleRegistrationName(user: any, text: string, data: any): Promise<void> {
         console.log('🔍 handleRegistrationName called:', { text, textLength: text.length, data })
 
+        // FIX: Đảm bảo data không bao giờ là undefined
+        if (!data) {
+            console.log('⚠️ Data is undefined, creating new object')
+            data = {}
+        }
+
         if (text.length < 2) {
             await sendMessage(user.facebook_id, '❌ Tên quá ngắn. Vui lòng nhập họ tên đầy đủ:')
             return
@@ -258,6 +275,12 @@ export class AuthFlow {
      * Handle phone input
      */
     private async handleRegistrationPhone(user: any, text: string, data: any): Promise<void> {
+        // FIX: Đảm bảo data không bao giờ là undefined
+        if (!data) {
+            console.log('⚠️ Data is undefined in phone handler, creating new object')
+            data = {}
+        }
+
         const phone = text.replace(/\D/g, '')
 
         if (phone.length < 10) {
@@ -334,6 +357,12 @@ export class AuthFlow {
      * Handle email input
      */
     private async handleRegistrationEmail(user: any, text: string, data: any): Promise<void> {
+        // FIX: Đảm bảo data không bao giờ là undefined
+        if (!data) {
+            console.log('⚠️ Data is undefined in email handler, creating new object')
+            data = {}
+        }
+
         if (text.toLowerCase().includes('bỏ qua') || text.toLowerCase().includes('không')) {
             data.email = null
         } else {
@@ -455,6 +484,12 @@ export class AuthFlow {
      * Handle keywords input for better search
      */
     private async handleRegistrationKeywords(user: any, text: string, data: any): Promise<void> {
+        // FIX: Đảm bảo data không bao giờ là undefined
+        if (!data) {
+            console.log('⚠️ Data is undefined in keywords handler, creating new object')
+            data = {}
+        }
+
         if (text.toLowerCase().includes('bỏ qua') || text.toLowerCase().includes('không')) {
             data.keywords = null
             data.product_service = null
@@ -528,6 +563,12 @@ export class AuthFlow {
 
     // Helper methods for registration steps
     private async handleRegistrationLocation(user: any, text: string, data: any): Promise<void> {
+        // FIX: Đảm bảo data không bao giờ là undefined
+        if (!data) {
+            console.log('⚠️ Data is undefined in location handler, creating new object')
+            data = {}
+        }
+
         data.location = text.trim()
 
         await sendMessagesWithTyping(user.facebook_id, [
@@ -544,6 +585,12 @@ export class AuthFlow {
     }
 
     private async handleRegistrationProductService(user: any, text: string, data: any): Promise<void> {
+        // FIX: Đảm bảo data không bao giờ là undefined
+        if (!data) {
+            console.log('⚠️ Data is undefined in product service handler, creating new object')
+            data = {}
+        }
+
         data.product_service = text.trim()
 
         await sendMessagesWithTyping(user.facebook_id, [
@@ -556,6 +603,12 @@ export class AuthFlow {
     }
 
     private async handleRegistrationBirthday(user: any, text: string, data: any): Promise<void> {
+        // FIX: Đảm bảo data không bao giờ là undefined
+        if (!data) {
+            console.log('⚠️ Data is undefined in birthday handler, creating new object')
+            data = {}
+        }
+
         const birthdayMatch = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/)
 
         if (!birthdayMatch) {
