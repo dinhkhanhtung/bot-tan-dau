@@ -9,6 +9,32 @@ export const BOT_CONFIG = {
 
 // Categories and Subcategories
 export const CATEGORIES = {
+    'Y TẾ': {
+        icon: '🏥',
+        name: 'Y TẾ',
+        keywords: ['y tế', 'bệnh viện', 'phòng khám', 'thuốc', 'dược phẩm', 'chăm sóc sức khỏe', 'bác sĩ', 'nha khoa', 'mắt', 'tai mũi họng', 'da liễu', 'sản phụ khoa', 'nội khoa', 'ngoại khoa', 'nhi khoa', 'medical', 'healthcare', 'hospital', 'clinic', 'pharmacy', 'medicine', 'doctor', 'dentist', 'ophthalmology', 'ent', 'dermatology', 'obstetrics', 'internal medicine', 'surgery', 'pediatrics'],
+        subcategories: [
+            { key: 'BỆNH_VIỆN', icon: '🏥', name: 'BỆNH VIỆN', keywords: ['bệnh viện', 'hospital', 'cơ sở y tế', 'medical center', 'healthcare facility'] },
+            { key: 'PHÒNG_KHÁM', icon: '🏥', name: 'PHÒNG KHÁM', keywords: ['phòng khám', 'clinic', 'phòng mạch', 'private practice', 'medical office'] },
+            { key: 'NHÀ_THUỐC', icon: '💊', name: 'NHÀ THUỐC', keywords: ['nhà thuốc', 'pharmacy', 'quầy thuốc', 'drugstore', 'thuốc tây', 'medicine'] },
+            { key: 'NHA_KHOA', icon: '🦷', name: 'NHA KHOA', keywords: ['nha khoa', 'răng hàm mặt', 'dentist', 'dental', 'nha sĩ', 'chỉnh nha', 'implant'] },
+            { key: 'MẮT', icon: '👁️', name: 'MẮT', keywords: ['mắt', 'nhãn khoa', 'kính mắt', 'ophthalmology', 'eye doctor', 'glasses', 'contact lens'] },
+            { key: 'TAI_MŨI_HỌNG', icon: '👂', name: 'TAI MŨI HỌNG', keywords: ['tai mũi họng', 'ent', 'tai', 'mũi', 'họng', 'ear nose throat', 'otorhinolaryngology'] },
+            { key: 'DA_LIỄU', icon: '🧴', name: 'DA LIỄU', keywords: ['da liễu', 'dermatology', 'da', 'liễu', 'chăm sóc da', 'skincare', 'skin doctor'] },
+            { key: 'SẢN_PHỤ_KHOA', icon: '🤰', name: 'SẢN PHỤ KHOA', keywords: ['sản phụ khoa', 'obstetrics', 'phụ khoa', 'sản khoa', 'maternity', 'gynecology'] },
+            { key: 'NỘI_KHOA', icon: '🩺', name: 'NỘI KHOA', keywords: ['nội khoa', 'internal medicine', 'nội tổng hợp', 'general medicine', 'physician'] },
+            { key: 'NGOẠI_KHOA', icon: '🔪', name: 'NGOẠI KHOA', keywords: ['ngoại khoa', 'surgery', 'phẫu thuật', 'surgeon', 'general surgery'] },
+            { key: 'NHI_KHOA', icon: '👶', name: 'NHI KHOA', keywords: ['nhi khoa', 'pediatrics', 'trẻ em', 'children', 'pediatrician', 'kids doctor'] },
+            { key: 'CHẨN_DOÁN_HÌNH_ẢNH', icon: '🩻', name: 'CHẨN ĐOÁN HÌNH ẢNH', keywords: ['x-quang', 'siêu âm', 'ct scan', 'mri', 'x-ray', 'ultrasound', 'radiology'] },
+            { key: 'XÉT_NGHIỆM', icon: '🧪', name: 'XÉT NGHIỆM', keywords: ['xét nghiệm', 'lab test', 'blood test', 'medical test', 'laboratory'] },
+            { key: 'VẬT_LÝ_TRỊ_LIỆU', icon: '💪', name: 'VẬT LÝ TRỊ LIỆU', keywords: ['vật lý trị liệu', 'physiotherapy', 'rehabilitation', 'physical therapy', 'phục hồi chức năng'] },
+            { key: 'TÂM_LÝ', icon: '🧠', name: 'TÂM LÝ', keywords: ['tâm lý', 'psychology', 'tư vấn tâm lý', 'psychologist', 'mental health', 'counseling'] },
+            { key: 'ĐÔNG_Y', icon: '🌿', name: 'ĐÔNG Y', keywords: ['đông y', 'thuốc nam', 'thuốc bắc', 'traditional medicine', 'herbal medicine', 'acupuncture'] },
+            { key: 'THẨM_MỸ', icon: '💅', name: 'THẨM MỸ', keywords: ['thẩm mỹ', 'làm đẹp', 'cosmetic', 'beauty', 'spa', 'aesthetic', 'plastic surgery'] },
+            { key: 'THÚ_Y', icon: '🐕', name: 'THÚ Y', keywords: ['thú y', 'veterinary', 'thú cưng', 'pet', 'animal doctor', 'vet clinic'] },
+            { key: 'KHÁC', icon: '🏥', name: 'Y TẾ KHÁC', keywords: ['y tế khác', 'other medical', 'specialized', 'chuyên khoa khác'] }
+        ]
+    },
     'BẤT ĐỘNG SẢN': {
         icon: '🏠',
         name: 'BẤT ĐỘNG SẢN',
@@ -137,7 +163,7 @@ export const CATEGORIES = {
 // Complete locations - All provinces and cities in Vietnam
 export const LOCATIONS = [
     // Major cities (Thành phố lớn)
-    'HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ',
+    'THÁI NGUYÊN', 'HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ',
 
     // Northern provinces (Miền Bắc)
     'BẮC GIANG', 'BẮC KẠN', 'BẮC NINH', 'CAO BẰNG', 'ĐIỆN BIÊN',
