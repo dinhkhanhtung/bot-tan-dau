@@ -315,8 +315,8 @@ export class UnifiedBotSystem {
                         const { setUserBotMode } = await import('../anti-spam')
                         await setUserBotMode(user.facebook_id)
 
-                        // Hiện main menu
-                        await this.showMainMenu(user)
+                        // Hiện menu chào mừng hấp dẫn
+                        await this.showWelcomeBotMenu(user)
                     }
                     break
                 case 'REG':
@@ -1197,6 +1197,39 @@ export class UnifiedBotSystem {
         // ADMIN VIEW PAYMENTS ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
         await this.sendMessage(adminUser.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
         await this.sendMessage(adminUser.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
+    }
+
+    /**
+     * Hiển thị menu chào mừng hấp dẫn khi user vào bot mode
+     */
+    private static async showWelcomeBotMenu(user: any): Promise<void> {
+        try {
+            const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+            const { BOT_INFO } = await import('../constants')
+
+            // Gửi thông báo chào mừng hấp dẫn
+            await sendMessage(user.facebook_id, '🌟 CHÀO MỪNG BẠN ĐẾN VỚI CỘNG ĐỒNG TÂN DẬU! 🌟')
+            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+            await sendMessage(user.facebook_id, `💰 ${BOT_INFO.PRICING_MESSAGE}`)
+            await sendMessage(user.facebook_id, `🏆 ${BOT_INFO.SLOGAN}`)
+            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+
+            // Hiển thị menu chức năng với icon đẹp
+            await sendQuickReply(
+                user.facebook_id,
+                '🚀 Bạn muốn khám phá gì hôm nay?',
+                [
+                    createQuickReply('🛒 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                    createQuickReply('📝 ĐĂNG BÁN/CẬP NHẬT', 'LISTING'),
+                    createQuickReply('ℹ️ THÔNG TIN CHI TIẾT', 'INFO'),
+                    createQuickReply('💬 HỖ TRỢ TRỰC TIẾP', 'CONTACT_ADMIN'),
+                    createQuickReply('🚪 THOÁT BOT', 'EXIT_BOT')
+                ]
+            )
+        } catch (error) {
+            console.error('Error showing welcome bot menu:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
     }
 
 

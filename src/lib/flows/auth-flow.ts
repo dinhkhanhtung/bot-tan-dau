@@ -84,7 +84,7 @@ export class AuthFlow {
 
             await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
 
-            await sendMessage(user.facebook_id, `🎁 QUYỀN LỢI: Trial ${BOT_CONFIG.TRIAL_DAYS} ngày miễn phí\n💰 ${BOT_INFO.PRICING_MESSAGE}\n💳 Phí duy trì: ${BOT_INFO.DAILY_FEE_FORMATTED}\n📅 Gói tối thiểu: ${BOT_CONFIG.MINIMUM_DAYS} ngày = ${formatCurrency(BOT_CONFIG.MINIMUM_DAYS * BOT_CONFIG.DAILY_FEE)}\n━━━━━━━━━━━━━━━━━━━━`)
+            await sendMessage(user.facebook_id, `🎁 QUYỀN LỢI: Trial ${BOT_CONFIG.TRIAL_DAYS} ngày miễn phí\n💰 ${BOT_INFO.PRICING_MESSAGE}\n💳 Phí duy trì: ${BOT_INFO.DAILY_FEE_FORMATTED}\n📅 Gói tối thiểu: ${BOT_CONFIG.MINIMUM_DAYS} ngày = ${formatCurrency(BOT_CONFIG.MINIMUM_DAYS * BOT_CONFIG.DAILY_FEE)}\n━━━━━━━━━━━━━━━━━━━━\n${BOT_INFO.WELCOME_MESSAGE}\n${BOT_INFO.SLOGAN}`)
 
             // Create session for registration flow - CHUẨN HÓA CẤU TRÚC
             const sessionData = {

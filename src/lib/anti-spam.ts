@@ -324,7 +324,7 @@ export async function handleBotExit(facebookId: string): Promise<void> {
 export async function showBotInvitation(facebookId: string): Promise<void> {
     const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api')
 
-    await sendMessage(facebookId, 'bạn đã tham gia Bot tân dậu - hỗ trợ chéo chưa.......')
+    await sendMessage(facebookId, '🌟 Bạn đã khám phá hết tiềm năng của cộng đồng Tân Dậu chưa?')
 
     // Gửi nút để vào bot
     await sendQuickReply(
@@ -340,7 +340,7 @@ export async function showBotInvitation(facebookId: string): Promise<void> {
 export async function showBotInvitationNoButton(facebookId: string): Promise<void> {
     const { sendMessage } = await import('./facebook-api')
 
-    await sendMessage(facebookId, 'bạn đã tham gia Bot tân dậu - hỗ trợ chéo chưa.......')
+    await sendMessage(facebookId, '🌟 Bạn đã khám phá hết tiềm năng của cộng đồng Tân Dậu chưa?')
 }
 
 // Hàm reset counter khi admin kết thúc chat - cho phép user chat lại bình thường
