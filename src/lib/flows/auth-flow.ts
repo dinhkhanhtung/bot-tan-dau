@@ -202,6 +202,19 @@ export class AuthFlow {
                     currentStep = 'name'
                     data = {}
                 }
+
+                // CRITICAL FIX: Check current_step field from database if available
+                if (session.current_step && session.current_step > 0) {
+                    // Map current_step number to step name
+                    const stepMapping: { [key: number]: string } = {
+                        0: 'name',
+                        1: 'phone',
+                        2: 'location',
+                        3: 'birthday_confirm'
+                    }
+                    currentStep = stepMapping[session.current_step] || 'name'
+                    console.log('🔧 Using current_step from database in resume:', session.current_step, '->', currentStep)
+                }
             }
 
             console.log('🔄 Resumed session data:', { currentStep, data })
@@ -266,6 +279,19 @@ export class AuthFlow {
                     sessionData = session
                     currentStep = 'name'
                     data = {}
+                }
+
+                // CRITICAL FIX: Check current_step field from database if available
+                if (session.current_step && session.current_step > 0) {
+                    // Map current_step number to step name
+                    const stepMapping: { [key: number]: string } = {
+                        0: 'name',
+                        1: 'phone',
+                        2: 'location',
+                        3: 'birthday_confirm'
+                    }
+                    currentStep = stepMapping[session.current_step] || 'name'
+                    console.log('🔧 Using current_step from database:', session.current_step, '->', currentStep)
                 }
             }
 
@@ -414,7 +440,7 @@ export class AuthFlow {
             await sendMessage(user.facebook_id, errorMessage)
 
             // Provide helpful guidance
-            await sendMessage(user.facebook_id, '💡 Mẹo: Nhập tên thật của bạn, ví dụ:\n• Nguyễn Văn Minh\n• Trần Thị Lan\n• Lê Minh Tuấn')
+            await sendMessage(user.facebook_id, '💡 Mẹo: Nhập tên thật của bạn, ví dụ:\n• Nguyễn Văn M\n• Trần Thị L\n• Lê Minh T')
             return
         }
 
