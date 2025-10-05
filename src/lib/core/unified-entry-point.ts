@@ -180,28 +180,14 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Xử lý flow message
+     * Xử lý flow message - ĐÃ ĐƠN GIẢN HÓA
      */
     private static async handleFlowMessage(user: any, text: string, session?: any): Promise<void> {
         try {
-            // CHUẨN HÓA: Sử dụng session đã được chuẩn hóa từ getBotSession
             const currentFlow = session?.current_flow || null
-
-            logger.debug('Handling flow message', {
-                currentFlow,
-                facebook_id: user.facebook_id,
-                hasSession: !!session,
-                sessionData: session?.session_data,
-                text: text?.substring(0, 50) + '...'
-            })
 
             // Kiểm tra session hợp lệ
             if (!session || !currentFlow) {
-                logger.error('Invalid session for flow message', {
-                    facebook_id: user.facebook_id,
-                    session,
-                    currentFlow
-                })
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
@@ -212,13 +198,9 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Route đến flow handler phù hợp
+            // Route đến flow handler phù hợp - CHỈ ROUTE, KHÔNG XỬ LÝ LOGIC
             switch (currentFlow) {
                 case 'registration':
-                    logger.info('Routing to registration flow', {
-                        facebook_id: user.facebook_id,
-                        step: session?.step
-                    })
                     const { AuthFlow } = await import('../flows/auth-flow')
                     const authFlow = new AuthFlow()
                     await authFlow.handleStep(user, text || '', session)
@@ -234,15 +216,9 @@ export class UnifiedBotSystem {
                     await searchFlow.handleSearchStep(user, text || '', session)
                     break
                 default:
-                    logger.error('Unknown flow type', { currentFlow, facebook_id: user.facebook_id })
                     await this.sendErrorMessage(user.facebook_id)
             }
         } catch (error) {
-            logger.error('Error handling flow message', {
-                error: error instanceof Error ? error.message : String(error),
-                facebook_id: user.facebook_id,
-                currentFlow: session?.current_flow
-            })
             await this.sendErrorMessage(user.facebook_id)
         }
     }
@@ -326,23 +302,7 @@ export class UnifiedBotSystem {
                         await this.showWelcomeBotMenu(user)
                     }
                     break
-                case 'REG':
-                    // Xử lý postback cho registration flow
-                    if (params[0] === 'LOCATION') {
-                        const location = params[1] // HANOI, HCM, etc.
-                        const { AuthFlow } = await import('../flows/auth-flow')
-                        const authFlow = new AuthFlow()
-                        await authFlow.handleRegistrationLocationPostback(user, location)
-                    } else if (params[0] === 'BIRTHDAY_YES') {
-                        const { AuthFlow } = await import('../flows/auth-flow')
-                        const authFlow = new AuthFlow()
-                        await authFlow.handleBirthdayVerification(user, 'YES')
-                    } else if (params[0] === 'BIRTHDAY_NO') {
-                        const { AuthFlow } = await import('../flows/auth-flow')
-                        const authFlow = new AuthFlow()
-                        await authFlow.handleBirthdayVerification(user, 'NO')
-                    }
-                    break
+
                 default:
                     await this.routeToHandler(user, postback)
             }
