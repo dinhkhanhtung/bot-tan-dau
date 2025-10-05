@@ -35,12 +35,7 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Step 2: Check if user is in admin chat mode
-            const isInAdminChat = await this.checkAdminChatMode(user.facebook_id)
-            if (isInAdminChat) {
-                await sendMessage(user.facebook_id, '💬 Bạn đang trong chế độ chat với admin. Bot sẽ tạm dừng để admin có thể hỗ trợ bạn trực tiếp.')
-                return
-            }
+
 
             // Step 3: Check user session and prioritize active flows
             const session = await this.getUserSession(user.facebook_id)
@@ -104,20 +99,7 @@ export class UnifiedBotSystem {
     }
 
 
-    /**
-     * Kiểm tra admin chat mode
-     */
-    private static async checkAdminChatMode(facebookId: string): Promise<boolean> {
-        try {
-            const { isUserInAdminChat } = await import('../admin-chat')
-            const result = await isUserInAdminChat(facebookId)
-            logger.debug('Admin chat mode check', { facebook_id: facebookId, isInAdminChat: result })
-            return result
-        } catch (error) {
-            logError(error as Error, { operation: 'admin_chat_mode_check', facebook_id: facebookId })
-            return false
-        }
-    }
+
 
     /**
      * Lấy session của user
@@ -169,15 +151,7 @@ export class UnifiedBotSystem {
         await this.sendMessage(user.facebook_id, '📧 Liên hệ admin để được cấp tài khoản quản lý.')
     }
 
-    /**
-     * Xử lý admin chat message - ĐÃ LOẠI BỎ
-     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
-     */
-    private static async handleAdminChatMessage(user: any, text: string): Promise<void> {
-        // ADMIN CHAT ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
-        await this.sendMessage(user.facebook_id, '🔧 Hệ thống chat admin đã được chuyển sang trang web.')
-        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
-    }
+
 
     /**
      * Xử lý flow message - ĐÃ ĐƠN GIẢN HÓA
@@ -281,7 +255,10 @@ export class UnifiedBotSystem {
                     await this.showMainMenu(user)
                     break
                 case 'ADMIN':
-                    await this.showAdminDashboard(user)
+                    // Admin chỉ nhận thông báo chuyển hướng đến webapp
+                    await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+                    await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
+                    await this.sendMessage(user.facebook_id, '📧 Liên hệ admin để được cấp tài khoản quản lý.')
                     break
                 case 'EXIT_BOT':
                     const { handleBotExit } = await import('../anti-spam')
@@ -448,33 +425,19 @@ export class UnifiedBotSystem {
      */
     private static async handleAdminTextMessage(user: any, text: string): Promise<void> {
         try {
-            // Admin text message - hiện admin dashboard
-            await this.showAdminDashboard(user)
+            // Admin chỉ nhận thông báo chuyển hướng đến webapp
+            await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+            await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
+            await this.sendMessage(user.facebook_id, '📧 Liên hệ admin để được cấp tài khoản quản lý.')
         } catch (error) {
             console.error('Error handling admin text:', error)
-            await this.showAdminDashboard(user)
+            await this.sendErrorMessage(user.facebook_id)
         }
     }
 
-    /**
-     * Xử lý admin trong cuộc trò chuyện với user - ĐÃ LOẠI BỎ
-     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
-     */
-    private static async handleAdminInChatMode(user: any, text: string): Promise<void> {
-        // ADMIN CHAT ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
-        await this.sendMessage(user.facebook_id, '🔧 Hệ thống chat admin đã được chuyển sang trang web.')
-        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
-    }
 
-    /**
-     * Hiện admin menu trong cuộc trò chuyện - ĐÃ LOẠI BỎ
-     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
-     */
-    private static async showAdminChatMenu(user: any, session: any): Promise<void> {
-        // ADMIN CHAT MENU ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
-        await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
-        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
-    }
+
+
 
     /**
      * Xử lý registered user text
@@ -1003,68 +966,25 @@ export class UnifiedBotSystem {
 
 
     /**
-     * Xử lý admin postback - CẢI THIỆN ĐỂ XỬ LÝ DUYỆT THANH TOÁN
+     * Xử lý admin postback - ĐÃ ĐƠN GIẢN HÓA
      */
     private static async handleAdminPostback(user: any, postback: string): Promise<void> {
         try {
             console.log('🔧 Admin postback received:', postback)
 
-            // Xử lý các nút admin gửi cho user
-            if (postback.startsWith('ADMIN_SEND_')) {
-                await this.handleAdminSendToUser(user, postback)
-            } else if (postback.startsWith('ADMIN_USER_')) {
-                await this.handleAdminUserInfo(user, postback)
-            } else if (postback.startsWith('ADMIN_END_CHAT_')) {
-                const sessionId = postback.replace('ADMIN_END_CHAT_', '')
-                const { AdminFlow } = await import('../flows/admin-flow')
-                await AdminFlow.handleExitAdminChat(user)
-            } else if (postback.startsWith('ADMIN_APPROVE_USER_')) {
-                // Xử lý duyệt thanh toán cho user cụ thể
-                const userId = postback.replace('ADMIN_APPROVE_USER_', '')
-                await this.handleAdminApproveUserPayment(user, userId)
-            } else if (postback.startsWith('ADMIN_REJECT_USER_')) {
-                // Xử lý từ chối thanh toán cho user cụ thể
-                const userId = postback.replace('ADMIN_REJECT_USER_', '')
-                await this.handleAdminRejectUserPayment(user, userId)
-            } else if (postback.startsWith('ADMIN_VIEW_PAYMENTS_')) {
-                // Xử lý xem thanh toán của user cụ thể
-                const userId = postback.replace('ADMIN_VIEW_PAYMENTS_', '')
-                await this.handleAdminViewUserPayments(user, userId)
-            } else if (postback === 'ADMIN_BULK_APPROVE') {
-                // Xử lý duyệt hàng loạt - chuyển hướng đến web dashboard
-                await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
-                await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
-            } else if (postback === 'ADMIN') {
-                await this.showAdminDashboard(user)
-            } else {
-                // Fallback to admin dashboard
-                await this.showAdminDashboard(user)
-            }
+            // TẤT CẢ ADMIN POSTBACK CHUYỂN HƯỚNG ĐẾN WEB DASHBOARD
+            await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+            await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
+            await this.sendMessage(user.facebook_id, '📧 Liên hệ admin để được cấp tài khoản quản lý.')
         } catch (error) {
             console.error('Error handling admin postback:', error)
-            await this.showAdminDashboard(user)
+            await this.sendErrorMessage(user.facebook_id)
         }
     }
 
-    /**
-     * Xử lý admin gửi nút cho user - ĐÃ LOẠI BỎ
-     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
-     */
-    private static async handleAdminSendToUser(user: any, postback: string): Promise<void> {
-        // ADMIN SEND TO USER ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
-        await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
-        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
-    }
 
-    /**
-     * Xử lý admin xem thông tin user - ĐÃ LOẠI BỎ
-     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
-     */
-    private static async handleAdminUserInfo(user: any, postback: string): Promise<void> {
-        // ADMIN USER INFO ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
-        await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
-        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
-    }
+
+
 
     /**
      * Handle default message - CHỈ HIỂN THỊ MENU, KHÔNG TẠO SPAM
@@ -1075,7 +995,10 @@ export class UnifiedBotSystem {
 
             switch (context.userType) {
                 case UserType.ADMIN:
-                    await this.showAdminDashboard(user)
+                    // Admin chỉ nhận thông báo chuyển hướng đến webapp
+                    await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+                    await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
+                    await this.sendMessage(user.facebook_id, '📧 Liên hệ admin để được cấp tài khoản quản lý.')
                     break
                 case UserType.REGISTERED_USER:
                 case UserType.TRIAL_USER:
@@ -1146,35 +1069,7 @@ export class UnifiedBotSystem {
         }
     }
 
-    /**
-     * Xử lý duyệt thanh toán cho user cụ thể - ĐÃ LOẠI BỎ
-     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
-     */
-    private static async handleAdminApproveUserPayment(adminUser: any, userId: string): Promise<void> {
-        // ADMIN PAYMENT ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
-        await this.sendMessage(adminUser.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
-        await this.sendMessage(adminUser.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
-    }
 
-    /**
-     * Xử lý từ chối thanh toán cho user cụ thể - ĐÃ LOẠI BỎ
-     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
-     */
-    private static async handleAdminRejectUserPayment(adminUser: any, userId: string): Promise<void> {
-        // ADMIN PAYMENT REJECT ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
-        await this.sendMessage(adminUser.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
-        await this.sendMessage(adminUser.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
-    }
-
-    /**
-     * Xử lý xem thanh toán của user cụ thể - ĐÃ LOẠI BỎ
-     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
-     */
-    private static async handleAdminViewUserPayments(adminUser: any, userId: string): Promise<void> {
-        // ADMIN VIEW PAYMENTS ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN
-        await this.sendMessage(adminUser.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
-        await this.sendMessage(adminUser.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
-    }
 
     /**
      * Hiển thị menu chào mừng hấp dẫn khi user vào bot mode

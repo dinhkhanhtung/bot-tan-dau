@@ -16,7 +16,7 @@ export enum UserState {
     IN_REGISTRATION = 'in_registration',
     IN_LISTING = 'in_listing',
     IN_SEARCH = 'in_search',
-    IN_ADMIN_CHAT = 'in_admin_chat',
+
     IN_PAYMENT = 'in_payment'
 }
 

@@ -309,7 +309,7 @@ export async function handleSupportAdmin(user: any) {
         user.facebook_id,
         'Chọn hành động:',
         [
-            createQuickReply('💬 BẮT ĐẦU CHAT', 'START_ADMIN_CHAT'),
+
             createQuickReply('🤖 CHAT BOT', 'SUPPORT_BOT'),
             createQuickReply('❓ FAQ', 'SUPPORT_FAQ'),
             createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
@@ -325,38 +325,22 @@ export async function handleStartAdminChat(user: any) {
     await hideButtons(user.facebook_id)
 
     try {
-        const { startAdminChatSession } = await import('../admin-chat')
-        const result = await startAdminChatSession(user.facebook_id)
+        // Admin chat functionality removed - redirect to webapp
+        await sendMessagesWithTyping(user.facebook_id, [
+            '🔧 HỆ THỐNG ADMIN',
+            'Admin chat đã được chuyển sang trang web.',
+            '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login',
+            '📧 Liên hệ admin để được cấp tài khoản quản lý.'
+        ])
 
-        if (result.success) {
-            await sendMessagesWithTyping(user.facebook_id, [
-                '✅ ĐÃ KẾT NỐI VỚI ADMIN!',
-                '👨‍💼 Yêu cầu chat đã được gửi đến admin.',
-                '⏳ Vui lòng chờ admin phản hồi...',
-                '',
-                '💬 Bạn có thể gửi tin nhắn ngay bây giờ.',
-                '🤖 Bot sẽ tạm dừng cho đến khi admin trả lời.'
-            ])
-
-            await sendQuickReply(
-                user.facebook_id,
-                'Trong khi chờ đợi:',
-                [
-                    createQuickReply('❌ HỦY CHAT', 'CANCEL_ADMIN_CHAT'),
-                    createQuickReply('🔄 QUAY LẠI BOT', 'EXIT_ADMIN_CHAT')
-                ]
-            )
-        } else {
-            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi kết nối với admin. Vui lòng thử lại sau!')
-            await sendQuickReply(
-                user.facebook_id,
-                'Tùy chọn khác:',
-                [
-                    createQuickReply('🤖 CHAT BOT', 'SUPPORT_BOT'),
-                    createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
-                ]
-            )
-        }
+        await sendQuickReply(
+            user.facebook_id,
+            'Tùy chọn khác:',
+            [
+                createQuickReply('🤖 CHAT BOT', 'SUPPORT_BOT'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
     } catch (error) {
         console.error('Error starting admin chat:', error)
         await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')

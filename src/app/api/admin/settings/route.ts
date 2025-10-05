@@ -143,81 +143,168 @@ export async function POST(request: NextRequest) {
 async function handleCleanupData() {
     try {
         console.log('🧹 Starting database cleanup...')
-        
-        // List of tables to clean (excluding critical system tables)
-        const tablesToClean = [
-            'messages',
-            'conversations',
-            'listings',
-            'payments',
-            'ratings',
-            'events',
-            'event_participants',
-            'notifications',
-            'ads',
-            'search_requests',
-            'referrals',
-            'user_points',
-            'point_transactions',
-            'bot_sessions',
+
+        let cleanedTables = 0
+        let errors: string[] = []
+        let warnings: string[] = []
+
+        // Kiểm tra các bảng tồn tại trước khi xóa
+        const existingTables = await getExistingTables()
+
+        // Thứ tự xóa quan trọng để tránh foreign key constraints
+        // Xóa từ bảng con đến bảng cha
+        const cleanupOrder = [
+            // Bảng không có foreign key dependencies
             'user_messages',
             'spam_logs',
             'spam_tracking',
             'chat_bot_offer_counts',
             'user_bot_modes',
+            'bot_sessions',
             'admin_chat_sessions',
             'user_activities',
             'user_activity_logs',
-            'system_metrics'
+            'system_metrics',
+            'ai_analytics',
+            'ai_templates',
+
+            // Bảng có foreign key đến users nhưng không có bảng khác phụ thuộc
+            'point_transactions',
+            'user_points',
+            'referrals',
+            'search_requests',
+            'ads',
+            'notifications',
+            'event_participants',
+            'events',
+            'ratings',
+            'payments',
+            'listings',
+            'conversations',
+            'messages',
+
+            // Bảng chính - users (cuối cùng)
+            'users'
         ]
 
-        let cleanedTables = 0
-        let errors = []
+        // Lọc chỉ các bảng thực sự tồn tại
+        const tablesToClean = cleanupOrder.filter(table => existingTables.includes(table))
+
+        console.log(`Found ${tablesToClean.length} tables to clean:`, tablesToClean)
 
         for (const table of tablesToClean) {
             try {
-                const { error } = await supabaseAdmin
-                    .from(table)
-                    .delete()
-                    .neq('id', '00000000-0000-0000-0000-000000000000')
-                
+                let deleteQuery = supabaseAdmin.from(table).delete()
+
+                // Xử lý đặc biệt cho từng bảng
+                switch (table) {
+                    case 'users':
+                        // Không xóa admin users
+                        if (process.env.FACEBOOK_PAGE_ID) {
+                            deleteQuery = deleteQuery.neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
+                        }
+                        break
+                    case 'messages':
+                        // Xóa tất cả messages
+                        deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
+                        break
+                    default:
+                        // Xóa tất cả records cho các bảng khác
+                        deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
+                }
+
+                const { error } = await deleteQuery
+
                 if (error) {
                     errors.push(`${table}: ${error.message}`)
+                    console.error(`Error cleaning ${table}:`, error)
                 } else {
                     cleanedTables++
+                    console.log(`✅ Cleaned ${table}`)
                 }
             } catch (err) {
-                errors.push(`${table}: ${err instanceof Error ? err.message : String(err)}`)
+                const errorMsg = err instanceof Error ? err.message : String(err)
+                errors.push(`${table}: ${errorMsg}`)
+                console.error(`Exception cleaning ${table}:`, err)
             }
         }
 
-        // Clean users except admin
-        const { error: usersError } = await supabaseAdmin
-            .from('users')
-            .delete()
-            .neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
-
-        if (!usersError) {
-            cleanedTables++
-        } else {
-            errors.push(`users: ${usersError.message}`)
-        }
+        // Đặt lại sequences cho các bảng SERIAL
+        await resetSequences()
 
         return NextResponse.json({
             success: true,
             message: `Database cleanup completed. Cleaned ${cleanedTables} tables.`,
             details: {
                 cleanedTables,
-                errors: errors.length > 0 ? errors : null
+                totalTables: tablesToClean.length,
+                errors: errors.length > 0 ? errors : null,
+                warnings: warnings.length > 0 ? warnings : null
             }
         })
 
     } catch (error) {
         console.error('Cleanup error:', error)
         return NextResponse.json(
-            { success: false, message: 'Cleanup failed' },
+            { success: false, message: `Cleanup failed: ${error instanceof Error ? error.message : String(error)}` },
             { status: 500 }
         )
+    }
+}
+
+// Lấy danh sách các bảng thực sự tồn tại trong database
+async function getExistingTables() {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('information_schema.tables')
+            .select('table_name')
+            .eq('table_schema', 'public')
+            .in('table_name', [
+                'users', 'listings', 'conversations', 'messages', 'payments',
+                'ratings', 'events', 'event_participants', 'notifications',
+                'ads', 'search_requests', 'referrals', 'user_points',
+                'point_transactions', 'bot_sessions', 'user_messages',
+                'spam_logs', 'spam_tracking', 'admin_users', 'admin_chat_sessions',
+                'user_activities', 'user_activity_logs', 'system_metrics',
+                'chat_bot_offer_counts', 'user_bot_modes', 'bot_settings',
+                'ai_templates', 'ai_analytics'
+            ])
+
+        if (error) {
+            console.error('Error getting existing tables:', error)
+            return []
+        }
+
+        return data?.map(table => table.table_name) || []
+    } catch (err) {
+        console.error('Exception getting existing tables:', err)
+        return []
+    }
+}
+
+// Đặt lại sequences cho các bảng SERIAL
+async function resetSequences() {
+    try {
+        const serialTables = [
+            'user_messages',
+            'spam_logs',
+            'admin_users',
+            'bot_settings',
+            'chat_bot_offer_counts',
+            'user_bot_modes'
+        ]
+
+        for (const table of serialTables) {
+            try {
+                // Đặt lại sequence về 1
+                await supabaseAdmin.rpc('restart_sequence', { table_name: table })
+            } catch (err) {
+                // Nếu function restart_sequence không tồn tại, bỏ qua
+                console.log(`Could not reset sequence for ${table}, continuing...`)
+            }
+        }
+    } catch (err) {
+        console.error('Error resetting sequences:', err)
     }
 }
 

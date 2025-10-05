@@ -41,6 +41,7 @@ export class AuthFlow {
     async handleStep(user: any, text: string, session: any): Promise<void> {
         try {
             console.log('🔍 Processing step:', session?.step, 'for user:', user.facebook_id)
+            console.log('[DEBUG] handleStep: currentStep=${session?.step}, input=${text}')
 
             // Get current step from session - handle both old and new session format
             const currentStep = session?.step || (session as any)?.current_step || 0
@@ -106,17 +107,21 @@ export class AuthFlow {
      */
     private async handlePhoneStep(user: any, text: string, session: any): Promise<void> {
         console.log('📱 Processing phone step for user:', user.facebook_id)
+        console.log('[DEBUG] handlePhoneStep: user=${user.facebook_id}, input=${text}, session.data=${JSON.stringify(session.data)}')
 
         // Clean phone number
         const phone = text.replace(/\D/g, '').trim()
+        console.log('[DEBUG] Cleaned phone number:', phone)
 
         // Validate phone
         if (phone.length < 10 || phone.length > 11) {
+            console.log('[DEBUG] Phone validation failed:', phone.length)
             await this.sendMessage(user.facebook_id, '❌ Số điện thoại không hợp lệ! Vui lòng nhập 10-11 chữ số.')
             return
         }
 
         // Check if phone exists
+        console.log('[DEBUG] Checking if phone exists in database...')
         const { data: existingUser } = await supabaseAdmin
             .from('users')
             .select('facebook_id')
@@ -124,9 +129,12 @@ export class AuthFlow {
             .single()
 
         if (existingUser && existingUser.facebook_id !== user.facebook_id) {
+            console.log('[DEBUG] Phone already exists for another user:', existingUser.facebook_id)
             await this.sendMessage(user.facebook_id, '❌ Số điện thoại đã được sử dụng!')
             return
         }
+
+        console.log('[DEBUG] Phone validation passed, updating session...')
 
         // Update session with phone data
         const sessionData = {
@@ -138,12 +146,18 @@ export class AuthFlow {
             }
         }
 
+        console.log('[DEBUG] New session data:', JSON.stringify(sessionData))
         await updateBotSession(user.facebook_id, sessionData)
+
+        // Verify session was updated
+        const updatedSession = await getBotSession(user.facebook_id)
+        console.log('[DEBUG] Session after update:', JSON.stringify(updatedSession))
 
         // Send location prompt
         await this.sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━`)
 
         // Send location buttons
+        console.log('[DEBUG] Sending location buttons...')
         await this.sendLocationButtons(user.facebook_id)
 
         console.log('✅ Phone step completed, moved to location step')
@@ -154,6 +168,7 @@ export class AuthFlow {
      */
     private async handleLocationStep(user: any, text: string, session: any): Promise<void> {
         console.log('📍 Processing location step for user:', user.facebook_id)
+        console.log('[DEBUG] handleLocationStep: user=${user.facebook_id}, input=${text}, session.step=${session?.step}')
 
         // For location step, we expect postback, not text
         await this.sendMessage(user.facebook_id, '❌ Vui lòng chọn tỉnh/thành phố từ các nút bên dưới!')
@@ -286,16 +301,26 @@ export class AuthFlow {
      * Send location selection buttons
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
+        console.log('[DEBUG] sendLocationButtons: Creating location buttons for user:', facebookId)
+
         const locations = [
             '🏠 HÀ NỘI', '🏢 TP.HCM', '🏖️ ĐÀ NẴNG',
             '🌊 HẢI PHÒNG', '🏔️ CẦN THƠ', '🏘️ BÌNH DƯƠNG'
         ]
 
-        const buttons = locations.map(location =>
-            createQuickReply(location, `LOC_${location.split(' ')[1]}`)
-        )
+        console.log('[DEBUG] Location options:', locations)
+
+        const buttons = locations.map(location => {
+            const locationCode = location.split(' ')[1]
+            const payload = `LOC_${locationCode}`
+            console.log('[DEBUG] Creating button:', location, '->', payload)
+            return createQuickReply(location, payload)
+        })
+
+        console.log('[DEBUG] Total buttons created:', buttons.length)
 
         await sendQuickReply(facebookId, '📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống:', buttons)
+        console.log('[DEBUG] Location buttons sent successfully')
     }
 
     /**
