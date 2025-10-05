@@ -137,28 +137,105 @@ export default function AdminStats() {
 
     const handleExportOverviewReport = async () => {
         await handleActionWithLoading('exportOverview', async () => {
-            await new Promise(resolve => setTimeout(resolve, 3000))
-            showToast('Đã xuất báo cáo tổng quan thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'export' })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Download the exported data as JSON file
+                const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `overview-report-${new Date().toISOString().split('T')[0]}.json`
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+                
+                showToast(`Đã xuất báo cáo tổng quan thành công! ${data.data.summary.totalUsers} users, ${data.data.summary.totalListings} listings`, 'success')
+            } else {
+                showToast(`Lỗi xuất báo cáo: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleExportUsersReport = async () => {
         await handleActionWithLoading('exportUsers', async () => {
-            await new Promise(resolve => setTimeout(resolve, 2500))
-            showToast('Đã xuất danh sách người dùng thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/users', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Download users data as JSON file
+                const blob = new Blob([JSON.stringify(data.users, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `users-report-${new Date().toISOString().split('T')[0]}.json`
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+                
+                showToast(`Đã xuất danh sách ${data.users.length} người dùng thành công!`, 'success')
+            } else {
+                showToast(`Lỗi xuất danh sách người dùng: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleExportFinancialReport = async () => {
         await handleActionWithLoading('exportFinancial', async () => {
-            await new Promise(resolve => setTimeout(resolve, 4000))
-            showToast('Đã xuất báo cáo tài chính thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/payments', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Download payments data as JSON file
+                const blob = new Blob([JSON.stringify(data.payments, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `financial-report-${new Date().toISOString().split('T')[0]}.json`
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+                
+                const totalRevenue = data.payments
+                    ?.filter((p: any) => p.status === 'approved')
+                    ?.reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0
+                
+                showToast(`Đã xuất báo cáo tài chính thành công! ${data.payments.length} payments, Tổng doanh thu: ${totalRevenue.toLocaleString()} VNĐ`, 'success')
+            } else {
+                showToast(`Lỗi xuất báo cáo tài chính: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleRefreshStats = async () => {
         await handleActionWithLoading('refreshStats', async () => {
-            await new Promise(resolve => setTimeout(resolve, 1500))
             await fetchStats()
             showToast('Đã cập nhật dữ liệu thống kê!', 'success')
         })

@@ -131,36 +131,151 @@ export default function AdminUsers() {
 
     const handleExportUsers = async () => {
         await handleActionWithLoading('exportUsers', async () => {
-            await new Promise(resolve => setTimeout(resolve, 2500))
-            showToast('Đã xuất danh sách người dùng thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/users', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Download users data as JSON file
+                const blob = new Blob([JSON.stringify(data.users, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `users-export-${new Date().toISOString().split('T')[0]}.json`
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+                
+                showToast(`Đã xuất danh sách ${data.users.length} người dùng thành công!`, 'success')
+            } else {
+                showToast(`Lỗi xuất danh sách người dùng: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleSendBulkNotification = async () => {
+        const message = prompt('Nhập nội dung thông báo gửi đến tất cả người dùng:')
+        if (!message) return
+
         await handleActionWithLoading('sendBulkNotification', async () => {
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            showToast('Đã gửi thông báo đến tất cả người dùng!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    action: 'sendGeneral',
+                    message: message
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast(`Đã gửi thông báo đến ${data.sentCount} người dùng!`, 'success')
+            } else {
+                showToast(`Lỗi gửi thông báo: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleSuspendUser = async (userId: string) => {
+        const reason = prompt('Nhập lý do đình chỉ (tùy chọn):')
+        
         await handleActionWithLoading(`suspendUser_${userId}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, 1500))
-            showToast('Đã đình chỉ người dùng thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch(`/api/admin/users/${userId}/suspend`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ reason: reason || 'Vi phạm quy định' })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast('Đã đình chỉ người dùng thành công!', 'success')
+                // Refresh users
+                await fetchUsers()
+            } else {
+                showToast(`Lỗi đình chỉ người dùng: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleActivateUser = async (userId: string) => {
         await handleActionWithLoading(`activateUser_${userId}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, 1500))
-            showToast('Đã kích hoạt người dùng thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch(`/api/admin/users/${userId}/activate`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast('Đã kích hoạt người dùng thành công!', 'success')
+                // Refresh users
+                await fetchUsers()
+            } else {
+                showToast(`Lỗi kích hoạt người dùng: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleViewUserDetails = async (userId: string) => {
         await handleActionWithLoading(`viewDetails_${userId}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, 800))
-            showToast('Đang tải thông tin chi tiết...', 'info')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch(`/api/admin/users/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Open details in new window
+                const detailsWindow = window.open('', '_blank', 'width=800,height=600')
+                if (detailsWindow) {
+                    const user = data.user
+                    detailsWindow.document.write(`
+                        <html>
+                            <head><title>User Details - ${user.name}</title></head>
+                            <body style="font-family: Arial, sans-serif; padding: 20px;">
+                                <h1>Chi tiết người dùng</h1>
+                                <h2>${user.name}</h2>
+                                <p><strong>Facebook ID:</strong> ${user.facebook_id}</p>
+                                <p><strong>Số điện thoại:</strong> ${user.phone || 'Chưa cập nhật'}</p>
+                                <p><strong>Email:</strong> ${user.email || 'Chưa cập nhật'}</p>
+                                <p><strong>Trạng thái:</strong> ${user.status}</p>
+                                <p><strong>Ngày đăng ký:</strong> ${new Date(user.created_at).toLocaleString()}</p>
+                                <p><strong>Lần cuối hoạt động:</strong> ${user.last_active ? new Date(user.last_active).toLocaleString() : 'Chưa có'}</p>
+                                <p><strong>Điểm:</strong> ${user.points || 0}</p>
+                                <p><strong>Số tin đăng:</strong> ${user.listings_count || 0}</p>
+                                <p><strong>Số thanh toán:</strong> ${user.payments_count || 0}</p>
+                            </body>
+                        </html>
+                    `)
+                }
+                showToast('Đã mở chi tiết người dùng!', 'success')
+            } else {
+                showToast(`Lỗi tải chi tiết: ${data.message}`, 'error')
+            }
         })
     }
 

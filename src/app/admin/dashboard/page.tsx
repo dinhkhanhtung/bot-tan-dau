@@ -116,44 +116,152 @@ export default function AdminDashboard() {
     }
 
     const handleBulkMessage = async () => {
+        const message = prompt('Nhập nội dung tin nhắn gửi đến tất cả người dùng:')
+        if (!message) return
+
         await handleActionWithLoading('bulkMessage', async () => {
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            showToast('Đã gửi tin nhắn hàng loạt thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    action: 'sendGeneral',
+                    message: message
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast(`Đã gửi tin nhắn hàng loạt đến ${data.sentCount} người dùng!`, 'success')
+            } else {
+                showToast(`Lỗi gửi tin nhắn: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleSendButton = async () => {
+        const userId = prompt('Nhập Facebook ID của người dùng:')
+        if (!userId) return
+
         await handleActionWithLoading('sendButton', async () => {
-            await new Promise(resolve => setTimeout(resolve, 1500))
-            showToast('Đã gửi nút cho người dùng thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    action: 'sendSpecific',
+                    userId: userId,
+                    message: 'Admin đã gửi nút tương tác cho bạn!'
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast('Đã gửi nút cho người dùng thành công!', 'success')
+            } else {
+                showToast(`Lỗi gửi nút: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleChatWithUser = async () => {
+        const userId = prompt('Nhập Facebook ID của người dùng để chat:')
+        if (!userId) return
+
         await handleActionWithLoading('chatWithUser', async () => {
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            showToast('Đang mở cửa sổ chat...', 'info')
+            // Open Facebook Messenger in new window
+            const messengerUrl = `https://m.me/${userId}`
+            window.open(messengerUrl, '_blank')
+            showToast('Đã mở cửa sổ chat với người dùng!', 'success')
         })
     }
 
     const handleSendNotification = async () => {
+        const message = prompt('Nhập nội dung thông báo gửi đến tất cả người dùng:')
+        if (!message) return
+
         await handleActionWithLoading('sendNotification', async () => {
-            await new Promise(resolve => setTimeout(resolve, 2500))
-            showToast('Đã gửi thông báo đến tất cả người dùng!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    action: 'sendGeneral',
+                    message: message
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast(`Đã gửi thông báo đến ${data.sentCount} người dùng!`, 'success')
+            } else {
+                showToast(`Lỗi gửi thông báo: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleGivePoints = async () => {
+        const userId = prompt('Nhập User ID:')
+        if (!userId) return
+        
+        const points = prompt('Nhập số điểm muốn tặng:')
+        if (!points || isNaN(Number(points))) return
+
         await handleActionWithLoading('givePoints', async () => {
-            await new Promise(resolve => setTimeout(resolve, 1800))
-            showToast('Đã tặng điểm thưởng cho người dùng!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch(`/api/admin/users/${userId}/points`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    points: Number(points),
+                    reason: 'Admin tặng điểm thưởng'
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast(`Đã tặng ${points} điểm thưởng cho người dùng!`, 'success')
+            } else {
+                showToast(`Lỗi tặng điểm: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleSyncFromDashboard = async () => {
         await handleActionWithLoading('syncFromDashboard', async () => {
-            await new Promise(resolve => setTimeout(resolve, 3000))
-            showToast('Đồng bộ dữ liệu thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'sync' })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast(`Đồng bộ dữ liệu thành công! ${data.data.users} users, ${data.data.listings} listings`, 'success')
+            } else {
+                showToast(`Lỗi đồng bộ: ${data.message}`, 'error')
+            }
         })
     }
 

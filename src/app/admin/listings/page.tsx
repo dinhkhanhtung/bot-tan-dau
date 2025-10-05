@@ -142,36 +142,172 @@ export default function AdminListings() {
 
     const handleExportListings = async () => {
         await handleActionWithLoading('exportListings', async () => {
-            await new Promise(resolve => setTimeout(resolve, 2500))
-            showToast('Đã xuất danh sách tin đăng thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/listings', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Download listings data as JSON file
+                const blob = new Blob([JSON.stringify(data.listings, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `listings-export-${new Date().toISOString().split('T')[0]}.json`
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+                
+                showToast(`Đã xuất danh sách ${data.listings.length} tin đăng thành công!`, 'success')
+            } else {
+                showToast(`Lỗi xuất danh sách tin đăng: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleApproveListing = async (listingId: string) => {
         await handleActionWithLoading(`approveListing_${listingId}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, 1500))
-            showToast('Đã duyệt tin đăng thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch(`/api/admin/listings/${listingId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast('Đã duyệt tin đăng thành công!', 'success')
+                // Refresh listings
+                await fetchListings()
+            } else {
+                showToast(`Lỗi duyệt tin đăng: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleRejectListing = async (listingId: string) => {
+        const reason = prompt('Nhập lý do từ chối (tùy chọn):')
+        
         await handleActionWithLoading(`rejectListing_${listingId}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, 1500))
-            showToast('Đã từ chối tin đăng!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch(`/api/admin/listings/${listingId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ reason: reason || 'Không đạt yêu cầu' })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast('Đã từ chối tin đăng!', 'success')
+                // Refresh listings
+                await fetchListings()
+            } else {
+                showToast(`Lỗi từ chối tin đăng: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleViewListingDetails = async (listingId: string) => {
         await handleActionWithLoading(`viewDetails_${listingId}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, 800))
-            showToast('Đang tải thông tin chi tiết...', 'info')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch(`/api/admin/listings/${listingId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Open details in new window
+                const detailsWindow = window.open('', '_blank', 'width=800,height=600')
+                if (detailsWindow) {
+                    const listing = data.listing
+                    detailsWindow.document.write(`
+                        <html>
+                            <head><title>Listing Details - ${listing.title}</title></head>
+                            <body style="font-family: Arial, sans-serif; padding: 20px;">
+                                <h1>Chi tiết tin đăng</h1>
+                                <h2>${listing.title}</h2>
+                                <p><strong>Mô tả:</strong> ${listing.description}</p>
+                                <p><strong>Giá:</strong> ${listing.price ? listing.price.toLocaleString() + ' VNĐ' : 'Thỏa thuận'}</p>
+                                <p><strong>Danh mục:</strong> ${listing.category}</p>
+                                <p><strong>Trạng thái:</strong> ${listing.status}</p>
+                                <p><strong>Người đăng:</strong> ${listing.users?.name || 'Unknown'}</p>
+                                <p><strong>Ngày tạo:</strong> ${new Date(listing.created_at).toLocaleString()}</p>
+                                ${listing.images ? `<p><strong>Hình ảnh:</strong> ${listing.images.length} ảnh</p>` : ''}
+                            </body>
+                        </html>
+                    `)
+                }
+                showToast('Đã mở chi tiết tin đăng!', 'success')
+            } else {
+                showToast(`Lỗi tải chi tiết: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleBulkApprove = async () => {
+        if (!confirm('Bạn có chắc chắn muốn duyệt tất cả tin đăng đang chờ?')) {
+            return
+        }
+
         await handleActionWithLoading('bulkApprove', async () => {
-            await new Promise(resolve => setTimeout(resolve, 3000))
-            showToast('Đã duyệt hàng loạt tin đăng thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            
+            // Get all pending listings
+            const response = await fetch('/api/admin/listings?status=pending', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success && data.listings.length > 0) {
+                // Approve all pending listings
+                let approvedCount = 0
+                let errorCount = 0
+
+                for (const listing of data.listings) {
+                    try {
+                        const approveResponse = await fetch(`/api/admin/listings/${listing.id}/approve`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        })
+                        
+                        if (approveResponse.ok) {
+                            approvedCount++
+                        } else {
+                            errorCount++
+                        }
+                    } catch (error) {
+                        errorCount++
+                    }
+                }
+
+                showToast(`Đã duyệt ${approvedCount} tin đăng thành công! ${errorCount > 0 ? `${errorCount} lỗi` : ''}`, 'success')
+                // Refresh listings
+                await fetchListings()
+            } else {
+                showToast('Không có tin đăng nào đang chờ duyệt!', 'info')
+            }
         })
     }
 
@@ -181,8 +317,41 @@ export default function AdminListings() {
         }
 
         await handleActionWithLoading('bulkDelete', async () => {
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            showToast('Đã xóa tin đăng thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            
+            // Get selected listings (assuming we have a selection mechanism)
+            const selectedListings = selectedItems || [] // This should come from component state
+            
+            if (selectedListings.length === 0) {
+                showToast('Vui lòng chọn tin đăng cần xóa!', 'warning')
+                return
+            }
+
+            let deletedCount = 0
+            let errorCount = 0
+
+            for (const listingId of selectedListings) {
+                try {
+                    const response = await fetch(`/api/admin/listings/${listingId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    })
+                    
+                    if (response.ok) {
+                        deletedCount++
+                    } else {
+                        errorCount++
+                    }
+                } catch (error) {
+                    errorCount++
+                }
+            }
+
+            showToast(`Đã xóa ${deletedCount} tin đăng thành công! ${errorCount > 0 ? `${errorCount} lỗi` : ''}`, 'success')
+            // Refresh listings
+            await fetchListings()
         })
     }
 

@@ -204,15 +204,81 @@ export default function AdminPayments() {
 
     const handleExportPayments = async () => {
         await handleActionWithLoading('exportPayments', async () => {
-            await new Promise(resolve => setTimeout(resolve, 2500))
-            showToast('Đã xuất danh sách thanh toán thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/payments', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Download payments data as JSON file
+                const blob = new Blob([JSON.stringify(data.payments, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `payments-export-${new Date().toISOString().split('T')[0]}.json`
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                URL.revokeObjectURL(url)
+                
+                showToast(`Đã xuất danh sách ${data.payments.length} thanh toán thành công!`, 'success')
+            } else {
+                showToast(`Lỗi xuất danh sách thanh toán: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleBulkApprove = async () => {
+        if (!confirm('Bạn có chắc chắn muốn duyệt tất cả thanh toán đang chờ?')) {
+            return
+        }
+
         await handleActionWithLoading('bulkApprovePayments', async () => {
-            await new Promise(resolve => setTimeout(resolve, 3000))
-            showToast('Đã duyệt hàng loạt thanh toán thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            
+            // Get all pending payments
+            const response = await fetch('/api/admin/payments?status=pending', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success && data.payments.length > 0) {
+                // Approve all pending payments
+                let approvedCount = 0
+                let errorCount = 0
+
+                for (const payment of data.payments) {
+                    try {
+                        const approveResponse = await fetch(`/api/admin/payments/${payment.id}/approve`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        })
+                        
+                        if (approveResponse.ok) {
+                            approvedCount++
+                        } else {
+                            errorCount++
+                        }
+                    } catch (error) {
+                        errorCount++
+                    }
+                }
+
+                showToast(`Đã duyệt ${approvedCount} thanh toán thành công! ${errorCount > 0 ? `${errorCount} lỗi` : ''}`, 'success')
+            } else {
+                showToast('Không có thanh toán nào đang chờ duyệt!', 'info')
+            }
         })
     }
 
