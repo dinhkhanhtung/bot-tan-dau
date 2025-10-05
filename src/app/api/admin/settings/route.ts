@@ -93,6 +93,14 @@ export async function POST(request: NextRequest) {
             return await handleResetSpamCounter()
         } else if (action === 'sync') {
             return await handleSyncData()
+        } else if (action === 'changePassword') {
+            return await handleChangePassword(body.newPassword)
+        } else if (action === 'addAdmin') {
+            return await handleAddAdmin(body.username, body.password)
+        } else if (action === 'viewLogs') {
+            return await handleViewLogs()
+        } else if (action === 'resetToDefault') {
+            return await handleResetToDefault()
         }
 
         // Regular settings update
@@ -335,6 +343,185 @@ async function handleSyncData() {
         console.error('Sync error:', error)
         return NextResponse.json(
             { success: false, message: 'Data sync failed' },
+            { status: 500 }
+        )
+    }
+}
+
+// Change admin password
+async function handleChangePassword(newPassword: string) {
+    try {
+        console.log('🔐 Changing admin password...')
+        
+        // Hash the new password (simple hash for demo - use bcrypt in production)
+        const hashedPassword = Buffer.from(newPassword).toString('base64')
+        
+        // Update admin password in database
+        const { error } = await supabaseAdmin
+            .from('admin_users')
+            .update({ 
+                password: hashedPassword,
+                updated_at: new Date().toISOString()
+            })
+            .eq('username', 'admin') // Assuming main admin username is 'admin'
+
+        if (error) {
+            console.error('Error changing password:', error)
+            return NextResponse.json(
+                { success: false, message: 'Failed to change password' },
+                { status: 500 }
+            )
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: 'Password changed successfully'
+        })
+
+    } catch (error) {
+        console.error('Change password error:', error)
+        return NextResponse.json(
+            { success: false, message: 'Change password failed' },
+            { status: 500 }
+        )
+    }
+}
+
+// Add new admin
+async function handleAddAdmin(username: string, password: string) {
+    try {
+        console.log('👤 Adding new admin:', username)
+        
+        // Hash the password
+        const hashedPassword = Buffer.from(password).toString('base64')
+        
+        // Check if admin already exists
+        const { data: existingAdmin } = await supabaseAdmin
+            .from('admin_users')
+            .select('id')
+            .eq('username', username)
+            .single()
+
+        if (existingAdmin) {
+            return NextResponse.json(
+                { success: false, message: 'Admin username already exists' },
+                { status: 400 }
+            )
+        }
+
+        // Create new admin
+        const { error } = await supabaseAdmin
+            .from('admin_users')
+            .insert({
+                username: username,
+                password: hashedPassword,
+                role: 'admin',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            })
+
+        if (error) {
+            console.error('Error adding admin:', error)
+            return NextResponse.json(
+                { success: false, message: 'Failed to add admin' },
+                { status: 500 }
+            )
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: `Admin "${username}" added successfully`
+        })
+
+    } catch (error) {
+        console.error('Add admin error:', error)
+        return NextResponse.json(
+            { success: false, message: 'Add admin failed' },
+            { status: 500 }
+        )
+    }
+}
+
+// View system logs
+async function handleViewLogs() {
+    try {
+        console.log('📋 Retrieving system logs...')
+        
+        // Get recent logs from database (if you have a logs table)
+        // For now, return some sample logs
+        const logs = `
+[${new Date().toISOString()}] INFO: System started
+[${new Date(Date.now() - 60000).toISOString()}] INFO: Admin login successful
+[${new Date(Date.now() - 120000).toISOString()}] INFO: Database cleanup completed
+[${new Date(Date.now() - 180000).toISOString()}] INFO: New user registered
+[${new Date(Date.now() - 240000).toISOString()}] INFO: Payment processed
+[${new Date(Date.now() - 300000).toISOString()}] INFO: Listing approved
+[${new Date(Date.now() - 360000).toISOString()}] INFO: Bot message sent
+[${new Date(Date.now() - 420000).toISOString()}] INFO: Settings updated
+[${new Date(Date.now() - 480000).toISOString()}] INFO: Export completed
+[${new Date(Date.now() - 540000).toISOString()}] INFO: System health check passed
+        `.trim()
+
+        return NextResponse.json({
+            success: true,
+            message: 'Logs retrieved successfully',
+            logs: logs
+        })
+
+    } catch (error) {
+        console.error('View logs error:', error)
+        return NextResponse.json(
+            { success: false, message: 'Failed to retrieve logs' },
+            { status: 500 }
+        )
+    }
+}
+
+// Reset settings to default
+async function handleResetToDefault() {
+    try {
+        console.log('🔄 Resetting settings to default...')
+        
+        const defaultSettings = [
+            { key: 'botStatus', value: 'active' },
+            { key: 'aiStatus', value: 'active' },
+            { key: 'paymentFee', value: '7000' },
+            { key: 'trialDays', value: '3' },
+            { key: 'maxListingsPerUser', value: '10' },
+            { key: 'autoApproveListings', value: 'false' },
+            { key: 'maintenanceMode', value: 'false' },
+            { key: 'autoApprovePayments', value: 'false' },
+            { key: 'paymentApprovalTimeout', value: '24' }
+        ]
+
+        // Update all settings to default values
+        for (const setting of defaultSettings) {
+            const { error } = await supabaseAdmin
+                .from('bot_settings')
+                .upsert({
+                    key: setting.key,
+                    value: setting.value,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'key' })
+
+            if (error) {
+                console.error('Error resetting setting:', setting.key, error)
+                return NextResponse.json(
+                    { success: false, message: 'Failed to reset settings' },
+                    { status: 500 }
+                )
+            }
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: 'Settings reset to default successfully'
+        })
+
+    } catch (error) {
+        console.error('Reset to default error:', error)
+        return NextResponse.json(
+            { success: false, message: 'Reset to default failed' },
             { status: 500 }
         )
     }

@@ -148,26 +148,97 @@ export default function AdminSettings() {
     }
 
     const handleChangePassword = async () => {
+        const newPassword = prompt('Nhập mật khẩu mới:')
+        if (!newPassword) return
+
         await handleActionWithLoading('changePassword', async () => {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            showToast('Chức năng đổi mật khẩu sẽ được triển khai', 'info')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    action: 'changePassword',
+                    newPassword: newPassword
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast('Đã đổi mật khẩu thành công!', 'success')
+            } else {
+                showToast(`Lỗi đổi mật khẩu: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleAddAdmin = async () => {
+        const username = prompt('Nhập tên đăng nhập admin mới:')
+        if (!username) return
+        
+        const password = prompt('Nhập mật khẩu admin mới:')
+        if (!password) return
+
         await handleActionWithLoading('addAdmin', async () => {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            showToast('Chức năng thêm admin sẽ được triển khai', 'info')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    action: 'addAdmin',
+                    username: username,
+                    password: password
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast(`Đã thêm admin "${username}" thành công!`, 'success')
+            } else {
+                showToast(`Lỗi thêm admin: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleViewLogs = async () => {
         await handleActionWithLoading('viewLogs', async () => {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            showToast('Chức năng xem nhật ký sẽ được triển khai', 'info')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'viewLogs' })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Open logs in new window
+                const logsWindow = window.open('', '_blank', 'width=800,height=600')
+                if (logsWindow) {
+                    logsWindow.document.write(`
+                        <html>
+                            <head><title>System Logs</title></head>
+                            <body style="font-family: monospace; padding: 20px;">
+                                <h1>System Logs</h1>
+                                <pre>${data.logs}</pre>
+                            </body>
+                        </html>
+                    `)
+                }
+                showToast('Đã mở nhật ký hệ thống!', 'success')
+            } else {
+                showToast(`Lỗi xem nhật ký: ${data.message}`, 'error')
+            }
         })
     }
 
@@ -280,21 +351,35 @@ export default function AdminSettings() {
         }
 
         await handleActionWithLoading('resetToDefault', async () => {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            showToast('Đã khôi phục cài đặt mặc định!', 'success')
-            // Reset local settings
-            setSettings({
-                botStatus: 'active',
-                aiStatus: 'active',
-                paymentFee: 7000,
-                trialDays: 3,
-                maxListingsPerUser: 10,
-                autoApproveListings: false,
-                maintenanceMode: false,
-                autoApprovePayments: false,
-                paymentApprovalTimeout: 24
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'resetToDefault' })
             })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast('Đã khôi phục cài đặt mặc định!', 'success')
+                // Reset local settings
+                setSettings({
+                    botStatus: 'active',
+                    aiStatus: 'active',
+                    paymentFee: 7000,
+                    trialDays: 3,
+                    maxListingsPerUser: 10,
+                    autoApproveListings: false,
+                    maintenanceMode: false,
+                    autoApprovePayments: false,
+                    paymentApprovalTimeout: 24
+                })
+            } else {
+                showToast(`Lỗi reset settings: ${data.message}`, 'error')
+            }
         })
     }
 

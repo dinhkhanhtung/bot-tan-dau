@@ -114,30 +114,65 @@ export async function GET(request: NextRequest) {
             .sort((a, b) => b.count - a.count)
             .slice(0, 10)
 
-        // Generate recent activity (mock data for now)
-        const recentActivity = [
-            {
-                id: '1',
+        // Get real recent activity from database
+        const [recentUsers, recentPayments, recentListings] = await Promise.all([
+            supabaseAdmin
+                .from('users')
+                .select('id, name, created_at')
+                .order('created_at', { ascending: false })
+                .limit(5),
+            supabaseAdmin
+                .from('payments')
+                .select('id, user_id, status, created_at, users(name)')
+                .order('created_at', { ascending: false })
+                .limit(5),
+            supabaseAdmin
+                .from('listings')
+                .select('id, user_id, title, created_at, users(name)')
+                .order('created_at', { ascending: false })
+                .limit(5)
+        ])
+
+        // Combine and format recent activity
+        const recentActivity = []
+        
+        // Add recent users
+        recentUsers.data?.forEach(user => {
+            recentActivity.push({
+                id: user.id,
                 type: 'user',
                 description: 'Người dùng mới đăng ký',
-                timestamp: new Date().toISOString(),
-                user: 'Nguyễn Văn A'
-            },
-            {
-                id: '2',
+                timestamp: user.created_at,
+                user: user.name
+            })
+        })
+
+        // Add recent payments
+        recentPayments.data?.forEach(payment => {
+            recentActivity.push({
+                id: payment.id,
                 type: 'payment',
-                description: 'Thanh toán được duyệt',
-                timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-                user: 'Trần Thị B'
-            },
-            {
-                id: '3',
+                description: `Thanh toán ${payment.status === 'approved' ? 'được duyệt' : payment.status === 'rejected' ? 'bị từ chối' : 'đang chờ duyệt'}`,
+                timestamp: payment.created_at,
+                user: payment.users?.name || 'Unknown'
+            })
+        })
+
+        // Add recent listings
+        recentListings.data?.forEach(listing => {
+            recentActivity.push({
+                id: listing.id,
                 type: 'listing',
                 description: 'Tin đăng mới được tạo',
-                timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-                user: 'Lê Văn C'
-            }
-        ]
+                timestamp: listing.created_at,
+                user: listing.users?.name || 'Unknown'
+            })
+        })
+
+        // Sort by timestamp and limit to 10
+        const sortedActivity = recentActivity
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+            .slice(0, 10)
 
         const stats = {
             overview: {
@@ -161,7 +196,7 @@ export async function GET(request: NextRequest) {
                 listingsGrowth
             },
             topCategories,
-            recentActivity
+            recentActivity: sortedActivity
         }
 
         return NextResponse.json({

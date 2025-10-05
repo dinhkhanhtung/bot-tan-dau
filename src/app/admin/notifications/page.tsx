@@ -138,37 +138,164 @@ export default function AdminNotifications() {
     }
 
     const handleSendGeneralNotification = async () => {
+        const message = prompt('Nhập nội dung thông báo chung:')
+        if (!message) return
+
         await handleActionWithLoading('sendGeneralNotification', async () => {
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            showToast('Đã gửi thông báo chung thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    action: 'sendGeneral',
+                    message: message
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast(`Đã gửi thông báo chung đến ${data.sentCount} người dùng!`, 'success')
+            } else {
+                showToast(`Lỗi gửi thông báo: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleSendSpecificUserNotification = async () => {
+        const userId = prompt('Nhập User ID:')
+        if (!userId) return
+        
+        const message = prompt('Nhập nội dung thông báo:')
+        if (!message) return
+
         await handleActionWithLoading('sendSpecificUserNotification', async () => {
-            await new Promise(resolve => setTimeout(resolve, 1500))
-            showToast('Đang mở form gửi thông báo cho user cụ thể...', 'info')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    action: 'sendSpecific',
+                    userId: userId,
+                    message: message
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast('Đã gửi thông báo cá nhân thành công!', 'success')
+            } else {
+                showToast(`Lỗi gửi thông báo: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleSendCategoryNotification = async () => {
+        const category = prompt('Nhập danh mục (ví dụ: bất động sản, xe cộ, việc làm):')
+        if (!category) return
+        
+        const message = prompt('Nhập nội dung thông báo:')
+        if (!message) return
+
         await handleActionWithLoading('sendCategoryNotification', async () => {
-            await new Promise(resolve => setTimeout(resolve, 1800))
-            showToast('Đang mở form gửi thông báo theo danh mục...', 'info')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    action: 'sendCategory',
+                    category: category,
+                    message: message
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast(`Đã gửi thông báo danh mục "${category}" đến ${data.sentCount} người dùng!`, 'success')
+            } else {
+                showToast(`Lỗi gửi thông báo: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleViewNotificationHistory = async () => {
         await handleActionWithLoading('viewNotificationHistory', async () => {
-            await new Promise(resolve => setTimeout(resolve, 1200))
-            showToast('Đang tải lịch sử thông báo...', 'info')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'viewHistory' })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Open history in new window
+                const historyWindow = window.open('', '_blank', 'width=1000,height=700')
+                if (historyWindow) {
+                    const notificationsHtml = data.notifications.map((notif: any) => `
+                        <div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 5px;">
+                            <strong>${notif.title}</strong> - ${notif.type}<br>
+                            <small>To: ${notif.users?.name || 'Unknown'} (${notif.users?.phone || 'N/A'})</small><br>
+                            <p>${notif.message}</p>
+                            <small>Created: ${new Date(notif.created_at).toLocaleString()}</small>
+                            ${notif.is_read ? '<span style="color: green;">✓ Read</span>' : '<span style="color: red;">✗ Unread</span>'}
+                        </div>
+                    `).join('')
+                    
+                    historyWindow.document.write(`
+                        <html>
+                            <head><title>Notification History</title></head>
+                            <body style="font-family: Arial, sans-serif; padding: 20px;">
+                                <h1>Notification History (${data.notifications.length} notifications)</h1>
+                                ${notificationsHtml}
+                            </body>
+                        </html>
+                    `)
+                }
+                showToast(`Đã mở lịch sử thông báo (${data.notifications.length} notifications)!`, 'success')
+            } else {
+                showToast(`Lỗi tải lịch sử: ${data.message}`, 'error')
+            }
         })
     }
 
     const handleMarkAsRead = async (notificationId: string) => {
         await handleActionWithLoading(`markAsRead_${notificationId}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, 800))
-            showToast('Đã đánh dấu là đã đọc!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    action: 'markAsRead',
+                    notificationId: notificationId
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast('Đã đánh dấu là đã đọc!', 'success')
+            } else {
+                showToast(`Lỗi đánh dấu đã đọc: ${data.message}`, 'error')
+            }
         })
     }
 
@@ -178,8 +305,26 @@ export default function AdminNotifications() {
         }
 
         await handleActionWithLoading(`deleteNotification_${notificationId}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            showToast('Đã xóa thông báo thành công!', 'success')
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    action: 'delete',
+                    notificationId: notificationId
+                })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                showToast('Đã xóa thông báo thành công!', 'success')
+            } else {
+                showToast(`Lỗi xóa thông báo: ${data.message}`, 'error')
+            }
         })
     }
 
