@@ -84,7 +84,7 @@ export class AuthFlow {
         // Save name and move to phone step
         const sessionData = {
             current_flow: 'registration',
-            current_step: 'phone',
+            step: 'phone',
             data: { name: text.trim() }
         }
 
@@ -126,7 +126,7 @@ export class AuthFlow {
         // Update session with phone data
         const sessionData = {
             current_flow: 'registration',
-            current_step: 'location',
+            step: 'location',
             data: {
                 ...session.data,
                 phone: phone
@@ -181,7 +181,7 @@ export class AuthFlow {
             // Move to final step - birthday verification
             const sessionData = {
                 current_flow: 'registration',
-                current_step: 'birthday',
+                step: 'birthday',
                 data: {
                     ...session.data,
                     location: location
@@ -258,7 +258,7 @@ export class AuthFlow {
         // Create initial session
         await updateBotSession(user.facebook_id, {
             current_flow: 'registration',
-            current_step: 'name',
+            step: 'name',
             data: {}
         })
 

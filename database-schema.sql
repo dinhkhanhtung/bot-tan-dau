@@ -223,13 +223,14 @@ CREATE TABLE IF NOT EXISTS point_transactions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Bot sessions table - FIXED VERSION với cột data
+-- Bot sessions table - FIXED VERSION với cột data và step
 CREATE TABLE IF NOT EXISTS bot_sessions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     facebook_id VARCHAR(255) UNIQUE NOT NULL,
     session_data JSONB DEFAULT '{}',
     current_flow VARCHAR(100) DEFAULT NULL,
     current_step INTEGER DEFAULT 0,
+    step VARCHAR(50) DEFAULT NULL,
     data JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -238,6 +239,7 @@ CREATE TABLE IF NOT EXISTS bot_sessions (
 -- Create index for better performance
 CREATE INDEX IF NOT EXISTS idx_bot_sessions_facebook_id ON bot_sessions(facebook_id);
 CREATE INDEX IF NOT EXISTS idx_bot_sessions_current_flow ON bot_sessions(current_flow) WHERE current_flow IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_bot_sessions_step ON bot_sessions(step) WHERE step IS NOT NULL;
 
 -- ========================================
 -- 3. ANTI-SPAM TABLES
@@ -764,3 +766,45 @@ WHERE paused_for_admin = TRUE;
 
 -- Cập nhật comment cho bảng
 COMMENT ON COLUMN user_bot_modes.paused_for_admin IS 'Đánh dấu user đang trong admin chat để tạm dừng welcome counter';
+
+-- ========================================
+-- MIGRATION: Thêm cột step vào bot_sessions
+-- ========================================
+-- Cập nhật: Thêm cột step để lưu tên bước hiện tại (name, phone, location, etc.)
+
+-- Thêm cột step vào bảng bot_sessions
+ALTER TABLE bot_sessions 
+ADD COLUMN IF NOT EXISTS step VARCHAR(50) DEFAULT NULL;
+
+-- Tạo index cho cột mới để tăng tốc query
+CREATE INDEX IF NOT EXISTS idx_bot_sessions_step_migration 
+ON bot_sessions(step) 
+WHERE step IS NOT NULL;
+
+-- Cập nhật comment cho bảng
+COMMENT ON COLUMN bot_sessions.step IS 'Tên bước hiện tại trong flow (name, phone, location, birthday, etc.)';
+COMMENT ON COLUMN bot_sessions.current_step IS 'Số thứ tự bước hiện tại (integer counter)';
+
+-- ========================================
+-- VERIFICATION & CLEANUP
+-- ========================================
+-- Kiểm tra migration đã thành công
+SELECT 'Migration completed successfully' as status;
+
+-- Hiển thị cấu trúc bảng bot_sessions sau migration
+SELECT column_name, data_type, is_nullable, column_default 
+FROM information_schema.columns 
+WHERE table_name = 'bot_sessions' 
+AND column_name IN ('step', 'current_step', 'current_flow', 'facebook_id', 'data')
+ORDER BY column_name;
+
+-- Kiểm tra index đã được tạo
+SELECT indexname, indexdef 
+FROM pg_indexes 
+WHERE tablename = 'bot_sessions' 
+AND indexname LIKE '%step%';
+
+-- ========================================
+-- FINAL STATUS
+-- ========================================
+SELECT 'Database setup hoàn chỉnh với FIXED bot_sessions table!' as final_status;
