@@ -43,27 +43,33 @@ export class AuthFlow {
             console.log('🔍 Processing step:', session?.step, 'for user:', user.facebook_id)
 
             // Get current step from session - handle both old and new session format
-            const currentStep = session?.step || (session as any)?.current_step?.toString() || 'name'
+            const currentStep = session?.step || (session as any)?.current_step || 0
+
+            console.log('🔍 Current step value:', currentStep, 'Type:', typeof currentStep)
 
             switch (currentStep) {
-                case 'name':
+                case 0:
                 case '0':
+                case 'name':
                     await this.handleNameStep(user, text, session)
                     break
-                case 'phone':
+                case 1:
                 case '1':
+                case 'phone':
                     await this.handlePhoneStep(user, text, session)
                     break
-                case 'location':
+                case 2:
                 case '2':
+                case 'location':
                     await this.handleLocationStep(user, text, session)
                     break
-                case 'birthday':
+                case 3:
                 case '3':
+                case 'birthday':
                     await this.handleBirthdayStep(user, text, session)
                     break
                 default:
-                    console.log('❌ Unknown step:', currentStep)
+                    console.log('❌ Unknown step:', currentStep, 'Type:', typeof currentStep)
                     await this.sendErrorMessage(user.facebook_id)
             }
 
@@ -88,7 +94,7 @@ export class AuthFlow {
         // Save name and move to phone step
         const sessionData = {
             current_flow: 'registration',
-            step: '1',  // Use numeric step for consistency
+            step: 1,  // Use numeric step for consistency
             data: { name: text.trim() }
         }
 
@@ -177,8 +183,7 @@ export class AuthFlow {
 
             // Get current session
             const session = await getBotSession(user.facebook_id)
-            const currentStepValue = (session as any)?.current_step || session?.step
-            if (!session || (session.step !== 'location' && session.step !== '2' && currentStepValue?.toString() !== 'location' && currentStepValue?.toString() !== '2')) {
+            if (!session) {
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
@@ -186,7 +191,7 @@ export class AuthFlow {
             // Move to final step - birthday verification
             const sessionData = {
                 current_flow: 'registration',
-                step: '3',  // Use numeric step for consistency
+                step: 3,  // Use numeric step for consistency
                 data: {
                     ...session.data,
                     location: location
@@ -278,9 +283,6 @@ export class AuthFlow {
         await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
         await this.sendMessage(user.facebook_id, '💡 LƯU Ý QUAN TRỌNG:')
         await this.sendMessage(user.facebook_id, '• Chỉ dành cho Tân Dậu (1981)')
-        await this.sendMessage(user.facebook_id, '• Thông tin được bảo mật tuyệt đối')
-        await this.sendMessage(user.facebook_id, '• Trial 3 ngày miễn phí')
-        await this.sendMessage(user.facebook_id, '• Phí duy trì: 3,000đ/ngày')
         await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
         await this.sendMessage(user.facebook_id, '📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
     }

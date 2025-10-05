@@ -255,9 +255,9 @@ export class DatabaseService {
                         .from('bot_sessions')
                         .select('*')
                         .eq('facebook_id', facebookId)
-                        .single()
+                        .maybeSingle()  // Use maybeSingle() instead of single() to avoid error when no rows
 
-                    if (error && error.code !== 'PGRST116') {
+                    if (error) {
                         // If table doesn't exist or other error, return null
                         if (error.message.includes('schema cache') || error.message.includes('does not exist')) {
                             logger.warn('Bot sessions table not found, returning null', { error: error.message })
@@ -276,6 +276,7 @@ export class DatabaseService {
                             current_flow: data.current_flow || null,
                             step: data.step || data.current_step || 0,  // Map both old and new formats
                             current_step: data.current_step || data.step || 0,
+                            data: data.data || {},  // Ensure data field exists
                             created_at: data.created_at,
                             updated_at: data.updated_at
                         }
