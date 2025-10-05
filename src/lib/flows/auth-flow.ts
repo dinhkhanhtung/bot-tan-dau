@@ -185,37 +185,37 @@ export class AuthFlow {
             }
         }
 
-        // FIX: Handle both session data structures for compatibility
-        const currentStep = session.step || session.session_data?.step || 'name'
-        const sessionData = session.data || session.session_data?.data || {}
+        // CHUẨN HÓA: Sử dụng session data đã được chuẩn hóa
+        const currentStep = session.session_data?.step || session.step || 'name'
+        const sessionData = session.session_data?.data || session.data || {}
 
         console.log('🔄 Processing step:', currentStep, 'with data:', sessionData)
 
         switch (currentStep) {
             case 'name':
-                await this.handleRegistrationName(user, text, session.data)
+                await this.handleRegistrationName(user, text, sessionData)
                 break
             case 'phone':
-                await this.handleRegistrationPhone(user, text, session.data)
+                await this.handleRegistrationPhone(user, text, sessionData)
                 break
             case 'location':
-                await this.handleRegistrationLocation(user, text, session.data)
+                await this.handleRegistrationLocation(user, text, sessionData)
                 break
             case 'birthday':
-                await this.handleRegistrationBirthday(user, text, session.data)
+                await this.handleRegistrationBirthday(user, text, sessionData)
                 break
             case 'birthday_confirm':
                 // This step is handled by postback buttons, not text input
                 await sendMessage(user.facebook_id, '❌ Vui lòng chọn nút xác nhận bên dưới để tiếp tục!')
                 break
             case 'email':
-                await this.handleRegistrationEmail(user, text, session.data)
+                await this.handleRegistrationEmail(user, text, sessionData)
                 break
             case 'keywords':
-                await this.handleRegistrationKeywords(user, text, session.data)
+                await this.handleRegistrationKeywords(user, text, sessionData)
                 break
             case 'product_service':
-                await this.handleRegistrationProductService(user, text, session.data)
+                await this.handleRegistrationProductService(user, text, sessionData)
                 break
             default:
                 await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng bắt đầu đăng ký lại!')

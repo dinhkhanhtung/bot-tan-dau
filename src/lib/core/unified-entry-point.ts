@@ -45,14 +45,24 @@ export class UnifiedBotSystem {
             // Step 3: Check user session and prioritize active flows
             const session = await this.getUserSession(user.facebook_id)
 
-            // FIX: Handle both session data structures for compatibility
-            const currentFlow = session?.current_flow || session?.session_data?.current_flow || null
+            // CHUẨN HÓA: Lấy current_flow từ session (đã được chuẩn hóa trong getBotSession)
+            const currentFlow = session?.current_flow || null
 
-            logger.debug('Session check', { currentFlow, session })
+            logger.debug('Session check', {
+                currentFlow,
+                session,
+                facebook_id: user.facebook_id,
+                hasSession: !!session,
+                sessionData: session?.session_data
+            })
 
-            // If user is in an active flow, handle flow first
+            // If user is in an active flow, handle flow first - ƯU TIÊN CAO NHẤT
             if (currentFlow && ['registration', 'listing', 'search'].includes(currentFlow)) {
-                logger.info('User in active flow', { currentFlow, facebook_id: user.facebook_id })
+                logger.info('User in active flow - PRIORITIZING FLOW', {
+                    currentFlow,
+                    facebook_id: user.facebook_id,
+                    step: session?.session_data?.step || session?.current_step
+                })
                 await this.handleFlowMessage(user, text, session)
                 return
             }
@@ -176,11 +186,24 @@ export class UnifiedBotSystem {
      */
     private static async handleFlowMessage(user: any, text: string, session?: any): Promise<void> {
         try {
-            // FIX: Handle both session data structures for compatibility
-            const currentFlow = session?.current_flow || session?.session_data?.current_flow || null
+            // CHUẨN HÓA: Sử dụng session đã được chuẩn hóa từ getBotSession
+            const currentFlow = session?.current_flow || null
+
+            logger.debug('Handling flow message', {
+                currentFlow,
+                facebook_id: user.facebook_id,
+                hasSession: !!session,
+                sessionData: session?.session_data,
+                text: text?.substring(0, 50) + '...'
+            })
 
             // Kiểm tra session hợp lệ
             if (!session || !currentFlow) {
+                logger.error('Invalid session for flow message', {
+                    facebook_id: user.facebook_id,
+                    session,
+                    currentFlow
+                })
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
@@ -194,6 +217,10 @@ export class UnifiedBotSystem {
             // Route đến flow handler phù hợp
             switch (currentFlow) {
                 case 'registration':
+                    logger.info('Routing to registration flow', {
+                        facebook_id: user.facebook_id,
+                        step: session?.session_data?.step
+                    })
                     const { AuthFlow } = await import('../flows/auth-flow')
                     const authFlow = new AuthFlow()
                     await authFlow.handleStep(user, text || '', session)
@@ -209,10 +236,15 @@ export class UnifiedBotSystem {
                     await searchFlow.handleSearchStep(user, text || '', session)
                     break
                 default:
+                    logger.error('Unknown flow type', { currentFlow, facebook_id: user.facebook_id })
                     await this.sendErrorMessage(user.facebook_id)
             }
         } catch (error) {
-            console.error('Error handling flow message:', error)
+            logger.error('Error handling flow message', {
+                error: error instanceof Error ? error.message : String(error),
+                facebook_id: user.facebook_id,
+                currentFlow: session?.current_flow
+            })
             await this.sendErrorMessage(user.facebook_id)
         }
     }
@@ -539,14 +571,16 @@ export class UnifiedBotSystem {
                 currentFlow,
                 session,
                 isInBotMode,
-                facebook_id: user.facebook_id
+                facebook_id: user.facebook_id,
+                hasSession: !!session
             })
 
             // Nếu đang trong flow đăng ký, xử lý tin nhắn bình thường - KHÔNG áp dụng counter
             if (currentFlow === 'registration') {
-                logger.info('New user in registration flow - bypassing counter logic', {
+                logger.info('New user in registration flow - BYPASSING COUNTER LOGIC', {
                     facebook_id: user.facebook_id,
-                    currentFlow
+                    currentFlow,
+                    step: session?.session_data?.step
                 })
                 await this.handleFlowMessage(user, text, session)
                 return

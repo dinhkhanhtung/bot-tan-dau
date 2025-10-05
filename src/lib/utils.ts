@@ -312,11 +312,16 @@ export function deepClone<T>(obj: T): T {
 // Update bot session
 export async function updateBotSession(facebookId: string, sessionData: any) {
     const { supabaseAdmin } = await import('./supabase')
+
+    // CHUẨN HÓA: Luôn lưu current_flow vào cả 2 nơi để đảm bảo tương thích
+    const currentFlow = sessionData?.current_flow || null
+
     await supabaseAdmin
         .from('bot_sessions')
         .upsert({
             facebook_id: facebookId,
             session_data: sessionData,
+            current_flow: currentFlow, // Lưu vào cột riêng để dễ query
             updated_at: new Date().toISOString()
         })
 }
@@ -331,6 +336,23 @@ export async function getBotSession(facebookId: string) {
         .single()
 
     if (error) return null
+
+    // CHUẨN HÓA: Đảm bảo current_flow có sẵn ở cả 2 nơi
+    if (data) {
+        const currentFlow = data.current_flow || data.session_data?.current_flow || null
+
+        // Nếu current_flow chỉ có trong session_data, copy ra ngoài
+        if (!data.current_flow && data.session_data?.current_flow) {
+            data.current_flow = data.session_data.current_flow
+        }
+
+        // Nếu current_flow chỉ có ở ngoài, copy vào session_data
+        if (data.current_flow && !data.session_data?.current_flow) {
+            data.session_data = data.session_data || {}
+            data.session_data.current_flow = data.current_flow
+        }
+    }
+
     return data
 }
 
