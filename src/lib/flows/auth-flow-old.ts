@@ -235,22 +235,15 @@ export class AuthFlow {
      */
     async handleStep(user: any, text: string, session: any): Promise<void> {
         try {
-            // Parse session data correctly - session comes from database with session_data field
-            const sessionData = session?.session_data || session
-            const currentStep = sessionData?.step || 'name'
-            const data = sessionData?.data || {}
-            const startedAt = sessionData?.started_at
-
             console.log('🔍 handleStep called:', {
                 text,
-                sessionStep: currentStep,
-                sessionData: data,
-                sessionStartedAt: startedAt,
-                rawSession: session
+                sessionStep: session?.session_data?.step,
+                sessionData: session?.session_data?.data,
+                sessionStartedAt: session?.session_data?.started_at
             })
 
             // Enhanced session validation with fallback
-            if (!session || !sessionData?.current_flow) {
+            if (!session || !session.current_flow) {
                 console.log('❌ Invalid session in handleStep - attempting fallback')
                 await this.handleSessionError(user, 'Phiên đăng ký không hợp lệ')
                 return
@@ -263,8 +256,8 @@ export class AuthFlow {
             }
 
             // Check if session is too old (more than 30 minutes) with fallback
-            if (startedAt) {
-                const sessionAge = Date.now() - new Date(startedAt).getTime()
+            if (session.session_data?.started_at) {
+                const sessionAge = Date.now() - new Date(session.session_data.started_at).getTime()
                 if (sessionAge > 30 * 60 * 1000) { // 30 minutes
                     console.log('Session expired, offering restart')
                     await this.handleRegistrationTimeout(user)
@@ -272,10 +265,14 @@ export class AuthFlow {
                 }
             }
 
-            console.log('🔄 Processing step:', currentStep, 'with data:', data)
+            // Process step with enhanced error handling
+            const currentStep = session.session_data?.step || 'name'
+            const sessionData = session.session_data?.data || {}
+
+            console.log('🔄 Processing step:', currentStep, 'with data:', sessionData)
 
             // Use safe step processing
-            await this.processRegistrationStep(user, text, currentStep, data)
+            await this.processRegistrationStep(user, text, currentStep, sessionData)
 
         } catch (error) {
             console.error('Error in handleStep:', error)
@@ -288,36 +285,20 @@ export class AuthFlow {
      */
     private async processRegistrationStep(user: any, text: string, step: string, data: any): Promise<void> {
         try {
-            switch (step) {
-                case 'name':
-                    await this.handleRegistrationName(user, text, data)
-                    break
-                case 'phone':
-                    await this.handleRegistrationPhone(user, text, data)
-                    break
-                case 'location':
-                    await this.handleRegistrationLocation(user, text, data)
-                    break
-                case 'birthday':
-                    await this.handleRegistrationBirthday(user, text, data)
-                    break
-                case 'birthday_confirm':
-                    // This step is handled by postback buttons, not text input
-                    await sendMessage(user.facebook_id, '❌ Vui lòng chọn nút xác nhận bên dưới để tiếp tục!')
-                    break
-                case 'email':
-                    await this.handleRegistrationEmail(user, text, data)
-                    break
-                case 'keywords':
-                    await this.handleRegistrationKeywords(user, text, data)
-                    break
-                case 'product_service':
-                    await this.handleRegistrationProductService(user, text, data)
-                    break
-                default:
-                    console.log('❌ Unknown step:', step)
-                    await this.handleSessionError(user, 'Bước đăng ký không hợp lệ')
+            // Import handlers from auth-handlers.ts
+            const { 
+                handleRegistrationStep 
+            } = await import('../handlers/auth-handlers')
+            
+            // Create session object in the format expected by auth-handlers
+            const session = {
+                step: step,
+                data: data
             }
+            
+            // Use the existing handler from auth-handlers.ts
+            await handleRegistrationStep(user, text, session)
+            
         } catch (error) {
             console.error(`Error processing step ${step}:`, error)
             await this.handleStepError(user, error, step)
@@ -366,61 +347,9 @@ export class AuthFlow {
         )
     }
 
-    /**
-     * Handle name input - ENHANCED VERSION
-     */
-    private async handleRegistrationName(user: any, text: string, data: any): Promise<void> {
-        console.log('🔍 handleRegistrationName called:', { text, textLength: text.length, data })
+    // Registration handlers are now imported from auth-handlers.ts
 
-        // FIX: Đảm bảo data không bao giờ là undefined
-        if (!data) {
-            console.log('⚠️ Data is undefined, creating new object')
-            data = {}
-        }
-
-        // Validate name using comprehensive validation
-        const validation = this.validateName(text)
-        if (!validation.isValid) {
-            // Enhanced error message with guidance
-            const errorMessage = validation.message || '❌ Tên không hợp lệ. Vui lòng nhập lại:'
-            await sendMessage(user.facebook_id, errorMessage)
-
-            // Provide helpful guidance
-            await sendMessage(user.facebook_id, '💡 Mẹo: Nhập tên thật của bạn, ví dụ:\n• Nguyễn Văn Minh\n• Trần Thị Lan\n• Lê Minh Tuấn')
-            return
-        }
-
-        data.name = text.trim()
-        console.log('✅ Name saved:', data.name)
-
-        // Enhanced success message with progress indicator
-        await sendMessage(user.facebook_id, `✅ Họ tên: ${data.name}\n\n📝 Tiến trình: (1/4) ✅ → (2/4) 📱 → (3/4) 📍 → (4/4) 🎂\n\n📱 Bước 2: Số điện thoại\nVui lòng nhập số điện thoại của bạn:`)
-
-        const sessionUpdate = {
-            current_flow: 'registration',
-            step: 'phone',
-            data: data,
-            started_at: new Date().toISOString()
-        }
-
-        console.log('🔄 Updating session:', sessionUpdate)
-        await updateBotSession(user.facebook_id, sessionUpdate)
-
-        // Verify session was updated
-        const sessionCheck = await getBotSession(user.facebook_id)
-        console.log('✅ Session after name update:', sessionCheck)
-    }
-
-    /**
-     * Handle phone input - ENHANCED VERSION
-     */
-    private async handleRegistrationPhone(user: any, text: string, data: any): Promise<void> {
-        console.log('📱 handleRegistrationPhone called:', {
-            text,
-            textLength: text.length,
-            data,
-            userId: user.facebook_id
-        })
+}
 
         // FIX: Đảm bảo data không bao giờ là undefined
         if (!data) {
