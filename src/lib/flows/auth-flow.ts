@@ -43,19 +43,23 @@ export class AuthFlow {
             console.log('🔍 Processing step:', session?.step, 'for user:', user.facebook_id)
 
             // Get current step from session - handle both old and new session format
-            const currentStep = session?.step || session?.current_step?.toString() || 'name'
+            const currentStep = session?.step || (session as any)?.current_step?.toString() || 'name'
 
             switch (currentStep) {
                 case 'name':
+                case '0':
                     await this.handleNameStep(user, text, session)
                     break
                 case 'phone':
+                case '1':
                     await this.handlePhoneStep(user, text, session)
                     break
                 case 'location':
+                case '2':
                     await this.handleLocationStep(user, text, session)
                     break
                 case 'birthday':
+                case '3':
                     await this.handleBirthdayStep(user, text, session)
                     break
                 default:
@@ -174,7 +178,7 @@ export class AuthFlow {
             // Get current session
             const session = await getBotSession(user.facebook_id)
             const currentStepValue = (session as any)?.current_step || session?.step
-            if (!session || (session.step !== 'location' && currentStepValue?.toString() !== 'location')) {
+            if (!session || (session.step !== 'location' && session.step !== '2' && currentStepValue?.toString() !== 'location' && currentStepValue?.toString() !== '2')) {
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
