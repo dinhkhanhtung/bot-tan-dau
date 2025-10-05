@@ -57,6 +57,7 @@ export default function AdminPayments() {
         fetchPayments()
     }, [filter])
 
+    // Move functions outside useEffect to fix dependency warnings
     const checkAuth = () => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')

@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    experimental: {
+        serverComponentsExternalPackages: ['@supabase/supabase-js'],
+    },
     env: {
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
         NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -18,6 +21,12 @@ const nextConfig = {
         GOOGLE_AI_ENABLED: process.env.GOOGLE_AI_ENABLED,
         OPENAI_MODEL: process.env.OPENAI_MODEL,
         GOOGLE_AI_MODEL: process.env.GOOGLE_AI_MODEL,
+    },
+    // Enable API routes to be properly built
+    output: 'standalone',
+    // Fix dynamic API routes
+    generateBuildId: async () => {
+        return 'build-' + Date.now()
     },
 }
 

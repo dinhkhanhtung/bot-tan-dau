@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Execute the query with parameters
+    // Execute the query with parameters using the admin client for RPC calls
     const { data, error } = await supabase.rpc('execute_sql', {
       sql_query: query,
       sql_params: params
@@ -40,6 +40,9 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Force this route to be dynamic
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
