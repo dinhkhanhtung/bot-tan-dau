@@ -301,6 +301,7 @@ export class AuthFlow {
         }
 
         data.phone = phone
+        console.log('✅ Phone saved:', data.phone)
 
         await sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n📝 Bước 3/7: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:`)
 
@@ -318,11 +319,19 @@ export class AuthFlow {
             ]
         )
 
-        await updateBotSession(user.facebook_id, {
+        const sessionUpdate = {
             current_flow: 'registration',
             step: 'location',
-            data: data
-        })
+            data: data,
+            started_at: new Date().toISOString()
+        }
+
+        console.log('🔄 Updating session after phone:', sessionUpdate)
+        await updateBotSession(user.facebook_id, sessionUpdate)
+
+        // Verify session was updated
+        const sessionCheck = await getBotSession(user.facebook_id)
+        console.log('✅ Session after phone update:', sessionCheck)
     }
 
     /**
@@ -332,8 +341,15 @@ export class AuthFlow {
         const session = await getBotSession(user.facebook_id)
         if (!session || session.current_flow !== 'registration') return
 
-        const data = session.data
+        // FIX: Đảm bảo data không bao giờ là undefined
+        let data = session.data || session.session_data?.data || {}
+        if (!data) {
+            console.log('⚠️ Data is undefined in location postback handler, creating new object')
+            data = {}
+        }
+
         data.location = location
+        console.log('✅ Location saved:', data.location)
 
         await sendMessage(user.facebook_id, `✅ Vị trí: ${location}\n📝 Bước 4/7: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!\n❓ Bạn có phải sinh năm 1981 (Tân Dậu) không?`)
 
@@ -346,11 +362,19 @@ export class AuthFlow {
             ]
         )
 
-        await updateBotSession(user.facebook_id, {
+        const sessionUpdate = {
             current_flow: 'registration',
             step: 'birthday_confirm',
-            data: data
-        })
+            data: data,
+            started_at: new Date().toISOString()
+        }
+
+        console.log('🔄 Updating session after location:', sessionUpdate)
+        await updateBotSession(user.facebook_id, sessionUpdate)
+
+        // Verify session was updated
+        const sessionCheck = await getBotSession(user.facebook_id)
+        console.log('✅ Session after location update:', sessionCheck)
     }
 
     /**
@@ -389,7 +413,7 @@ export class AuthFlow {
     /**
      * Handle birthday verification
      */
-    async handleBirthdayVerification(user: any): Promise<void> {
+    async handleBirthdayVerification(user: any, answer: string): Promise<void> {
         const session = await getBotSession(user.facebook_id)
         if (!session || session.current_flow !== 'registration') return
 

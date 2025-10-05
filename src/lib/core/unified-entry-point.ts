@@ -319,6 +319,20 @@ export class UnifiedBotSystem {
                         await this.showMainMenu(user)
                     }
                     break
+                case 'REG':
+                    // Xử lý postback cho registration flow
+                    if (params[0] === 'LOCATION') {
+                        const location = params[1] // HANOI, HCM, etc.
+                        const { AuthFlow } = await import('../flows/auth-flow')
+                        const authFlow = new AuthFlow()
+                        await authFlow.handleRegistrationLocationPostback(user, location)
+                    } else if (params[0] === 'BIRTHDAY') {
+                        const answer = params[1] // YES or NO
+                        const { AuthFlow } = await import('../flows/auth-flow')
+                        const authFlow = new AuthFlow()
+                        await authFlow.handleBirthdayVerification(user, answer)
+                    }
+                    break
                 default:
                     await this.routeToHandler(user, postback)
             }
