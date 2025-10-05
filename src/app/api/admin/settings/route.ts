@@ -187,7 +187,7 @@ async function handleCleanupData() {
                     cleanedTables++
                 }
             } catch (err) {
-                errors.push(`${table}: ${err.message}`)
+                errors.push(`${table}: ${err instanceof Error ? err.message : String(err)}`)
             }
         }
 

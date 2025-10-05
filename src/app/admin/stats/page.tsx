@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 // Toast notification component
@@ -71,7 +71,7 @@ export default function AdminStats() {
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
-    const checkAuth = () => {
+    const checkAuth = useCallback(() => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')
 
@@ -81,9 +81,9 @@ export default function AdminStats() {
         }
 
         setAdminInfo(JSON.parse(adminInfoStr))
-    }
+    }, [router])
 
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
             const token = localStorage.getItem('admin_token')
             const response = await fetch(`/api/admin/stats?range=${timeRange}`, {
@@ -104,12 +104,12 @@ export default function AdminStats() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [timeRange])
 
     useEffect(() => {
         checkAuth()
         fetchStats()
-    }, [timeRange])
+    }, [checkAuth, fetchStats])
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('vi-VN').format(amount) + 'đ'

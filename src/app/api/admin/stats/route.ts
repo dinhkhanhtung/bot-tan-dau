@@ -123,18 +123,24 @@ export async function GET(request: NextRequest) {
                 .limit(5),
             supabaseAdmin
                 .from('payments')
-                .select('id, user_id, status, created_at, users(name)')
+                .select('id, user_id, status, created_at, users!inner(name)')
                 .order('created_at', { ascending: false })
                 .limit(5),
             supabaseAdmin
                 .from('listings')
-                .select('id, user_id, title, created_at, users(name)')
+                .select('id, user_id, title, created_at, users!inner(name)')
                 .order('created_at', { ascending: false })
                 .limit(5)
         ])
 
         // Combine and format recent activity
-        const recentActivity = []
+        const recentActivity: Array<{
+            id: string
+            type: string
+            description: string
+            timestamp: string
+            user?: string
+        }> = []
         
         // Add recent users
         recentUsers.data?.forEach(user => {
@@ -148,7 +154,7 @@ export async function GET(request: NextRequest) {
         })
 
         // Add recent payments
-        recentPayments.data?.forEach(payment => {
+        recentPayments.data?.forEach((payment: any) => {
             recentActivity.push({
                 id: payment.id,
                 type: 'payment',
@@ -159,7 +165,7 @@ export async function GET(request: NextRequest) {
         })
 
         // Add recent listings
-        recentListings.data?.forEach(listing => {
+        recentListings.data?.forEach((listing: any) => {
             recentActivity.push({
                 id: listing.id,
                 type: 'listing',

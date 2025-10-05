@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 // Toast notification component
@@ -50,7 +50,7 @@ export default function AdminUsers() {
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
-    const checkAuth = () => {
+    const checkAuth = useCallback(() => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')
 
@@ -60,9 +60,9 @@ export default function AdminUsers() {
         }
 
         setAdminInfo(JSON.parse(adminInfoStr))
-    }
+    }, [router])
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         try {
             const token = localStorage.getItem('admin_token')
             const response = await fetch(`/api/admin/users?status=${filter}`, {
@@ -83,12 +83,12 @@ export default function AdminUsers() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [filter])
 
     useEffect(() => {
         checkAuth()
         fetchUsers()
-    }, [filter])
+    }, [checkAuth, fetchUsers])
 
     const filteredUsers = users.filter(user => {
         if (!searchTerm) return true

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 // Toast notification component
@@ -58,7 +58,7 @@ export default function AdminSettings() {
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
-    const checkAuth = () => {
+    const checkAuth = useCallback(() => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')
 
@@ -68,12 +68,12 @@ export default function AdminSettings() {
         }
 
         setAdminInfo(JSON.parse(adminInfoStr))
-    }
+    }, [router])
 
     useEffect(() => {
         checkAuth()
         fetchSettings()
-    }, [])
+    }, [checkAuth])
 
     const fetchSettings = async () => {
         try {
