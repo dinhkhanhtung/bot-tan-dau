@@ -52,7 +52,7 @@ export class AuthFlow {
             if (currentStep === 0 || currentStep === '0' || currentStep === 'name') {
                 await this.handleNameStep(user, text, session)
             }
-            // Handle phone step (step 1)
+            // Handle phone step (step 1) - FIXED: should be step 1, not step 2
             else if (currentStep === 1 || currentStep === '1' || currentStep === 'phone') {
                 await this.handlePhoneStep(user, text, session)
             }
