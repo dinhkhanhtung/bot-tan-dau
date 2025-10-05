@@ -8,7 +8,7 @@ import {
     sendMessagesWithTyping
 } from '../facebook-api'
 import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from '../utils'
-import { LOCATIONS, DISTRICTS } from '../constants'
+import { LOCATIONS, DISTRICTS, BOT_INFO, BOT_CONFIG } from '../constants'
 
 export class AuthFlow {
     /**
@@ -81,7 +81,7 @@ export class AuthFlow {
 
         await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Email (để nhận thông báo quan trọng)\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
 
-        await sendMessage(user.facebook_id, '🎁 QUYỀN LỢI: Trial 7 ngày miễn phí\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━')
+        await sendMessage(user.facebook_id, `🎁 QUYỀN LỢI: Trial 7 ngày miễn phí\n💰 ${BOT_INFO.PRICING_MESSAGE}\n━━━━━━━━━━━━━━━━━━━━`)
 
         // Create session for registration flow - CHUẨN HÓA CẤU TRÚC
         const sessionData = {
@@ -450,7 +450,7 @@ export class AuthFlow {
     async handleBirthdayRejection(user: any): Promise<void> {
         await sendMessagesWithTyping(user.facebook_id, [
             '⚠️ THÔNG BÁO QUAN TRỌNG',
-            'Bot Tân Dậu - Hỗ Trợ Chéo được tạo ra dành riêng cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.',
+            'Bot Tân Dậu - Hỗ Trợ Chéo được tạo ra dành riêng cho cộng đồng Tân Dậu Việt.',
             '🎯 Mục đích:\n• Kết nối mua bán trong cộng đồng cùng tuổi\n• Chia sẻ kinh nghiệm và kỷ niệm\n• Hỗ trợ lẫn nhau trong cuộc sống',
             '💡 Nếu bạn không phải Tân Dậu - Hỗ Trợ Chéo:\n• Có thể sử dụng các platform khác\n• Hoặc giới thiệu cho bạn bè Tân Dậu - Hỗ Trợ Chéo',
             '❌ Đăng ký đã bị hủy do không đúng đối tượng mục tiêu.'
@@ -762,7 +762,7 @@ export class AuthFlow {
 
             await sendQuickReply(
                 user.facebook_id,
-                'Cảm ơn bạn đã đăng ký! Admin sẽ duyệt sớm nhất có thể.',
+                `${BOT_INFO.WELCOME_MESSAGE}\n${BOT_INFO.SLOGAN}`,
                 [
                     createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU'),
                     createQuickReply('ℹ️ THÔNG TIN', 'INFO'),

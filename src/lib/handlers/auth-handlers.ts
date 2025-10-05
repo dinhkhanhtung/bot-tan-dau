@@ -19,7 +19,7 @@ import {
     shouldSendTrialNotification,
     getTrialNotificationMessage
 } from '../utils'
-import { LOCATIONS, DISTRICTS } from '../constants'
+import { LOCATIONS, DISTRICTS, BOT_INFO, BOT_CONFIG } from '../constants'
 
 /**
  * Handle registration flow - Optimized version
@@ -78,7 +78,7 @@ export async function handleRegistration(user: any) {
 
     await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
 
-    await sendMessage(user.facebook_id, '🎁 QUYỀN LỢI: Trial 7 ngày miễn phí\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━')
+    await sendMessage(user.facebook_id, `🎁 QUYỀN LỢI: Trial 7 ngày miễn phí\n💰 ${BOT_INFO.PRICING_MESSAGE}\n━━━━━━━━━━━━━━━━━━━━`)
 
     // Create session for registration flow
     const sessionData = {
@@ -420,7 +420,7 @@ export async function handleInfo(user: any) {
         'ℹ️ THÔNG TIN VỀ BOT Tân Dậu - Hỗ Trợ Chéo',
         '🤖 Bot này được thiết kế đặc biệt cho cộng đồng Tân Dậu - Hỗ Trợ Chéo',
         '🎯 Chức năng chính:\n• Niêm yết sản phẩm/dịch vụ\n• Tìm kiếm & kết nối mua bán\n• Cộng đồng Tân Dậu - hỗ trợ chéo\n• Tử vi hàng ngày\n• Điểm thưởng & quà tặng',
-        '💰 Phí sử dụng:\n• Trial 3 ngày miễn phí\n• Phí duy trì: 2,000đ/ngày\n• Gói tối thiểu: 7 ngày = 14,000đ',
+        `💰 Phí sử dụng:\n• Trial 3 ngày miễn phí\n• ${BOT_INFO.PRICING_MESSAGE}\n• Gói tối thiểu: 7 ngày = 21,000đ`,
         '🔒 Bảo mật:\n• Chỉ dành cho Tân Dậu - Hỗ Trợ Chéo\n• Thông tin được mã hóa bảo mật\n• Lưu trữ để tìm kiếm & kết nối hiệu quả'
     ])
 
@@ -441,7 +441,7 @@ export async function sendExpiredMessage(facebookId: string) {
     await sendMessagesWithTyping(facebookId, [
         '⏰ TÀI KHOẢN ĐÃ HẾT HẠN!',
         'Tài khoản của bạn đã hết hạn sử dụng.',
-        '💳 Phí duy trì: 2,000đ/ngày\n📅 Gói tối thiểu: 7 ngày = 14,000đ'
+        `💳 ${BOT_INFO.PRICING_MESSAGE}\n📅 Gói tối thiểu: 7 ngày = 21,000đ`
     ])
 
     await sendQuickReply(
@@ -655,12 +655,12 @@ async function completeRegistration(user: any, data: any) {
         // Clear session
         await updateBotSession(user.facebook_id, null)
 
-        // Send success message - SIMPLIFIED
-        await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 7 ngày!\n💰 Phí: 2,000đ/ngày\n━━━━━━━━━━━━━━━━━━━━`)
+        // Send success message - UPDATED WITH NEW PRICING
+        await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 7 ngày!\n${BOT_INFO.PRICING_MESSAGE}\n━━━━━━━━━━━━━━━━━━━━`)
 
         await sendQuickReply(
             user.facebook_id,
-            'Chào mừng bạn đến với cộng đồng Tân Dậu - Hỗ Trợ Chéo!',
+            `${BOT_INFO.WELCOME_MESSAGE}\n${BOT_INFO.SLOGAN}`,
             [
                 createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
                 createQuickReply('🛒 TẠO TIN', 'LISTING'),

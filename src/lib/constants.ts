@@ -1,10 +1,19 @@
 // Bot Configuration - UPDATED PRICING
 export const BOT_CONFIG = {
-    DAILY_FEE: 2000, // Tăng từ 1000 lên 2000đ/ngày
+    DAILY_FEE: 3000, // Chỉ với 3,000đ/ngày - cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu
     MINIMUM_DAYS: 7,
     TRIAL_DAYS: 3,
     REFERRAL_REWARD: 10000,
     SEARCH_SERVICE_FEE: 5000,
+} as const
+
+// Bot Information
+export const BOT_INFO = {
+    SLOGAN: 'Tân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng',
+    WELCOME_MESSAGE: 'Chào mừng bạn đến với cộng đồng Tân Dậu!',
+    PRICING_MESSAGE: 'Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu',
+    COMMUNITY_SIZE: '2 triệu Tân Dậu',
+    DAILY_FEE_FORMATTED: '3,000đ/ngày',
 } as const
 
 // Categories and Subcategories
