@@ -592,7 +592,8 @@ export class UnifiedBotSystem {
                 logger.info('New user in registration flow - BYPASSING COUNTER LOGIC', {
                     facebook_id: user.facebook_id,
                     currentFlow,
-                    step: session?.step
+                    step: session?.step,
+                    text: text
                 })
                 await this.handleFlowMessage(user, text, session)
                 return
