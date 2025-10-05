@@ -163,6 +163,13 @@ export class AuthFlow {
      * Handle registration step
      */
     async handleStep(user: any, text: string, session: any): Promise<void> {
+        console.log('🔍 handleStep called:', {
+            text,
+            sessionStep: session.step,
+            sessionData: session.data,
+            sessionStartedAt: session.started_at
+        })
+
         // Check for exit commands
         if (text.toLowerCase().includes('hủy') || text.toLowerCase().includes('thoát') || text.toLowerCase().includes('cancel')) {
             await this.handleRegistrationCancel(user)
@@ -178,7 +185,13 @@ export class AuthFlow {
             }
         }
 
-        switch (session.step) {
+        // FIX: Handle both session data structures for compatibility
+        const currentStep = session.step || session.session_data?.step || 'name'
+        const sessionData = session.data || session.session_data?.data || {}
+
+        console.log('🔄 Processing step:', currentStep, 'with data:', sessionData)
+
+        switch (currentStep) {
             case 'name':
                 await this.handleRegistrationName(user, text, session.data)
                 break
@@ -214,20 +227,31 @@ export class AuthFlow {
      * Handle name input
      */
     private async handleRegistrationName(user: any, text: string, data: any): Promise<void> {
+        console.log('🔍 handleRegistrationName called:', { text, textLength: text.length, data })
+
         if (text.length < 2) {
             await sendMessage(user.facebook_id, '❌ Tên quá ngắn. Vui lòng nhập họ tên đầy đủ:')
             return
         }
 
         data.name = text.trim()
+        console.log('✅ Name saved:', data.name)
 
         await sendMessage(user.facebook_id, `✅ Họ tên: ${data.name}\n📝 Bước 2/7: Số điện thoại\n📱 Vui lòng nhập số điện thoại của bạn:`)
 
-        await updateBotSession(user.facebook_id, {
+        const sessionUpdate = {
             current_flow: 'registration',
             step: 'phone',
-            data: data
-        })
+            data: data,
+            started_at: new Date().toISOString()
+        }
+
+        console.log('🔄 Updating session:', sessionUpdate)
+        await updateBotSession(user.facebook_id, sessionUpdate)
+
+        // Verify session was updated
+        const sessionCheck = await getBotSession(user.facebook_id)
+        console.log('✅ Session after name update:', sessionCheck)
     }
 
     /**
