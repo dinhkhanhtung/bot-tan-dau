@@ -84,7 +84,7 @@ export class AuthFlow {
 
             await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
 
-            await sendMessage(user.facebook_id, `🎁 QUYỀN LỢI: Trial 7 ngày miễn phí\n💰 ${BOT_INFO.PRICING_MESSAGE}\n━━━━━━━━━━━━━━━━━━━━`)
+            await sendMessage(user.facebook_id, `🎁 QUYỀN LỢI: Trial ${BOT_CONFIG.TRIAL_DAYS} ngày miễn phí\n💰 ${BOT_INFO.PRICING_MESSAGE}\n💳 Phí duy trì: ${BOT_INFO.DAILY_FEE_FORMATTED}\n📅 Gói tối thiểu: ${BOT_CONFIG.MINIMUM_DAYS} ngày = ${formatCurrency(BOT_CONFIG.MINIMUM_DAYS * BOT_CONFIG.DAILY_FEE)}\n━━━━━━━━━━━━━━━━━━━━`)
 
             // Create session for registration flow - CHUẨN HÓA CẤU TRÚC
             const sessionData = {
@@ -726,44 +726,73 @@ export class AuthFlow {
 
             let userError = null
 
+            // Kiểm tra bot settings để xác định có auto trial không
+            const { data: botSettings } = await supabaseAdmin
+                .from('bot_settings')
+                .select('value')
+                .eq('key', 'trial_days')
+                .single()
+
+            const trialDays = botSettings?.value ? parseInt(botSettings.value) : 3
+            const shouldAutoTrial = trialDays > 0
+
             if (existingUser) {
-                // Update existing user record - ĐẶT LẠI STATUS PENDING ĐỂ CHỜ ADMIN DUYỆT
+                // Update existing user record
+                const updateData: any = {
+                    name: data.name,
+                    phone: data.phone,
+                    location: data.location,
+                    birthday: data.birth_year || 1981,
+                    email: data.email || null,
+                    product_service: data.product_service || null,
+                    welcome_message_sent: true,
+                    updated_at: new Date().toISOString()
+                }
+
+                if (shouldAutoTrial) {
+                    // Auto trial: Set status trial và membership_expires_at
+                    updateData.status = 'trial'
+                    updateData.membership_expires_at = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString()
+                } else {
+                    // Không auto trial: Set status pending để chờ admin duyệt
+                    updateData.status = 'pending'
+                    updateData.membership_expires_at = null
+                }
+
                 const { error } = await supabaseAdmin
                     .from('users')
-                    .update({
-                        name: data.name,
-                        phone: data.phone,
-                        location: data.location,
-                        birthday: data.birth_year || 1981,
-                        email: data.email || null,
-                        product_service: data.product_service || null,
-                        status: 'pending', // CHỜ ADMIN DUYỆT
-                        membership_expires_at: null, // CHƯA CÓ QUYỀN HẠN
-                        referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
-                        welcome_message_sent: true,
-                        updated_at: new Date().toISOString()
-                    })
+                    .update(updateData)
                     .eq('facebook_id', user.facebook_id)
                 userError = error
             } else {
-                // Create new user record - TẠO VỚI STATUS PENDING
+                // Create new user record
+                const insertData: any = {
+                    id: generateId(),
+                    facebook_id: user.facebook_id,
+                    name: data.name,
+                    phone: data.phone,
+                    location: data.location,
+                    birthday: data.birth_year || 1981,
+                    email: data.email || null,
+                    product_service: data.product_service || null,
+                    referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
+                    welcome_message_sent: true,
+                    created_at: new Date().toISOString()
+                }
+
+                if (shouldAutoTrial) {
+                    // Auto trial: Set status trial và membership_expires_at
+                    insertData.status = 'trial'
+                    insertData.membership_expires_at = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString()
+                } else {
+                    // Không auto trial: Set status pending để chờ admin duyệt
+                    insertData.status = 'pending'
+                    insertData.membership_expires_at = null
+                }
+
                 const { error } = await supabaseAdmin
                     .from('users')
-                    .insert({
-                        id: generateId(),
-                        facebook_id: user.facebook_id,
-                        name: data.name,
-                        phone: data.phone,
-                        location: data.location,
-                        birthday: data.birth_year || 1981,
-                        email: data.email || null,
-                        product_service: data.product_service || null,
-                        status: 'pending', // CHỜ ADMIN DUYỆT
-                        membership_expires_at: null, // CHƯA CÓ QUYỀN HẠN
-                        referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
-                        welcome_message_sent: true,
-                        created_at: new Date().toISOString()
-                    })
+                    .insert(insertData)
                 userError = error
             }
 
@@ -777,7 +806,7 @@ export class AuthFlow {
             await updateBotSession(user.facebook_id, null)
 
             // Send success message - CHỜ ADMIN DUYỆT
-            await sendMessage(user.facebook_id, `📝 ĐĂNG KÝ HOÀN TẤT!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.email ? `✅ Email: ${data.email}` : '✅ Chưa có email'}\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang chờ Admin duyệt...\n📢 Bạn sẽ nhận được thông báo khi tài khoản được kích hoạt!\n━━━━━━━━━━━━━━━━━━━━`)
+            await sendMessage(user.facebook_id, `📝 ĐĂNG KÝ HOÀN TẤT!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n✅ Năm sinh: 1981 (Tân Dậu)\n${data.email ? `✅ Email: ${data.email}` : '✅ Chưa có email'}\n${data.product_service ? `✅ Sản phẩm/Dịch vụ: ${data.product_service}` : '✅ Chưa có sản phẩm/dịch vụ'}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí ${BOT_CONFIG.TRIAL_DAYS} ngày!\n💰 ${BOT_INFO.PRICING_MESSAGE}\n💳 Phí duy trì: ${BOT_INFO.DAILY_FEE_FORMATTED}\n📅 Gói tối thiểu: ${BOT_CONFIG.MINIMUM_DAYS} ngày = ${formatCurrency(BOT_CONFIG.MINIMUM_DAYS * BOT_CONFIG.DAILY_FEE)}\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang chờ Admin duyệt...\n📢 Bạn sẽ nhận được thông báo khi tài khoản được kích hoạt!\n━━━━━━━━━━━━━━━━━━━━`)
 
             await sendQuickReply(
                 user.facebook_id,
