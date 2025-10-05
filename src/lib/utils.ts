@@ -366,49 +366,116 @@ export function deepClone<T>(obj: T): T {
 
 // Update bot session
 export async function updateBotSession(facebookId: string, sessionData: any) {
-    const { supabaseAdmin } = await import('./supabase')
+    try {
+        const { supabaseAdmin } = await import('./supabase')
 
-    // CHUẨN HÓA: Luôn lưu current_flow vào cả 2 nơi để đảm bảo tương thích
-    const currentFlow = sessionData?.current_flow || null
-
-    await supabaseAdmin
-        .from('bot_sessions')
-        .upsert({
-            facebook_id: facebookId,
-            session_data: sessionData,
-            current_flow: currentFlow, // Lưu vào cột riêng để dễ query
-            updated_at: new Date().toISOString()
+        console.log('🔄 updateBotSession called:', {
+            facebookId,
+            hasSessionData: !!sessionData,
+            currentFlow: sessionData?.current_flow,
+            step: sessionData?.step
         })
+
+        // CHUẨN HÓA: Luôn lưu current_flow vào cả 2 nơi để đảm bảo tương thích
+        const currentFlow = sessionData?.current_flow || null
+
+        const { data, error } = await supabaseAdmin
+            .from('bot_sessions')
+            .upsert({
+                facebook_id: facebookId,
+                session_data: sessionData,
+                current_flow: currentFlow, // Lưu vào cột riêng để dễ query
+                updated_at: new Date().toISOString()
+            })
+            .select()
+
+        if (error) {
+            console.error('❌ updateBotSession error:', {
+                facebookId,
+                error: error.message,
+                code: error.code,
+                sessionData
+            })
+            return
+        }
+
+        console.log('✅ updateBotSession success:', {
+            facebookId,
+            updated: !!data,
+            record: data
+        })
+
+    } catch (error) {
+        console.error('❌ Exception in updateBotSession:', error)
+    }
 }
 
 // Get bot session
 export async function getBotSession(facebookId: string) {
-    const { supabaseAdmin } = await import('./supabase')
-    const { data, error } = await supabaseAdmin
-        .from('bot_sessions')
-        .select('*')
-        .eq('facebook_id', facebookId)
-        .single()
+    try {
+        const { supabaseAdmin } = await import('./supabase')
 
-    if (error) return null
+        console.log('🔍 getBotSession called for:', facebookId)
 
-    // CHUẨN HÓA: Đảm bảo current_flow có sẵn ở cả 2 nơi
-    if (data) {
-        const currentFlow = data.current_flow || data.session_data?.current_flow || null
+        const { data, error } = await supabaseAdmin
+            .from('bot_sessions')
+            .select('*')
+            .eq('facebook_id', facebookId)
+            .single()
 
-        // Nếu current_flow chỉ có trong session_data, copy ra ngoài
-        if (!data.current_flow && data.session_data?.current_flow) {
-            data.current_flow = data.session_data.current_flow
+        if (error) {
+            console.log('❌ getBotSession error:', {
+                facebookId,
+                error: error.message,
+                code: error.code,
+                details: error.details
+            })
+
+            // Nếu bảng không tồn tại, trả về null
+            if (error.code === 'PGRST116' || error.message.includes('relation "bot_sessions" does not exist')) {
+                console.log('❌ bot_sessions table does not exist')
+                return null
+            }
+
+            // Nếu không tìm thấy record, trả về null (bình thường)
+            if (error.code === 'PGRST116') {
+                console.log('❌ No session found for user:', facebookId)
+                return null
+            }
+
+            // Các lỗi khác cũng trả về null
+            console.log('❌ Other error in getBotSession:', error)
+            return null
         }
 
-        // Nếu current_flow chỉ có ở ngoài, copy vào session_data
-        if (data.current_flow && !data.session_data?.current_flow) {
-            data.session_data = data.session_data || {}
-            data.session_data.current_flow = data.current_flow
+        console.log('✅ getBotSession success:', {
+            facebookId,
+            hasData: !!data,
+            currentFlow: data?.current_flow,
+            sessionData: data?.session_data
+        })
+
+        // CHUẨN HÓA: Đảm bảo current_flow có sẵn ở cả 2 nơi
+        if (data) {
+            const currentFlow = data.current_flow || data.session_data?.current_flow || null
+
+            // Nếu current_flow chỉ có trong session_data, copy ra ngoài
+            if (!data.current_flow && data.session_data?.current_flow) {
+                data.current_flow = data.session_data.current_flow
+            }
+
+            // Nếu current_flow chỉ có ở ngoài, copy vào session_data
+            if (data.current_flow && !data.session_data?.current_flow) {
+                data.session_data = data.session_data || {}
+                data.session_data.current_flow = data.current_flow
+            }
         }
+
+        return data
+    } catch (error) {
+        console.error('❌ Exception in getBotSession:', error)
+        return null
     }
-
-    return data
 }
 
 // Sleep function
