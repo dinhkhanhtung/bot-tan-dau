@@ -823,7 +823,7 @@ export class UnifiedBotSystem {
             const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
 
             await sendMessage(user.facebook_id, '💬 LIÊN HỆ HỖ TRỢ')
-            await sendMessage(user.facebook_id, 'Để được hỗ trợ, vui lòng liên hệ:\n📞 Hotline: 0901 234 567\n📧 Email: dinhkhanhtung@outlook.com\n⏰ Thời gian: 8:00 - 22:00')
+            await sendMessage(user.facebook_id, 'Để được hỗ trợ, vui lòng liên hệ:\n📞 Hotline: 0982581222\n📧 Email: dinhkhanhtung@outlook.com\n🏦 Ngân hàng: BIDV\n👤 Chủ TK: Đinh Khánh Tùng\n⏰ Thời gian: 8:00 - 22:00')
             await sendMessage(user.facebook_id, 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.')
 
             await sendQuickReply(

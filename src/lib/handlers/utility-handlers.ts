@@ -18,15 +18,9 @@ export async function handleHoroscope(user: any) {
     // Hide previous buttons first to avoid button clutter
     await hideButtons(user.facebook_id)
 
-    // Simple horoscope generation (AI removed)
-    const horoscope = {
-        fortune: 'Tài lộc khá tốt, có cơ hội đầu tư',
-        love: 'Tình cảm ổn định, nên quan tâm gia đình',
-        health: 'Sức khỏe tốt, nên tập thể dục thường xuyên',
-        advice: 'Hôm nay nên tập trung vào công việc chính',
-        luckyColor: 'Vàng',
-        luckyNumber: '8'
-    }
+    // Get horoscope data from database
+    const { generateHoroscope } = await import('../utils')
+    const horoscope = await generateHoroscope()
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🔮 TỬ VI TÂN DẬU HÔM NAY',
@@ -62,15 +56,9 @@ export async function handleHoroscopeDetail(user: any) {
     // Hide previous buttons first to avoid button clutter
     await hideButtons(user.facebook_id)
 
-    // Simple horoscope generation (AI removed)
-    const horoscope = {
-        fortune: 'Tài lộc khá tốt, có cơ hội đầu tư',
-        love: 'Tình cảm ổn định, nên quan tâm gia đình',
-        health: 'Sức khỏe tốt, nên tập thể dục thường xuyên',
-        advice: 'Hôm nay nên tập trung vào công việc chính',
-        luckyColor: 'Vàng',
-        luckyNumber: '8'
-    }
+    // Get horoscope data from database
+    const { generateHoroscope } = await import('../utils')
+    const horoscope = await generateHoroscope()
 
     await sendMessagesWithTyping(user.facebook_id, [
         '🔮 TỬ VI CHI TIẾT TÂN DẬU',
@@ -204,13 +192,13 @@ export async function handlePoints(user: any) {
             '⭐ HỆ THỐNG ĐIỂM THƯỞNG',
             `🏆 Level hiện tại: ${getLevelName(level)} (${points}/${nextLevelPoints} điểm)`,
             `⭐ Tổng điểm: ${points} điểm`,
-            `🎯 Streak: 7 ngày liên tiếp`,
+            `🎯 Streak: 0 ngày liên tiếp`,
             '',
             '📈 Hoạt động hôm nay:',
-            '• Đăng nhập: +2 điểm ✅',
-            '• Tạo tin đăng: +10 điểm ✅',
-            '• Nhận đánh giá: +5 điểm ✅',
-            '• Chia sẻ kỷ niệm: +3 điểm ✅'
+            '• Đăng nhập: +2 điểm ⏳',
+            '• Tạo tin đăng: +10 điểm ⏳',
+            '• Nhận đánh giá: +5 điểm ⏳',
+            '• Chia sẻ kỷ niệm: +3 điểm ⏳'
         ])
 
         await sendQuickReply(
@@ -539,8 +527,8 @@ export async function handleReferralWithdraw(user: any) {
             `💵 Số tiền có thể rút: ${formatCurrency(pendingReward)}`,
             '🏦 Thông tin chuyển khoản:',
             '• STK: 0982581222',
-            '• Ngân hàng: Vietcombank',
-            '• Chủ TK: BOT TÂN DẬU',
+            '• Ngân hàng: BIDV',
+            '• Chủ TK: Đinh Khánh Tùng',
             `• Nội dung: THUONG ${user.phone || user.facebook_id.slice(-6)}`
         ])
 

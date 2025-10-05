@@ -180,8 +180,8 @@ export function getTrialNotificationMessage(daysLeft: number, priority: string):
     }
 }
 
-// Generate random horoscope
-export function generateHoroscope(): {
+// Generate horoscope for Tân Dậu (1981) - Simple automated system
+export async function generateHoroscope(): Promise<{
     fortune: string
     love: string
     health: string
@@ -189,32 +189,87 @@ export function generateHoroscope(): {
     advice: string
     luckyColor: string
     luckyNumber: number
-} {
-    const fortunes = ['Rất tốt', 'Tốt', 'Bình thường', 'Kém']
-    const loves = ['Rất tốt', 'Tốt', 'Bình thường', 'Kém']
-    const healths = ['Rất tốt', 'Tốt', 'Bình thường', 'Kém']
-    const careers = ['Rất tốt', 'Tốt', 'Bình thường', 'Kém']
+}> {
+    try {
+        // Simple automated horoscope for Tân Dậu (1981)
+        // Based on Vietnamese zodiac and general astrology
 
-    const advices = [
-        'Hôm nay nên ký kết hợp đồng',
-        'Nên gặp gỡ bạn bè cũ',
-        'Tránh căng thẳng, nghỉ ngơi nhiều hơn',
-        'Tập thể dục nhẹ nhàng',
-        'Nên đầu tư bất động sản',
-        'Tránh cho vay tiền'
-    ]
+        const fortunes = [
+            'Tài lộc dồi dào, có quý nhân phù trợ',
+            'Tài lộc ổn định, nên tích góp làm vốn',
+            'Tài lộc trung bình, tránh đầu tư lớn',
+            'Tài lộc tốt, có cơ hội làm ăn',
+            'Tài lộc vượng, nên mở rộng kinh doanh'
+        ]
 
-    const colors = ['Vàng', 'Trắng', 'Xanh dương', 'Xanh lá', 'Đỏ']
-    const numbers = [1, 6, 8, 3, 9, 5]
+        const loves = [
+            'Tình cảm hài hòa, gia đình đầm ấm',
+            'Tình cảm ổn định, nên quan tâm người thân',
+            'Tình cảm tốt đẹp, có tin vui tình cảm',
+            'Tình cảm êm đềm, nên chia sẻ nhiều hơn',
+            'Tình cảm nồng thắm, nên dành thời gian cho gia đình'
+        ]
 
-    return {
-        fortune: fortunes[Math.floor(Math.random() * fortunes.length)],
-        love: loves[Math.floor(Math.random() * loves.length)],
-        health: healths[Math.floor(Math.random() * healths.length)],
-        career: careers[Math.floor(Math.random() * careers.length)],
-        advice: advices[Math.floor(Math.random() * advices.length)],
-        luckyColor: colors[Math.floor(Math.random() * colors.length)],
-        luckyNumber: numbers[Math.floor(Math.random() * numbers.length)]
+        const healths = [
+            'Sức khỏe tốt, tinh thần minh mẫn',
+            'Sức khỏe ổn định, nên nghỉ ngơi điều độ',
+            'Sức khỏe tốt, nên tập thể dục nhẹ nhàng',
+            'Sức khỏe dồi dào, nên giữ gìn sức khỏe',
+            'Sức khỏe bình thường, chú ý ăn uống'
+        ]
+
+        const careers = [
+            'Công việc thuận lợi, có cơ hội thăng tiến',
+            'Công việc ổn định, nên học hỏi thêm',
+            'Công việc tốt, nên mạnh dạn đề xuất ý tưởng',
+            'Công việc suôn sẻ, có quý nhân giúp đỡ',
+            'Công việc phát triển, nên mở rộng mạng lưới'
+        ]
+
+        const advices = [
+            'Hôm nay nên mạnh dạn đầu tư kinh doanh',
+            'Nên kết nối với bạn bè và đối tác',
+            'Hôm nay là ngày tốt để ký kết hợp đồng',
+            'Nên dành thời gian cho gia đình và người thân',
+            'Hôm nay nên học hỏi kinh nghiệm từ người đi trước',
+            'Nên giữ tinh thần lạc quan, tích cực',
+            'Hôm nay nên sắp xếp công việc có kế hoạch',
+            'Nên chia sẻ khó khăn với người thân'
+        ]
+
+        const colors = ['Vàng', 'Trắng', 'Xanh dương', 'Xanh lá', 'Đỏ', 'Tím']
+        const numbers = [1, 6, 8, 3, 9, 5, 7]
+
+        // Use current date to generate consistent but varied results
+        const today = new Date()
+        const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24))
+        const seed = dayOfYear + today.getFullYear()
+
+        // Simple pseudo-random using seed
+        const random = (seed * 9301 + 49297) % 233280
+        const random2 = (seed * 49297 + 233280) % 233280
+
+        return {
+            fortune: fortunes[random % fortunes.length],
+            love: loves[random2 % loves.length],
+            health: healths[(random + 1) % healths.length],
+            career: careers[(random2 + 1) % careers.length],
+            advice: advices[random % advices.length],
+            luckyColor: colors[(random + 2) % colors.length],
+            luckyNumber: numbers[(random + 3) % numbers.length]
+        }
+    } catch (error) {
+        console.error('Error generating horoscope:', error)
+        // Fallback to default data if any error occurs
+        return {
+            fortune: 'Tài lộc khá tốt, có cơ hội đầu tư',
+            love: 'Tình cảm ổn định, nên quan tâm gia đình',
+            health: 'Sức khỏe tốt, nên tập thể dục thường xuyên',
+            career: 'Công việc thuận lợi',
+            advice: 'Hôm nay nên tập trung vào công việc chính',
+            luckyColor: 'Vàng',
+            luckyNumber: 8
+        }
     }
 }
 
