@@ -271,16 +271,12 @@ export class SmartContextManager {
     }
 
     /**
-     * Menu cho Admin
+     * Menu cho Admin - ĐÃ LOẠI BỎ
+     * TẤT CẢ QUẢN LÝ QUA TRANG WEB ADMIN
      */
     private static getAdminMenu(): any[] {
         return [
-            { title: '💰 QUẢN LÝ THANH TOÁN', action: 'ADMIN_PAYMENTS', priority: 1 },
-            { title: '👥 QUẢN LÝ NGƯỜI DÙNG', action: 'ADMIN_USERS', priority: 2 },
-            { title: '🛒 QUẢN LÝ TIN ĐĂNG', action: 'ADMIN_LISTINGS', priority: 3 },
-            { title: '📊 XEM THỐNG KÊ', action: 'ADMIN_STATS', priority: 4 },
-            { title: '🔔 QUẢN LÝ THÔNG BÁO', action: 'ADMIN_NOTIFICATIONS', priority: 5 },
-            { title: '⚙️ CẤU HÌNH HỆ THỐNG', action: 'ADMIN_SETTINGS', priority: 6 }
+            // Admin functions moved to web dashboard
         ]
     }
 

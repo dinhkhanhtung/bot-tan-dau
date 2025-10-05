@@ -10,32 +10,7 @@ import {
 import { formatCurrency, formatNumber, generateId } from '../utils'
 
 export class AdminFlow {
-    async handleCommand(user: any): Promise<void> {
-        // Typing indicator removed for quick reply
-        await sendQuickReplyNoTyping(
-            user.facebook_id,
-            'Quản lý:',
-            [
-                createQuickReply('💰 THANH TOÁN', 'ADMIN_PAYMENTS'),
-                createQuickReply('👥 NGƯỜI DÙNG', 'ADMIN_USERS'),
-                createQuickReply('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS'),
-                createQuickReply('📊 THỐNG KÊ', 'ADMIN_STATS'),
-                createQuickReply('📢 THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
-                createQuickReply('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS')
-            ]
-        )
-
-        await sendQuickReply(
-            user.facebook_id,
-            'Chức năng nâng cao:',
-            [
-                createQuickReply('📤 XUẤT DỮ LIỆU', 'ADMIN_EXPORT'),
-                createQuickReply('🔗 TẠO LINK CHIA SẺ', 'ADMIN_CREATE_SHARE_LINK'),
-                createQuickReply('🚫 DỪNG BOT', 'ADMIN_STOP_BOT'),
-                createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
-            ]
-        )
-    }
+    // Admin functions moved to web dashboard
 
     // Additional functions for webhook compatibility
     static async handleCancelAdminChat(user: any): Promise<void> {

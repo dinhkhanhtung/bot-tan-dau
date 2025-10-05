@@ -282,7 +282,7 @@ DROP TRIGGER IF EXISTS update_spam_tracking_updated_at ON spam_tracking;
 CREATE TRIGGER update_spam_tracking_updated_at BEFORE UPDATE ON spam_tracking
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Admin users table (UPDATED FOR WEB ADMIN)
+-- Admin users table
 CREATE TABLE IF NOT EXISTS admin_users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
@@ -383,13 +383,10 @@ CREATE TRIGGER update_admin_chat_sessions_updated_at BEFORE UPDATE ON admin_chat
 -- 7. DEFAULT DATA
 -- ========================================
 
--- DEPRECATED: Admin users table no longer needed
--- Logic changed: Messages from fanpage (FACEBOOK_APP_ID) are automatically treated as admin
--- INSERT INTO admin_users (facebook_id, name, role, permissions, is_active) VALUES
--- ('100074107869848', 'Admin 1', 'super_admin', '{"all": true}', true),
--- ('100026336745820', 'Admin 2', 'super_admin', '{"all": true}', true),
--- ('100000699238053', 'Admin 3', 'super_admin', '{"all": true}', true)
--- ON CONFLICT (facebook_id) DO NOTHING;
+-- Insert default admin users nếu chưa có (sẽ được setup-admin.js ghi đè)
+-- INSERT INTO admin_users (username, password_hash, name, email, role, permissions, is_active)
+-- VALUES ('admin', '', 'Administrator', 'admin@example.com', 'super_admin', '{"all": true}', true)
+-- ON CONFLICT (username) DO NOTHING;
 
 -- Update existing users to have welcome_message_sent = true
 UPDATE users SET welcome_message_sent = TRUE WHERE welcome_message_sent IS NULL OR welcome_message_sent = FALSE;

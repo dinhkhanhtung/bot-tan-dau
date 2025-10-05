@@ -12,7 +12,83 @@ import { LOCATIONS, DISTRICTS, BOT_INFO, BOT_CONFIG } from '../constants'
 
 export class AuthFlow {
     /**
-     * Handle registration flow - FIXED VERSION
+     * Validate name input with profanity check - SIMPLIFIED VERSION
+     */
+    private validateName(name: string): { isValid: boolean; message?: string } {
+        // Basic validation - more lenient
+        if (!name || name.trim().length < 2) {
+            return { isValid: false, message: '❌ Tên quá ngắn. Vui lòng nhập họ tên đầy đủ (tối thiểu 2 ký tự).' }
+        }
+
+        if (name.length > 100) {
+            return { isValid: false, message: '❌ Tên quá dài. Vui lòng nhập tên ngắn gọn hơn.' }
+        }
+
+        const trimmedName = name.trim()
+
+        // Check for obvious spam patterns only
+        if (/^[0-9!@#$%^&*()+\-=]+$/.test(trimmedName)) {
+            return { isValid: false, message: '❌ Vui lòng nhập họ tên thật của bạn.' }
+        }
+
+        // Check for extreme repeated characters (more than 10)
+        if (/(.)\1{10,}/.test(trimmedName)) {
+            return { isValid: false, message: '❌ Tên không hợp lệ. Vui lòng nhập tên thật.' }
+        }
+
+        // Must contain at least one letter
+        if (!/[a-zA-ZÀ-ỹ]/.test(trimmedName)) {
+            return { isValid: false, message: '❌ Tên phải chứa chữ cái.' }
+        }
+
+        // Check for severe profanity only (most common ones)
+        const severeProfanity = [
+            'địt', 'đụ', 'đĩ', 'cặc', 'cứt', 'lồn', 'buồi',
+            'fuck', 'shit', 'ass', 'bitch'
+        ]
+
+        const lowerName = trimmedName.toLowerCase()
+        for (const word of severeProfanity) {
+            if (lowerName.includes(word)) {
+                return { isValid: false, message: '❌ Tên chứa từ không phù hợp. Vui lòng nhập tên thật của bạn.' }
+            }
+        }
+
+        return { isValid: true }
+    }
+
+    /**
+     * Validate keywords input for inappropriate content
+     */
+    private validateKeywords(keywords: string): { isValid: boolean; message?: string } {
+        if (!keywords || keywords.toLowerCase().includes('bỏ qua') || keywords.toLowerCase().includes('không')) {
+            return { isValid: true }
+        }
+
+        // Check for profanity in keywords
+        const profanityWords = [
+            'địt', 'đụ', 'đĩ', 'đồ', 'cặc', 'cứt', 'lồn', 'buồi',
+            'fuck', 'shit', 'ass', 'bitch', 'bastard', 'damn', 'hell'
+        ]
+
+        const lowerKeywords = keywords.toLowerCase().trim()
+
+        for (const word of profanityWords) {
+            if (lowerKeywords.includes(word)) {
+                return { isValid: false, message: '❌ Từ khóa chứa nội dung không phù hợp. Vui lòng nhập từ khóa khác.' }
+            }
+        }
+
+        // Check for suspicious patterns
+        if (/(.)\1{10,}/.test(keywords)) {
+            return { isValid: false, message: '❌ Từ khóa không hợp lệ. Vui lòng nhập từ khóa có ý nghĩa.' }
+        }
+
+        return { isValid: true }
+    }
+
+    /**
+     * Handle registration flow - OPTIMIZED VERSION
      */
     async handleRegistration(user: any): Promise<void> {
         try {
@@ -69,24 +145,38 @@ export class AuthFlow {
                 return
             }
 
-            // Kiểm tra xem user đã có session registration chưa - FIXED SESSION STRUCTURE
+            // OPTIMIZED: Simplified session check and creation
+            await this.startOrResumeRegistration(user)
+
+        } catch (error) {
+            console.error('Error in handleRegistration:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi bắt đầu đăng ký. Vui lòng thử lại!')
+        }
+    }
+
+    /**
+     * Start or resume registration - SIMPLIFIED LOGIC
+     */
+    private async startOrResumeRegistration(user: any): Promise<void> {
+        try {
             const existingSession = await getBotSession(user.facebook_id)
 
             if (existingSession && existingSession.current_flow === 'registration') {
-                // User đã trong flow registration, chỉ gửi lại hướng dẫn hiện tại
-                console.log('User already in registration flow, resuming current step')
+                // Resume existing session
+                console.log('Resuming existing registration session')
                 await this.resumeRegistration(user, existingSession)
                 return
             }
 
-            // OPTIMIZED: Single screen with essential info first
+            // Start new registration
+            console.log('Starting new registration session')
+
+            // Welcome message with clear instructions
             await sendMessage(user.facebook_id, '🚀 ĐĂNG KÝ NHANH - Tân Dậu Hỗ Trợ Chéo')
 
             await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
 
-
-
-            // Create session for registration flow - CHUẨN HÓA CẤU TRÚC
+            // Create session for registration flow
             const sessionData = {
                 current_flow: 'registration',
                 step: 'name',
@@ -94,19 +184,14 @@ export class AuthFlow {
                 started_at: new Date().toISOString()
             }
 
-            console.log('🔄 Creating registration session:', sessionData)
             await updateBotSession(user.facebook_id, sessionData)
 
-            // Start with first step - SIMPLIFIED
+            // Start with first step
             await sendMessage(user.facebook_id, '📝 ĐĂNG KÝ (Bước 1/4)\n━━━━━━━━━━━━━━━━━━━━\n👤 HỌ TÊN ĐẦY ĐỦ\nVui lòng nhập họ tên đầy đủ của bạn:\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: Đinh Khánh Tùng\n📝 Nhập họ tên để tiếp tục:')
 
-            // Verify session was created
-            const sessionCheck = await getBotSession(user.facebook_id)
-            console.log('Session created for registration:', sessionCheck)
-
         } catch (error) {
-            console.error('Error in handleRegistration:', error)
-            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi bắt đầu đăng ký. Vui lòng thử lại!')
+            console.error('Error in startOrResumeRegistration:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại!')
         }
     }
 
@@ -146,7 +231,7 @@ export class AuthFlow {
     }
 
     /**
-     * Handle registration step - FIXED VERSION
+     * Handle registration step - OPTIMIZED VERSION with fallback
      */
     async handleStep(user: any, text: string, session: any): Promise<void> {
         try {
@@ -157,11 +242,10 @@ export class AuthFlow {
                 sessionStartedAt: session?.started_at
             })
 
-            // Validate session
+            // Enhanced session validation with fallback
             if (!session || !session.current_flow) {
-                console.log('❌ Invalid session in handleStep')
-                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng bắt đầu đăng ký lại!')
-                await updateBotSession(user.facebook_id, null)
+                console.log('❌ Invalid session in handleStep - attempting fallback')
+                await this.handleSessionError(user, 'Phiên đăng ký không hợp lệ')
                 return
             }
 
@@ -171,60 +255,116 @@ export class AuthFlow {
                 return
             }
 
-            // Check if session is too old (more than 30 minutes)
+            // Check if session is too old (more than 30 minutes) with fallback
             if (session.started_at) {
                 const sessionAge = Date.now() - new Date(session.started_at).getTime()
                 if (sessionAge > 30 * 60 * 1000) { // 30 minutes
+                    console.log('Session expired, offering restart')
                     await this.handleRegistrationTimeout(user)
                     return
                 }
             }
 
-            // CHUẨN HÓA: Sử dụng cấu trúc session chuẩn
+            // Process step with enhanced error handling
             const currentStep = session.step || 'name'
             const sessionData = session.data || {}
 
             console.log('🔄 Processing step:', currentStep, 'with data:', sessionData)
 
-            switch (currentStep) {
+            // Use safe step processing
+            await this.processRegistrationStep(user, text, currentStep, sessionData)
+
+        } catch (error) {
+            console.error('Error in handleStep:', error)
+            await this.handleStepError(user, error)
+        }
+    }
+
+    /**
+     * Process registration step with enhanced error handling
+     */
+    private async processRegistrationStep(user: any, text: string, step: string, data: any): Promise<void> {
+        try {
+            switch (step) {
                 case 'name':
-                    await this.handleRegistrationName(user, text, sessionData)
+                    await this.handleRegistrationName(user, text, data)
                     break
                 case 'phone':
-                    await this.handleRegistrationPhone(user, text, sessionData)
+                    await this.handleRegistrationPhone(user, text, data)
                     break
                 case 'location':
-                    await this.handleRegistrationLocation(user, text, sessionData)
+                    await this.handleRegistrationLocation(user, text, data)
                     break
                 case 'birthday':
-                    await this.handleRegistrationBirthday(user, text, sessionData)
+                    await this.handleRegistrationBirthday(user, text, data)
                     break
                 case 'birthday_confirm':
                     // This step is handled by postback buttons, not text input
                     await sendMessage(user.facebook_id, '❌ Vui lòng chọn nút xác nhận bên dưới để tiếp tục!')
                     break
                 case 'email':
-                    await this.handleRegistrationEmail(user, text, sessionData)
+                    await this.handleRegistrationEmail(user, text, data)
                     break
                 case 'keywords':
-                    await this.handleRegistrationKeywords(user, text, sessionData)
+                    await this.handleRegistrationKeywords(user, text, data)
                     break
                 case 'product_service':
-                    await this.handleRegistrationProductService(user, text, sessionData)
+                    await this.handleRegistrationProductService(user, text, data)
                     break
                 default:
-                    console.log('❌ Unknown step in handleStep:', currentStep)
-                    await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng bắt đầu đăng ký lại!')
-                    await updateBotSession(user.facebook_id, null)
+                    console.log('❌ Unknown step:', step)
+                    await this.handleSessionError(user, 'Bước đăng ký không hợp lệ')
             }
         } catch (error) {
-            console.error('Error in handleStep:', error)
-            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi xử lý đăng ký. Vui lòng thử lại!')
+            console.error(`Error processing step ${step}:`, error)
+            await this.handleStepError(user, error, step)
         }
     }
 
     /**
-     * Handle name input
+     * Handle session errors with fallback options
+     */
+    private async handleSessionError(user: any, errorMessage: string): Promise<void> {
+        await sendMessage(user.facebook_id, `❌ ${errorMessage}`)
+        await sendMessage(user.facebook_id, '💡 Bạn có thể:')
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Chọn hành động:',
+            [
+                createQuickReply('🔄 BẮT ĐẦU LẠI', 'REGISTER'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU'),
+                createQuickReply('💬 HỖ TRỢ', 'SUPPORT_ADMIN')
+            ]
+        )
+
+        // Clear invalid session
+        await updateBotSession(user.facebook_id, null)
+    }
+
+    /**
+     * Handle step errors with recovery options
+     */
+    private async handleStepError(user: any, error: any, currentStep?: string): Promise<void> {
+        console.error('Step error:', error)
+
+        const stepName = currentStep ? ` ở bước ${currentStep}` : ''
+        await sendMessage(user.facebook_id, `❌ Có lỗi xảy ra${stepName}. Vui lòng thử lại!`)
+
+        // Offer recovery options
+        await sendQuickReply(
+            user.facebook_id,
+            'Bạn muốn:',
+            [
+                createQuickReply('🔄 THỬ LẠI', 'RETRY_STEP'),
+                createQuickReply('🔄 BẮT ĐẦU LẠI', 'REGISTER'),
+                createQuickReply('💬 HỖ TRỢ', 'SUPPORT_ADMIN')
+            ]
+        )
+    }
+
+    /**
+     * Handle name input - ENHANCED VERSION
      */
     private async handleRegistrationName(user: any, text: string, data: any): Promise<void> {
         console.log('🔍 handleRegistrationName called:', { text, textLength: text.length, data })
@@ -235,15 +375,23 @@ export class AuthFlow {
             data = {}
         }
 
-        if (text.length < 2) {
-            await sendMessage(user.facebook_id, '❌ Tên quá ngắn. Vui lòng nhập họ tên đầy đủ:')
+        // Validate name using comprehensive validation
+        const validation = this.validateName(text)
+        if (!validation.isValid) {
+            // Enhanced error message with guidance
+            const errorMessage = validation.message || '❌ Tên không hợp lệ. Vui lòng nhập lại:'
+            await sendMessage(user.facebook_id, errorMessage)
+
+            // Provide helpful guidance
+            await sendMessage(user.facebook_id, '💡 Mẹo: Nhập tên thật của bạn, ví dụ:\n• Nguyễn Văn Minh\n• Trần Thị Lan\n• Lê Minh Tuấn')
             return
         }
 
         data.name = text.trim()
         console.log('✅ Name saved:', data.name)
 
-        await sendMessage(user.facebook_id, `✅ Họ tên: ${data.name}\n📝 Bước 2/4: Số điện thoại\n📱 Vui lòng nhập số điện thoại của bạn:`)
+        // Enhanced success message with progress indicator
+        await sendMessage(user.facebook_id, `✅ Họ tên: ${data.name}\n\n📝 Tiến trình: (1/4) ✅ → (2/4) 📱 → (3/4) 📍 → (4/4) 🎂\n\n📱 Bước 2: Số điện thoại\nVui lòng nhập số điện thoại của bạn:`)
 
         const sessionUpdate = {
             current_flow: 'registration',
@@ -261,7 +409,7 @@ export class AuthFlow {
     }
 
     /**
-     * Handle phone input
+     * Handle phone input - ENHANCED VERSION
      */
     private async handleRegistrationPhone(user: any, text: string, data: any): Promise<void> {
         // FIX: Đảm bảo data không bao giờ là undefined
@@ -272,8 +420,15 @@ export class AuthFlow {
 
         const phone = text.replace(/\D/g, '')
 
+        // Enhanced phone validation with better error messages
         if (phone.length < 10) {
-            await sendMessage(user.facebook_id, '❌ Số điện thoại không hợp lệ. Vui lòng nhập lại:')
+            await sendMessage(user.facebook_id, '❌ Số điện thoại không hợp lệ!')
+            await sendMessage(user.facebook_id, '💡 Vui lòng nhập số điện thoại hợp lệ:\n• 10-11 chữ số\n• Ví dụ: 0901234567\n• Không cần nhập khoảng cách hay dấu gạch ngang')
+            return
+        }
+
+        if (phone.length > 11) {
+            await sendMessage(user.facebook_id, '❌ Số điện thoại quá dài. Vui lòng kiểm tra lại!')
             return
         }
 
@@ -285,14 +440,16 @@ export class AuthFlow {
             .single()
 
         if (existingUser && existingUser.facebook_id !== user.facebook_id) {
-            await sendMessage(user.facebook_id, '❌ Số điện thoại đã được sử dụng. Vui lòng nhập số khác:')
+            await sendMessage(user.facebook_id, '❌ Số điện thoại đã được sử dụng bởi tài khoản khác!')
+            await sendMessage(user.facebook_id, '💡 Vui lòng sử dụng số điện thoại khác hoặc liên hệ admin để được hỗ trợ.')
             return
         }
 
         data.phone = phone
         console.log('✅ Phone saved:', data.phone)
 
-        await sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n📝 Bước 3/4: Vị trí\n📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:`)
+        // Enhanced success message with progress indicator
+        await sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n\n📝 Tiến trình: (1/4) ✅ → (2/4) ✅ → (3/4) 📍 → (4/4) 🎂\n\n📍 Bước 3: Vị trí sinh sống\nVui lòng chọn tỉnh/thành phố bạn đang sinh sống:`)
 
         // Tạo danh sách vị trí thông minh - hiển thị các thành phố lớn trước
         const majorCities = ['HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ']
@@ -337,7 +494,7 @@ export class AuthFlow {
     }
 
     /**
-     * Handle location selection - FIXED VERSION
+     * Handle location selection - ENHANCED VERSION
      */
     async handleRegistrationLocationPostback(user: any, location: string): Promise<void> {
         try {
@@ -346,8 +503,7 @@ export class AuthFlow {
             const session = await getBotSession(user.facebook_id)
             if (!session || session.current_flow !== 'registration') {
                 console.log('❌ Invalid session in location postback')
-                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng bắt đầu đăng ký lại!')
-                await updateBotSession(user.facebook_id, null)
+                await this.handleSessionError(user, 'Phiên đăng ký không hợp lệ')
                 return
             }
 
@@ -357,11 +513,12 @@ export class AuthFlow {
             data.location = location
             console.log('✅ Location saved:', data.location)
 
-            await sendMessage(user.facebook_id, `✅ Vị trí: ${location}\n📝 Bước 4/4: Xác nhận tuổi\n🎂 Đây là bước quan trọng nhất!\n❓ Bạn có phải sinh năm 1981 (Tân Dậu) không?`)
+            // Enhanced success message with progress indicator
+            await sendMessage(user.facebook_id, `✅ Vị trí: ${location}\n\n📝 Tiến trình: (1/4) ✅ → (2/4) ✅ → (3/4) ✅ → (4/4) 🎂\n\n🎂 Bước 4: Xác nhận năm sinh\nĐây là bước quan trọng nhất để đảm bảo bạn thuộc cộng đồng Tân Dậu!\n\n❓ Bạn có sinh năm 1981 (Tân Dậu) không?`)
 
             await sendQuickReply(
                 user.facebook_id,
-                'Xác nhận tuổi:',
+                'Xác nhận năm sinh:',
                 [
                     createQuickReply('✅ CÓ - TÔI SINH NĂM 1981', 'REG_BIRTHDAY_YES'),
                     createQuickReply('❌ KHÔNG - TÔI SINH NĂM KHÁC', 'REG_BIRTHDAY_NO')
@@ -384,7 +541,7 @@ export class AuthFlow {
 
         } catch (error) {
             console.error('Error in handleRegistrationLocationPostback:', error)
-            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi xử lý vị trí. Vui lòng thử lại!')
+            await this.handleStepError(user, error, 'location')
         }
     }
 
@@ -538,7 +695,7 @@ export class AuthFlow {
     }
 
     /**
-     * Handle keywords input for better search
+     * Handle keywords input for better search - ENHANCED VERSION
      */
     private async handleRegistrationKeywords(user: any, text: string, data: any): Promise<void> {
         // FIX: Đảm bảo data không bao giờ là undefined
@@ -549,14 +706,21 @@ export class AuthFlow {
 
         if (text.toLowerCase().includes('bỏ qua') || text.toLowerCase().includes('không')) {
             data.keywords = null
+            await sendMessage(user.facebook_id, '✅ Bỏ qua từ khóa tìm kiếm')
         } else {
+            // Validate keywords for inappropriate content
+            const validation = this.validateKeywords(text)
+            if (!validation.isValid) {
+                await sendMessage(user.facebook_id, validation.message || '❌ Từ khóa không hợp lệ. Vui lòng nhập lại hoặc "bỏ qua":')
+                await sendMessage(user.facebook_id, '💡 Ví dụ từ khóa hợp lệ:\n• nhà đất, căn hộ\n• xe honda, xe máy\n• điện thoại, laptop')
+                return
+            }
             data.keywords = text.trim()
+            await sendMessage(user.facebook_id, `✅ Từ khóa: ${data.keywords}`)
         }
 
-        await sendMessage(user.facebook_id, data.keywords ? `✅ Từ khóa: ${data.keywords}` : '✅ Bỏ qua từ khóa')
-
-        // Chuyển sang bước tiếp theo - Sản phẩm/Dịch vụ
-        await sendMessage(user.facebook_id, '📝 Bước 6/7: Sản phẩm/Dịch vụ\n━━━━━━━━━━━━━━━━━━━━\n🛒 Bạn muốn bán sản phẩm hay dịch vụ gì?\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: nhà đất, xe cộ, dịch vụ tư vấn\n📝 Nhập sản phẩm/dịch vụ để tiếp tục:')
+        // Enhanced transition to next step with progress indicator
+        await sendMessage(user.facebook_id, `\n📝 Tiến trình: (5/7) ✅ → (6/7) 🛒 → (7/7) 🎉\n\n🛒 Bước 6: Sản phẩm/Dịch vụ\nBạn muốn bán sản phẩm hay dịch vụ gì?\n\n💡 Ví dụ:\n• Nhà đất, căn hộ cho thuê\n• Xe máy, ô tô\n• Dịch vụ sửa chữa, tư vấn`)
 
         const sessionUpdate = {
             current_flow: 'registration',
@@ -824,20 +988,5 @@ export class AuthFlow {
         }
     }
 
-    // Additional functions for webhook compatibility
-    static async handleAdminCommand(user: any, command?: string): Promise<void> {
-        // Typing indicator removed for quick reply
-        await sendQuickReplyNoTyping(
-            user.facebook_id,
-            'Quản lý:',
-            [
-                createQuickReply('💰 THANH TOÁN', 'ADMIN_PAYMENTS'),
-                createQuickReply('👥 NGƯỜI DÙNG', 'ADMIN_USERS'),
-                createQuickReply('🛒 TIN ĐĂNG', 'ADMIN_LISTINGS'),
-                createQuickReply('📊 THỐNG KÊ', 'ADMIN_STATS'),
-                createQuickReply('📢 THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
-                createQuickReply('⚙️ CÀI ĐẶT', 'ADMIN_SETTINGS')
-            ]
-        )
-    }
+
 }

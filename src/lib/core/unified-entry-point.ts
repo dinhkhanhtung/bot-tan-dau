@@ -1043,8 +1043,8 @@ export class UnifiedBotSystem {
                 await this.handleAdminUserInfo(user, postback)
             } else if (postback.startsWith('ADMIN_END_CHAT_')) {
                 const sessionId = postback.replace('ADMIN_END_CHAT_', '')
-                const { handleAdminEndChat } = await import('../handlers/admin-handlers')
-                await handleAdminEndChat(user, sessionId)
+                const { AdminFlow } = await import('../flows/admin-flow')
+                await AdminFlow.handleExitAdminChat(user)
             } else if (postback.startsWith('ADMIN_APPROVE_USER_')) {
                 // Xử lý duyệt thanh toán cho user cụ thể
                 const userId = postback.replace('ADMIN_APPROVE_USER_', '')
@@ -1058,15 +1058,14 @@ export class UnifiedBotSystem {
                 const userId = postback.replace('ADMIN_VIEW_PAYMENTS_', '')
                 await this.handleAdminViewUserPayments(user, userId)
             } else if (postback === 'ADMIN_BULK_APPROVE') {
-                // Xử lý duyệt hàng loạt
-                const { handleAdminBulkApprove } = await import('../handlers/admin-handlers')
-                await handleAdminBulkApprove(user)
+                // Xử lý duyệt hàng loạt - chuyển hướng đến web dashboard
+                await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+                await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
             } else if (postback === 'ADMIN') {
                 await this.showAdminDashboard(user)
             } else {
-                // Fallback to admin command handler
-                const { handleAdminCommand } = await import('../handlers/admin-handlers')
-                await handleAdminCommand(user)
+                // Fallback to admin dashboard
+                await this.showAdminDashboard(user)
             }
         } catch (error) {
             console.error('Error handling admin postback:', error)

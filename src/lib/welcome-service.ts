@@ -43,7 +43,7 @@ const WELCOME_TEMPLATES = {
         callToAction: 'Bạn muốn làm gì hôm nay?'
     },
     [WelcomeType.PENDING_USER]: {
-        greeting: '⏳ Chào mừng bạn đến với cộng đồng Tân Dậu!',
+        greeting: '⏳ Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!',
         description: '📋 Tài khoản của bạn đang chờ Admin duyệt. Trong thời gian này, bạn có thể:',
         features: [
             '🔍 Tìm kiếm và xem sản phẩm',
@@ -190,10 +190,7 @@ export class WelcomeService {
 
             case WelcomeType.ADMIN:
                 return [
-                    createQuickReply('👥 QUẢN LÝ NGƯỜI DÙNG', 'ADMIN_USERS'),
-                    createQuickReply('💰 QUẢN LÝ THANH TOÁN', 'ADMIN_PAYMENTS'),
-                    createQuickReply('🛒 QUẢN LÝ TIN ĐĂNG', 'ADMIN_LISTINGS'),
-                    createQuickReply('📊 XEM THỐNG KÊ', 'ADMIN_STATS')
+                    // Admin functions moved to web dashboard
                 ]
 
             default:
