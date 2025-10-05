@@ -74,6 +74,8 @@ export class AuthFlow {
      */
     private async handleNameStep(user: any, text: string, session: any): Promise<void> {
         console.log('📝 Processing name step for user:', user.facebook_id)
+        console.log('📝 Input text:', text)
+        console.log('📝 Current session:', session)
 
         // Validate name
         if (!text || text.trim().length < 2) {
@@ -88,10 +90,13 @@ export class AuthFlow {
             data: { name: text.trim() }
         }
 
+        console.log('📝 Saving session data:', sessionData)
         await updateBotSession(user.facebook_id, sessionData)
 
         // Send phone prompt
-        await this.sendMessage(user.facebook_id, `✅ Họ tên: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📱 Bước 2/4: Số điện thoại\n💡 Nhập số điện thoại để nhận thông báo quan trọng\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập số điện thoại:`)
+        const message = `✅ Họ tên: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📱 Bước 2/4: Số điện thoại\n💡 Nhập số điện thoại để nhận thông báo quan trọng\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập số điện thoại:`
+        console.log('📝 Sending message:', message)
+        await this.sendMessage(user.facebook_id, message)
 
         console.log('✅ Name step completed, moved to phone step')
     }
@@ -101,6 +106,8 @@ export class AuthFlow {
      */
     private async handlePhoneStep(user: any, text: string, session: any): Promise<void> {
         console.log('📱 Processing phone step for user:', user.facebook_id)
+        console.log('📱 Input text:', text)
+        console.log('📱 Current session:', session)
 
         // Clean phone number
         const phone = text.replace(/\D/g, '').trim()
@@ -133,10 +140,13 @@ export class AuthFlow {
             }
         }
 
+        console.log('📱 Saving session data:', sessionData)
         await updateBotSession(user.facebook_id, sessionData)
 
         // Send location prompt
-        await this.sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━`)
+        const message = `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━`
+        console.log('📱 Sending message:', message)
+        await this.sendMessage(user.facebook_id, message)
 
         // Send location buttons
         await this.sendLocationButtons(user.facebook_id)
