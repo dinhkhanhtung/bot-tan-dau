@@ -47,30 +47,25 @@ export class AuthFlow {
 
             console.log('🔍 Current step value:', currentStep, 'Type:', typeof currentStep)
 
-            switch (currentStep) {
-                case 0:
-                case '0':
-                case 'name':
-                    await this.handleNameStep(user, text, session)
-                    break
-                case 1:
-                case '1':
-                case 'phone':
-                    await this.handlePhoneStep(user, text, session)
-                    break
-                case 2:
-                case '2':
-                case 'location':
-                    await this.handleLocationStep(user, text, session)
-                    break
-                case 3:
-                case '3':
-                case 'birthday':
-                    await this.handleBirthdayStep(user, text, session)
-                    break
-                default:
-                    console.log('❌ Unknown step:', currentStep, 'Type:', typeof currentStep)
-                    await this.sendErrorMessage(user.facebook_id)
+            // Handle name step (step 0)
+            if (currentStep === 0 || currentStep === '0' || currentStep === 'name') {
+                await this.handleNameStep(user, text, session)
+            }
+            // Handle phone step (step 1)
+            else if (currentStep === 1 || currentStep === '1' || currentStep === 'phone') {
+                await this.handlePhoneStep(user, text, session)
+            }
+            // Handle location step (step 2) - expects postback, not text
+            else if (currentStep === 2 || currentStep === '2' || currentStep === 'location') {
+                await this.handleLocationStep(user, text, session)
+            }
+            // Handle birthday step (step 3) - expects postback, not text
+            else if (currentStep === 3 || currentStep === '3' || currentStep === 'birthday') {
+                await this.handleBirthdayStep(user, text, session)
+            }
+            else {
+                console.log('❌ Unknown step:', currentStep, 'Type:', typeof currentStep)
+                await this.sendErrorMessage(user.facebook_id)
             }
 
         } catch (error) {
@@ -136,7 +131,7 @@ export class AuthFlow {
         // Update session with phone data
         const sessionData = {
             current_flow: 'registration',
-            step: '2',  // Use numeric step for consistency
+            step: 2,  // Use numeric step for consistency
             data: {
                 ...session.data,
                 phone: phone
@@ -265,10 +260,10 @@ export class AuthFlow {
      * Start registration process
      */
     private async startRegistration(user: any): Promise<void> {
-        // Create initial session
+        // Create initial session with numeric step 0
         await updateBotSession(user.facebook_id, {
             current_flow: 'registration',
-            step: 'name',
+            step: 0,  // Use numeric step for consistency
             data: {}
         })
 

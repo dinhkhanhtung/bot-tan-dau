@@ -1,73 +1,129 @@
 /**
  * Test script for registration flow
- * Run with: npm run dev (then test manually via Facebook Messenger)
- *
- * Since this is a Next.js project, we can't easily run the auth flow directly.
- * Instead, this script provides instructions for manual testing.
+ * Run with: npx ts-node test-registration-flow.js
  */
 
-console.log('🧪 REGISTRATION FLOW TEST INSTRUCTIONS');
-console.log('=====================================\n');
+import { AuthFlow } from './src/lib/flows/auth-flow';
+import { getBotSession, updateBotSession } from './src/lib/database-service';
 
-console.log('📋 MANUAL TESTING STEPS:');
-console.log('1. Start your Next.js development server:');
-console.log('   npm run dev\n');
+async function testRegistrationFlow() {
+    console.log('🧪 Testing Registration Flow...\n');
 
-console.log('2. Set up Facebook Webhook to point to:');
-console.log('   http://localhost:3000/api/webhook\n');
+    // Mock user object
+    const mockUser = {
+        facebook_id: 'test_user_123',
+        status: 'new_user'
+    };
 
-console.log('3. Test the registration flow by:');
-console.log('   a) Send a message to your Facebook page');
-console.log('   b) Bot should respond with registration start');
-console.log('   c) Enter your name (e.g., "Đinh Khánh Tùng")');
-console.log('   d) Bot should ask for phone number');
-console.log('   e) Enter phone (e.g., "0982581222")');
-console.log('   f) Bot should ask for location');
-console.log('   g) Select location');
-console.log('   h) Bot should ask for birth year confirmation\n');
+    const authFlow = new AuthFlow();
 
-console.log('🔍 WHAT TO LOOK FOR:');
-console.log('✅ Bot responds to each step');
-console.log('✅ Progress indicators show correctly (1/4, 2/4, etc.)');
-console.log('✅ Session transitions work smoothly');
-console.log('✅ No errors in server logs');
-console.log('✅ Final registration completes successfully\n');
+    try {
+        // Test 1: Start registration
+        console.log('📝 Test 1: Starting registration...');
+        await authFlow.handleRegistration(mockUser);
+        console.log('✅ Registration started successfully\n');
 
-console.log('🐛 DEBUGGING TIPS:');
-console.log('• Check server console for detailed logs');
-console.log('• Look for "🔍 handleStep called" messages');
-console.log('• Verify session data is parsed correctly');
-console.log('• Check database for session records\n');
+        // Test 2: Check session was created
+        console.log('📝 Test 2: Checking session creation...');
+        const session = await getBotSession(mockUser.facebook_id);
+        console.log('Session:', JSON.stringify(session, null, 2));
 
-console.log('📊 DATABASE VERIFICATION:');
-console.log('Check these tables in Supabase:');
-console.log('• bot_sessions - Should show current registration session');
-console.log('• users - Should show new user after completion');
-console.log('• user_messages - Should log all interactions\n');
+        if (session && session.current_flow === 'registration' && session.step === 0) {
+            console.log('✅ Session created correctly\n');
+        } else {
+            console.log('❌ Session not created correctly\n');
+        }
 
-console.log('🎯 EXPECTED BEHAVIOR:');
-console.log('• Step 1: Name input → Step 2: Phone input');
-console.log('• Step 2: Phone input → Step 3: Location selection');
-console.log('• Step 3: Location → Step 4: Birth confirmation');
-console.log('• Step 4: Confirmation → Registration complete\n');
+        // Test 3: Test name step
+        console.log('📝 Test 3: Testing name input...');
+        const nameInput = 'Nguyễn Văn Test';
+        await authFlow.handleStep(mockUser, nameInput, session);
+        console.log('✅ Name step completed\n');
 
-console.log('✅ REGISTRATION FLOW IS NOW COMPLETELY REWRITTEN!');
-console.log('The main issues have been resolved:');
-console.log('• Completely rewritten with simple, linear logic');
-console.log('• Removed all complex session parsing and edge cases');
-console.log('• Single flow: name → phone → location → complete');
-console.log('• No more duplicate handlers or conflicting logic');
-console.log('• Direct session management without complex state machines');
-console.log('• Clear error handling and user feedback');
-console.log('• Removed all legacy code that was causing conflicts\n');
+        // Test 4: Check session after name step
+        console.log('📝 Test 4: Checking session after name step...');
+        const sessionAfterName = await getBotSession(mockUser.facebook_id);
+        console.log('Session after name:', JSON.stringify(sessionAfterName, null, 2));
 
-console.log('🚀 Ready for production testing!');
+        if (sessionAfterName && sessionAfterName.step === 1 && sessionAfterName.data.name === nameInput) {
+            console.log('✅ Name step processed correctly\n');
+        } else {
+            console.log('❌ Name step not processed correctly\n');
+        }
 
-console.log('\n🔧 COMPLETE REWRITE APPLIED:');
-console.log('1. Simple 3-step registration: name → phone → location');
-console.log('2. Direct session updates without complex parsing');
-console.log('3. Immediate error feedback for invalid inputs');
-console.log('4. No more session format conflicts');
-console.log('5. Clean, maintainable code structure');
-console.log('6. Removed all duplicate and legacy code');
-console.log('7. Single source of truth for registration logic');
+        // Test 5: Test phone step
+        console.log('📝 Test 5: Testing phone input...');
+        const phoneInput = '0987654321';
+        await authFlow.handleStep(mockUser, phoneInput, sessionAfterName);
+        console.log('✅ Phone step completed\n');
+
+        // Test 6: Check session after phone step
+        console.log('📝 Test 6: Checking session after phone step...');
+        const sessionAfterPhone = await getBotSession(mockUser.facebook_id);
+        console.log('Session after phone:', JSON.stringify(sessionAfterPhone, null, 2));
+
+        if (sessionAfterPhone && sessionAfterPhone.step === 2 && sessionAfterPhone.data.phone === phoneInput) {
+            console.log('✅ Phone step processed correctly\n');
+        } else {
+            console.log('❌ Phone step not processed correctly\n');
+        }
+
+        // Test 7: Test location postback
+        console.log('📝 Test 7: Testing location postback...');
+        const locationInput = 'HÀ NỘI';
+        await authFlow.handleLocationPostback(mockUser, locationInput);
+        console.log('✅ Location postback completed\n');
+
+        // Test 8: Check session after location step
+        console.log('📝 Test 8: Checking session after location step...');
+        const sessionAfterLocation = await getBotSession(mockUser.facebook_id);
+        console.log('Session after location:', JSON.stringify(sessionAfterLocation, null, 2));
+
+        if (sessionAfterLocation && sessionAfterLocation.step === 3 && sessionAfterLocation.data.location === locationInput) {
+            console.log('✅ Location step processed correctly\n');
+        } else {
+            console.log('❌ Location step not processed correctly\n');
+        }
+
+        // Test 9: Test birthday verification
+        console.log('📝 Test 9: Testing birthday verification...');
+        await authFlow.handleBirthdayVerification(mockUser, 'YES');
+        console.log('✅ Birthday verification completed\n');
+
+        // Test 10: Check if user was created
+        console.log('📝 Test 10: Checking if user was created...');
+        const { supabaseAdmin } = await import('./src/lib/supabase');
+        const { data: createdUser } = await supabaseAdmin
+            .from('users')
+            .select('*')
+            .eq('facebook_id', mockUser.facebook_id)
+            .single();
+
+        if (createdUser) {
+            console.log('✅ User created successfully:', createdUser.name);
+            console.log('📧 Phone:', createdUser.phone);
+            console.log('📍 Location:', createdUser.location);
+            console.log('🎂 Birthday:', createdUser.birthday);
+            console.log('🏷️ Status:', createdUser.status);
+        } else {
+            console.log('❌ User not created');
+        }
+
+        // Test 11: Check if session was cleared
+        console.log('📝 Test 11: Checking if session was cleared...');
+        const finalSession = await getBotSession(mockUser.facebook_id);
+        if (!finalSession) {
+            console.log('✅ Session cleared successfully');
+        } else {
+            console.log('❌ Session not cleared');
+        }
+
+        console.log('\n🎉 Registration flow test completed!');
+
+    } catch (error) {
+        console.error('❌ Test failed:', error);
+    }
+}
+
+// Run the test
+testRegistrationFlow();

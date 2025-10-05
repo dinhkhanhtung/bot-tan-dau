@@ -559,21 +559,9 @@ export class UnifiedBotSystem {
                 hasSession: !!session
             })
 
-            // Nếu đang trong flow đăng ký, xử lý tin nhắn bình thường - KHÔNG áp dụng counter
-            if (currentFlow === 'registration') {
-                logger.info('New user in registration flow - BYPASSING COUNTER LOGIC', {
-                    facebook_id: user.facebook_id,
-                    currentFlow,
-                    step: session?.step,
-                    text: text
-                })
-                await this.handleFlowMessage(user, text, session)
-                return
-            }
-
-            // KIỂM TRA XEM USER CÓ ĐANG TRONG BẤT KỲ FLOW NÀO KHÁC KHÔNG
-            if (currentFlow && ['listing', 'search'].includes(currentFlow)) {
-                logger.info('New user in active flow - BYPASSING WELCOME LOGIC', {
+            // Nếu đang trong BẤT KỲ flow nào (registration, listing, search), xử lý flow TRƯỚC - ƯU TIÊN CAO NHẤT
+            if (currentFlow && ['registration', 'listing', 'search'].includes(currentFlow)) {
+                logger.info('User in active flow - BYPASSING ALL COUNTER AND WELCOME LOGIC', {
                     facebook_id: user.facebook_id,
                     currentFlow,
                     step: session?.step,
