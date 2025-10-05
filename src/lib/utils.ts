@@ -373,11 +373,18 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
             facebookId,
             hasSessionData: !!sessionData,
             currentFlow: sessionData?.current_flow,
-            step: sessionData?.step
+            step: sessionData?.step,
+            dataKeys: sessionData?.data ? Object.keys(sessionData.data) : []
         })
 
         // CHUẨN HÓA: Luôn lưu current_flow vào cả 2 nơi để đảm bảo tương thích
         const currentFlow = sessionData?.current_flow || null
+
+        // Validate session data before saving
+        if (sessionData && !currentFlow) {
+            console.warn('⚠️ updateBotSession: No current_flow provided, setting to registration')
+            sessionData.current_flow = 'registration'
+        }
 
         // Sử dụng upsert với onConflict để đảm bảo chỉ có 1 record per facebook_id
         const { data, error } = await supabaseAdmin
@@ -397,6 +404,7 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
                 facebookId,
                 error: error.message,
                 code: error.code,
+                details: error.details,
                 sessionData
             })
             return
@@ -405,7 +413,9 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
         console.log('✅ updateBotSession success:', {
             facebookId,
             updated: !!data,
-            record: data
+            recordId: data?.[0]?.id,
+            currentFlow: data?.[0]?.current_flow,
+            sessionDataStep: data?.[0]?.session_data?.step
         })
 
     } catch (error) {
@@ -455,7 +465,10 @@ export async function getBotSession(facebookId: string) {
             facebookId,
             hasData: !!data,
             currentFlow: data?.current_flow,
-            sessionData: data?.session_data
+            sessionDataStep: data?.session_data?.step,
+            sessionDataKeys: data?.session_data?.data ? Object.keys(data.session_data.data) : [],
+            directStep: data?.step,
+            directDataKeys: data?.data ? Object.keys(data.data) : []
         })
 
         // CHUẨN HÓA: Đảm bảo current_flow có sẵn ở cả 2 nơi
@@ -465,12 +478,34 @@ export async function getBotSession(facebookId: string) {
             // Nếu current_flow chỉ có trong session_data, copy ra ngoài
             if (!data.current_flow && data.session_data?.current_flow) {
                 data.current_flow = data.session_data.current_flow
+                console.log('🔧 Copied current_flow from session_data to main field')
             }
 
             // Nếu current_flow chỉ có ở ngoài, copy vào session_data
             if (data.current_flow && !data.session_data?.current_flow) {
                 data.session_data = data.session_data || {}
                 data.session_data.current_flow = data.current_flow
+                console.log('🔧 Copied current_flow from main field to session_data')
+            }
+
+            // Ensure step consistency between formats
+            if (data.session_data?.step && !data.step) {
+                data.step = data.session_data.step
+                console.log('🔧 Copied step from session_data to main field')
+            } else if (data.step && !data.session_data?.step) {
+                data.session_data = data.session_data || {}
+                data.session_data.step = data.step
+                console.log('🔧 Copied step from main field to session_data')
+            }
+
+            // Ensure data consistency between formats
+            if (data.session_data?.data && !data.data) {
+                data.data = data.session_data.data
+                console.log('🔧 Copied data from session_data to main field')
+            } else if (data.data && !data.session_data?.data) {
+                data.session_data = data.session_data || {}
+                data.session_data.data = data.data
+                console.log('🔧 Copied data from main field to session_data')
             }
         }
 

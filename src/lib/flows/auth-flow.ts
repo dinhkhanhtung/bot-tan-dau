@@ -189,18 +189,29 @@ export class AuthFlow {
             let data = {}
 
             if (session) {
+                console.log('🔍 Raw session structure in resume:', {
+                    hasSessionData: !!session.session_data,
+                    hasStep: !!session.step,
+                    hasCurrentStep: !!session.current_step,
+                    currentFlow: session.current_flow,
+                    sessionKeys: Object.keys(session)
+                })
+
                 if (session.session_data) {
                     // Format: { session_data: { step, data, started_at, current_flow } }
                     currentStep = session.session_data.step || 'name'
                     data = session.session_data.data || {}
+                    console.log('🔍 Resumed from session_data:', { currentStep, dataKeys: Object.keys(data) })
                 } else if (session.step) {
                     // Direct format: { step, data, started_at, current_flow }
                     currentStep = session.step || 'name'
                     data = session.data || {}
+                    console.log('🔍 Resumed from direct format:', { currentStep, dataKeys: Object.keys(data) })
                 } else {
                     // Fallback
                     currentStep = 'name'
                     data = {}
+                    console.log('🔍 Using fallback parsing in resume')
                 }
 
                 // CRITICAL FIX: Check current_step field from database if available
@@ -212,8 +223,9 @@ export class AuthFlow {
                         2: 'location',
                         3: 'birthday_confirm'
                     }
+                    const oldStep = currentStep
                     currentStep = stepMapping[session.current_step] || 'name'
-                    console.log('🔧 Using current_step from database in resume:', session.current_step, '->', currentStep)
+                    console.log('🔧 Using current_step from database in resume:', session.current_step, '->', currentStep, '(was:', oldStep, ')')
                 }
             }
 
@@ -261,6 +273,14 @@ export class AuthFlow {
             let startedAt = null
 
             if (session) {
+                console.log('🔍 Raw session structure:', {
+                    hasSessionData: !!session.session_data,
+                    hasStep: !!session.step,
+                    hasCurrentStep: !!session.current_step,
+                    currentFlow: session.current_flow,
+                    sessionKeys: Object.keys(session)
+                })
+
                 // Handle different session formats from database
                 if (session.session_data) {
                     // Format: { session_data: { step, data, started_at, current_flow } }
@@ -268,17 +288,20 @@ export class AuthFlow {
                     currentStep = sessionData.step || 'name'
                     data = sessionData.data || {}
                     startedAt = sessionData.started_at
+                    console.log('🔍 Parsed from session_data:', { currentStep, dataKeys: Object.keys(data) })
                 } else if (session.step) {
                     // Direct format: { step, data, started_at, current_flow }
                     sessionData = session
                     currentStep = session.step || 'name'
                     data = session.data || {}
                     startedAt = session.started_at
+                    console.log('🔍 Parsed from direct format:', { currentStep, dataKeys: Object.keys(data) })
                 } else {
                     // Fallback: assume it's the session data object itself
                     sessionData = session
                     currentStep = 'name'
                     data = {}
+                    console.log('🔍 Using fallback parsing')
                 }
 
                 // CRITICAL FIX: Check current_step field from database if available
@@ -290,8 +313,15 @@ export class AuthFlow {
                         2: 'location',
                         3: 'birthday_confirm'
                     }
+                    const oldStep = currentStep
                     currentStep = stepMapping[session.current_step] || 'name'
-                    console.log('🔧 Using current_step from database:', session.current_step, '->', currentStep)
+                    console.log('🔧 Using current_step from database:', session.current_step, '->', currentStep, '(was:', oldStep, ')')
+                }
+
+                // Additional validation: ensure current_flow is set
+                if (sessionData && !sessionData.current_flow) {
+                    sessionData.current_flow = 'registration'
+                    console.log('🔧 Fixed missing current_flow in sessionData')
                 }
             }
 
