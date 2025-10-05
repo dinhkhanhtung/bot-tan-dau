@@ -320,6 +320,29 @@ export async function handleBotExit(facebookId: string): Promise<void> {
     )
 }
 
+// Hàm hiển thị thông báo mời sử dụng bot (để sử dụng khi cần)
+export async function showBotInvitation(facebookId: string): Promise<void> {
+    const { sendMessage, sendQuickReply, createQuickReply } = await import('./facebook-api')
+
+    await sendMessage(facebookId, 'bạn đã tham gia Bot tân dậu - hỗ trợ chéo chưa.......')
+
+    // Gửi nút để vào bot
+    await sendQuickReply(
+        facebookId,
+        'Chọn hành động:',
+        [
+            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
+        ]
+    )
+}
+
+// Hàm chỉ hiển thị thông báo mà không có nút (cho lần 3)
+export async function showBotInvitationNoButton(facebookId: string): Promise<void> {
+    const { sendMessage } = await import('./facebook-api')
+
+    await sendMessage(facebookId, 'bạn đã tham gia Bot tân dậu - hỗ trợ chéo chưa.......')
+}
+
 // Hàm reset counter khi admin kết thúc chat - cho phép user chat lại bình thường
 export async function resetWelcomeCounter(facebookId: string): Promise<void> {
     try {

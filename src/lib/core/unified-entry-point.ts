@@ -652,49 +652,21 @@ export class UnifiedBotSystem {
 
                 if (currentCount === 1) {
                     console.log(`🎯 Executing count=1 logic for ${user.facebook_id}`)
-                    // Tin nhắn đầu tiên - chào mừng đầy đủ + nút "Chat Bot"
-                    const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+                    // Tin nhắn đầu tiên - chỉ hiển thị thông báo chào mừng
+                    const { sendMessage } = await import('../facebook-api')
 
-                    // Tin nhắn 1: Chào mừng + câu hỏi
+                    // Tin nhắn 1: Chỉ chào mừng, không kèm nút
                     const welcomeMessage = `🎉 Chào bạn ghé thăm Đinh Khánh Tùng!\n👋 Hôm nay mình có thể giúp gì cho bạn?`
                     await sendMessage(user.facebook_id, welcomeMessage)
-
-                    // Hiển thị nút Chat Bot
-                    await sendQuickReply(
-                        user.facebook_id,
-                        'Chọn hành động:',
-                        [
-                            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
-                        ]
-                    )
                 } else if (currentCount === 2 && shouldShowButton) {
                     console.log(`🎯 Executing count=2 logic for ${user.facebook_id}`)
-                    // Tin nhắn thứ 2 - CHỈ hiển thị nút Chat Bot mà KHÔNG nói gì
-                    const { sendQuickReply, createQuickReply } = await import('../facebook-api')
-
-                    // Chỉ hiển thị nút mà không nói gì
-                    await sendQuickReply(
-                        user.facebook_id,
-                        'Chọn hành động:',
-                        [
-                            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
-                        ]
-                    )
+                    // Tin nhắn thứ 2 - hiển thị thông báo mời sử dụng bot
+                    const { showBotInvitation } = await import('../anti-spam')
+                    await showBotInvitation(user.facebook_id)
                 } else if (currentCount === 3 && shouldShowButton) {
                     console.log(`🎯 Executing count=3 logic for ${user.facebook_id}`)
-                    // Tin nhắn thứ 3 - thông báo admin + nút Chat Bot
-                    const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
-
+                    // Tin nhắn thứ 3 - chỉ thông báo admin đã nhận tin
                     await sendMessage(user.facebook_id, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!')
-
-                    // Vẫn hiển thị nút Chat Bot để user có thể vào bot mode
-                    await sendQuickReply(
-                        user.facebook_id,
-                        'Chọn hành động:',
-                        [
-                            createQuickReply('🤖 CHAT BOT', 'CHAT_BOT')
-                        ]
-                    )
                 } else if (currentCount >= 4) {
                     console.log(`🎯 Executing count=${currentCount} logic for ${user.facebook_id} - chỉ hiển thị nút nếu được phép`)
                     // Tin nhắn thứ 4+ - chỉ hiển thị nút nếu shouldShowButton = true
