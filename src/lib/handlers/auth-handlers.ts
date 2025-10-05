@@ -78,7 +78,7 @@ export async function handleRegistration(user: any) {
 
     await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
 
-    await sendMessage(user.facebook_id, `🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 ${BOT_INFO.PRICING_MESSAGE}\n━━━━━━━━━━━━━━━━━━━━`)
+
 
     // Create session for registration flow
     const sessionData = {
