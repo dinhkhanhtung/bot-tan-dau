@@ -164,7 +164,7 @@ async function handleRegistrationName(user: any, text: string, data: any) {
 
 // Handle phone input
 async function handleRegistrationPhone(user: any, text: string, data: any) {
-    const phone = text.replace(/\D/g, '')
+    const phone = text.replace(/\D/g, '').trim()
 
     if (phone.length < 10) {
         await sendMessage(user.facebook_id, '❌ Số điện thoại không hợp lệ. Vui lòng nhập lại:')

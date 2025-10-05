@@ -418,7 +418,7 @@ export class AuthFlow {
             data = {}
         }
 
-        const phone = text.replace(/\D/g, '')
+        const phone = text.replace(/\D/g, '').trim()
 
         // Enhanced phone validation with better error messages
         if (phone.length < 10) {
