@@ -55,6 +55,9 @@ export class AuthFlow {
                 case 'location':
                     await this.handleLocationStep(user, text, session)
                     break
+                case 'birthday':
+                    await this.handleBirthdayStep(user, text, session)
+                    break
                 default:
                     console.log('❌ Unknown step:', currentStep)
                     await this.sendErrorMessage(user.facebook_id)
@@ -88,7 +91,7 @@ export class AuthFlow {
         await updateBotSession(user.facebook_id, sessionData)
 
         // Send phone prompt
-        await this.sendMessage(user.facebook_id, `✅ Họ tên: ${text.trim()}\n\n📱 Bước 2: Số điện thoại\nVui lòng nhập số điện thoại:`)
+        await this.sendMessage(user.facebook_id, `✅ Họ tên: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📱 Bước 2/4: Số điện thoại\n💡 Nhập số điện thoại để nhận thông báo quan trọng\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập số điện thoại:`)
 
         console.log('✅ Name step completed, moved to phone step')
     }
@@ -133,7 +136,7 @@ export class AuthFlow {
         await updateBotSession(user.facebook_id, sessionData)
 
         // Send location prompt
-        await this.sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n\n📍 Bước 3: Chọn tỉnh/thành phố`)
+        await this.sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━`)
 
         // Send location buttons
         await this.sendLocationButtons(user.facebook_id)
@@ -152,6 +155,16 @@ export class AuthFlow {
     }
 
     /**
+     * Handle birthday verification step
+     */
+    private async handleBirthdayStep(user: any, text: string, session: any): Promise<void> {
+        console.log('🎂 Processing birthday step for user:', user.facebook_id)
+
+        // For birthday step, we expect postback, not text
+        await this.sendMessage(user.facebook_id, '❌ Vui lòng chọn từ các nút bên dưới để xác nhận!')
+    }
+
+    /**
      * Handle location postback
      */
     async handleLocationPostback(user: any, location: string): Promise<void> {
@@ -165,11 +178,21 @@ export class AuthFlow {
                 return
             }
 
-            // Complete registration
-            await this.completeRegistration(user, {
-                ...session.data,
-                location: location
-            })
+            // Move to final step - birthday verification
+            const sessionData = {
+                current_flow: 'registration',
+                step: 'birthday',
+                data: {
+                    ...session.data,
+                    location: location
+                }
+            }
+
+            await updateBotSession(user.facebook_id, sessionData)
+
+            // Send birthday verification prompt
+            await this.sendMessage(user.facebook_id, `✅ Địa điểm: ${location}\n━━━━━━━━━━━━━━━━━━━━\n🎂 Bước 4/4: Xác nhận sinh năm\n💡 Chỉ dành cho Tân Dậu (sinh năm 1981)\n━━━━━━━━━━━━━━━━━━━━`)
+            await this.sendBirthdayVerificationButtons(user.facebook_id)
 
         } catch (error) {
             console.error('❌ Location postback error:', error)
@@ -239,8 +262,22 @@ export class AuthFlow {
             data: {}
         })
 
-        // Send welcome message
-        await this.sendMessage(user.facebook_id, '🚀 ĐĂNG KÝ BOT TÂN DẬU\n━━━━━━━━━━━━━━━━━━━━\n📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
+        // Send welcome message with quick guide
+        await this.sendMessage(user.facebook_id, '🚀 ĐĂNG KÝ BOT TÂN DẬU - Hỗ Trợ Chéo')
+        await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+        await this.sendMessage(user.facebook_id, '📋 QUY TRÌNH ĐĂNG KÝ:')
+        await this.sendMessage(user.facebook_id, '1️⃣ Họ tên đầy đủ')
+        await this.sendMessage(user.facebook_id, '2️⃣ Số điện thoại')
+        await this.sendMessage(user.facebook_id, '3️⃣ Tỉnh/thành phố')
+        await this.sendMessage(user.facebook_id, '4️⃣ Xác nhận sinh năm 1981')
+        await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+        await this.sendMessage(user.facebook_id, '💡 LƯU Ý QUAN TRỌNG:')
+        await this.sendMessage(user.facebook_id, '• Chỉ dành cho Tân Dậu (1981)')
+        await this.sendMessage(user.facebook_id, '• Thông tin được bảo mật tuyệt đối')
+        await this.sendMessage(user.facebook_id, '• Trial 3 ngày miễn phí')
+        await this.sendMessage(user.facebook_id, '• Phí duy trì: 3,000đ/ngày')
+        await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+        await this.sendMessage(user.facebook_id, '📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
     }
 
     /**
@@ -256,7 +293,19 @@ export class AuthFlow {
             createQuickReply(location, `LOC_${location.split(' ')[1]}`)
         )
 
-        await sendQuickReply(facebookId, 'Chọn tỉnh/thành phố:', buttons)
+        await sendQuickReply(facebookId, '📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống:', buttons)
+    }
+
+    /**
+     * Send birthday verification buttons
+     */
+    private async sendBirthdayVerificationButtons(facebookId: string): Promise<void> {
+        const buttons = [
+            createQuickReply('✅ Đúng vậy, tôi sinh năm 1981', 'REG_BIRTHDAY_YES'),
+            createQuickReply('❌ Không phải, tôi sinh năm khác', 'REG_BIRTHDAY_NO')
+        ]
+
+        await sendQuickReply(facebookId, '🎂 Bạn có sinh năm 1981 (Tân Dậu) không?', buttons)
     }
 
     /**
@@ -300,8 +349,39 @@ export class AuthFlow {
     }
 
     async handleBirthdayVerification(user: any, answer: string): Promise<void> {
-        // Simplified birthday verification - just complete registration
-        await this.completeRegistration(user, { name: 'Test', phone: '0123456789', location: 'HÀ NỘI' })
+        try {
+            console.log('🎂 Processing birthday verification:', answer, 'for user:', user.facebook_id)
+
+            if (answer === 'YES') {
+                // User confirmed they were born in 1981 - complete registration
+                const session = await getBotSession(user.facebook_id)
+                if (session && session.data) {
+                    await this.completeRegistration(user, session.data)
+                } else {
+                    await this.sendErrorMessage(user.facebook_id)
+                }
+            } else if (answer === 'NO') {
+                // User is not born in 1981 - cannot register
+                await updateBotSession(user.facebook_id, null)
+
+                await this.sendMessage(user.facebook_id, '❌ XIN LỖI')
+                await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+                await this.sendMessage(user.facebook_id, '😔 Bot Tân Dậu - Hỗ Trợ Chéo chỉ dành riêng cho những người con Tân Dậu sinh năm 1981.')
+                await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+                await this.sendMessage(user.facebook_id, '💡 Nếu bạn sinh năm khác, bạn có thể:')
+                await this.sendMessage(user.facebook_id, '• Liên hệ Đinh Khánh Tùng để được tư vấn')
+                await this.sendMessage(user.facebook_id, '• Tham gia các cộng đồng khác phù hợp hơn')
+                await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+                await this.sendMessage(user.facebook_id, '📞 Liên hệ: 0982581222')
+                await this.sendMessage(user.facebook_id, '📧 Email: dinhkhanhtung@outlook.com')
+            } else {
+                await this.sendErrorMessage(user.facebook_id)
+            }
+
+        } catch (error) {
+            console.error('❌ Birthday verification error:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
     }
 
 }

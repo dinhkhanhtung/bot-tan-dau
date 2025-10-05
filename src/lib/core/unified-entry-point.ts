@@ -333,11 +333,14 @@ export class UnifiedBotSystem {
                         const { AuthFlow } = await import('../flows/auth-flow')
                         const authFlow = new AuthFlow()
                         await authFlow.handleRegistrationLocationPostback(user, location)
-                    } else if (params[0] === 'BIRTHDAY') {
-                        const answer = params[1] // YES or NO
+                    } else if (params[0] === 'BIRTHDAY_YES') {
                         const { AuthFlow } = await import('../flows/auth-flow')
                         const authFlow = new AuthFlow()
-                        await authFlow.handleBirthdayVerification(user, answer)
+                        await authFlow.handleBirthdayVerification(user, 'YES')
+                    } else if (params[0] === 'BIRTHDAY_NO') {
+                        const { AuthFlow } = await import('../flows/auth-flow')
+                        const authFlow = new AuthFlow()
+                        await authFlow.handleBirthdayVerification(user, 'NO')
                     }
                     break
                 default:
