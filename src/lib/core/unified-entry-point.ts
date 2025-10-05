@@ -276,6 +276,15 @@ export class UnifiedBotSystem {
                         return
                     }
 
+                    // Đặt cờ để tránh gửi welcome message khi bắt đầu đăng ký
+                    await updateBotSession(user.facebook_id, {
+                        current_flow: 'registration',
+                        step: 'name',
+                        data: {},
+                        started_at: new Date().toISOString(),
+                        skip_welcome: true // Cờ này để tránh xung đột với welcome message
+                    })
+
                     await this.startRegistration(user)
                     break
                 case 'INFO':
@@ -599,6 +608,18 @@ export class UnifiedBotSystem {
                 return
             }
 
+            // KIỂM TRA XEM USER CÓ ĐANG TRONG BẤT KỲ FLOW NÀO KHÁC KHÔNG
+            if (currentFlow && ['listing', 'search'].includes(currentFlow)) {
+                logger.info('New user in active flow - BYPASSING WELCOME LOGIC', {
+                    facebook_id: user.facebook_id,
+                    currentFlow,
+                    step: session?.step,
+                    text: text
+                })
+                await this.handleFlowMessage(user, text, session)
+                return
+            }
+
             // Nếu đang trong bot mode, xử lý bình thường
             if (isInBotMode) {
                 logger.info('User in bot mode - processing normally', {
@@ -860,6 +881,8 @@ export class UnifiedBotSystem {
                 return
             }
 
+            // Nếu không có session hoặc session không phải registration, bắt đầu flow mới
+            console.log('Starting new registration flow for user:', user.facebook_id)
             const { AuthFlow } = await import('../flows/auth-flow')
             const authFlow = new AuthFlow()
             await authFlow.handleRegistration(user)
