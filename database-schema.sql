@@ -680,6 +680,38 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- ========================================
+-- WORKFLOW API FUNCTIONS
+-- ========================================
+
+-- Execute SQL function for workflow API
+CREATE OR REPLACE FUNCTION execute_sql(sql_query TEXT, sql_params TEXT[] DEFAULT '{}')
+RETURNS TABLE(
+    id TEXT,
+    data JSONB
+) AS $$
+DECLARE
+    result RECORD;
+    param TEXT;
+    i INTEGER := 1;
+BEGIN
+    -- Replace parameter placeholders with actual values
+    FOR param IN SELECT unnest(sql_params) LOOP
+        sql_query := REPLACE(sql_query, '$' || i, quote_literal(param));
+        i := i + 1;
+    END LOOP;
+
+    -- Execute the query and return results
+    FOR result IN EXECUTE sql_query LOOP
+        id := result.id::TEXT;
+        data := row_to_json(result)::JSONB;
+        RETURN NEXT;
+    END LOOP;
+
+    RETURN;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Comment
 COMMENT ON TABLE chat_bot_offer_counts IS 'Lưu số lần hiển thị nút Chat Bot cho mỗi user';
 COMMENT ON COLUMN chat_bot_offer_counts.facebook_id IS 'Facebook ID của user';
