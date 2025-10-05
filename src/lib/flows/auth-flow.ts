@@ -81,7 +81,7 @@ export class AuthFlow {
 
         await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━\n📋 THÔNG TIN BẮT BUỘC:\n• Họ tên đầy đủ\n• Số điện thoại\n• Tỉnh/thành sinh sống\n• Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n📝 THÔNG TIN TÙY CHỌN:\n• Email (để nhận thông báo quan trọng)\n• Từ khóa tìm kiếm\n• Sản phẩm/dịch vụ\n━━━━━━━━━━━━━━━━━━━━')
 
-        await sendMessage(user.facebook_id, `🎁 QUYỀN LỢI: Trial 7 ngày miễn phí\n💰 ${BOT_INFO.PRICING_MESSAGE}\n━━━━━━━━━━━━━━━━━━━━`)
+        await sendMessage(user.facebook_id, `🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 ${BOT_INFO.PRICING_MESSAGE}\n━━━━━━━━━━━━━━━━━━━━`)
 
         // Create session for registration flow - CHUẨN HÓA CẤU TRÚC
         const sessionData = {
@@ -452,7 +452,7 @@ export class AuthFlow {
             '⚠️ THÔNG BÁO QUAN TRỌNG',
             'Bot Tân Dậu - Hỗ Trợ Chéo được tạo ra dành riêng cho cộng đồng Tân Dậu Việt.',
             '🎯 Mục đích:\n• Kết nối mua bán trong cộng đồng cùng tuổi\n• Chia sẻ kinh nghiệm và kỷ niệm\n• Hỗ trợ lẫn nhau trong cuộc sống',
-            '💡 Nếu bạn không phải Tân Dậu - Hỗ Trợ Chéo:\n• Có thể sử dụng các platform khác\n• Hoặc giới thiệu cho bạn bè Tân Dậu - Hỗ Trợ Chéo',
+            '💡 Nếu bạn không phải Tân Dậu - Hỗ Trợ Chéo:\n• Có thể sử dụng các platform khác\n• Hoặc giới thiệu cho bạn bè Tân Dậu của mình',
             '❌ Đăng ký đã bị hủy do không đúng đối tượng mục tiêu.'
         ])
 

@@ -1,7 +1,7 @@
 // Bot Configuration - UPDATED PRICING
 export const BOT_CONFIG = {
     DAILY_FEE: 3000, // Chỉ với 3,000đ/ngày - cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu
-    MINIMUM_DAYS: 7,
+    MINIMUM_DAYS: 3,
     TRIAL_DAYS: 3,
     REFERRAL_REWARD: 10000,
     SEARCH_SERVICE_FEE: 5000,
