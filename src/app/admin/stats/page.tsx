@@ -71,11 +71,6 @@ export default function AdminStats() {
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
-    useEffect(() => {
-        checkAuth()
-        fetchStats()
-    }, [timeRange])
-
     const checkAuth = () => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')
@@ -110,6 +105,11 @@ export default function AdminStats() {
             setIsLoading(false)
         }
     }
+
+    useEffect(() => {
+        checkAuth()
+        fetchStats()
+    }, [timeRange])
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('vi-VN').format(amount) + 'đ'

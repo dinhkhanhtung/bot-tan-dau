@@ -45,6 +45,7 @@ export default function AdminListings() {
     const [filter, setFilter] = useState('all')
     const [searchTerm, setSearchTerm] = useState('')
     const [adminInfo, setAdminInfo] = useState<any>(null)
+    const [selectedItems, setSelectedItems] = useState<string[]>([])
     const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info', show: boolean }>({
         message: '',
         type: 'info',
@@ -323,7 +324,7 @@ export default function AdminListings() {
             const selectedListings = selectedItems || [] // This should come from component state
             
             if (selectedListings.length === 0) {
-                showToast('Vui lòng chọn tin đăng cần xóa!', 'warning')
+                showToast('Vui lòng chọn tin đăng cần xóa!', 'error')
                 return
             }
 

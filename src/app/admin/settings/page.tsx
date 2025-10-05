@@ -58,11 +58,6 @@ export default function AdminSettings() {
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
-    useEffect(() => {
-        checkAuth()
-        fetchSettings()
-    }, [])
-
     const checkAuth = () => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')
@@ -74,6 +69,11 @@ export default function AdminSettings() {
 
         setAdminInfo(JSON.parse(adminInfoStr))
     }
+
+    useEffect(() => {
+        checkAuth()
+        fetchSettings()
+    }, [])
 
     const fetchSettings = async () => {
         try {

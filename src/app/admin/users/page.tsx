@@ -50,11 +50,6 @@ export default function AdminUsers() {
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
-    useEffect(() => {
-        checkAuth()
-        fetchUsers()
-    }, [filter])
-
     const checkAuth = () => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')
@@ -89,6 +84,11 @@ export default function AdminUsers() {
             setIsLoading(false)
         }
     }
+
+    useEffect(() => {
+        checkAuth()
+        fetchUsers()
+    }, [filter])
 
     const filteredUsers = users.filter(user => {
         if (!searchTerm) return true
