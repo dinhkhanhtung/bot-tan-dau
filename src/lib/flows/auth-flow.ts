@@ -412,6 +412,13 @@ export class AuthFlow {
      * Handle phone input - ENHANCED VERSION
      */
     private async handleRegistrationPhone(user: any, text: string, data: any): Promise<void> {
+        console.log('📱 handleRegistrationPhone called:', {
+            text,
+            textLength: text.length,
+            data,
+            userId: user.facebook_id
+        })
+
         // FIX: Đảm bảo data không bao giờ là undefined
         if (!data) {
             console.log('⚠️ Data is undefined in phone handler, creating new object')
@@ -420,26 +427,40 @@ export class AuthFlow {
 
         const phone = text.replace(/\D/g, '').trim()
 
+        console.log('📱 Phone processing:', {
+            originalText: text,
+            cleanedPhone: phone,
+            phoneLength: phone.length
+        })
+
         // Enhanced phone validation with better error messages
         if (phone.length < 10) {
+            console.log('❌ Phone too short:', phone.length)
             await sendMessage(user.facebook_id, '❌ Số điện thoại không hợp lệ!')
             await sendMessage(user.facebook_id, '💡 Vui lòng nhập số điện thoại hợp lệ:\n• 10-11 chữ số\n• Ví dụ: 0901234567\n• Không cần nhập khoảng cách hay dấu gạch ngang')
             return
         }
 
         if (phone.length > 11) {
+            console.log('❌ Phone too long:', phone.length)
             await sendMessage(user.facebook_id, '❌ Số điện thoại quá dài. Vui lòng kiểm tra lại!')
             return
         }
 
         // Check if phone already exists
+        console.log('🔍 Checking if phone exists:', phone)
         const { data: existingUser, error } = await supabaseAdmin
             .from('users')
             .select('facebook_id')
             .eq('phone', phone)
             .single()
 
+        if (error && error.code !== 'PGRST116') {
+            console.error('❌ Error checking phone:', error)
+        }
+
         if (existingUser && existingUser.facebook_id !== user.facebook_id) {
+            console.log('❌ Phone already exists for another user')
             await sendMessage(user.facebook_id, '❌ Số điện thoại đã được sử dụng bởi tài khoản khác!')
             await sendMessage(user.facebook_id, '💡 Vui lòng sử dụng số điện thoại khác hoặc liên hệ admin để được hỗ trợ.')
             return
