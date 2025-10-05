@@ -379,6 +379,7 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
         // CHUẨN HÓA: Luôn lưu current_flow vào cả 2 nơi để đảm bảo tương thích
         const currentFlow = sessionData?.current_flow || null
 
+        // Sử dụng upsert với onConflict để đảm bảo chỉ có 1 record per facebook_id
         const { data, error } = await supabaseAdmin
             .from('bot_sessions')
             .upsert({
@@ -386,6 +387,8 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
                 session_data: sessionData,
                 current_flow: currentFlow, // Lưu vào cột riêng để dễ query
                 updated_at: new Date().toISOString()
+            }, {
+                onConflict: 'facebook_id'
             })
             .select()
 

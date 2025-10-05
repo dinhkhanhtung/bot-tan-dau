@@ -226,7 +226,7 @@ CREATE TABLE IF NOT EXISTS point_transactions (
 -- Bot sessions table
 CREATE TABLE IF NOT EXISTS bot_sessions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    facebook_id VARCHAR(255) NOT NULL,
+    facebook_id VARCHAR(255) UNIQUE NOT NULL,
     session_data JSONB DEFAULT '{}',
     current_flow VARCHAR(100),
     current_step INTEGER DEFAULT 0,

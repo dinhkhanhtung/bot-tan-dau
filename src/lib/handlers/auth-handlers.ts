@@ -158,7 +158,8 @@ async function handleRegistrationName(user: any, text: string, data: any) {
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
         step: 'phone',
-        data: data
+        data: data,
+        started_at: new Date().toISOString()
     })
 }
 
@@ -217,7 +218,8 @@ async function handleRegistrationPhone(user: any, text: string, data: any) {
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
         step: 'location',
-        data: data
+        data: data,
+        started_at: new Date().toISOString()
     })
 }
 
@@ -243,7 +245,8 @@ export async function handleRegistrationLocationPostback(user: any, location: st
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
         step: 'birthday_confirm',
-        data: data
+        data: data,
+        started_at: new Date().toISOString()
     })
 }
 
@@ -259,7 +262,8 @@ export async function handleBirthdayVerification(user: any) {
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
         step: 'keywords',
-        data: data
+        data: data,
+        started_at: new Date().toISOString()
     })
 }
 
@@ -535,7 +539,8 @@ export async function handleRegistrationLocation(user: any, text: string, data: 
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
         step: 'birthday',
-        data: data
+        data: data,
+        started_at: new Date().toISOString()
     })
 }
 
@@ -591,7 +596,8 @@ export async function handleRegistrationBirthday(user: any, text: string, data: 
     await updateBotSession(user.facebook_id, {
         current_flow: 'registration',
         step: 'birthday_confirm',
-        data: data
+        data: data,
+        started_at: new Date().toISOString()
     })
 }
 
