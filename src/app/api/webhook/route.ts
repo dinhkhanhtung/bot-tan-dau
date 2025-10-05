@@ -88,6 +88,17 @@ export async function POST(request: NextRequest) {
 // Handle webhook events
 async function handleWebhookEvent(event: any) {
     try {
+        const senderId = event.sender?.id
+        const recipientId = event.recipient?.id
+
+        logger.info('Processing webhook event', {
+            senderId,
+            recipientId,
+            hasMessage: !!event.message,
+            hasPostback: !!event.postback,
+            eventType: event.message ? 'message' : event.postback ? 'postback' : 'other'
+        })
+
         // Check if bot is stopped
         const { getBotStatus } = await import('@/lib/database-service')
         const botStatus = await getBotStatus()
@@ -154,7 +165,7 @@ async function handleMessageEvent(event: any) {
         const { getUserByFacebookId } = await import('@/lib/database-service')
         const user = await getUserByFacebookId(senderId)
 
-        // Create user object for UnifiedBotSystem
+        // Create user object for UnifiedBotSystem - ENSURE CORRECT FACEBOOK_ID
         const userObj = user || {
             facebook_id: senderId,
             status: 'new_user',
@@ -162,6 +173,14 @@ async function handleMessageEvent(event: any) {
             phone: null,
             membership_expires_at: null
         }
+
+        // Log user info for debugging
+        logger.info('User object created for webhook', {
+            senderId,
+            userObj_facebook_id: userObj.facebook_id,
+            user_status: userObj.status,
+            has_user_data: !!user
+        })
 
         // Log message
         const { logMessage } = await import('@/lib/database-service')
@@ -216,9 +235,16 @@ async function handlePostbackEvent(event: any) {
         const payload = event.postback.payload
         const messageId = event.postback.mid || `${senderId}_${payload}_${Date.now()}`
 
+        logger.info(`Processing postback event`, {
+            senderId,
+            payload,
+            messageId,
+            timestamp: Date.now()
+        })
+
         // Check if this postback was already processed
         if (processedPostbacks.has(messageId)) {
-            logSystemEvent('duplicate_postback_ignored', { messageId, senderId })
+            logger.warn('Duplicate postback ignored', { messageId, senderId, payload })
             return
         }
 
@@ -245,7 +271,11 @@ async function handlePostbackEvent(event: any) {
             membership_expires_at: null
         }
 
-        logger.info(`Handling postback: ${payload}`, { senderId })
+        logger.info(`Handling postback: ${payload}`, {
+            senderId,
+            userObj_facebook_id: userObj.facebook_id,
+            user_status: userObj.status
+        })
 
         // Handle postback via UnifiedBotSystem
         await UnifiedBotSystem.handleMessage(userObj, '', true, payload)
