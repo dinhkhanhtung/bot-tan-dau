@@ -297,6 +297,28 @@ export class UnifiedBotSystem {
     }
 
     /**
+     * Xử lý tin nhắn trong bot mode - KHÔNG áp dụng counter logic
+     */
+    private static async handleBotModeMessage(user: any, text: string): Promise<void> {
+        try {
+            // Xử lý các lệnh đặc biệt trong bot mode
+            if (text.includes('đăng ký') || text.includes('ĐĂNG KÝ')) {
+                await this.startRegistration(user)
+            } else if (text.includes('thông tin') || text.includes('THÔNG TIN')) {
+                await this.showBotInfo(user)
+            } else if (text.includes('hỗ trợ') || text.includes('HỖ TRỢ')) {
+                await this.showSupportInfo(user)
+            } else {
+                // Xử lý tin nhắn thường - hiện main menu
+                await this.showMainMenu(user)
+            }
+        } catch (error) {
+            console.error('Error handling bot mode message:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
      * Xử lý text message
      */
     private static async handleTextMessage(user: any, text: string): Promise<void> {
@@ -538,6 +560,8 @@ export class UnifiedBotSystem {
                 // Xử lý tin nhắn trong bot mode - KHÔNG áp dụng counter logic
                 // Chuyển đến xử lý tin nhắn bình thường trong bot mode
                 // Bỏ qua phần counter logic và chuyển đến xử lý tin nhắn bình thường
+                await this.handleBotModeMessage(user, text)
+                return
             } else {
                 // User không trong bot mode và không trong flow đăng ký
                 // Áp dụng logic counter cho tin nhắn chào mừng
