@@ -516,23 +516,28 @@ export class AuthFlow {
 
         if (text.toLowerCase().includes('bỏ qua') || text.toLowerCase().includes('không')) {
             data.keywords = null
-            data.product_service = null
         } else {
-            // Try to parse combined input: "keywords, product_service"
-            const parts = text.split(',').map(part => part.trim())
-            if (parts.length >= 1) {
-                data.keywords = parts[0] || null
-                data.product_service = parts[1] || null
-            } else {
-                data.keywords = text
-                data.product_service = null
-            }
+            data.keywords = text.trim()
         }
 
-        await sendMessage(user.facebook_id, data.keywords ? `✅ Từ khóa: ${data.keywords}` : '✅ Bỏ qua thông tin tùy chọn')
+        await sendMessage(user.facebook_id, data.keywords ? `✅ Từ khóa: ${data.keywords}` : '✅ Bỏ qua từ khóa')
 
-        // Complete registration
-        await this.completeRegistration(user, data)
+        // Chuyển sang bước tiếp theo - Sản phẩm/Dịch vụ
+        await sendMessage(user.facebook_id, '📝 Bước 6/7: Sản phẩm/Dịch vụ\n━━━━━━━━━━━━━━━━━━━━\n🛒 Bạn muốn bán sản phẩm hay dịch vụ gì?\n━━━━━━━━━━━━━━━━━━━━\n💡 Ví dụ: nhà đất, xe cộ, dịch vụ tư vấn\n📝 Nhập sản phẩm/dịch vụ để tiếp tục:')
+
+        const sessionUpdate = {
+            current_flow: 'registration',
+            step: 'product_service',
+            data: data,
+            started_at: new Date().toISOString()
+        }
+
+        console.log('🔄 Updating session after keywords:', sessionUpdate)
+        await updateBotSession(user.facebook_id, sessionUpdate)
+
+        // Verify session was updated
+        const sessionCheck = await getBotSession(user.facebook_id)
+        console.log('✅ Session after keywords update:', sessionCheck)
     }
 
     /**
