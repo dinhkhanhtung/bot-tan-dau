@@ -417,7 +417,7 @@ export class UnifiedBotSystem {
 
             // Nếu không tìm thấy user trong database -> NEW USER
             if (error || !userData) {
-                console.log('❌ No user data found for:', user.facebook_id, 'Error:', error?.message)
+                console.log('❌ No user data found for:', user.facebook_id, 'Error:', error?.message || 'No error details')
                 return { userType: UserType.NEW_USER, user: null }
             }
 

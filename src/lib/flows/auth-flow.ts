@@ -96,25 +96,7 @@ export class AuthFlow {
 
             await sendTypingIndicator(user.facebook_id)
 
-            // Check if user is admin first
-            const { isAdmin } = await import('../utils')
-            const userIsAdmin = await isAdmin(user.facebook_id)
-
-            if (userIsAdmin) {
-                await sendMessage(user.facebook_id, '🔧 ADMIN DASHBOARD\nChào admin! 👋\nBạn có quyền truy cập đầy đủ mà không cần đăng ký.')
-
-                await sendQuickReply(
-                    user.facebook_id,
-                    'Chọn chức năng:',
-                    [
-                        createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
-                        createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
-                        createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
-                        createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
-                    ]
-                )
-                return
-            }
+            // Admin check moved to dashboard - no longer needed here
 
             // Check if user is already registered (exclude users without complete info)
             if ((user.status === 'registered' || user.status === 'trial') &&
@@ -202,9 +184,27 @@ export class AuthFlow {
         try {
             console.log('🔄 Resuming registration for user:', user.facebook_id, 'session:', session)
 
-            // CHUẨN HÓA: Sử dụng cấu trúc session chuẩn
-            const currentStep = session.step || 'name'
-            const data = session.data || {}
+            // FIXED: Properly parse session data from database format (same logic as handleStep)
+            let currentStep = 'name'
+            let data = {}
+
+            if (session) {
+                if (session.session_data) {
+                    // Format: { session_data: { step, data, started_at, current_flow } }
+                    currentStep = session.session_data.step || 'name'
+                    data = session.session_data.data || {}
+                } else if (session.step) {
+                    // Direct format: { step, data, started_at, current_flow }
+                    currentStep = session.step || 'name'
+                    data = session.data || {}
+                } else {
+                    // Fallback
+                    currentStep = 'name'
+                    data = {}
+                }
+            }
+
+            console.log('🔄 Resumed session data:', { currentStep, data })
 
             switch (currentStep) {
                 case 'name':
@@ -231,27 +231,55 @@ export class AuthFlow {
     }
 
     /**
-     * Handle registration step - OPTIMIZED VERSION with fallback
+     * Handle registration step - FIXED VERSION with proper session handling
      */
     async handleStep(user: any, text: string, session: any): Promise<void> {
         try {
-            // Parse session data correctly - session comes from database with session_data field
-            const sessionData = session?.session_data || session
-            const currentStep = sessionData?.step || 'name'
-            const data = sessionData?.data || {}
-            const startedAt = sessionData?.started_at
-
-            console.log('🔍 handleStep called:', {
+            console.log('🔍 handleStep called with raw session:', {
                 text,
-                sessionStep: currentStep,
-                sessionData: data,
-                sessionStartedAt: startedAt,
-                rawSession: session
+                rawSession: session,
+                sessionType: typeof session
             })
 
-            // Enhanced session validation with fallback
-            if (!session || !sessionData?.current_flow) {
-                console.log('❌ Invalid session in handleStep - attempting fallback')
+            // FIXED: Properly parse session data from database format
+            let sessionData = null
+            let currentStep = 'name'
+            let data = {}
+            let startedAt = null
+
+            if (session) {
+                // Handle different session formats from database
+                if (session.session_data) {
+                    // Format: { session_data: { step, data, started_at, current_flow } }
+                    sessionData = session.session_data
+                    currentStep = sessionData.step || 'name'
+                    data = sessionData.data || {}
+                    startedAt = sessionData.started_at
+                } else if (session.step) {
+                    // Direct format: { step, data, started_at, current_flow }
+                    sessionData = session
+                    currentStep = session.step || 'name'
+                    data = session.data || {}
+                    startedAt = session.started_at
+                } else {
+                    // Fallback: assume it's the session data object itself
+                    sessionData = session
+                    currentStep = 'name'
+                    data = {}
+                }
+            }
+
+            console.log('🔍 Parsed session data:', {
+                currentStep,
+                data,
+                startedAt,
+                sessionData,
+                hasSession: !!session
+            })
+
+            // Enhanced session validation with better error handling
+            if (session && (!sessionData || !sessionData.current_flow)) {
+                console.log('❌ Invalid session format in handleStep - attempting fallback')
                 await this.handleSessionError(user, 'Phiên đăng ký không hợp lệ')
                 return
             }
@@ -531,8 +559,13 @@ export class AuthFlow {
                 return
             }
 
-            // CHUẨN HÓA: Sử dụng cấu trúc session chuẩn
-            const data = session.data || {}
+            // FIXED: Properly parse session data from database format
+            let data: Record<string, any> = {}
+            if (session.session_data) {
+                data = (session.session_data.data as Record<string, any>) || {}
+            } else if (session.data) {
+                data = (session.data as Record<string, any>) || {}
+            }
 
             data.location = location
             console.log('✅ Location saved:', data.location)
@@ -617,8 +650,18 @@ export class AuthFlow {
                 return
             }
 
-            // CHUẨN HÓA: Sử dụng cấu trúc session chuẩn
-            const data = session.data || {}
+            // FIXED: Properly parse session data from database format
+            let data: Record<string, any> = {}
+            if (session.session_data) {
+                data = (session.session_data.data as Record<string, any>) || {}
+            } else if (session.data) {
+                data = (session.data as Record<string, any>) || {}
+            }
+
+            // Ensure data properties exist to avoid TypeScript errors
+            data.location = data.location || null
+            data.name = data.name || null
+            data.phone = data.phone || null
 
             await sendMessage(user.facebook_id, '✅ Xác nhận tuổi thành công!\n📝 Thông tin tùy chọn (có thể bỏ qua)\n━━━━━━━━━━━━━━━━━━━━\n📧 Email (để nhận thông báo quan trọng):\nVD: nguyenvanminh@gmail.com\n━━━━━━━━━━━━━━━━━━━━\n🔍 Từ khóa tìm kiếm:\nVD: nhà đất, xe honda, điện thoại...\n━━━━━━━━━━━━━━━━━━━━\n🛒 Sản phẩm/Dịch vụ:\nVD: Nhà đất, xe cộ, điện tử...\n━━━━━━━━━━━━━━━━━━━━\n💡 Nhập: "email,từ khóa,sản phẩm" hoặc "bỏ qua"')
 
@@ -767,29 +810,7 @@ export class AuthFlow {
     async handleDefaultMessage(user: any): Promise<void> {
         await sendTypingIndicator(user.facebook_id)
 
-        // Check if user is admin first
-        const { isAdmin } = await import('../utils')
-        const userIsAdmin = await isAdmin(user.facebook_id)
-
-        if (userIsAdmin) {
-            await sendMessagesWithTyping(user.facebook_id, [
-                '🔧 ADMIN DASHBOARD',
-                'Chào admin! 👋',
-                'Bạn có quyền truy cập đầy đủ.'
-            ])
-
-            await sendQuickReply(
-                user.facebook_id,
-                'Chọn chức năng:',
-                [
-                    createQuickReply('🔧 ADMIN PANEL', 'ADMIN'),
-                    createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU'),
-                    createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
-                    createQuickReply('🔍 TÌM KIẾM', 'SEARCH')
-                ]
-            )
-            return
-        }
+        // Admin check moved to dashboard - no longer needed here
 
         // DISABLED: Welcome message now handled by anti-spam system
         console.log('Welcome message handled by anti-spam system')

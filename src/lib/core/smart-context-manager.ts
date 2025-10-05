@@ -148,18 +148,7 @@ export class SmartContextManager {
      */
     static async analyzeUserContext(user: any): Promise<UserContext> {
         try {
-            // BƯỚC 1: KIỂM TRA ADMIN TRƯỚC (ưu tiên cao nhất)
-            const isAdminUser = await this.detectAdmin(user.facebook_id)
-
-            if (isAdminUser) {
-                return {
-                    userType: UserType.ADMIN,
-                    userState: UserState.IDLE,
-                    user,
-                    session: null,
-                    isInFlow: false
-                }
-            }
+            // Admin check moved to dashboard - no longer needed here
 
             // BƯỚC 2: LẤY THÔNG TIN USER TỪ DATABASE
             const { data: userData } = await supabaseAdmin

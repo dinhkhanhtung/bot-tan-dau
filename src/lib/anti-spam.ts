@@ -410,13 +410,7 @@ export async function handleAntiSpam(facebookId: string, message: string, userSt
     unlockTime?: number,
     message?: string
 }> {
-    // Check if user is admin - skip all spam checks for admin
-    const { isAdmin } = await import('./utils')
-    const userIsAdmin = await isAdmin(facebookId)
-
-    if (userIsAdmin) {
-        return { action: 'none', block: false }
-    }
+    // Admin check moved to dashboard - no longer needed here
 
     // QUAN TRỌNG: Kiểm tra user có đang trong bot mode không
     const isInBotMode = await checkUserBotMode(facebookId)
@@ -746,17 +740,7 @@ export async function sendSpamBlockMessage(facebookId: string): Promise<void> {
 
 // Check if user is currently blocked
 export async function isUserBlocked(facebookId: string): Promise<boolean> {
-    // Check if user is admin - never block admin
-    try {
-        const { isAdmin } = await import('./utils')
-        const userIsAdmin = await isAdmin(facebookId)
-
-        if (userIsAdmin) {
-            return false
-        }
-    } catch (error) {
-        console.error('Error checking admin status in isUserBlocked:', error)
-    }
+    // Admin check moved to dashboard - no longer needed here
 
     // Check if user is in any active flow - don't block during legitimate flows
     try {
@@ -830,16 +814,7 @@ export async function trackNonButtonMessage(facebookId: string, message: string)
     warningCount: number,
     reason?: string
 }> {
-    // Check if user is admin - skip tracking for admin
-    const { isAdmin } = await import('./utils')
-    const userIsAdmin = await isAdmin(facebookId)
-
-    if (userIsAdmin) {
-        return {
-            shouldStopBot: false,
-            warningCount: 0
-        }
-    }
+    // Admin check moved to dashboard - no longer needed here
 
     // Check if user is in any active flow - skip tracking for legitimate input
     const { getBotSession } = await import('./utils')
@@ -963,17 +938,7 @@ async function stopBotForUser(facebookId: string, reason: string): Promise<void>
 
 // Check if bot is stopped for user
 export async function isBotStoppedForUser(facebookId: string): Promise<boolean> {
-    // Check if user is admin - never stop bot for admin
-    try {
-        const { isAdmin } = await import('./utils')
-        const userIsAdmin = await isAdmin(facebookId)
-
-        if (userIsAdmin) {
-            return false
-        }
-    } catch (error) {
-        console.error('Error checking admin status in isBotStoppedForUser:', error)
-    }
+    // Admin check moved to dashboard - no longer needed here
 
     // Check if user is in any active flow - don't stop bot during legitimate flows
     try {
