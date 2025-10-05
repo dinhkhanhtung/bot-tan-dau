@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 // Toast notification component
@@ -49,13 +49,8 @@ export default function AdminNotifications() {
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
-    useEffect(() => {
-        checkAuth()
-        fetchNotifications()
-    }, [filter])
-
     // Move functions outside useEffect to fix dependency warnings
-    const checkAuth = () => {
+    const checkAuth = useCallback(() => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')
 
@@ -65,9 +60,9 @@ export default function AdminNotifications() {
         }
 
         setAdminInfo(JSON.parse(adminInfoStr))
-    }
+    }, [router])
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             const token = localStorage.getItem('admin_token')
             const response = await fetch(`/api/admin/notifications?filter=${filter}`, {
@@ -88,7 +83,12 @@ export default function AdminNotifications() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [filter])
+
+    useEffect(() => {
+        checkAuth()
+        fetchNotifications()
+    }, [checkAuth, fetchNotifications])
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString('vi-VN')
