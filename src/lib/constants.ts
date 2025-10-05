@@ -14,6 +14,7 @@ export const CATEGORIES = {
         name: 'Y TẾ',
         keywords: ['y tế', 'bệnh viện', 'phòng khám', 'thuốc', 'dược phẩm', 'chăm sóc sức khỏe', 'bác sĩ', 'nha khoa', 'mắt', 'tai mũi họng', 'da liễu', 'sản phụ khoa', 'nội khoa', 'ngoại khoa', 'nhi khoa', 'medical', 'healthcare', 'hospital', 'clinic', 'pharmacy', 'medicine', 'doctor', 'dentist', 'ophthalmology', 'ent', 'dermatology', 'obstetrics', 'internal medicine', 'surgery', 'pediatrics'],
         subcategories: [
+            { key: 'ĐÔNG_Y', icon: '🌿', name: 'ĐÔNG Y', keywords: ['đông y', 'thuốc nam', 'thuốc bắc', 'traditional medicine', 'herbal medicine', 'acupuncture', 'châm cứu', 'bấm huyệt', 'cây thuốc', 'thảo dược'] },
             { key: 'BỆNH_VIỆN', icon: '🏥', name: 'BỆNH VIỆN', keywords: ['bệnh viện', 'hospital', 'cơ sở y tế', 'medical center', 'healthcare facility'] },
             { key: 'PHÒNG_KHÁM', icon: '🏥', name: 'PHÒNG KHÁM', keywords: ['phòng khám', 'clinic', 'phòng mạch', 'private practice', 'medical office'] },
             { key: 'NHÀ_THUỐC', icon: '💊', name: 'NHÀ THUỐC', keywords: ['nhà thuốc', 'pharmacy', 'quầy thuốc', 'drugstore', 'thuốc tây', 'medicine'] },
@@ -29,7 +30,6 @@ export const CATEGORIES = {
             { key: 'XÉT_NGHIỆM', icon: '🧪', name: 'XÉT NGHIỆM', keywords: ['xét nghiệm', 'lab test', 'blood test', 'medical test', 'laboratory'] },
             { key: 'VẬT_LÝ_TRỊ_LIỆU', icon: '💪', name: 'VẬT LÝ TRỊ LIỆU', keywords: ['vật lý trị liệu', 'physiotherapy', 'rehabilitation', 'physical therapy', 'phục hồi chức năng'] },
             { key: 'TÂM_LÝ', icon: '🧠', name: 'TÂM LÝ', keywords: ['tâm lý', 'psychology', 'tư vấn tâm lý', 'psychologist', 'mental health', 'counseling'] },
-            { key: 'ĐÔNG_Y', icon: '🌿', name: 'ĐÔNG Y', keywords: ['đông y', 'thuốc nam', 'thuốc bắc', 'traditional medicine', 'herbal medicine', 'acupuncture'] },
             { key: 'THẨM_MỸ', icon: '💅', name: 'THẨM MỸ', keywords: ['thẩm mỹ', 'làm đẹp', 'cosmetic', 'beauty', 'spa', 'aesthetic', 'plastic surgery'] },
             { key: 'THÚ_Y', icon: '🐕', name: 'THÚ Y', keywords: ['thú y', 'veterinary', 'thú cưng', 'pet', 'animal doctor', 'vet clinic'] },
             { key: 'KHÁC', icon: '🏥', name: 'Y TẾ KHÁC', keywords: ['y tế khác', 'other medical', 'specialized', 'chuyên khoa khác'] }
