@@ -88,7 +88,7 @@ export class AuthFlow {
         // Save name and move to phone step
         const sessionData = {
             current_flow: 'registration',
-            step: 'phone',
+            step: '1',  // Use numeric step for consistency
             data: { name: text.trim() }
         }
 
@@ -130,7 +130,7 @@ export class AuthFlow {
         // Update session with phone data
         const sessionData = {
             current_flow: 'registration',
-            step: 'location',
+            step: '2',  // Use numeric step for consistency
             data: {
                 ...session.data,
                 phone: phone
@@ -186,7 +186,7 @@ export class AuthFlow {
             // Move to final step - birthday verification
             const sessionData = {
                 current_flow: 'registration',
-                step: 'birthday',
+                step: '3',  // Use numeric step for consistency
                 data: {
                     ...session.data,
                     location: location
