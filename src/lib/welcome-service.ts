@@ -21,14 +21,14 @@ export enum WelcomeType {
 // Welcome message templates
 const WELCOME_TEMPLATES = {
     [WelcomeType.NEW_USER]: {
-        greeting: '🎉 Chào bạn ghé thăm Đinh Khánh Tùng! 👋 Hôm nay mình có thể giúp gì cho bạn?',
+        greeting: '🎉 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo! 👋 Mình có thể giúp gì cho bạn?',
         description: '',
-        intro: 'Có thể bạn cũng muốn tham gia Bot Tân Dậu - Hỗ Trợ Chéo. Ở đây bạn có thể kết nối với hơn 2 triệu Tân Dậu khác để cùng nhau phát triển và thịnh vượng.',
+        intro: 'Kết nối với hơn 2 triệu Tân Dậu để cùng nhau phát triển và thịnh vượng.',
         features: [
-            '🛒 Tìm kiếm và niêm yết sản phẩm',
-            '💬 Kết nối với người dùng khác',
-            '📊 Xem thống kê và báo cáo',
-            '🎁 Nhận điểm thưởng và quà tặng'
+            '🛒 Tìm kiếm & niêm yết sản phẩm',
+            '💬 Kết nối với cộng đồng',
+            '📊 Thống kê & báo cáo',
+            '🎁 Điểm thưởng & quà tặng'
         ],
         callToAction: 'Bạn muốn bắt đầu với chức năng nào?'
     },
