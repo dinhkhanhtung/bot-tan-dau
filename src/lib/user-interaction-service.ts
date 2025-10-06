@@ -226,8 +226,8 @@ export class UserInteractionService {
 
             // Ẩn nút ngay khi user gửi tin nhắn thay vì ấn nút
             const { hideButtons } = await import('./facebook-api')
-            await hideButtons(facebookId)
-            console.log('🔧 Hidden buttons because user sent text instead of clicking button')
+            const hideResult = await hideButtons(facebookId)
+            console.log('🔧 Hidden buttons because user sent text instead of clicking button:', hideResult)
 
             // Chỉ gọi anti-spam khi KHÔNG trong luồng
             const { handleAntiSpam } = await import('./anti-spam')

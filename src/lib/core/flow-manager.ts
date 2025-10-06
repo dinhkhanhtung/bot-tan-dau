@@ -261,22 +261,23 @@ export class FlowManager {
     private static async contactAdmin(user: any): Promise<void> {
         try {
             const { sendMessage, hideButtons } = await import('../facebook-api')
-            
+
             // Send contact message
             await sendMessage(user.facebook_id, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!')
             
             // Hide buttons
-            await hideButtons(user.facebook_id)
-            
+            const hideResult = await hideButtons(user.facebook_id)
+            console.log('🔧 Hidden buttons after contact request:', hideResult)
+
             // Stop bot for this user
             const { UserInteractionService } = await import('../user-interaction-service')
             await UserInteractionService.updateUserState(user.facebook_id, {
                 bot_active: false
             })
-            
+
             // Notify admin (you can add admin notification logic here)
             console.log('User requested support:', user.facebook_id)
-            
+
         } catch (error) {
             console.error('Error contacting admin:', error)
             await this.sendErrorMessage(user.facebook_id)

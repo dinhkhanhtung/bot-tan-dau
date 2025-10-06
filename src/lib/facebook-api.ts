@@ -279,19 +279,33 @@ export async function sendImage(recipientId: string, imageUrl: string) {
     }
 }
 
-// Hide/remove buttons by sending empty quick reply (Facebook Messenger hack)
+// Hide/remove buttons by sending regular message (Facebook Messenger workaround)
 export async function hideButtons(recipientId: string) {
     try {
         console.log('🔧 Attempting to hide buttons for user:', recipientId)
         
-        // Send empty quick reply to clear previous buttons
-        // This is a workaround since Facebook doesn't provide a direct way to hide buttons
-        const response = await axios.post(
+        // Method 1: Send a regular message without quick_replies to "push down" the buttons
+        const response1 = await axios.post(
             `${FACEBOOK_API_URL}/me/messages`,
             {
                 recipient: { id: recipientId },
                 message: {
-                    text: '​', // Zero-width space character
+                    text: '​' // Zero-width space character to make message invisible
+                }
+            },
+            {
+                params: { access_token: FACEBOOK_ACCESS_TOKEN },
+                headers: { 'Content-Type': 'application/json' }
+            }
+        )
+        
+        // Method 2: Send empty quick_replies to clear buttons
+        const response2 = await axios.post(
+            `${FACEBOOK_API_URL}/me/messages`,
+            {
+                recipient: { id: recipientId },
+                message: {
+                    text: '​',
                     quick_replies: []
                 }
             },
@@ -301,7 +315,7 @@ export async function hideButtons(recipientId: string) {
             }
         )
         
-        console.log('✅ Buttons hidden successfully for user:', recipientId, response.data)
+        console.log('✅ Buttons hidden successfully for user:', recipientId, { response1: response1.data, response2: response2.data })
         return true
     } catch (error) {
         console.error('❌ Error hiding buttons for user:', recipientId, error)
