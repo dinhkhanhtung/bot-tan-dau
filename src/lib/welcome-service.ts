@@ -21,8 +21,8 @@ export enum WelcomeType {
 // Welcome message templates
 const WELCOME_TEMPLATES = {
     [WelcomeType.NEW_USER]: {
-        greeting: '🎉 Chào bạn ghé thăm Đinh Khánh Tùng!',
-        description: '👋 Hôm nay mình có thể giúp gì cho bạn?',
+        greeting: '🎉 Chào bạn ghé thăm Đinh Khánh Tùng! 👋 Hôm nay mình có thể giúp gì cho bạn?',
+        description: '',
         intro: 'Có thể bạn cũng muốn tham gia Bot Tân Dậu - Hỗ Trợ Chéo. Ở đây bạn có thể kết nối với hơn 2 triệu Tân Dậu khác để cùng nhau phát triển và thịnh vượng.',
         features: [
             '🛒 Tìm kiếm và niêm yết sản phẩm',
@@ -114,9 +114,13 @@ export class WelcomeService {
             // Send typing indicator
             await sendTypingIndicator(facebookId)
 
-            // Combine greeting and description into one message to reduce spam
-            const combinedMessage = `${template.greeting}\n\n${template.description}`
-            await sendMessage(facebookId, combinedMessage)
+            // Send greeting (and description if available)
+            if (template.description) {
+                const combinedMessage = `${template.greeting}\n\n${template.description}`
+                await sendMessage(facebookId, combinedMessage)
+            } else {
+                await sendMessage(facebookId, template.greeting)
+            }
 
             // Send intro if available
             if (template.intro) {
