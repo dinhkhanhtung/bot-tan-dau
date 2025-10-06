@@ -208,9 +208,19 @@ export class FlowManager {
     private static async sendDetailedInfo(user: any): Promise<void> {
         try {
             const { sendMessage } = await import('../facebook-api')
-            
+
             // Send detailed information with smooth flow
             await sendMessage(user.facebook_id, '📋 THÔNG TIN CHI TIẾT BOT TÂN DẬU')
+            await this.delay(1500)
+            
+            await sendMessage(user.facebook_id, 'Kết nối với hơn 2 triệu Tân Dậu để cùng nhau phát triển và thịnh vượng.')
+            await this.delay(1500)
+            
+            await sendMessage(user.facebook_id, '🎯 TÍNH NĂNG CHÍNH:')
+            await sendMessage(user.facebook_id, '🛒 Tìm kiếm & niêm yết sản phẩm')
+            await sendMessage(user.facebook_id, '💬 Kết nối với cộng đồng')
+            await sendMessage(user.facebook_id, '📊 Thống kê & báo cáo')
+            await sendMessage(user.facebook_id, '🎁 Điểm thưởng & quà tặng')
             await this.delay(1500)
             
             await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
@@ -229,23 +239,15 @@ export class FlowManager {
             await this.delay(1500)
             
             await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
-            await sendMessage(user.facebook_id, '🎯 TÍNH NĂNG CHÍNH:')
-            await sendMessage(user.facebook_id, '• 🛒 Tìm kiếm và niêm yết sản phẩm')
-            await sendMessage(user.facebook_id, '• 💬 Kết nối với người dùng khác')
-            await sendMessage(user.facebook_id, '• 📊 Xem thống kê và báo cáo')
-            await sendMessage(user.facebook_id, '• 🎁 Nhận điểm thưởng và quà tặng')
-            await this.delay(1500)
-            
-            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
             await sendMessage(user.facebook_id, 'Bạn có muốn đăng ký ngay không?')
-            
+
             // Send action buttons
             const { sendQuickReply, createQuickReply } = await import('../facebook-api')
             await sendQuickReply(user.facebook_id, 'Chọn hành động:', [
                 createQuickReply('🚀 ĐĂNG KÝ NGAY', 'REGISTER'),
                 createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
             ])
-            
+
         } catch (error) {
             console.error('Error sending detailed info:', error)
             await this.sendErrorMessage(user.facebook_id)

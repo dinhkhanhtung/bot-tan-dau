@@ -23,13 +23,8 @@ const WELCOME_TEMPLATES = {
     [WelcomeType.NEW_USER]: {
         greeting: '🎉 Chào bạn ghé thăm Đinh Khánh Tùng! 👋 Mình là Bot Tân Dậu - Hỗ Trợ Chéo, có thể giúp gì cho bạn?',
         description: '',
-        intro: 'Kết nối với hơn 2 triệu Tân Dậu để cùng nhau phát triển và thịnh vượng.',
-        features: [
-            '🛒 Tìm kiếm & niêm yết sản phẩm',
-            '💬 Kết nối với cộng đồng',
-            '📊 Thống kê & báo cáo',
-            '🎁 Điểm thưởng & quà tặng'
-        ],
+        intro: '',
+        features: [],
         callToAction: 'Bạn muốn bắt đầu với chức năng nào?'
     },
     [WelcomeType.RETURNING_USER]: {
@@ -128,10 +123,12 @@ export class WelcomeService {
                 await sendMessage(facebookId, template.intro)
             }
 
-            // Send features as a single message with bullet points
-            await this.delay(1000)
-            const featuresMessage = template.features.join('\n')
-            await sendMessage(facebookId, featuresMessage)
+            // Send features as a single message with bullet points (if available)
+            if (template.features && template.features.length > 0) {
+                await this.delay(1000)
+                const featuresMessage = template.features.join('\n')
+                await sendMessage(facebookId, featuresMessage)
+            }
 
             // Add delay between messages to prevent spam
             await this.delay(1000)
