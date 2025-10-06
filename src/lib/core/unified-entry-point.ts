@@ -99,19 +99,19 @@ export class UnifiedBotSystem {
             const context = await this.analyzeUserContext(user)
 
             switch (context.userType) {
-                case 'NEW_USER':
+                case UserType.NEW_USER:
                     await this.handleNewUser(user)
                     break
-                case 'PENDING_USER':
+                case UserType.PENDING_USER:
                     await this.handlePendingUser(user)
                     break
-                case 'REGISTERED_USER':
+                case UserType.REGISTERED_USER:
                     await this.handleRegisteredUser(user)
                     break
-                case 'TRIAL_USER':
+                case UserType.TRIAL_USER:
                     await this.handleTrialUser(user)
                     break
-                case 'EXPIRED_USER':
+                case UserType.EXPIRED_USER:
                     await this.handleExpiredUser(user)
                     break
                 default:
@@ -133,17 +133,11 @@ export class UnifiedBotSystem {
         } catch (error) {
             logError(error as Error, { operation: 'analyze_user_context', user })
             return {
-                userType: 'UNKNOWN',
-                userState: 'UNKNOWN',
-                permissions: {
-                    canCreateListings: false,
-                    canSearch: false,
-                    canContactSellers: false,
-                    canUseCommunity: false,
-                    canMakePayments: false
-                },
-                trialInfo: null,
-                subscriptionInfo: null
+                userType: UserType.NEW_USER,
+                userState: UserState.IDLE,
+                user: user,
+                session: null,
+                isInFlow: false
             }
         }
     }

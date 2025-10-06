@@ -383,7 +383,7 @@ export class ListingFlow extends BaseFlow {
      * Send category buttons
      */
     private async sendCategoryButtons(facebookId: string): Promise<void> {
-        const quickReplies = CATEGORIES.map(category => 
+        const quickReplies = Object.keys(CATEGORIES).map(category => 
             createQuickReply(category, `CATEGORY_${category}`)
         )
 
@@ -394,7 +394,7 @@ export class ListingFlow extends BaseFlow {
      * Send location buttons
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
-        const quickReplies = LOCATIONS.map(location => 
+        const quickReplies = Object.keys(LOCATIONS).map(location => 
             createQuickReply(location, `LOCATION_${location}`)
         )
 

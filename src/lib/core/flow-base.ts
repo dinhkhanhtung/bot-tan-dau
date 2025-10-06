@@ -42,7 +42,7 @@ export abstract class BaseFlow implements IFlow {
      * Validate user input
      */
     protected validateInput(input: string, minLength: number = 1): boolean {
-        return input && input.trim().length >= minLength
+        return !!(input && input.trim().length >= minLength)
     }
 
     /**

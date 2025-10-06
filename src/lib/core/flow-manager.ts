@@ -95,7 +95,7 @@ export class FlowManager {
         const lowerText = text.toLowerCase().trim()
 
         // Check each flow for triggers
-        for (const [flowName, flow] of this.flows) {
+        for (const [flowName, flow] of Array.from(this.flows.entries())) {
             if (flow.canHandle(user, null)) {
                 // Check if this is a trigger for this flow
                 if (this.isFlowTrigger(flowName, lowerText)) {
@@ -115,7 +115,7 @@ export class FlowManager {
      */
     private static async handlePostbackTriggers(user: any, payload: string): Promise<void> {
         // Check each flow for postback triggers
-        for (const [flowName, flow] of this.flows) {
+        for (const [flowName, flow] of Array.from(this.flows.entries())) {
             if (flow.canHandle(user, null)) {
                 // Check if this postback triggers this flow
                 if (this.isPostbackTrigger(flowName, payload)) {

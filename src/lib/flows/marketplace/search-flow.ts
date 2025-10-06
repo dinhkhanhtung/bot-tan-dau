@@ -264,7 +264,7 @@ export class SearchFlow extends BaseFlow {
                 createGenericElement(
                     listing.title,
                     listing.description,
-                    null, // No image for now
+                    undefined, // No image for now
                     [
                         {
                             type: 'postback',
@@ -333,7 +333,7 @@ export class SearchFlow extends BaseFlow {
                 createGenericElement(
                     listing.title,
                     `${formatCurrency(listing.price)} • ${listing.location}`,
-                    null, // No image for now
+                    undefined, // No image for now
                     [
                         {
                             type: 'postback',
@@ -372,7 +372,7 @@ export class SearchFlow extends BaseFlow {
      * Send category buttons
      */
     private async sendCategoryButtons(facebookId: string): Promise<void> {
-        const quickReplies = CATEGORIES.map(category => 
+        const quickReplies = Object.keys(CATEGORIES).map(category => 
             createQuickReply(category, `CATEGORY_${category}`)
         )
 
@@ -383,7 +383,7 @@ export class SearchFlow extends BaseFlow {
      * Send location buttons
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
-        const quickReplies = LOCATIONS.map(location => 
+        const quickReplies = Object.keys(LOCATIONS).map(location => 
             createQuickReply(location, `LOCATION_${location}`)
         )
 
