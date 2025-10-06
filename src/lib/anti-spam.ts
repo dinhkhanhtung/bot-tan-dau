@@ -33,7 +33,6 @@ export async function sendChatBotWelcome(userId: string, userStatus: string): Pr
 
         await sendMessage(userId, '🌟 Có thể bạn muốn tham gia cùng cộng đồng Tân Dậu - Hỗ Trợ Chéo!')
         await sendMessage(userId, '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')
-
         await sendQuickReply(
             userId,
             'Bạn muốn:',

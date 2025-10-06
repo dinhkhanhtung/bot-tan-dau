@@ -22,15 +22,13 @@ export enum WelcomeType {
 const WELCOME_TEMPLATES = {
     [WelcomeType.NEW_USER]: {
         greeting: '🎉 Chào bạn ghé thăm Đinh Khánh Tùng! 👋 Mình là Bot Tân Dậu - Hỗ Trợ Chéo, có thể giúp gì cho bạn?',
-        description: '',
-        intro: '',
+        description: '🌟 Chào mừng bạn đến với cộng đồng Tân Dậu - nơi kết nối và hỗ trợ lẫn nhau!',
         features: [],
         callToAction: 'Chọn một trong các tùy chọn bên dưới nhé!'
     },
     [WelcomeType.RETURNING_USER]: {
         greeting: '👋 Chào mừng bạn quay trở lại!',
         description: '🤖 Tôi đã sẵn sàng hỗ trợ bạn tiếp tục hành trình trong cộng đồng Tân Dậu',
-        intro: '',
         features: [
             '📈 Xem thống kê hoạt động của bạn',
             '🛒 Tiếp tục tìm kiếm sản phẩm',
@@ -42,7 +40,6 @@ const WELCOME_TEMPLATES = {
     [WelcomeType.PENDING_USER]: {
         greeting: '⏳ Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!',
         description: '📋 Tài khoản của bạn đang chờ Admin duyệt. Trong thời gian này, bạn có thể:',
-        intro: '',
         features: [
             '🔍 Tìm kiếm và xem sản phẩm',
             '👀 Duyệt qua các tin đăng',
@@ -54,7 +51,6 @@ const WELCOME_TEMPLATES = {
     [WelcomeType.EXPIRED_USER]: {
         greeting: '⏰ Chào mừng bạn quay trở lại!',
         description: '💰 Tài khoản của bạn đã hết hạn. Để tiếp tục sử dụng đầy đủ tính năng, vui lòng gia hạn:',
-        intro: '',
         features: [
             '💳 Thanh toán phí duy trì',
             '📊 Xem lịch sử giao dịch',
@@ -66,7 +62,6 @@ const WELCOME_TEMPLATES = {
     [WelcomeType.ADMIN]: {
         greeting: '🔧 Chào mừng Admin!',
         description: '🛠️ Bạn có toàn quyền quản lý hệ thống Bot Tân Dậu - Hỗ Trợ Chéo',
-        intro: '',
         features: [
             '👥 Quản lý người dùng',
             '💰 Quản lý thanh toán',
@@ -117,11 +112,6 @@ export class WelcomeService {
                 await sendMessage(facebookId, template.greeting)
             }
 
-            // Send intro if available
-            if (template.intro) {
-                await this.delay(1000)
-                await sendMessage(facebookId, template.intro)
-            }
 
             // Send features as a single message with bullet points (if available)
             if (template.features && template.features.length > 0) {
