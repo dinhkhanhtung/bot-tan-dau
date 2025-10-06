@@ -493,10 +493,17 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
     if (newCount === 1) {
         // Lần 1: Gửi welcome đầy đủ - SỬ DỤNG WELCOME SERVICE
         console.log('🎉 First message - sending welcome')
-        const { welcomeService, WelcomeType } = await import('./welcome-service')
-        const welcomeType = isRegistered(userStatus) ? WelcomeType.RETURNING_USER : WelcomeType.NEW_USER
-        await welcomeService.sendWelcome(facebookId, welcomeType)
-        return { action: 'none', block: false, message: 'Welcome sent' }
+        try {
+            const { welcomeService, WelcomeType } = await import('./welcome-service')
+            const welcomeType = isRegistered(userStatus) ? WelcomeType.RETURNING_USER : WelcomeType.NEW_USER
+            console.log('📝 Welcome type:', welcomeType, 'for user status:', userStatus)
+            await welcomeService.sendWelcome(facebookId, welcomeType)
+            console.log('✅ Welcome sent successfully')
+            return { action: 'none', block: false, message: 'Welcome sent' }
+        } catch (error) {
+            console.error('❌ Error sending welcome:', error)
+            return { action: 'none', block: false, message: 'Welcome failed' }
+        }
     } else if (newCount >= 2) {
         // Lần 2+: Thông báo admin, bot dừng, ẩn nút
         console.log('🚫 Message count >= 2 - stopping bot and notifying admin')
