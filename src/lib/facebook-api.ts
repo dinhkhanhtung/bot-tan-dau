@@ -282,9 +282,11 @@ export async function sendImage(recipientId: string, imageUrl: string) {
 // Hide/remove buttons by sending empty quick reply (Facebook Messenger hack)
 export async function hideButtons(recipientId: string) {
     try {
+        console.log('🔧 Attempting to hide buttons for user:', recipientId)
+        
         // Send empty quick reply to clear previous buttons
         // This is a workaround since Facebook doesn't provide a direct way to hide buttons
-        await axios.post(
+        const response = await axios.post(
             `${FACEBOOK_API_URL}/me/messages`,
             {
                 recipient: { id: recipientId },
@@ -298,9 +300,11 @@ export async function hideButtons(recipientId: string) {
                 headers: { 'Content-Type': 'application/json' }
             }
         )
+        
+        console.log('✅ Buttons hidden successfully for user:', recipientId, response.data)
         return true
     } catch (error) {
-        console.error('Error hiding buttons:', error)
+        console.error('❌ Error hiding buttons for user:', recipientId, error)
         return false
     }
 }
