@@ -2,6 +2,12 @@
 
 Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.
 
+## 🚀 **CẬP NHẬT MỚI NHẤT**
+- **Version 2.1.0** - Fixed registration flow và đồng bộ database
+- **Database Schema** - Hoàn chỉnh với 18+ bảng và đầy đủ tính năng
+- **Registration Flow** - Đã khắc phục lỗi step handling
+- **Error Logging** - Cải thiện logging để dễ debug
+
 ## 🎯 Mục đích
 
 - **Platform kết nối mua bán** cho thành viên sinh năm 1981

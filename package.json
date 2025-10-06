@@ -1,7 +1,7 @@
 {
     "name": "bot-tan-dau-1981",
-    "version": "1.0.0",
-    "description": "Facebook Messenger Bot cho cộng đồng Tân Dậu - Hỗ Trợ Chéo",
+    "version": "2.1.0",
+    "description": "Facebook Messenger Bot cho cộng đồng Tân Dậu - Hỗ Trợ Chéo (Fixed registration flow)",
     "private": true,
     "scripts": {
         "dev": "next dev",

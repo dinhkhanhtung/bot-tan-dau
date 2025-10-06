@@ -1,7 +1,7 @@
 -- ========================================
 -- BOT Tân Dậu - DATABASE SETUP HOÀN CHỈNH
 -- ========================================
--- Cập nhật: Thêm các trường cho Admin Dashboard Mobile-Friendly
+-- Cập nhật: Fix registration flow và đồng bộ với code hiện tại
 -- Chạy file này 1 lần duy nhất trong Supabase SQL Editor
 -- Bao gồm tất cả tables + welcome tracking + admin chat sessions + bot settings
 

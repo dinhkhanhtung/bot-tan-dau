@@ -353,7 +353,12 @@ export class UnifiedBotSystem {
 
             // Nếu không tìm thấy user trong database -> NEW USER
             if (error || !userData) {
-                console.log('❌ No user data found for:', user.facebook_id, 'Error:', error?.message || 'No error details')
+                // Only log as error if it's not the expected "no user found" error
+                if (error && error.code !== 'PGRST116' && !error.message.includes('Cannot coerce the result to a single JSON object')) {
+                    console.error('❌ Database error getting user data for:', user.facebook_id, 'Error:', error.message)
+                } else {
+                    console.log('ℹ️ No user data found for:', user.facebook_id, '(expected for new users)')
+                }
                 return { userType: UserType.NEW_USER, user: null }
             }
 

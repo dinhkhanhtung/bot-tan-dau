@@ -1,6 +1,7 @@
 /**
  * Centralized Configuration Management
  * Tập trung tất cả cấu hình và biến môi trường
+ * Cập nhật: 10/6/2025 - Đồng bộ với database schema mới
  */
 
 // Environment variables validation
@@ -12,6 +13,16 @@ const requiredEnvVars = [
     'SUPABASE_URL',
     'SUPABASE_ANON_KEY',
     'SUPABASE_SERVICE_ROLE_KEY'
+] as const
+
+// Additional optional environment variables for enhanced features
+const optionalEnvVars = [
+    'OPENAI_API_KEY',
+    'GOOGLE_AI_API_KEY',
+    'CLAUDE_API_KEY',
+    'DATABASE_URL',
+    'JWT_SECRET',
+    'CRON_SECRET'
 ] as const
 
 // Validate required environment variables (only at runtime, not build time)
