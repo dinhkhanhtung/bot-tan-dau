@@ -136,17 +136,16 @@ export class RegistrationFlow extends BaseFlow {
             return
         }
 
-        // Save name to database directly - NO SESSION COMPLEXITY
+        // Update existing session with name
         const { error } = await supabaseAdmin
             .from('bot_sessions')
-            .upsert({
-                facebook_id: user.facebook_id,
-                current_flow: 'registration',
+            .update({
                 step: 1,
                 current_step: 1,
                 data: { name: text.trim() },
                 updated_at: new Date().toISOString()
             })
+            .eq('facebook_id', user.facebook_id)
 
         if (error) {
             console.error('❌ Database error:', error)
@@ -203,9 +202,7 @@ export class RegistrationFlow extends BaseFlow {
         // Update session with phone data
         const { error } = await supabaseAdmin
             .from('bot_sessions')
-            .upsert({
-                facebook_id: user.facebook_id,
-                current_flow: 'registration',
+            .update({
                 step: 2,
                 current_step: 2,
                 data: {
@@ -214,6 +211,7 @@ export class RegistrationFlow extends BaseFlow {
                 },
                 updated_at: new Date().toISOString()
             })
+            .eq('facebook_id', user.facebook_id)
 
         if (error) {
             console.error('❌ Database error:', error)
@@ -316,9 +314,7 @@ export class RegistrationFlow extends BaseFlow {
             // Update session with location
             const { error } = await supabaseAdmin
                 .from('bot_sessions')
-                .upsert({
-                    facebook_id: user.facebook_id,
-                    current_flow: 'registration',
+                .update({
                     step: 3,
                     current_step: 3,
                     data: {
@@ -327,6 +323,7 @@ export class RegistrationFlow extends BaseFlow {
                     },
                     updated_at: new Date().toISOString()
                 })
+                .eq('facebook_id', user.facebook_id)
 
             if (error) {
                 console.error('❌ Database error:', error)
