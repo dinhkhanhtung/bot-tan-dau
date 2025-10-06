@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
 // Toast notification component
 const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
@@ -58,7 +57,6 @@ export default function AdsPage() {
     start_date: '',
     end_date: ''
   })
-  const router = useRouter()
 
   useEffect(() => {
     fetchAds()
@@ -217,7 +215,7 @@ export default function AdsPage() {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <button
-                onClick={() => router.push('/admin/dashboard')}
+                onClick={() => window.history.back()}
                 className="mr-4 text-gray-600 hover:text-gray-900"
               >
                 ← Quay lại
