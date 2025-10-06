@@ -22,7 +22,7 @@ export async function sendChatBotWelcome(userId: string, userStatus: string): Pr
             [
                 createQuickReply('🛒 TÌM KIẾM HÀNG HÓA', 'SEARCH'),
                 createQuickReply('📝 ĐĂNG BÁN/CẬP NHẬT', 'LISTING'),
-                createQuickReply('💬 HỖ TRỢ ADMIN', 'CONTACT_ADMIN'),
+                createQuickReply('💬 HỖ TRỢ ADMIN', 'SUPPORT_ADMIN'),
                 createQuickReply('ℹ️ HƯỚNG DẪN', 'HELP'),
                 createQuickReply('🚪 THOÁT BOT', 'EXIT_BOT')
             ]
@@ -40,7 +40,7 @@ export async function sendChatBotWelcome(userId: string, userStatus: string): Pr
             [
                 createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
                 createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
-                createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN'),
+                createQuickReply('💬 HỖ TRỢ', 'SUPPORT'),
                 createQuickReply('🚪 THOÁT BOT', 'EXIT_BOT')
             ]
         );
@@ -513,7 +513,7 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
 
         if (warningCount === 0) {
             // Chỉ gửi thông báo 1 lần duy nhất
-            await sendMessage(facebookId, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!')
+            await sendMessage(facebookId, '� Liên hệ:\n📧 Email: dinhkhanhtung@outlook.com\n📱 SĐT: 0982581222')
 
             // Ẩn nút Chat Bot
             const { hideButtons } = await import('./facebook-api')

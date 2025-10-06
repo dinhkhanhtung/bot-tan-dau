@@ -338,7 +338,7 @@ export class SmartContextManager {
         return [
             { title: '🚀 ĐĂNG KÝ NGAY', action: 'REGISTER', priority: 1 },
             { title: 'ℹ️ TÌM HIỂU THÊM', action: 'INFO', priority: 2 },
-            { title: '💬 HỖ TRỢ', action: 'CONTACT_ADMIN', priority: 3 }
+            { title: '💬 HỖ TRỢ', action: 'SUPPORT', priority: 3 }
         ]
     }
 

@@ -3,7 +3,7 @@ import { SessionManager } from './session-manager'
 
 /**
  * Centralized Flow Manager
- * Routes messages to appropriate flows, and manages flow lifecycle
+ * Routes messages to appropriate flows and manages flow lifecycle
  */
 export class FlowManager {
     private static flows: Map<string, IFlow> = new Map()
@@ -259,8 +259,8 @@ Bạn có muốn đăng ký ngay không?`
         try {
             const { sendMessage, hideButtons } = await import('../facebook-api')
 
-            // Send contact information
-            await sendMessage(user.facebook_id, '💬 THÔNG TIN LIÊN HỆ:\n\n📧 Email: dinhkhanhtung@outlook.com\n📱 SĐT: 0982581222\n\nCảm ơn bạn đã quan tâm!')
+            // Send contact message
+            await sendMessage(user.facebook_id, '� Liên hệ:\n📧 Email: dinhkhanhtung@outlook.com\n📱 SĐT: 0982581222')
 
             // Hide buttons
             const hideResult = await hideButtons(user.facebook_id)

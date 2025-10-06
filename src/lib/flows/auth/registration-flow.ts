@@ -152,12 +152,7 @@ export class RegistrationFlow extends BaseFlow {
         }
     }
 
-    /**
-     * Delay helper for smooth message flow
-     */
-    private async delay(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms))
-    }
+
 
     /**
      * Handle name input step
@@ -497,7 +492,14 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Handle birthday verification - EXACT COPY FROM OLD LOGIC
+     * Delay helper for smooth message flow
+     */
+    private async delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms))
+    }
+
+    /**
+     * Send birthday verification - EXACT COPY FROM OLD LOGIC
      */
     private async handleBirthdayVerification(user: any, answer: string): Promise<void> {
         try {

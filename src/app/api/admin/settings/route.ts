@@ -139,21 +139,29 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// Cleanup database data - IMPROVED VERSION
+// Cleanup database data
 async function handleCleanupData() {
     try {
-        console.log('🧹 Starting comprehensive database cleanup...')
+        console.log('🧹 Starting database cleanup...')
 
         let cleanedTables = 0
         let errors: string[] = []
         let warnings: string[] = []
 
+        // Kiểm tra các bảng tồn tại trước khi xóa
+        const existingTables = await getExistingTables()
+
+        // Nếu không tìm thấy bảng nào, thử với danh sách mặc định
+        if (existingTables.length === 0) {
+            console.log('No tables found, using default table list')
+        }
+
         // Thứ tự xóa quan trọng để tránh foreign key constraints
         // Xóa từ bảng con đến bảng cha
         const cleanupOrder = [
-            // Bảng không có foreign key dependencies - XÓA TRIỆT ĐỂ
+            // Bảng không có foreign key dependencies
             'user_messages',
-            'spam_logs', 
+            'spam_logs',
             'spam_tracking',
             'chat_bot_offer_counts',
             'user_bot_modes',
@@ -164,6 +172,8 @@ async function handleCleanupData() {
             'system_metrics',
             'ai_analytics',
             'ai_templates',
+            'admin_users',
+            'bot_settings',
 
             // Bảng có foreign key đến users nhưng không có bảng khác phụ thuộc
             'point_transactions',
@@ -184,54 +194,69 @@ async function handleCleanupData() {
             'users'
         ]
 
-        console.log(`Attempting to clean ${cleanupOrder.length} tables:`, cleanupOrder)
+        // Lọc chỉ các bảng thực sự tồn tại
+        const tablesToClean = cleanupOrder.filter(table => existingTables.includes(table))
 
-        for (const table of cleanupOrder) {
+        console.log(`Found ${tablesToClean.length} tables to clean:`, tablesToClean)
+
+        for (const table of tablesToClean) {
             try {
-                console.log(`🧹 Cleaning table: ${table}`)
-                
-                // XÓA TRIỆT ĐỂ - không dùng điều kiện neq
                 let deleteQuery = supabaseAdmin.from(table).delete()
 
-                // Xử lý đặc biệt cho bảng users - giữ lại admin
-                if (table === 'users') {
-                    if (process.env.FACEBOOK_PAGE_ID) {
-                        deleteQuery = deleteQuery.neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
-                        console.log(`Keeping admin user with facebook_id: ${process.env.FACEBOOK_PAGE_ID}`)
-                    } else {
-                        // Nếu không có FACEBOOK_PAGE_ID, xóa tất cả users
-                        console.log('No FACEBOOK_PAGE_ID found, deleting all users')
-                    }
+                // Xử lý đặc biệt cho từng bảng
+                switch (table) {
+                    case 'users':
+                        // Không xóa admin users
+                        if (process.env.FACEBOOK_PAGE_ID) {
+                            deleteQuery = deleteQuery.neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
+                        } else {
+                            // Nếu không có FACEBOOK_PAGE_ID, xóa tất cả users
+                            deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
+                        }
+                        break
+                    case 'user_messages':
+                    case 'spam_logs':
+                    case 'admin_users':
+                    case 'bot_settings':
+                        // Các bảng có id là SERIAL (INTEGER)
+                        deleteQuery = deleteQuery.neq('id', 0)
+                        break
+                    case 'chat_bot_offer_counts':
+                    case 'user_bot_modes':
+                        // Các bảng có id là BIGSERIAL (BIGINT)
+                        deleteQuery = deleteQuery.neq('id', 0)
+                        break
+                    default:
+                        // Các bảng có id là UUID
+                        deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
+                        break
                 }
 
-                const { error, count } = await deleteQuery
+                const { error } = await deleteQuery
 
                 if (error) {
                     errors.push(`${table}: ${error.message}`)
-                    console.error(`❌ Error cleaning ${table}:`, error)
+                    console.error(`Error cleaning ${table}:`, error)
                 } else {
                     cleanedTables++
-                    console.log(`✅ Cleaned ${table} - ${count || 'unknown'} rows deleted`)
+                    console.log(`✅ Cleaned ${table}`)
                 }
             } catch (err) {
                 const errorMsg = err instanceof Error ? err.message : String(err)
                 errors.push(`${table}: ${errorMsg}`)
-                console.error(`❌ Exception cleaning ${table}:`, err)
+                console.error(`Exception cleaning ${table}:`, err)
             }
         }
 
         // Đặt lại sequences cho các bảng SERIAL
         await resetSequences()
 
-        // Thêm cleanup cho các bảng có thể bị bỏ sót
-        await cleanupAdditionalTables()
-
         return NextResponse.json({
             success: true,
             message: `Database cleanup completed. Cleaned ${cleanedTables} tables.`,
             details: {
                 cleanedTables,
-                totalTables: cleanupOrder.length,
+                totalTables: tablesToClean.length,
                 errors: errors.length > 0 ? errors : null,
                 warnings: warnings.length > 0 ? warnings : null
             }
@@ -243,28 +268,6 @@ async function handleCleanupData() {
             { success: false, message: `Cleanup failed: ${error instanceof Error ? error.message : String(error)}` },
             { status: 500 }
         )
-    }
-}
-
-// Cleanup additional tables that might be missed
-async function cleanupAdditionalTables() {
-    const additionalTables = [
-        'admin_users',
-        'bot_settings'
-    ]
-
-    for (const table of additionalTables) {
-        try {
-            console.log(`🧹 Cleaning additional table: ${table}`)
-            const { error } = await supabaseAdmin.from(table).delete()
-            if (error) {
-                console.error(`❌ Error cleaning additional table ${table}:`, error)
-            } else {
-                console.log(`✅ Cleaned additional table ${table}`)
-            }
-        } catch (err) {
-            console.error(`❌ Exception cleaning additional table ${table}:`, err)
-        }
     }
 }
 
