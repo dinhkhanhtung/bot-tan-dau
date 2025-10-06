@@ -182,15 +182,20 @@ export class UserInteractionService {
         // Sử dụng logic anti-spam đã được cải thiện
         const { handleAntiSpam } = await import('./anti-spam')
         
+        // Lấy current flow từ session data
+        const { getBotSession } = await import('./utils')
+        const sessionData = await getBotSession(facebookId)
+        const currentFlow = sessionData?.current_flow || null
+        
         // Gọi handleAntiSpam để xử lý welcome và spam detection
-        const result = await handleAntiSpam(facebookId, 'welcome', userStatus, null)
+        const result = await handleAntiSpam(facebookId, 'welcome', userStatus, currentFlow)
         
         if (result.block) {
             logger.info('Welcome blocked due to spam detection', { facebookId, result })
             return
         }
         
-        logger.info('Welcome sent via anti-spam logic', { facebookId, userStatus, result })
+        logger.info('Welcome sent via anti-spam logic', { facebookId, userStatus, currentFlow, result })
     }
 
     /**
@@ -216,8 +221,15 @@ export class UserInteractionService {
             const userData = await getUserByFacebookId(facebookId)
             const userStatus = userData?.status || 'new_user'
             
-            const result = await handleAntiSpam(facebookId, message, userStatus, null)
+            // Lấy current flow từ session data
+            const { getBotSession } = await import('./utils')
+            const sessionData = await getBotSession(facebookId)
+            const currentFlow = sessionData?.current_flow || null
             
+            console.log('🔍 Anti-spam check:', { facebookId, userStatus, currentFlow, message })
+            
+            const result = await handleAntiSpam(facebookId, message, userStatus, currentFlow)
+
             if (result.block) {
                 logger.info('Message blocked due to spam detection', { facebookId, result })
                 return
