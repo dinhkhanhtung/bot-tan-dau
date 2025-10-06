@@ -560,161 +560,21 @@ export async function getFacebookDisplayName(facebookId: string): Promise<string
 
 
 
-// Update bot session - FIXED VERSION
+// DEPRECATED: Use database-service.ts instead
+// These functions are kept for backward compatibility but will be removed in future versions
+
+/**
+ * @deprecated Use updateBotSession from database-service.ts instead
+ */
 export async function updateBotSession(facebookId: string, sessionData: any) {
-    try {
-        const { supabaseAdmin } = await import('./supabase')
-
-        console.log('🔄 updateBotSession called:', {
-            facebookId,
-            hasSessionData: !!sessionData,
-            currentFlow: sessionData?.current_flow,
-            step: sessionData?.step,
-            stepType: typeof sessionData?.step
-        })
-
-        // Nếu sessionData là null, xóa session
-        if (sessionData === null) {
-            const { error } = await supabaseAdmin
-                .from('bot_sessions')
-                .delete()
-                .eq('facebook_id', facebookId)
-
-            if (error) {
-                console.error('❌ Error deleting session:', error)
-            } else {
-                console.log('✅ Session deleted for user:', facebookId)
-            }
-            return
-        }
-
-        // Đơn giản hóa: chỉ lưu những gì cần thiết - FIX STEP HANDLING
-        let stepValue: number = 0
-        if (sessionData?.step !== undefined && sessionData?.step !== null) {
-            stepValue = typeof sessionData.step === 'string' ? parseInt(sessionData.step) || 0 : sessionData.step
-        }
-
-        const sessionToSave = {
-            facebook_id: facebookId,
-            current_flow: sessionData.current_flow || 'registration',
-            current_step: stepValue,  // Always save as number
-            step: stepValue,  // Keep both fields for compatibility
-            data: sessionData.data || {},
-            updated_at: new Date().toISOString()
-        }
-
-        console.log('💾 Saving session data:', {
-            facebookId,
-            currentFlow: sessionToSave.current_flow,
-            step: sessionToSave.step,
-            current_step: sessionToSave.current_step,
-            data: sessionToSave.data
-        })
-
-        // FIX: Sử dụng upsert với onConflict để tránh lỗi duplicate key
-        const { error } = await supabaseAdmin
-            .from('bot_sessions')
-            .upsert(sessionToSave, {
-                onConflict: 'facebook_id',
-                ignoreDuplicates: false
-            })
-
-        if (error) {
-            console.error('❌ updateBotSession error:', {
-                facebookId,
-                error: error.message,
-                code: error.code,
-                details: error.details,
-                hint: error.hint,
-                sessionData: sessionToSave
-            })
-
-            // FIX: Thử insert thay vì upsert nếu upsert thất bại
-            if (error.code === '23505' || error.message.includes('duplicate')) {
-                console.log('🔄 Retrying with insert for user:', facebookId)
-                const { error: insertError } = await supabaseAdmin
-                    .from('bot_sessions')
-                    .insert(sessionToSave)
-
-                if (insertError) {
-                    console.error('❌ Insert also failed:', insertError)
-                } else {
-                    console.log('✅ Session inserted successfully')
-                }
-            }
-            return
-        }
-
-        console.log('✅ updateBotSession success:', {
-            facebookId,
-            currentFlow: sessionToSave.current_flow,
-            step: sessionToSave.step,
-            current_step: sessionToSave.current_step,
-            data: sessionToSave.data
-        })
-
-    } catch (error) {
-        console.error('❌ Exception in updateBotSession:', error)
-    }
+    const { updateBotSession: dbUpdateBotSession } = await import('./database-service')
+    return dbUpdateBotSession(facebookId, sessionData)
 }
 
-// Get bot session - Simplified version
+/**
+ * @deprecated Use getBotSession from database-service.ts instead
+ */
 export async function getBotSession(facebookId: string) {
-    try {
-        const { supabaseAdmin } = await import('./supabase')
-
-        console.log('🔍 getBotSession called for:', facebookId)
-
-        const { data, error } = await supabaseAdmin
-            .from('bot_sessions')
-            .select('*')
-            .eq('facebook_id', facebookId)
-            .single()
-
-        if (error) {
-            // Nếu không tìm thấy record, trả về null (bình thường)
-            if (error.code === 'PGRST116') {
-                console.log('ℹ️ No session found for user:', facebookId)
-                return null
-            }
-
-            // Các lỗi khác cũng trả về null
-            console.error('❌ getBotSession error:', error)
-            return null
-        }
-
-        // Đơn giản hóa: chỉ trả về data nếu có
-        if (data) {
-            // FIX STEP HANDLING - ensure numeric step value
-            let stepValue: number = 0
-            if (data.step !== undefined && data.step !== null) {
-                stepValue = typeof data.step === 'string' ? parseInt(data.step) || 0 : data.step
-            } else if (data.current_step !== undefined && data.current_step !== null) {
-                stepValue = typeof data.current_step === 'string' ? parseInt(data.current_step) || 0 : data.current_step
-            }
-
-            console.log('✅ getBotSession success:', {
-                facebookId,
-                currentFlow: data.current_flow,
-                step: stepValue,
-                originalStep: data.step,
-                originalCurrentStep: data.current_step
-            })
-
-            // Đảm bảo cấu trúc dữ liệu nhất quán
-            return {
-                facebook_id: data.facebook_id,
-                current_flow: data.current_flow,
-                step: stepValue,  // Return as number for consistent comparison
-                current_step: stepValue,  // Keep both for compatibility
-                data: data.data || {},
-                updated_at: data.updated_at
-            }
-        }
-
-        return null
-    } catch (error) {
-        console.error('❌ Exception in getBotSession:', error)
-        return null
-    }
+    const { getBotSession: dbGetBotSession } = await import('./database-service')
+    return dbGetBotSession(facebookId)
 }

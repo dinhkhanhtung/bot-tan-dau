@@ -242,7 +242,7 @@ CREATE TABLE IF NOT EXISTS bot_sessions (
     facebook_id VARCHAR(255) UNIQUE NOT NULL,
     current_flow VARCHAR(100) DEFAULT NULL,
     current_step INTEGER DEFAULT 0,
-    step VARCHAR(50) DEFAULT NULL, -- CỘT QUAN TRỌNG - FIX LỖI REGISTRATION FLOW
+    step INTEGER DEFAULT 0, -- FIX: Changed to INTEGER to match current_step
     data JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -777,3 +777,64 @@ WHERE paused_for_admin = TRUE;
 
 -- Cập nhật comment cho bảng
 COMMENT ON COLUMN user_bot_modes.paused_for_admin IS 'Đánh dấu user đang trong admin chat để tạm dừng welcome counter';
+
+-- ========================================
+-- MIGRATION: Fix bot_sessions step column type
+-- ========================================
+-- Cập nhật: Sửa lỗi registration flow - step column phải là INTEGER
+
+-- Thay đổi kiểu dữ liệu của cột step từ VARCHAR sang INTEGER (nếu cần)
+-- Kiểm tra và chuyển đổi cột step nếu nó chưa phải INTEGER
+DO $$
+BEGIN
+    -- Kiểm tra xem cột step có phải là VARCHAR không
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'bot_sessions' 
+        AND column_name = 'step' 
+        AND data_type = 'character varying'
+    ) THEN
+        -- Chuyển đổi từ VARCHAR sang INTEGER
+        ALTER TABLE bot_sessions 
+        ALTER COLUMN step TYPE INTEGER USING CASE 
+            WHEN step ~ '^[0-9]+$' THEN step::INTEGER 
+            ELSE 0 
+        END;
+    ELSIF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'bot_sessions' 
+        AND column_name = 'step' 
+        AND data_type = 'integer'
+    ) THEN
+        -- Cột đã là INTEGER, chỉ cần đảm bảo giá trị mặc định
+        ALTER TABLE bot_sessions 
+        ALTER COLUMN step SET DEFAULT 0;
+    ELSE
+        -- Cột không tồn tại, tạo mới
+        ALTER TABLE bot_sessions 
+        ADD COLUMN step INTEGER DEFAULT 0;
+    END IF;
+END $$;
+
+-- Đảm bảo giá trị mặc định cho cột step
+ALTER TABLE bot_sessions 
+ALTER COLUMN step SET DEFAULT 0;
+
+-- Cập nhật comment
+COMMENT ON COLUMN bot_sessions.step IS 'Current step in registration flow (0=name, 1=phone, 2=location, 3=birthday)';
+
+-- Kiểm tra và sửa dữ liệu hiện tại (nếu có)
+UPDATE bot_sessions 
+SET step = COALESCE(current_step, 0) 
+WHERE step IS NULL OR step = 0;
+
+-- Hiển thị thông tin về cột step
+SELECT 
+    column_name, 
+    data_type, 
+    is_nullable, 
+    column_default
+FROM information_schema.columns 
+WHERE table_name = 'bot_sessions' 
+AND column_name IN ('step', 'current_step')
+ORDER BY column_name;

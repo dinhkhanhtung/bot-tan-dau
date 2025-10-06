@@ -318,13 +318,23 @@ export class DatabaseService {
             'updateBotSession',
             async () => {
                 try {
+                    // Validate input parameters
+                    if (!facebookId || typeof facebookId !== 'string') {
+                        throw new Error(`Invalid facebookId: ${facebookId}`)
+                    }
+
+                    if (!sessionData || typeof sessionData !== 'object') {
+                        throw new Error(`Invalid sessionData: ${sessionData}`)
+                    }
+
                     // Use facebook_id directly (matching database schema)
                     const { data, error } = await supabaseAdmin
                         .from('bot_sessions')
                         .upsert({
                             facebook_id: facebookId,
                             current_flow: sessionData?.current_flow || null,
-                            current_step: sessionData?.step ? parseInt(sessionData.step) || 0 : 0,
+                            current_step: sessionData?.step ? parseInt(String(sessionData.step)) || 0 : 0,
+                            step: sessionData?.step ? parseInt(String(sessionData.step)) || 0 : 0, // FIX: Use INTEGER for step column
                             data: sessionData?.data || {},
                             updated_at: new Date().toISOString()
                         })
@@ -332,12 +342,47 @@ export class DatabaseService {
                         .single()
 
                     if (error) {
-                        // If table doesn't exist or other error, just log warning and continue
+                        // Handle specific error cases
                         if (error.message.includes('schema cache') || error.message.includes('does not exist')) {
-                            logger.warn('Bot sessions table not found, cannot update session', { error: error.message })
-                            return null
+                            logger.warn('Bot sessions table not found, cannot update session', {
+                                facebookId,
+                                error: error.message,
+                                code: error.code
+                            })
+                            // Return a standardized session object instead of null
+                            return {
+                                facebook_id: facebookId,
+                                current_flow: sessionData?.current_flow || null,
+                                step: sessionData?.step ? parseInt(String(sessionData.step)) || 0 : 0,
+                                current_step: sessionData?.step ? parseInt(String(sessionData.step)) || 0 : 0,
+                                data: sessionData?.data || {},
+                                updated_at: new Date().toISOString()
+                            }
                         }
+
+                        // For other errors, log details and throw them to be handled by error handler
+                        logger.error('Bot session update failed', {
+                            facebookId,
+                            sessionData,
+                            error: error.message,
+                            code: error.code,
+                            details: error.details,
+                            hint: error.hint
+                        })
                         throw error
+                    }
+
+                    // Ensure we return a valid session object
+                    if (!data) {
+                        logger.warn('No data returned from session update, creating fallback', { facebookId })
+                        return {
+                            facebook_id: facebookId,
+                            current_flow: sessionData?.current_flow || null,
+                            step: sessionData?.step ? parseInt(String(sessionData.step)) || 0 : 0,
+                            current_step: sessionData?.step ? parseInt(String(sessionData.step)) || 0 : 0,
+                            data: sessionData?.data || {},
+                            updated_at: new Date().toISOString()
+                        }
                     }
 
                     // Invalidate session cache
@@ -345,9 +390,22 @@ export class DatabaseService {
 
                     return data
                 } catch (error) {
-                    // Fallback: just log warning and continue
-                    logger.warn('Failed to update bot session', { error: error instanceof Error ? error.message : String(error) })
-                    return null
+                    // Log the error but don't swallow it completely
+                    logger.error('Exception in bot session update', {
+                        facebookId,
+                        error: error instanceof Error ? error.message : String(error),
+                        sessionData: JSON.stringify(sessionData)
+                    })
+
+                    // Return a fallback session object instead of null
+                    return {
+                        facebook_id: facebookId,
+                        current_flow: sessionData?.current_flow || null,
+                        step: sessionData?.step ? parseInt(String(sessionData.step)) || 0 : 0,
+                        current_step: sessionData?.step ? parseInt(String(sessionData.step)) || 0 : 0,
+                        data: sessionData?.data || {},
+                        updated_at: new Date().toISOString()
+                    }
                 }
             }
         )

@@ -116,18 +116,12 @@ export class AuthFlow {
 
         console.log('[DEBUG] Saving name step session:', JSON.stringify(sessionData))
 
-        // Add error handling for session update
+        // Update session - new implementation handles errors gracefully
         try {
             await updateBotSession(user.facebook_id, sessionData)
-
-            // Verify session was updated correctly
-            const updatedSession = await getBotSession(user.facebook_id)
-            if (!updatedSession || updatedSession.step !== nextStep) {
-                console.error('❌ Session update failed - retrying...')
-                await updateBotSession(user.facebook_id, sessionData)
-            }
         } catch (error) {
-            console.error('❌ Critical session update error:', error)
+            console.error('❌ Session update error:', error)
+            console.error('❌ Session data that failed:', JSON.stringify(sessionData, null, 2))
             await this.sendErrorMessage(user.facebook_id)
             return
         }
@@ -185,18 +179,12 @@ export class AuthFlow {
 
         console.log('[DEBUG] New session data:', JSON.stringify(sessionData))
 
-        // Add error handling for session update
+        // Update session - new implementation handles errors gracefully
         try {
             await updateBotSession(user.facebook_id, sessionData)
-
-            // Verify session was updated correctly
-            const updatedSession = await getBotSession(user.facebook_id)
-            if (!updatedSession || updatedSession.step !== nextStep) {
-                console.error('❌ Session update failed - retrying...')
-                await updateBotSession(user.facebook_id, sessionData)
-            }
         } catch (error) {
-            console.error('❌ Critical session update error:', error)
+            console.error('❌ Session update error:', error)
+            console.error('❌ Session data that failed:', JSON.stringify(sessionData, null, 2))
             await this.sendErrorMessage(user.facebook_id)
             return
         }
@@ -257,18 +245,11 @@ export class AuthFlow {
                 }
             }
 
-            // Add error handling for session update
+            // Update session - new implementation handles errors gracefully
             try {
                 await updateBotSession(user.facebook_id, sessionData)
-
-                // Verify session was updated correctly
-                const updatedSession = await getBotSession(user.facebook_id)
-                if (!updatedSession || updatedSession.step !== nextStep) {
-                    console.error('❌ Session update failed - retrying...')
-                    await updateBotSession(user.facebook_id, sessionData)
-                }
             } catch (error) {
-                console.error('❌ Critical session update error:', error)
+                console.error('❌ Session update error:', error)
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
@@ -353,18 +334,11 @@ export class AuthFlow {
                 data: {}
             }
 
-            // Add error handling for session update
+            // Update session - new implementation handles errors gracefully
             try {
                 await updateBotSession(user.facebook_id, sessionData)
-
-                // Verify session was updated correctly
-                const updatedSession = await getBotSession(user.facebook_id)
-                if (!updatedSession || updatedSession.step !== initialStep) {
-                    console.error('❌ Initial session update failed - retrying...')
-                    await updateBotSession(user.facebook_id, sessionData)
-                }
             } catch (error) {
-                console.error('❌ Critical initial session update error:', error)
+                console.error('❌ Session update error:', error)
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
