@@ -1,9 +1,8 @@
-require('dotenv').config()
 const { createClient } = require('@supabase/supabase-js')
 const crypto = require('crypto')
 
 // Lấy thông tin từ biến môi trường
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseUrl = process.env.SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // Lấy thông tin admin từ biến môi trường
