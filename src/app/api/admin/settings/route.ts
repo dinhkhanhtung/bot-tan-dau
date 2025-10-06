@@ -151,6 +151,11 @@ async function handleCleanupData() {
         // Kiểm tra các bảng tồn tại trước khi xóa
         const existingTables = await getExistingTables()
 
+        // Nếu không tìm thấy bảng nào, thử với danh sách mặc định
+        if (existingTables.length === 0) {
+            console.log('No tables found, using default table list')
+        }
+
         // Thứ tự xóa quan trọng để tránh foreign key constraints
         // Xóa từ bảng con đến bảng cha
         const cleanupOrder = [
@@ -255,30 +260,48 @@ async function handleCleanupData() {
 // Lấy danh sách các bảng thực sự tồn tại trong database
 async function getExistingTables() {
     try {
-        const { data, error } = await supabaseAdmin
-            .from('information_schema.tables')
-            .select('table_name')
-            .eq('table_schema', 'public')
-            .in('table_name', [
-                'users', 'listings', 'conversations', 'messages', 'payments',
-                'ratings', 'events', 'event_participants', 'notifications',
-                'ads', 'search_requests', 'referrals', 'user_points',
-                'point_transactions', 'bot_sessions', 'user_messages',
-                'spam_logs', 'spam_tracking', 'admin_users', 'admin_chat_sessions',
-                'user_activities', 'user_activity_logs', 'system_metrics',
-                'chat_bot_offer_counts', 'user_bot_modes', 'bot_settings',
-                'ai_templates', 'ai_analytics'
-            ])
+        // Danh sách các bảng cần kiểm tra
+        const tablesToCheck = [
+            'users', 'listings', 'conversations', 'messages', 'payments',
+            'ratings', 'events', 'event_participants', 'notifications',
+            'ads', 'search_requests', 'referrals', 'user_points',
+            'point_transactions', 'bot_sessions', 'user_messages',
+            'spam_logs', 'spam_tracking', 'admin_users', 'admin_chat_sessions',
+            'user_activities', 'user_activity_logs', 'system_metrics',
+            'chat_bot_offer_counts', 'user_bot_modes', 'bot_settings',
+            'ai_templates', 'ai_analytics'
+        ]
 
-        if (error) {
-            console.error('Error getting existing tables:', error)
-            return []
+        const existingTables: string[] = []
+
+        // Kiểm tra từng bảng một cách an toàn
+        for (const tableName of tablesToCheck) {
+            try {
+                // Thử truy vấn bảng với LIMIT 1 để kiểm tra tồn tại
+                const { error } = await supabaseAdmin
+                    .from(tableName)
+                    .select('id')
+                    .limit(1)
+
+                // Nếu không có lỗi, bảng tồn tại
+                if (!error) {
+                    existingTables.push(tableName)
+                }
+            } catch (tableError) {
+                // Bảng không tồn tại hoặc có lỗi khác, bỏ qua
+                console.log(`Table ${tableName} not accessible or doesn't exist`)
+            }
         }
 
-        return data?.map(table => table.table_name) || []
+        console.log(`Found ${existingTables.length} existing tables:`, existingTables)
+        return existingTables
     } catch (err) {
         console.error('Exception getting existing tables:', err)
-        return []
+        // Trả về danh sách mặc định nếu có lỗi
+        return [
+            'users', 'listings', 'conversations', 'messages', 'payments',
+            'bot_sessions', 'bot_settings'
+        ]
     }
 }
 
