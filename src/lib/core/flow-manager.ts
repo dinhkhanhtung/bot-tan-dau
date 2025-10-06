@@ -208,39 +208,36 @@ export class FlowManager {
     private static async sendDetailedInfo(user: any): Promise<void> {
         try {
             const { sendMessage } = await import('../facebook-api')
+            
+            // Send detailed information in 2 compact messages
+            const infoMessage = `📋 THÔNG TIN CHI TIẾT BOT TÂN DẬU
 
-            // Send detailed information with smooth flow
-            await sendMessage(user.facebook_id, '📋 THÔNG TIN CHI TIẾT BOT TÂN DẬU')
-            await this.delay(1500)
+Kết nối với hơn 2 triệu Tân Dậu để cùng nhau phát triển và thịnh vượng.
 
-            await sendMessage(user.facebook_id, 'Kết nối với hơn 2 triệu Tân Dậu để cùng nhau phát triển và thịnh vượng.')
-            await this.delay(1500)
+🎯 TÍNH NĂNG CHÍNH:
+🛒 Tìm kiếm & niêm yết sản phẩm
+💬 Kết nối với cộng đồng
+📊 Thống kê & báo cáo
+🎁 Điểm thưởng & quà tặng`
 
-            await sendMessage(user.facebook_id, '🎯 TÍNH NĂNG CHÍNH:')
-            await sendMessage(user.facebook_id, '🛒 Tìm kiếm & niêm yết sản phẩm')
-            await sendMessage(user.facebook_id, '💬 Kết nối với cộng đồng')
-            await sendMessage(user.facebook_id, '📊 Thống kê & báo cáo')
-            await sendMessage(user.facebook_id, '🎁 Điểm thưởng & quà tặng')
-            await this.delay(1500)
+            const processMessage = `📋 QUY TRÌNH ĐĂNG KÝ:
+1️⃣ Họ tên đầy đủ
+2️⃣ Số điện thoại
+3️⃣ Tỉnh/thành phố
+4️⃣ Xác nhận sinh năm 1981
 
-            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
-            await sendMessage(user.facebook_id, '📋 QUY TRÌNH ĐĂNG KÝ:')
-            await sendMessage(user.facebook_id, '1️⃣ Họ tên đầy đủ')
-            await sendMessage(user.facebook_id, '2️⃣ Số điện thoại')
-            await sendMessage(user.facebook_id, '3️⃣ Tỉnh/thành phố')
-            await sendMessage(user.facebook_id, '4️⃣ Xác nhận sinh năm 1981')
-            await this.delay(1500)
+💡 LƯU Ý QUAN TRỌNG:
+• Chỉ dành cho Tân Dậu (1981)
+• Thông tin được bảo mật tuyệt đối
+• Hỗ trợ 24/7 từ admin
 
-            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
-            await sendMessage(user.facebook_id, '💡 LƯU Ý QUAN TRỌNG:')
-            await sendMessage(user.facebook_id, '• Chỉ dành cho Tân Dậu (1981)')
-            await sendMessage(user.facebook_id, '• Thông tin được bảo mật tuyệt đối')
-            await sendMessage(user.facebook_id, '• Hỗ trợ 24/7 từ admin')
-            await this.delay(1500)
-
-            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
-            await sendMessage(user.facebook_id, 'Bạn có muốn đăng ký ngay không?')
-
+Bạn có muốn đăng ký ngay không?`
+            
+            await sendMessage(user.facebook_id, infoMessage)
+            await this.delay(1000)
+            await sendMessage(user.facebook_id, processMessage)
+            await this.delay(1000)
+            
             // Send action buttons
             const { sendQuickReply, createQuickReply } = await import('../facebook-api')
             await sendQuickReply(user.facebook_id, 'Bạn muốn làm gì tiếp theo?', [
@@ -248,7 +245,7 @@ export class FlowManager {
                 createQuickReply('🛒 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
                 createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
             ])
-
+            
         } catch (error) {
             console.error('Error sending detailed info:', error)
             await this.sendErrorMessage(user.facebook_id)
@@ -264,7 +261,7 @@ export class FlowManager {
 
             // Send contact message
             await sendMessage(user.facebook_id, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!')
-            
+
             // Hide buttons
             const hideResult = await hideButtons(user.facebook_id)
             console.log('🔧 Hidden buttons after contact request:', hideResult)
