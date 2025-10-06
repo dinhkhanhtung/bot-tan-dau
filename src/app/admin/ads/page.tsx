@@ -213,17 +213,9 @@ export default function AdsPage() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <button
-                onClick={() => window.history.back()}
-                className="mr-4 text-gray-600 hover:text-gray-900"
-              >
-                ← Quay lại
-              </button>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">📢 Ads Management</h1>
-                <p className="text-gray-600">Manage advertisements on the platform</p>
-              </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">📢 Ads Management</h1>
+              <p className="text-gray-600">Manage advertisements on the platform</p>
             </div>
             <button
               onClick={() => setIsCreateModalOpen(true)}
