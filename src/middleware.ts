@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import jwt from 'jsonwebtoken'
 
 export function middleware(request: NextRequest) {
     console.log('🔍 Middleware checking path:', request.nextUrl.pathname)
@@ -23,23 +24,21 @@ export function middleware(request: NextRequest) {
         }
 
         try {
-            // Basic token validation - check if it exists and has reasonable length
-            if (!token || token.length < 10) {
-                console.log('❌ Invalid token format or length')
-                return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-            }
+            // Properly verify JWT token
+            const jwtSecret = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production'
+            const decoded = jwt.verify(token, jwtSecret) as any
 
-            // For now, we'll allow the token through and let the API routes handle JWT verification
-            // This prevents middleware from blocking valid requests
-            console.log('✅ Token format valid, allowing request to proceed')
+            console.log('✅ Token validation passed for admin:', decoded.username)
 
             // Add admin info to request headers for API routes
             const response = NextResponse.next()
-            response.headers.set('x-admin-token', token)
+            response.headers.set('x-admin-id', decoded.adminId)
+            response.headers.set('x-admin-username', decoded.username)
+            response.headers.set('x-admin-role', decoded.role)
 
             return response
         } catch (error) {
-            console.log('❌ Token verification error:', error)
+            console.log('❌ Token verification failed:', error)
             return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
         }
     }
