@@ -109,16 +109,16 @@ export class WelcomeService {
             // Send typing indicator
             await sendTypingIndicator(facebookId)
 
-            // Send greeting
-            await sendMessage(facebookId, template.greeting)
+            // Combine greeting and description into one message to reduce spam
+            const combinedMessage = `${template.greeting}\n\n${template.description}`
+            await sendMessage(facebookId, combinedMessage)
 
-            // Send description
-            await sendMessage(facebookId, template.description)
+            // Send features as a single message with bullet points
+            const featuresMessage = template.features.join('\n')
+            await sendMessage(facebookId, featuresMessage)
 
-            // Send features
-            for (const feature of template.features) {
-                await sendMessage(facebookId, feature)
-            }
+            // Add delay between messages to prevent spam
+            await this.delay(1000)
 
             // Send call to action with buttons
             await this.sendWelcomeButtons(facebookId, userType)
@@ -205,7 +205,7 @@ export class WelcomeService {
 
         const now = Date.now()
         const timeDiff = now - lastTime
-        const cooldownPeriod = 5 * 60 * 1000 // 5 minutes
+        const cooldownPeriod = 30 * 60 * 1000 // 30 minutes to prevent spam
 
         return timeDiff < cooldownPeriod
     }
@@ -388,6 +388,11 @@ export class WelcomeService {
     public clearWelcomeStats(): void {
         this.welcomeCounts.clear()
         this.lastWelcomeTime.clear()
+    }
+
+    // Helper method to add delay between messages
+    private async delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms))
     }
 }
 

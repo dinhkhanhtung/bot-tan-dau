@@ -3,6 +3,10 @@ import axios from 'axios'
 const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN!
 const FACEBOOK_API_URL = 'https://graph.facebook.com/v18.0'
 
+// Rate limiting: track last message time per user
+const lastMessageTime = new Map<string, number>()
+const MIN_MESSAGE_INTERVAL = 500 // 500ms minimum between messages per user
+
 // Send text message
 export async function sendMessage(recipientId: string, message: string) {
     // Validate message is not empty
@@ -10,6 +14,18 @@ export async function sendMessage(recipientId: string, message: string) {
         console.warn('Attempted to send empty message, skipping...')
         return null
     }
+
+    // Rate limiting: ensure minimum interval between messages
+    const lastTime = lastMessageTime.get(recipientId)
+    const now = Date.now()
+
+    if (lastTime && (now - lastTime) < MIN_MESSAGE_INTERVAL) {
+        const delay = MIN_MESSAGE_INTERVAL - (now - lastTime)
+        console.log(`Rate limiting: waiting ${delay}ms before sending message to ${recipientId}`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+    }
+
+    lastMessageTime.set(recipientId, Date.now())
 
     try {
         const response = await axios.post(

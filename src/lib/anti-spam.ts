@@ -488,7 +488,7 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
         last_message_time: new Date(now).toISOString()
     })
 
-    // Xử lý theo level - LOGIC MỚI THEO YÊU CẦU
+    // Xử lý theo level - LOGIC ĐƠN GIẢN THEO YÊU CẦU
     if (newCount === 1) {
         // Lần 1: Gửi welcome đầy đủ - SỬ DỤNG WELCOME SERVICE
         console.log('🎉 First message - sending welcome')
@@ -497,10 +497,18 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
         await welcomeService.sendWelcome(facebookId, welcomeType)
         return { action: 'none', block: false, message: 'Welcome sent' }
     } else if (newCount >= 2) {
-        // Lần 2+: Chỉ cảnh báo nhẹ, KHÔNG khóa user chưa đăng ký
-        console.log('⚠️ Message count >= 2 - sending gentle warning')
-        await sendMessage(facebookId, '💡 Bạn có thể chọn một trong các nút bên dưới để tiếp tục!')
-        return { action: 'warning', block: false, message: 'Gentle warning sent' }
+        // Lần 2+: Thông báo admin, bot dừng, ẩn nút
+        console.log('🚫 Message count >= 2 - stopping bot and notifying admin')
+        await sendMessage(facebookId, '🚫 Bot đã dừng. Admin đã được thông báo.')
+
+        // Ẩn nút Chat Bot
+        const { hideButtons } = await import('./facebook-api')
+        await hideButtons(facebookId)
+
+        // Thông báo admin
+        await notifyAdminOfSpam(facebookId, newCount)
+
+        return { action: 'block', block: true, message: 'Bot stopped, buttons hidden, admin notified' }
     }
 
     return { action: 'none', block: false }
@@ -1003,6 +1011,26 @@ export async function sendNonButtonWarning(facebookId: string, warningCount: num
     } else if (warningCount === 2) {
         await sendMessage(facebookId, '🚨 Cảnh báo lần 2: Bạn vẫn chưa chọn nút!')
         await sendMessage(facebookId, 'Nếu tiếp tục gửi tin nhắn, bot sẽ tạm dừng và bạn cần liên hệ admin.')
+    }
+}
+
+// Notify admin of spam activity
+async function notifyAdminOfSpam(facebookId: string, messageCount: number): Promise<void> {
+    try {
+        // Log spam activity to database for admin review
+        await supabaseAdmin
+            .from('spam_logs')
+            .insert({
+                user_id: facebookId,
+                reason: `User sent ${messageCount} messages without using buttons`,
+                blocked_at: new Date().toISOString(),
+                action: 'buttons_hidden',
+                message_count: messageCount
+            })
+
+        console.log(`🚨 Admin notified of spam from user ${facebookId} - ${messageCount} messages`)
+    } catch (error) {
+        console.error('Error notifying admin of spam:', error)
     }
 }
 
