@@ -8,18 +8,17 @@ import {
     sendMessagesWithTyping
 } from '../facebook-api'
 import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId } from '../utils'
-import { updateBotSession, getBotSession } from '../database-service'
 import { LOCATIONS, DISTRICTS, BOT_INFO, BOT_CONFIG } from '../constants'
 
 export class AuthFlow {
-    // Simple registration flow - completely rewritten for reliability
+    // SIMPLE REGISTRATION FLOW - REWRITTEN FROM SCRATCH
 
     /**
-     * Main registration handler - handles the entire flow
+     * Main registration handler - SIMPLIFIED VERSION
      */
     async handleRegistration(user: any): Promise<void> {
         try {
-            console.log('🔄 Starting registration for user:', user.facebook_id)
+            console.log('🔄 Starting NEW registration for user:', user.facebook_id)
 
             // Check if user already registered
             if (user.status === 'registered' || user.status === 'trial') {
@@ -37,55 +36,35 @@ export class AuthFlow {
     }
 
     /**
-     * Handle step input - simplified logic
+     * Handle step input - SIMPLIFIED LOGIC
      */
     async handleStep(user: any, text: string, session: any): Promise<void> {
         try {
             console.log('🔍 Processing step for user:', user.facebook_id)
-            console.log('[DEBUG] handleStep: session=${JSON.stringify(session)}, input=${text}')
+            console.log('[DEBUG] Session:', JSON.stringify(session, null, 2))
+            console.log('[DEBUG] Input:', text)
 
-            // Get current step from session - ensure consistent numeric comparison
-            let currentStep: number
+            // Get current step - SIMPLIFIED
+            const currentStep = session?.step || 0
+            console.log('🔍 Current step:', currentStep)
 
-            if (session?.step !== undefined && session?.step !== null) {
-                currentStep = typeof session.step === 'string' ? parseInt(session.step) || 0 : session.step
-            } else if (session?.current_step !== undefined && session?.current_step !== null) {
-                currentStep = typeof session.current_step === 'string' ? parseInt(session.current_step) || 0 : session.current_step
-            } else {
-                currentStep = 0
-            }
-
-            console.log('🔍 Current step value:', currentStep, 'Type:', typeof currentStep)
-            console.log('[DEBUG] Session step details:', {
-                sessionStep: session?.step,
-                sessionCurrentStep: session?.current_step,
-                resolvedStep: currentStep
-            })
-
-            // Handle name step (step 0)
-            if (currentStep === 0) {
-                console.log('📝 Processing name step')
-                await this.handleNameStep(user, text, session)
-            }
-            // Handle phone step (step 1)
-            else if (currentStep === 1) {
-                console.log('📱 Processing phone step')
-                await this.handlePhoneStep(user, text, session)
-            }
-            // Handle location step (step 2) - expects postback, not text
-            else if (currentStep === 2) {
-                console.log('📍 Processing location step')
-                await this.handleLocationStep(user, text, session)
-            }
-            // Handle birthday step (step 3) - expects postback, not text
-            else if (currentStep === 3) {
-                console.log('🎂 Processing birthday step')
-                await this.handleBirthdayStep(user, text, session)
-            }
-            else {
-                console.log('❌ Unknown step:', currentStep, 'Type:', typeof currentStep)
-                console.log('[DEBUG] Session data:', JSON.stringify(session, null, 2))
-                await this.sendErrorMessage(user.facebook_id)
+            // Handle each step
+            switch (currentStep) {
+                case 0:
+                    await this.handleNameStep(user, text)
+                    break
+                case 1:
+                    await this.handlePhoneStep(user, text)
+                    break
+                case 2:
+                    await this.handleLocationStep(user, text)
+                    break
+                case 3:
+                    await this.handleBirthdayStep(user, text)
+                    break
+                default:
+                    console.log('❌ Unknown step:', currentStep)
+                    await this.sendErrorMessage(user.facebook_id)
             }
 
         } catch (error) {
@@ -95,9 +74,9 @@ export class AuthFlow {
     }
 
     /**
-     * Handle name input step - FIXED VERSION
+     * Handle name input step - SIMPLIFIED
      */
-    private async handleNameStep(user: any, text: string, session: any): Promise<void> {
+    private async handleNameStep(user: any, text: string): Promise<void> {
         console.log('📝 Processing name step for user:', user.facebook_id)
 
         // Validate name
@@ -106,22 +85,20 @@ export class AuthFlow {
             return
         }
 
-        // Save name and move to phone step - FIX STEP HANDLING
-        const nextStep = 1 // Always use number
-        const sessionData = {
-            current_flow: 'registration',
-            step: nextStep,  // Use number consistently
-            data: { name: text.trim() }
-        }
+        // Save name to database directly - NO SESSION COMPLEXITY
+        const { error } = await supabaseAdmin
+            .from('bot_sessions')
+            .upsert({
+                facebook_id: user.facebook_id,
+                current_flow: 'registration',
+                step: 1,
+                current_step: 1,
+                data: { name: text.trim() },
+                updated_at: new Date().toISOString()
+            })
 
-        console.log('[DEBUG] Saving name step session:', JSON.stringify(sessionData))
-
-        // Update session - new implementation handles errors gracefully
-        try {
-            await updateBotSession(user.facebook_id, sessionData)
-        } catch (error) {
-            console.error('❌ Session update error:', error)
-            console.error('❌ Session data that failed:', JSON.stringify(sessionData, null, 2))
+        if (error) {
+            console.error('❌ Database error:', error)
             await this.sendErrorMessage(user.facebook_id)
             return
         }
@@ -133,11 +110,10 @@ export class AuthFlow {
     }
 
     /**
-     * Handle phone input step - FIXED VERSION
+     * Handle phone input step - SIMPLIFIED
      */
-    private async handlePhoneStep(user: any, text: string, session: any): Promise<void> {
+    private async handlePhoneStep(user: any, text: string): Promise<void> {
         console.log('📱 Processing phone step for user:', user.facebook_id)
-        console.log('[DEBUG] handlePhoneStep: user=${user.facebook_id}, input=${text}, session.data=${JSON.stringify(session.data)}')
 
         // Clean phone number
         const phone = text.replace(/\D/g, '').trim()
@@ -164,27 +140,32 @@ export class AuthFlow {
             return
         }
 
-        console.log('[DEBUG] Phone validation passed, updating session...')
+        // Get current session data
+        const { data: sessionData } = await supabaseAdmin
+            .from('bot_sessions')
+            .select('data')
+            .eq('facebook_id', user.facebook_id)
+            .single()
 
-        // Update session with phone data - FIX STEP HANDLING
-        const nextStep = 2 // Always use number
-        const sessionData = {
-            current_flow: 'registration',
-            step: nextStep,  // Use numeric step for consistency
-            data: {
-                ...session.data,
-                phone: phone
-            }
-        }
+        const currentData = sessionData?.data || {}
 
-        console.log('[DEBUG] New session data:', JSON.stringify(sessionData))
+        // Update session with phone data
+        const { error } = await supabaseAdmin
+            .from('bot_sessions')
+            .upsert({
+                facebook_id: user.facebook_id,
+                current_flow: 'registration',
+                step: 2,
+                current_step: 2,
+                data: {
+                    ...currentData,
+                    phone: phone
+                },
+                updated_at: new Date().toISOString()
+            })
 
-        // Update session - new implementation handles errors gracefully
-        try {
-            await updateBotSession(user.facebook_id, sessionData)
-        } catch (error) {
-            console.error('❌ Session update error:', error)
-            console.error('❌ Session data that failed:', JSON.stringify(sessionData, null, 2))
+        if (error) {
+            console.error('❌ Database error:', error)
             await this.sendErrorMessage(user.facebook_id)
             return
         }
@@ -202,9 +183,8 @@ export class AuthFlow {
     /**
      * Handle location selection step
      */
-    private async handleLocationStep(user: any, text: string, session: any): Promise<void> {
+    private async handleLocationStep(user: any, text: string): Promise<void> {
         console.log('📍 Processing location step for user:', user.facebook_id)
-        console.log('[DEBUG] handleLocationStep: user=${user.facebook_id}, input=${text}, session.step=${session?.step}')
 
         // For location step, we expect postback, not text
         await this.sendMessage(user.facebook_id, '❌ Vui lòng chọn tỉnh/thành phố từ các nút bên dưới!')
@@ -213,7 +193,7 @@ export class AuthFlow {
     /**
      * Handle birthday verification step
      */
-    private async handleBirthdayStep(user: any, text: string, session: any): Promise<void> {
+    private async handleBirthdayStep(user: any, text: string): Promise<void> {
         console.log('🎂 Processing birthday step for user:', user.facebook_id)
 
         // For birthday step, we expect postback, not text
@@ -221,35 +201,38 @@ export class AuthFlow {
     }
 
     /**
-     * Handle location postback - FIXED VERSION
+     * Handle location postback - SIMPLIFIED
      */
     async handleLocationPostback(user: any, location: string): Promise<void> {
         try {
             console.log('🏠 Processing location postback:', location, 'for user:', user.facebook_id)
 
-            // Get current session
-            const session = await getBotSession(user.facebook_id)
-            if (!session) {
-                await this.sendErrorMessage(user.facebook_id)
-                return
-            }
+            // Get current session data
+            const { data: sessionData } = await supabaseAdmin
+                .from('bot_sessions')
+                .select('data')
+                .eq('facebook_id', user.facebook_id)
+                .single()
 
-            // Move to final step - birthday verification - FIX STEP HANDLING
-            const nextStep = 3 // Always use number
-            const sessionData = {
-                current_flow: 'registration',
-                step: nextStep,  // Use numeric step for consistency
-                data: {
-                    ...session.data,
-                    location: location
-                }
-            }
+            const currentData = sessionData?.data || {}
 
-            // Update session - new implementation handles errors gracefully
-            try {
-                await updateBotSession(user.facebook_id, sessionData)
-            } catch (error) {
-                console.error('❌ Session update error:', error)
+            // Update session with location
+            const { error } = await supabaseAdmin
+                .from('bot_sessions')
+                .upsert({
+                    facebook_id: user.facebook_id,
+                    current_flow: 'registration',
+                    step: 3,
+                    current_step: 3,
+                    data: {
+                        ...currentData,
+                        location: location
+                    },
+                    updated_at: new Date().toISOString()
+                })
+
+            if (error) {
+                console.error('❌ Database error:', error)
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
@@ -265,7 +248,7 @@ export class AuthFlow {
     }
 
     /**
-     * Complete registration process - FIXED VERSION
+     * Complete registration process - SIMPLIFIED
      */
     private async completeRegistration(user: any, data: any): Promise<void> {
         try {
@@ -301,14 +284,11 @@ export class AuthFlow {
                 return
             }
 
-            // Clear session - ADD ERROR HANDLING
-            try {
-                await updateBotSession(user.facebook_id, null)
-                console.log('✅ Session cleared successfully')
-            } catch (error) {
-                console.error('❌ Error clearing session:', error)
-                // Don't return here - registration was successful, just log the error
-            }
+            // Clear session
+            await supabaseAdmin
+                .from('bot_sessions')
+                .delete()
+                .eq('facebook_id', user.facebook_id)
 
             // Send success message
             await this.sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 3 ngày!\n🚀 Chúc bạn sử dụng bot vui vẻ!`)
@@ -322,23 +302,31 @@ export class AuthFlow {
     }
 
     /**
-     * Start registration process - FIXED VERSION
+     * Start registration process - SIMPLIFIED
      */
     private async startRegistration(user: any): Promise<void> {
         try {
-            // Create initial session with numeric step 0 - FIX STEP HANDLING
-            const initialStep = 0 // Always use number
-            const sessionData = {
-                current_flow: 'registration',
-                step: initialStep,  // Use numeric step for consistency
-                data: {}
-            }
+            // Clear any existing session first
+            await supabaseAdmin
+                .from('bot_sessions')
+                .delete()
+                .eq('facebook_id', user.facebook_id)
 
-            // Update session - new implementation handles errors gracefully
-            try {
-                await updateBotSession(user.facebook_id, sessionData)
-            } catch (error) {
-                console.error('❌ Session update error:', error)
+            // Create new session
+            const { error } = await supabaseAdmin
+                .from('bot_sessions')
+                .insert({
+                    facebook_id: user.facebook_id,
+                    current_flow: 'registration',
+                    step: 0,
+                    current_step: 0,
+                    data: {},
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                })
+
+            if (error) {
+                console.error('❌ Session creation error:', error)
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
@@ -447,21 +435,23 @@ export class AuthFlow {
 
             if (answer === 'YES') {
                 // User confirmed they were born in 1981 - complete registration
-                const session = await getBotSession(user.facebook_id)
-                if (session && session.data) {
-                    await this.completeRegistration(user, session.data)
+                const { data: sessionData } = await supabaseAdmin
+                    .from('bot_sessions')
+                    .select('data')
+                    .eq('facebook_id', user.facebook_id)
+                    .single()
+
+                if (sessionData && sessionData.data) {
+                    await this.completeRegistration(user, sessionData.data)
                 } else {
                     await this.sendErrorMessage(user.facebook_id)
                 }
             } else if (answer === 'NO') {
-                // User is not born in 1981 - cannot register - ADD ERROR HANDLING
-                try {
-                    await updateBotSession(user.facebook_id, null)
-                    console.log('✅ Session cleared for non-1981 user')
-                } catch (error) {
-                    console.error('❌ Error clearing session for non-1981 user:', error)
-                    // Don't return here - still show the rejection message
-                }
+                // User is not born in 1981 - cannot register
+                await supabaseAdmin
+                    .from('bot_sessions')
+                    .delete()
+                    .eq('facebook_id', user.facebook_id)
 
                 await this.sendMessage(user.facebook_id, '❌ XIN LỖI')
                 await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
@@ -482,5 +472,4 @@ export class AuthFlow {
             await this.sendErrorMessage(user.facebook_id)
         }
     }
-
 }
