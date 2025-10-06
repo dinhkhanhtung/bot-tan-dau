@@ -21,7 +21,7 @@ export enum WelcomeType {
 // Welcome message templates
 const WELCOME_TEMPLATES = {
     [WelcomeType.NEW_USER]: {
-        greeting: '🎉 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo! 👋 Mình có thể giúp gì cho bạn?',
+        greeting: '🎉 Chào bạn ghé thăm Đinh Khánh Tùng! 👋 Mình là Bot Tân Dậu - Hỗ Trợ Chéo, có thể giúp gì cho bạn?',
         description: '',
         intro: 'Kết nối với hơn 2 triệu Tân Dậu để cùng nhau phát triển và thịnh vượng.',
         features: [
