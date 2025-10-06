@@ -62,6 +62,9 @@ export class AuthFlow {
                 resolvedStep: currentStep
             })
 
+            // CRITICAL DEBUG: Log the exact session object
+            console.log('🚨 CRITICAL DEBUG - Full session object:', JSON.stringify(session, null, 2))
+
             // Handle name step (step 0)
             if (currentStep === 0) {
                 console.log('📝 Processing name step')
@@ -114,11 +117,23 @@ export class AuthFlow {
         }
 
         console.log('[DEBUG] Saving name step session:', JSON.stringify(sessionData))
-        await updateBotSession(user.facebook_id, sessionData)
+        
+        // CRITICAL DEBUG: Log before update
+        console.log('🚨 BEFORE UPDATE - Current session:', JSON.stringify(session, null, 2))
+        
+        const updateResult = await updateBotSession(user.facebook_id, sessionData)
+        console.log('🚨 UPDATE RESULT:', updateResult)
 
         // Verify session was updated
         const updatedSession = await getBotSession(user.facebook_id)
         console.log('[DEBUG] Session after name step update:', JSON.stringify(updatedSession))
+        
+        // CRITICAL DEBUG: Verify step was actually updated
+        if (updatedSession && updatedSession.step !== 1) {
+            console.log('🚨 CRITICAL ERROR: Step was not updated! Expected: 1, Got:', updatedSession.step)
+        } else {
+            console.log('✅ Step update successful:', updatedSession?.step)
+        }
 
         // Send phone prompt
         await this.sendMessage(user.facebook_id, `✅ Họ tên: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📱 Bước 2/4: Số điện thoại\n💡 Nhập số điện thoại để nhận thông báo quan trọng\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập số điện thoại:`)
