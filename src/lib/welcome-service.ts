@@ -24,6 +24,7 @@ const WELCOME_TEMPLATES = {
         greeting: '🎉 Chào bạn ghé thăm Đinh Khánh Tùng!',
         description: '👋 Hôm nay mình có thể giúp gì cho bạn?',
         features: [
+            'Có thể bạn cũng muốn tham gia Bot Tân Dậu - Hỗ Trợ Chéo. Ở đây bạn có thể...',
             'Cùng nhau kết nối - cùng nhau thịnh vượng',
             '🎁 QUYỀN LỢI: Trial 3 ngày miễn phí',
             '💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu',
@@ -32,50 +33,50 @@ const WELCOME_TEMPLATES = {
         ],
         callToAction: 'Bạn muốn bắt đầu với chức năng nào?'
     },
-[WelcomeType.RETURNING_USER]: {
-    greeting: '👋 Chào mừng bạn quay trở lại!',
+    [WelcomeType.RETURNING_USER]: {
+        greeting: '👋 Chào mừng bạn quay trở lại!',
         description: '🤖 Tôi đã sẵn sàng hỗ trợ bạn tiếp tục hành trình trong cộng đồng Tân Dậu',
-            features: [
-                '📈 Xem thống kê hoạt động của bạn',
-                '🛒 Tiếp tục tìm kiếm sản phẩm',
-                '💬 Kiểm tra tin nhắn mới',
-                '🎁 Xem điểm thưởng hiện tại'
-            ],
-                callToAction: 'Bạn muốn làm gì hôm nay?'
-},
-[WelcomeType.PENDING_USER]: {
-    greeting: '⏳ Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!',
+        features: [
+            '📈 Xem thống kê hoạt động của bạn',
+            '🛒 Tiếp tục tìm kiếm sản phẩm',
+            '💬 Kiểm tra tin nhắn mới',
+            '🎁 Xem điểm thưởng hiện tại'
+        ],
+        callToAction: 'Bạn muốn làm gì hôm nay?'
+    },
+    [WelcomeType.PENDING_USER]: {
+        greeting: '⏳ Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!',
         description: '📋 Tài khoản của bạn đang chờ Admin duyệt. Trong thời gian này, bạn có thể:',
-            features: [
-                '🔍 Tìm kiếm và xem sản phẩm',
-                '👀 Duyệt qua các tin đăng',
-                '💬 Liên hệ Admin để được hỗ trợ',
-                'ℹ️ Tìm hiểu thêm về cộng đồng'
-            ],
-                callToAction: 'Bạn muốn khám phá gì trước?'
-},
-[WelcomeType.EXPIRED_USER]: {
-    greeting: '⏰ Chào mừng bạn quay trở lại!',
+        features: [
+            '🔍 Tìm kiếm và xem sản phẩm',
+            '👀 Duyệt qua các tin đăng',
+            '💬 Liên hệ Admin để được hỗ trợ',
+            'ℹ️ Tìm hiểu thêm về cộng đồng'
+        ],
+        callToAction: 'Bạn muốn khám phá gì trước?'
+    },
+    [WelcomeType.EXPIRED_USER]: {
+        greeting: '⏰ Chào mừng bạn quay trở lại!',
         description: '💰 Tài khoản của bạn đã hết hạn. Để tiếp tục sử dụng đầy đủ tính năng, vui lòng gia hạn:',
-            features: [
-                '💳 Thanh toán phí duy trì',
-                '📊 Xem lịch sử giao dịch',
-                '🎁 Nhận ưu đãi gia hạn',
-                '💬 Liên hệ hỗ trợ'
-            ],
-                callToAction: 'Bạn muốn gia hạn ngay không?'
-},
-[WelcomeType.ADMIN]: {
-    greeting: '🔧 Chào mừng Admin!',
+        features: [
+            '💳 Thanh toán phí duy trì',
+            '📊 Xem lịch sử giao dịch',
+            '🎁 Nhận ưu đãi gia hạn',
+            '💬 Liên hệ hỗ trợ'
+        ],
+        callToAction: 'Bạn muốn gia hạn ngay không?'
+    },
+    [WelcomeType.ADMIN]: {
+        greeting: '🔧 Chào mừng Admin!',
         description: '🛠️ Bạn có toàn quyền quản lý hệ thống Bot Tân Dậu - Hỗ Trợ Chéo',
-            features: [
-                '👥 Quản lý người dùng',
-                '💰 Quản lý thanh toán',
-                '🛒 Quản lý tin đăng',
-                '📊 Xem thống kê hệ thống'
-            ],
-                callToAction: 'Bạn muốn quản lý gì?'
-}
+        features: [
+            '👥 Quản lý người dùng',
+            '💰 Quản lý thanh toán',
+            '🛒 Quản lý tin đăng',
+            '📊 Xem thống kê hệ thống'
+        ],
+        callToAction: 'Bạn muốn quản lý gì?'
+    }
 }
 
 // Welcome service class
