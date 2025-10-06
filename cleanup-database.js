@@ -67,27 +67,60 @@ async function cleanupDatabase() {
             try {
                 let deleteQuery = supabase.from(table).delete()
 
-                // Xử lý đặc biệt cho từng bảng dựa trên kiểu dữ liệu của cột id
+                // Xử lý đặc biệt cho từng bảng dựa trên kiểu dữ liệu của cột id với WHERE clause an toàn
                 switch (table) {
                     case 'user_messages':
                     case 'spam_logs':
                     case 'admin_users':
                     case 'bot_settings':
-                        // Các bảng có id là SERIAL (INTEGER) - xóa tất cả
+                        // Các bảng có id là SERIAL (INTEGER) - xóa tất cả với điều kiện rõ ràng
                         deleteQuery = deleteQuery.gte('id', 0)
                         break
                     case 'chat_bot_offer_counts':
                     case 'user_bot_modes':
-                        // Các bảng có id là BIGSERIAL (BIGINT) - xóa tất cả
+                        // Các bảng có id là BIGSERIAL (BIGINT) - xóa tất cả với điều kiện rõ ràng
                         deleteQuery = deleteQuery.gte('id', 0)
                         break
                     case 'users':
-                        // Bảng users - xóa tất cả trừ admin
-                        deleteQuery = deleteQuery.neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
+                        // Bảng users - xóa tất cả trừ admin với điều kiện rõ ràng
+                        if (process.env.FACEBOOK_PAGE_ID) {
+                            deleteQuery = deleteQuery.neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
+                        } else {
+                            // Nếu không có FACEBOOK_PAGE_ID, xóa tất cả với điều kiện rõ ràng
+                            deleteQuery = deleteQuery.not('id', 'is', null)
+                        }
+                        break
+                    case 'bot_sessions':
+                    case 'admin_chat_sessions':
+                    case 'user_activities':
+                    case 'user_activity_logs':
+                    case 'system_metrics':
+                    case 'ai_analytics':
+                    case 'ai_templates':
+                        // Các bảng có thể có id là UUID hoặc SERIAL - xóa tất cả với điều kiện rõ ràng
+                        deleteQuery = deleteQuery.not('id', 'is', null)
+                        break
+                    case 'point_transactions':
+                    case 'user_points':
+                    case 'referrals':
+                    case 'search_requests':
+                    case 'ads':
+                    case 'notifications':
+                    case 'event_participants':
+                    case 'events':
+                    case 'ratings':
+                    case 'payments':
+                    case 'listings':
+                    case 'conversations':
+                    case 'messages':
+                    case 'user_interactions':
+                    case 'spam_tracking':
+                        // Các bảng này có id là UUID - xóa tất cả với điều kiện rõ ràng
+                        deleteQuery = deleteQuery.not('id', 'is', null)
                         break
                     default:
-                        // Các bảng có id là UUID - xóa tất cả
-                        deleteQuery = deleteQuery.gte('id', '00000000-0000-0000-0000-000000000000')
+                        // Fallback: xóa tất cả với điều kiện rõ ràng
+                        deleteQuery = deleteQuery.not('id', 'is', null)
                         break
                 }
 

@@ -767,7 +767,220 @@ VALUES
     ('payment_approval_timeout', '24', 'Thời gian chờ duyệt thanh toán (giờ)')
 ON CONFLICT (key) DO NOTHING;
 
+-- ========================================
+-- ADDITIONAL INDEXES FOR PERFORMANCE
+-- ========================================
+
+-- Composite indexes for common query patterns
+CREATE INDEX IF NOT EXISTS idx_users_status_created_at ON users(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_listings_status_category ON listings(status, category);
+CREATE INDEX IF NOT EXISTS idx_listings_user_status ON listings(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_payments_status_created_at ON payments(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_payments_user_status ON payments(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_conversations_last_message ON conversations(last_message_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_created ON messages(conversation_id, created_at ASC);
+
+-- Indexes for admin dashboard queries
+CREATE INDEX IF NOT EXISTS idx_users_membership_expires ON users(membership_expires_at) WHERE membership_expires_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_listings_featured ON listings(is_featured) WHERE is_featured = true;
+CREATE INDEX IF NOT EXISTS idx_ads_status_dates ON ads(status, start_date, end_date);
+
+-- Indexes for anti-spam system
+CREATE INDEX IF NOT EXISTS idx_user_activities_date_facebook ON user_activities(date, facebook_id);
+CREATE INDEX IF NOT EXISTS idx_user_activity_logs_facebook_timestamp ON user_activity_logs(facebook_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_spam_tracking_last_message ON spam_tracking(last_message_time);
+
+-- ========================================
+-- ADDITIONAL CONSTRAINTS FOR DATA INTEGRITY
+-- ========================================
+
+-- Ensure payment amounts are positive
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'payments' AND constraint_name = 'check_positive_amount'
+    ) THEN
+        ALTER TABLE payments ADD CONSTRAINT check_positive_amount CHECK (amount > 0);
+    END IF;
+END $$;
+
+-- Ensure listing prices are positive
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'listings' AND constraint_name = 'check_positive_price'
+    ) THEN
+        ALTER TABLE listings ADD CONSTRAINT check_positive_price CHECK (price > 0);
+    END IF;
+END $$;
+
+-- Ensure ad budgets are positive
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'ads' AND constraint_name = 'check_positive_budget'
+    ) THEN
+        ALTER TABLE ads ADD CONSTRAINT check_positive_budget CHECK (budget > 0);
+    END IF;
+END $$;
+
+-- Ensure point amounts are valid
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'point_transactions' AND constraint_name = 'check_valid_points'
+    ) THEN
+        ALTER TABLE point_transactions ADD CONSTRAINT check_valid_points CHECK (points != 0);
+    END IF;
+END $$;
+
+-- ========================================
+-- ADDITIONAL USEFUL VIEWS
+-- ========================================
+
+-- View for active users with their latest activity
+CREATE OR REPLACE VIEW active_users_summary AS
+SELECT
+    u.id,
+    u.facebook_id,
+    u.name,
+    u.phone,
+    u.status,
+    u.membership_expires_at,
+    u.created_at as user_created_at,
+    ua.last_activity,
+    ua.listings_count,
+    ua.searches_count,
+    ua.messages_count,
+    COALESCE(up.points, 0) as current_points,
+    COALESCE(up.level, 'Đồng') as user_level
+FROM users u
+LEFT JOIN user_activities ua ON ua.facebook_id = u.facebook_id
+    AND ua.date = CURRENT_DATE
+LEFT JOIN user_points up ON up.user_id = u.id
+WHERE u.status IN ('active', 'trial')
+ORDER BY ua.last_activity DESC NULLS LAST;
+
+-- View for system health metrics
+CREATE OR REPLACE VIEW system_health_metrics AS
+SELECT
+    sm.date,
+    sm.total_pending_users,
+    sm.pending_users_today,
+    sm.total_searches_today,
+    sm.total_messages_today,
+    sm.average_response_time_ms,
+    sm.error_rate_percentage,
+    COUNT(DISTINCT ual.facebook_id) as active_users_today,
+    COUNT(CASE WHEN ual.success = false THEN 1 END) as errors_today
+FROM system_metrics sm
+LEFT JOIN user_activity_logs ual ON ual.timestamp::date = sm.date
+WHERE sm.date >= CURRENT_DATE - INTERVAL '30 days'
+GROUP BY sm.date, sm.total_pending_users, sm.pending_users_today,
+         sm.total_searches_today, sm.total_messages_today,
+         sm.average_response_time_ms, sm.error_rate_percentage
+ORDER BY sm.date DESC;
+
+-- ========================================
+-- ADDITIONAL UTILITY FUNCTIONS
+-- ========================================
+
+-- Function to get user engagement score
+CREATE OR REPLACE FUNCTION get_user_engagement_score(user_facebook_id TEXT)
+RETURNS INTEGER AS $$
+DECLARE
+    score INTEGER := 0;
+    user_record RECORD;
+    activity_record RECORD;
+BEGIN
+    -- Base score from user status
+    SELECT * INTO user_record FROM users WHERE facebook_id = user_facebook_id;
+
+    IF user_record.status = 'active' THEN
+        score := score + 50;
+    ELSIF user_record.status = 'trial' THEN
+        score := score + 25;
+    END IF;
+
+    -- Score from recent activity (last 7 days)
+    SELECT * INTO activity_record
+    FROM user_activities
+    WHERE facebook_id = user_facebook_id
+    AND date >= CURRENT_DATE - INTERVAL '7 days'
+    ORDER BY date DESC
+    LIMIT 1;
+
+    IF activity_record.id IS NOT NULL THEN
+        score := score + LEAST(activity_record.listings_count * 10, 50);
+        score := score + LEAST(activity_record.searches_count * 5, 25);
+        score := score + LEAST(activity_record.messages_count * 3, 15);
+    END IF;
+
+    -- Score from points
+    SELECT COALESCE(points, 0) INTO score FROM user_points
+    WHERE user_id = user_record.id;
+
+    RETURN GREATEST(score, 0);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to cleanup old data (safe deletion)
+CREATE OR REPLACE FUNCTION safe_cleanup_old_data(days_to_keep INTEGER DEFAULT 90)
+RETURNS TABLE(
+    table_name TEXT,
+    deleted_count BIGINT
+) AS $$
+DECLARE
+    cleanup_tables RECORD;
+    delete_count BIGINT;
+BEGIN
+    -- List of tables with their retention policies
+    FOR cleanup_tables IN
+        SELECT
+            t.table_name,
+            CASE
+                WHEN t.table_name IN ('user_activity_logs', 'system_metrics') THEN days_to_keep
+                WHEN t.table_name IN ('spam_logs') THEN 30
+                WHEN t.table_name IN ('chat_bot_offer_counts') THEN 7
+                ELSE 365
+            END as retention_days
+        FROM information_schema.tables t
+        WHERE t.table_schema = 'public'
+        AND t.table_name IN (
+            'user_activity_logs', 'system_metrics', 'spam_logs',
+            'chat_bot_offer_counts', 'user_messages'
+        )
+    LOOP
+        -- Dynamic SQL to delete old records
+        EXECUTE format(
+            'DELETE FROM %I WHERE created_at < NOW() - INTERVAL ''%s days''',
+            cleanup_tables.table_name,
+            cleanup_tables.retention_days
+        );
+
+        GET DIAGNOSTICS delete_count = ROW_COUNT;
+
+        table_name := cleanup_tables.table_name;
+        deleted_count := delete_count;
+        RETURN NEXT;
+    END LOOP;
+
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ========================================
+-- FINAL VERIFICATION
+-- ========================================
+
 SELECT 'Database setup hoàn chỉnh với PENDING_USER system, ANTI-SPAM thông minh và CHAT BOT COUNTER!' as status;
+
+-- Count total tables
 SELECT COUNT(*) as total_tables FROM information_schema.tables
 WHERE table_schema = 'public'
 AND table_name IN (
@@ -776,8 +989,24 @@ AND table_name IN (
     'referrals', 'user_points', 'point_transactions', 'bot_sessions',
     'user_messages', 'spam_logs', 'spam_tracking', 'admin_users', 'admin_chat_sessions',
     'user_activities', 'user_activity_logs', 'system_metrics', 'chat_bot_offer_counts',
-    'user_bot_modes', 'bot_settings'
+    'user_bot_modes', 'bot_settings', 'ai_templates', 'ai_analytics', 'user_interactions'
 );
+
+-- Show total indexes
+SELECT COUNT(*) as total_indexes FROM pg_indexes
+WHERE schemaname = 'public';
+
+-- Show table sizes (for monitoring)
+SELECT
+    schemaname,
+    tablename,
+    attname AS column_name,
+    n_distinct,
+    most_common_vals,
+    most_common_freqs
+FROM pg_stats
+WHERE schemaname = 'public'
+ORDER BY tablename, attname;
 
 -- ========================================
 -- MIGRATION: Thêm cột paused_for_admin vào user_bot_modes
@@ -891,4 +1120,3 @@ SELECT
 FROM information_schema.columns
 WHERE table_name = 'user_interactions'
 ORDER BY ordinal_position;
-

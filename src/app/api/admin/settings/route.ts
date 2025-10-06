@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
 // Cleanup database data
 async function handleCleanupData() {
     try {
-        console.log('🧹 Starting database cleanup...')
+        console.log('🧹 Starting comprehensive database cleanup...')
 
         let cleanedTables = 0
         let errors: string[] = []
@@ -204,32 +204,60 @@ async function handleCleanupData() {
             try {
                 let deleteQuery = supabaseAdmin.from(table).delete()
 
-                // Xử lý đặc biệt cho từng bảng
+                // Xử lý đặc biệt cho từng bảng với WHERE clause an toàn
                 switch (table) {
                     case 'users':
-                        // Không xóa admin users
+                        // Không xóa admin users - sử dụng WHERE clause rõ ràng
                         if (process.env.FACEBOOK_PAGE_ID) {
                             deleteQuery = deleteQuery.neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
                         } else {
-                            // Nếu không có FACEBOOK_PAGE_ID, xóa tất cả users
-                            deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
+                            // Nếu không có FACEBOOK_PAGE_ID, xóa tất cả users với điều kiện rõ ràng
+                            deleteQuery = deleteQuery.not('id', 'is', null)
                         }
                         break
                     case 'user_messages':
                     case 'spam_logs':
                     case 'admin_users':
                     case 'bot_settings':
-                        // Các bảng có id là SERIAL (INTEGER) - xóa tất cả
+                        // Các bảng có id là SERIAL (INTEGER) - xóa tất cả với điều kiện rõ ràng
                         deleteQuery = deleteQuery.gte('id', 0)
                         break
                     case 'chat_bot_offer_counts':
                     case 'user_bot_modes':
-                        // Các bảng có id là BIGSERIAL (BIGINT) - xóa tất cả
+                        // Các bảng có id là BIGSERIAL (BIGINT) - xóa tất cả với điều kiện rõ ràng
                         deleteQuery = deleteQuery.gte('id', 0)
                         break
+                    case 'bot_sessions':
+                    case 'admin_chat_sessions':
+                    case 'user_activities':
+                    case 'user_activity_logs':
+                    case 'system_metrics':
+                    case 'ai_analytics':
+                    case 'ai_templates':
+                        // Các bảng có thể có id là UUID hoặc SERIAL - xóa tất cả với điều kiện rõ ràng
+                        deleteQuery = deleteQuery.not('id', 'is', null)
+                        break
+                    case 'point_transactions':
+                    case 'user_points':
+                    case 'referrals':
+                    case 'search_requests':
+                    case 'ads':
+                    case 'notifications':
+                    case 'event_participants':
+                    case 'events':
+                    case 'ratings':
+                    case 'payments':
+                    case 'listings':
+                    case 'conversations':
+                    case 'messages':
+                    case 'user_interactions':
+                    case 'spam_tracking':
+                        // Các bảng này có id là UUID - xóa tất cả với điều kiện rõ ràng
+                        deleteQuery = deleteQuery.not('id', 'is', null)
+                        break
                     default:
-                        // Các bảng có id là UUID - xóa tất cả
-                        deleteQuery = deleteQuery.gte('id', '00000000-0000-0000-0000-000000000000')
+                        // Fallback: xóa tất cả với điều kiện rõ ràng
+                        deleteQuery = deleteQuery.not('id', 'is', null)
                         break
                 }
 
@@ -264,7 +292,7 @@ async function handleCleanupData() {
         })
 
     } catch (error) {
-        console.error('Cleanup error:', error)
+        console.error('Comprehensive cleanup error:', error)
         return NextResponse.json(
             { success: false, message: `Cleanup failed: ${error instanceof Error ? error.message : String(error)}` },
             { status: 500 }
@@ -392,23 +420,23 @@ async function handleResetSpamCounter() {
     try {
         console.log('🔄 Resetting spam counter...')
 
-        // Clear spam tracking
+        // Clear spam tracking với WHERE clause an toàn
         const { error: spamError } = await supabaseAdmin
             .from('spam_tracking')
             .delete()
-            .neq('user_id', '00000000-0000-0000-0000-000000000000')
+            .not('user_id', 'is', null)
 
-        // Clear chat bot offer counts
+        // Clear chat bot offer counts với WHERE clause an toàn
         const { error: offerError } = await supabaseAdmin
             .from('chat_bot_offer_counts')
             .delete()
-            .neq('facebook_id', '00000000-0000-0000-0000-000000000000')
+            .not('facebook_id', 'is', null)
 
-        // Clear bot sessions
+        // Clear bot sessions với WHERE clause an toàn
         const { error: sessionError } = await supabaseAdmin
             .from('bot_sessions')
             .delete()
-            .neq('facebook_id', '00000000-0000-0000-0000-000000000000')
+            .not('facebook_id', 'is', null)
 
         return NextResponse.json({
             success: true,
