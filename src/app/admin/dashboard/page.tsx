@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AIPromptGenerator from './components/AIPromptGenerator'
+import FacebookLinkParser from './components/FacebookLinkParser'
 import { AIDashboardStats } from '@/types'
 
 // Toast notification component
@@ -52,6 +53,10 @@ export default function AdminDashboard() {
         show: false
     })
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
+    const [showUserModal, setShowUserModal] = useState(false)
+    const [modalType, setModalType] = useState<'sendButton' | 'chat' | 'givePoints' | null>(null)
+    const [selectedUserId, setSelectedUserId] = useState('')
+    const [additionalData, setAdditionalData] = useState<{ [key: string]: any }>({})
     const router = useRouter()
 
     useEffect(() => {
@@ -127,14 +132,14 @@ export default function AdminDashboard() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     action: 'sendGeneral',
                     message: message
                 })
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast(`Đã gửi tin nhắn hàng loạt đến ${data.sentCount} người dùng!`, 'success')
             } else {
@@ -143,10 +148,14 @@ export default function AdminDashboard() {
         })
     }
 
-    const handleSendButton = async () => {
-        const userId = prompt('Nhập Facebook ID của người dùng:')
-        if (!userId) return
+    const handleSendButton = () => {
+        setModalType('sendButton')
+        setShowUserModal(true)
+        setSelectedUserId('')
+        setAdditionalData({})
+    }
 
+    const executeSendButton = async (userId: string) => {
         await handleActionWithLoading('sendButton', async () => {
             const token = localStorage.getItem('admin_token')
             const response = await fetch('/api/admin/notifications', {
@@ -155,7 +164,7 @@ export default function AdminDashboard() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     action: 'sendSpecific',
                     userId: userId,
                     message: 'Admin đã gửi nút tương tác cho bạn!'
@@ -163,7 +172,7 @@ export default function AdminDashboard() {
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast('Đã gửi nút cho người dùng thành công!', 'success')
             } else {
@@ -172,10 +181,14 @@ export default function AdminDashboard() {
         })
     }
 
-    const handleChatWithUser = async () => {
-        const userId = prompt('Nhập Facebook ID của người dùng để chat:')
-        if (!userId) return
+    const handleChatWithUser = () => {
+        setModalType('chat')
+        setShowUserModal(true)
+        setSelectedUserId('')
+        setAdditionalData({})
+    }
 
+    const executeChatWithUser = async (userId: string) => {
         await handleActionWithLoading('chatWithUser', async () => {
             // Open Facebook Messenger in new window
             const messengerUrl = `https://m.me/${userId}`
@@ -196,14 +209,14 @@ export default function AdminDashboard() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     action: 'sendGeneral',
                     message: message
                 })
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast(`Đã gửi thông báo đến ${data.sentCount} người dùng!`, 'success')
             } else {
@@ -212,13 +225,14 @@ export default function AdminDashboard() {
         })
     }
 
-    const handleGivePoints = async () => {
-        const userId = prompt('Nhập User ID:')
-        if (!userId) return
-        
-        const points = prompt('Nhập số điểm muốn tặng:')
-        if (!points || isNaN(Number(points))) return
+    const handleGivePoints = () => {
+        setModalType('givePoints')
+        setShowUserModal(true)
+        setSelectedUserId('')
+        setAdditionalData({ points: '' })
+    }
 
+    const executeGivePoints = async (userId: string, points: number) => {
         await handleActionWithLoading('givePoints', async () => {
             const token = localStorage.getItem('admin_token')
             const response = await fetch(`/api/admin/users/${userId}/points`, {
@@ -227,14 +241,14 @@ export default function AdminDashboard() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
-                    points: Number(points),
+                body: JSON.stringify({
+                    points: points,
                     reason: 'Admin tặng điểm thưởng'
                 })
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast(`Đã tặng ${points} điểm thưởng cho người dùng!`, 'success')
             } else {
@@ -256,13 +270,56 @@ export default function AdminDashboard() {
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast(`Đồng bộ dữ liệu thành công! ${data.data.users} users, ${data.data.listings} listings`, 'success')
             } else {
                 showToast(`Lỗi đồng bộ: ${data.message}`, 'error')
             }
         })
+    }
+
+    const handleModalSubmit = async () => {
+        if (!selectedUserId) {
+            showToast('Vui lòng nhập Facebook ID của người dùng', 'error')
+            return
+        }
+
+        if (modalType === 'sendButton') {
+            await executeSendButton(selectedUserId)
+        } else if (modalType === 'chat') {
+            await executeChatWithUser(selectedUserId)
+        } else if (modalType === 'givePoints') {
+            const points = additionalData.points
+            if (!points || isNaN(Number(points))) {
+                showToast('Vui lòng nhập số điểm hợp lệ', 'error')
+                return
+            }
+            await executeGivePoints(selectedUserId, Number(points))
+        }
+
+        setShowUserModal(false)
+        setModalType(null)
+        setSelectedUserId('')
+        setAdditionalData({})
+    }
+
+    const getModalTitle = () => {
+        switch (modalType) {
+            case 'sendButton': return 'Gửi nút tương tác'
+            case 'chat': return 'Chat với người dùng'
+            case 'givePoints': return 'Tặng điểm thưởng'
+            default: return ''
+        }
+    }
+
+    const getModalDescription = () => {
+        switch (modalType) {
+            case 'sendButton': return 'Nhập Facebook ID hoặc dán link Facebook của người dùng để gửi nút tương tác'
+            case 'chat': return 'Nhập Facebook ID hoặc dán link Facebook của người dùng để mở chat'
+            case 'givePoints': return 'Nhập Facebook ID và số điểm muốn tặng cho người dùng'
+            default: return ''
+        }
     }
 
     if (isLoading) {
@@ -500,21 +557,19 @@ export default function AdminDashboard() {
                         <nav className="-mb-px flex space-x-8 px-6">
                             <button
                                 onClick={() => setActiveTab('overview')}
-                                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                                    activeTab === 'overview'
+                                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview'
                                         ? 'border-indigo-500 text-indigo-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                }`}
+                                    }`}
                             >
                                 📊 Tổng quan
                             </button>
                             <button
                                 onClick={() => setActiveTab('ai')}
-                                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                                    activeTab === 'ai'
+                                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'ai'
                                         ? 'border-indigo-500 text-indigo-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                }`}
+                                    }`}
                             >
                                 🤖 AI Assistant
                             </button>
@@ -626,6 +681,66 @@ export default function AdminDashboard() {
                     <AIPromptGenerator onStatsUpdate={setAiStats} />
                 )}
             </main>
+
+            {/* User Action Modal */}
+            {showUserModal && modalType && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            {getModalTitle()}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                            {getModalDescription()}
+                        </p>
+
+                        <div className="space-y-4">
+                            <FacebookLinkParser
+                                onIdExtracted={setSelectedUserId}
+                                placeholder="Dán link Facebook hoặc nhập Facebook ID..."
+                            />
+
+                            {modalType === 'givePoints' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Số điểm muốn tặng
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={additionalData.points || ''}
+                                        onChange={(e) => setAdditionalData(prev => ({ ...prev, points: e.target.value }))}
+                                        placeholder="Nhập số điểm..."
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        min="1"
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end space-x-3 mt-6">
+                            <button
+                                onClick={() => {
+                                    setShowUserModal(false)
+                                    setModalType(null)
+                                    setSelectedUserId('')
+                                    setAdditionalData({})
+                                }}
+                                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={handleModalSubmit}
+                                disabled={!selectedUserId || (modalType === 'givePoints' && !additionalData.points)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {modalType === 'sendButton' && 'Gửi nút'}
+                                {modalType === 'chat' && 'Mở chat'}
+                                {modalType === 'givePoints' && 'Tặng điểm'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Toast Notifications */}
             <Toast

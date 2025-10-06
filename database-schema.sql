@@ -750,6 +750,243 @@ COMMENT ON COLUMN chat_bot_offer_counts.count IS 'Số lần đã gửi tin nh�
 COMMENT ON COLUMN chat_bot_offer_counts.last_offer IS 'Thời gian gửi tin nhắn cuối cùng';
 
 -- ========================================
+-- COMPREHENSIVE CLEANUP FUNCTIONS
+-- ========================================
+
+-- Function to perform comprehensive database cleanup
+CREATE OR REPLACE FUNCTION comprehensive_cleanup()
+RETURNS TABLE (
+    table_name TEXT,
+    records_deleted BIGINT,
+    status TEXT
+) AS $$
+DECLARE
+    cleanup_order TEXT[] := ARRAY[
+        -- Bảng không có foreign key dependencies
+        'user_messages',
+        'spam_logs', 
+        'spam_tracking',
+        'chat_bot_offer_counts',
+        'user_bot_modes',
+        'bot_sessions',
+        'admin_chat_sessions',
+        'user_activities',
+        'user_activity_logs',
+        'system_metrics',
+        'ai_analytics',
+        'ai_templates',
+        'admin_users',
+        'bot_settings',
+        
+        -- Bảng có foreign key đến users
+        'point_transactions',
+        'user_points',
+        'referrals',
+        'search_requests',
+        'ads',
+        'notifications',
+        'event_participants',
+        'events',
+        'ratings',
+        'payments',
+        'listings',
+        'conversations',
+        'messages',
+        'user_interactions',
+        
+        -- Bảng chính - users (cuối cùng)
+        'users'
+    ];
+    table_name TEXT;
+    deleted_count BIGINT;
+    admin_facebook_id TEXT;
+BEGIN
+    -- Lấy Facebook ID của admin từ environment hoặc default
+    admin_facebook_id := COALESCE(current_setting('app.facebook_page_id', true), 'ADMIN-1981');
+    
+    -- Duyệt qua từng bảng theo thứ tự
+    FOREACH table_name IN ARRAY cleanup_order
+    LOOP
+        BEGIN
+            -- Xóa dữ liệu theo từng bảng
+            CASE table_name
+                WHEN 'users' THEN
+                    -- Xóa tất cả users trừ admin
+                    DELETE FROM users WHERE facebook_id != admin_facebook_id;
+                    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+                WHEN 'user_messages', 'spam_logs', 'admin_users', 'bot_settings' THEN
+                    -- Các bảng có id là SERIAL - xóa tất cả
+                    EXECUTE format('DELETE FROM %I WHERE id >= 0', table_name);
+                    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+                WHEN 'chat_bot_offer_counts', 'user_bot_modes' THEN
+                    -- Các bảng có id là BIGSERIAL - xóa tất cả
+                    EXECUTE format('DELETE FROM %I WHERE id >= 0', table_name);
+                    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+                ELSE
+                    -- Các bảng có id là UUID - xóa tất cả
+                    EXECUTE format('DELETE FROM %I WHERE id >= %L', table_name, '00000000-0000-0000-0000-000000000000');
+                    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+            END CASE;
+            
+            -- Trả về kết quả
+            table_name := table_name;
+            records_deleted := deleted_count;
+            status := 'SUCCESS';
+            RETURN NEXT;
+            
+        EXCEPTION WHEN OTHERS THEN
+            -- Xử lý lỗi
+            table_name := table_name;
+            records_deleted := 0;
+            status := 'ERROR: ' || SQLERRM;
+            RETURN NEXT;
+        END;
+    END LOOP;
+    
+    -- Reset sequences cho các bảng SERIAL
+    PERFORM reset_all_sequences();
+    
+    -- Tạo lại admin user nếu không tồn tại
+    PERFORM ensure_admin_user_exists(admin_facebook_id);
+    
+    -- Reset bot settings về mặc định
+    PERFORM reset_bot_settings_to_default();
+    
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to reset all sequences
+CREATE OR REPLACE FUNCTION reset_all_sequences()
+RETURNS void AS $$
+DECLARE
+    serial_tables TEXT[] := ARRAY[
+        'user_messages',
+        'spam_logs', 
+        'admin_users',
+        'bot_settings',
+        'chat_bot_offer_counts',
+        'user_bot_modes'
+    ];
+    table_name TEXT;
+BEGIN
+    FOREACH table_name IN ARRAY serial_tables
+    LOOP
+        BEGIN
+            -- Đặt lại sequence về 1
+            EXECUTE format('ALTER SEQUENCE %I_id_seq RESTART WITH 1', table_name);
+        EXCEPTION WHEN OTHERS THEN
+            -- Bỏ qua nếu sequence không tồn tại
+            CONTINUE;
+        END;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to ensure admin user exists
+CREATE OR REPLACE FUNCTION ensure_admin_user_exists(admin_facebook_id TEXT)
+RETURNS void AS $$
+BEGIN
+    -- Kiểm tra xem admin user đã tồn tại chưa
+    IF NOT EXISTS (SELECT 1 FROM users WHERE facebook_id = admin_facebook_id) THEN
+        -- Tạo admin user mặc định
+        INSERT INTO users (
+            facebook_id, name, phone, location, birthday, status,
+            membership_expires_at, referral_code, welcome_message_sent,
+            created_at, updated_at
+        ) VALUES (
+            admin_facebook_id,
+            'Admin Tân Dậu',
+            '0000000000',
+            'Hà Nội',
+            1981,
+            'active',
+            NOW() + INTERVAL '1 year',
+            'ADMIN-1981',
+            true,
+            NOW(),
+            NOW()
+        );
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to reset bot settings to default
+CREATE OR REPLACE FUNCTION reset_bot_settings_to_default()
+RETURNS void AS $$
+BEGIN
+    -- Xóa tất cả settings cũ
+    DELETE FROM bot_settings;
+    
+    -- Insert default settings
+    INSERT INTO bot_settings (key, value, description) VALUES
+        ('bot_status', 'active', 'Trạng thái hoạt động của bot (active/stopped)'),
+        ('ai_status', 'active', 'Trạng thái hoạt động của AI (active/stopped)'),
+        ('payment_fee', '7000', 'Phí dịch vụ mỗi ngày (VNĐ)'),
+        ('trial_days', '3', 'Số ngày dùng thử miễn phí'),
+        ('max_listings_per_user', '10', 'Số tin đăng tối đa mỗi user'),
+        ('auto_approve_listings', 'false', 'Tự động duyệt tin đăng mới'),
+        ('maintenance_mode', 'false', 'Chế độ bảo trì hệ thống'),
+        ('auto_approve_payments', 'false', 'Tự động duyệt thanh toán'),
+        ('payment_approval_timeout', '24', 'Thời gian chờ duyệt thanh toán (giờ)');
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to clean up old data (for regular maintenance)
+CREATE OR REPLACE FUNCTION cleanup_old_data()
+RETURNS TABLE (
+    table_name TEXT,
+    records_deleted BIGINT,
+    description TEXT
+) AS $$
+DECLARE
+    deleted_count BIGINT;
+BEGIN
+    -- Cleanup old notifications (older than 90 days)
+    DELETE FROM notifications WHERE created_at < NOW() - INTERVAL '90 days';
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    table_name := 'notifications';
+    records_deleted := deleted_count;
+    description := 'Old notifications (90+ days)';
+    RETURN NEXT;
+    
+    -- Cleanup old bot sessions (older than 30 days)
+    DELETE FROM bot_sessions WHERE updated_at < NOW() - INTERVAL '30 days';
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    table_name := 'bot_sessions';
+    records_deleted := deleted_count;
+    description := 'Old bot sessions (30+ days)';
+    RETURN NEXT;
+    
+    -- Cleanup old activity logs (older than 30 days)
+    DELETE FROM user_activity_logs WHERE created_at < NOW() - INTERVAL '30 days';
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    table_name := 'user_activity_logs';
+    records_deleted := deleted_count;
+    description := 'Old activity logs (30+ days)';
+    RETURN NEXT;
+    
+    -- Cleanup old chat bot offer counts (older than 1 day)
+    DELETE FROM chat_bot_offer_counts WHERE last_offer < NOW() - INTERVAL '1 day';
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    table_name := 'chat_bot_offer_counts';
+    records_deleted := deleted_count;
+    description := 'Old chat bot offers (1+ day)';
+    RETURN NEXT;
+    
+    -- Cleanup old system metrics (older than 90 days)
+    DELETE FROM system_metrics WHERE date < CURRENT_DATE - INTERVAL '90 days';
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    table_name := 'system_metrics';
+    records_deleted := deleted_count;
+    description := 'Old system metrics (90+ days)';
+    RETURN NEXT;
+    
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ========================================
 -- FINAL STATUS
 -- ========================================
 
