@@ -2,21 +2,14 @@ const { createClient } = require('@supabase/supabase-js')
 const crypto = require('crypto')
 
 // Lấy thông tin từ biến môi trường
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseUrl = process.env.SUPABASE_URL || 'https://oxornnooldwivlexsnkf.supabase.co'
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94b3Jubm9vbGR3aXZsZXhzbmtmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTI4MTYyOCwiZXhwIjoyMDc0ODU3NjI4fQ.8g5-hIc94hhxythqCvJXGTB0_m_KqsYpxCmGDEgFLnY'
 
-// Lấy thông tin admin từ biến môi trường
-const adminUsername = process.env.ADMIN_USERNAME
-const adminPassword = process.env.ADMIN_PASSWORD
-const adminName = process.env.ADMIN_NAME
-const adminEmail = process.env.ADMIN_EMAIL
-
-// Kiểm tra các biến môi trường bắt buộc
-if (!supabaseUrl || !supabaseKey || !adminUsername || !adminPassword || !adminName || !adminEmail) {
-  console.error('❌ Thiếu biến môi trường bắt buộc!')
-  console.error('Cần có: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ADMIN_USERNAME, ADMIN_PASSWORD, ADMIN_NAME, ADMIN_EMAIL')
-  process.exit(1)
-}
+// Lấy thông tin admin từ biến môi trường (nếu có)
+const adminUsername = process.env.ADMIN_USERNAME || 'admin'
+const adminPassword = process.env.ADMIN_PASSWORD || 'pem05vrGNV8aIe'
+const adminName = process.env.ADMIN_NAME || 'Administrator'
+const adminEmail = process.env.ADMIN_EMAIL || 'dinhkhanhtung@outlook.com'
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 

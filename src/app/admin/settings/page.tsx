@@ -159,14 +159,14 @@ export default function AdminSettings() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
+                body: JSON.stringify({ 
                     action: 'changePassword',
                     newPassword: newPassword
                 })
             })
 
             const data = await response.json()
-
+            
             if (data.success) {
                 showToast('Đã đổi mật khẩu thành công!', 'success')
             } else {
@@ -178,7 +178,7 @@ export default function AdminSettings() {
     const handleAddAdmin = async () => {
         const username = prompt('Nhập tên đăng nhập admin mới:')
         if (!username) return
-
+        
         const password = prompt('Nhập mật khẩu admin mới:')
         if (!password) return
 
@@ -190,7 +190,7 @@ export default function AdminSettings() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
+                body: JSON.stringify({ 
                     action: 'addAdmin',
                     username: username,
                     password: password
@@ -198,7 +198,7 @@ export default function AdminSettings() {
             })
 
             const data = await response.json()
-
+            
             if (data.success) {
                 showToast(`Đã thêm admin "${username}" thành công!`, 'success')
             } else {
@@ -220,7 +220,7 @@ export default function AdminSettings() {
             })
 
             const data = await response.json()
-
+            
             if (data.success) {
                 // Open logs in new window
                 const logsWindow = window.open('', '_blank', 'width=800,height=600')
@@ -255,7 +255,7 @@ export default function AdminSettings() {
             })
 
             const data = await response.json()
-
+            
             if (data.success) {
                 showToast(`Đồng bộ dữ liệu thành công! ${data.data.users} users, ${data.data.listings} listings`, 'success')
             } else {
@@ -277,7 +277,7 @@ export default function AdminSettings() {
             })
 
             const data = await response.json()
-
+            
             if (data.success) {
                 // Download the exported data as JSON file
                 const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' })
@@ -289,7 +289,7 @@ export default function AdminSettings() {
                 a.click()
                 document.body.removeChild(a)
                 URL.revokeObjectURL(url)
-
+                
                 showToast(`Xuất dữ liệu thành công! ${data.data.summary.totalUsers} users, ${data.data.summary.totalListings} listings`, 'success')
             } else {
                 showToast(`Lỗi xuất dữ liệu: ${data.message}`, 'error')
@@ -310,7 +310,7 @@ export default function AdminSettings() {
             })
 
             const data = await response.json()
-
+            
             if (data.success) {
                 showToast(`Đã reset bộ đếm spam thành công! ${data.details.spamTrackingCleared ? 'Spam tracking cleared' : ''}`, 'success')
             } else {
@@ -320,7 +320,7 @@ export default function AdminSettings() {
     }
 
     const handleCleanupData = async () => {
-        if (!confirm('⚠️ CẢNH BÁO: Thao tác này sẽ xóa TẤT CẢ dữ liệu trong database!\n\nBao gồm:\n- Tất cả users (trừ admin)\n- Tất cả tin đăng, tin nhắn, thanh toán\n- Tất cả dữ liệu spam, sessions, logs\n- Reset về trạng thái ban đầu\n\nBạn có chắc chắn muốn tiếp tục?')) {
+        if (!confirm('⚠️ CẢNH BÁO: Thao tác này sẽ xóa TẤT CẢ dữ liệu trong database!\n\nBạn có chắc chắn muốn tiếp tục?')) {
             return
         }
 
@@ -336,19 +336,9 @@ export default function AdminSettings() {
             })
 
             const data = await response.json()
-
+            
             if (data.success) {
-                const details = data.details
-                const message = `🧹 Dọn dẹp hoàn tất!\n` +
-                    `✅ ${details.cleanedTables} bảng đã được làm sạch\n` +
-                    `🗑️ ${details.totalRecordsDeleted.toLocaleString()} bản ghi đã xóa\n` +
-                    `🕒 ${details.oldDataRecordsDeleted.toLocaleString()} bản ghi cũ đã xóa\n` +
-                    `📊 Tổng cộng: ${(details.totalRecordsDeleted + details.oldDataRecordsDeleted).toLocaleString()} bản ghi`
-
-                showToast(message, 'success')
-
-                // Log detailed results to console for debugging
-                console.log('Cleanup Results:', details)
+                showToast(`Đã làm sạch dữ liệu thành công! Cleaned ${data.details.cleanedTables} tables`, 'success')
             } else {
                 showToast(`Lỗi cleanup: ${data.message}`, 'error')
             }
@@ -372,7 +362,7 @@ export default function AdminSettings() {
             })
 
             const data = await response.json()
-
+            
             if (data.success) {
                 showToast('Đã khôi phục cài đặt mặc định!', 'success')
                 // Reset local settings

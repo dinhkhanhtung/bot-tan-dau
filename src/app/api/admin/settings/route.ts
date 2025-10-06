@@ -139,71 +139,127 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// Cleanup database data - Enhanced version using comprehensive cleanup function
+// Cleanup database data
 async function handleCleanupData() {
     try {
-        console.log('🧹 Starting comprehensive database cleanup...')
+        console.log('🧹 Starting database cleanup...')
 
-        // Set the Facebook page ID for the cleanup function
-        const facebookPageId = process.env.FACEBOOK_PAGE_ID || 'ADMIN-1981'
+        let cleanedTables = 0
+        let errors: string[] = []
+        let warnings: string[] = []
 
-        // Call the comprehensive cleanup function
-        const { data: cleanupResults, error: cleanupError } = await supabaseAdmin
-            .rpc('comprehensive_cleanup')
+        // Kiểm tra các bảng tồn tại trước khi xóa
+        const existingTables = await getExistingTables()
 
-        if (cleanupError) {
-            console.error('Comprehensive cleanup error:', cleanupError)
-            return NextResponse.json(
-                { success: false, message: `Cleanup failed: ${cleanupError.message}` },
-                { status: 500 }
-            )
+        // Nếu không tìm thấy bảng nào, thử với danh sách mặc định
+        if (existingTables.length === 0) {
+            console.log('No tables found, using default table list')
         }
 
-        // Process results
-        const successfulCleanups = cleanupResults?.filter((result: any) => result.status === 'SUCCESS') || []
-        const failedCleanups = cleanupResults?.filter((result: any) => result.status !== 'SUCCESS') || []
+        // Thứ tự xóa quan trọng để tránh foreign key constraints
+        // Xóa từ bảng con đến bảng cha
+        const cleanupOrder = [
+            // Bảng không có foreign key dependencies
+            'user_messages',
+            'spam_logs',
+            'spam_tracking',
+            'chat_bot_offer_counts',
+            'user_bot_modes',
+            'bot_sessions',
+            'admin_chat_sessions',
+            'user_activities',
+            'user_activity_logs',
+            'system_metrics',
+            'ai_analytics',
+            'ai_templates',
+            'admin_users',
+            'bot_settings',
 
-        const totalRecordsDeleted = successfulCleanups.reduce((sum: number, result: any) => sum + parseInt(result.records_deleted), 0)
-        const cleanedTables = successfulCleanups.length
+            // Bảng có foreign key đến users nhưng không có bảng khác phụ thuộc
+            'point_transactions',
+            'user_points',
+            'referrals',
+            'search_requests',
+            'ads',
+            'notifications',
+            'event_participants',
+            'events',
+            'ratings',
+            'payments',
+            'listings',
+            'conversations',
+            'messages',
+            'user_interactions',
 
-        console.log(`✅ Comprehensive cleanup completed: ${cleanedTables} tables cleaned, ${totalRecordsDeleted} records deleted`)
+            // Bảng chính - users (cuối cùng)
+            'users'
+        ]
 
-        // Also perform old data cleanup for maintenance
-        const { data: oldDataResults, error: oldDataError } = await supabaseAdmin
-            .rpc('cleanup_old_data')
+        // Lọc chỉ các bảng thực sự tồn tại
+        const tablesToClean = cleanupOrder.filter(table => existingTables.includes(table))
 
-        let oldDataCleaned = 0
-        let oldDataRecordsDeleted = 0
+        console.log(`Found ${tablesToClean.length} tables to clean:`, tablesToClean)
 
-        if (!oldDataError && oldDataResults) {
-            oldDataCleaned = oldDataResults.length
-            oldDataRecordsDeleted = oldDataResults.reduce((sum: number, result: any) => sum + parseInt(result.records_deleted), 0)
-            console.log(`✅ Old data cleanup: ${oldDataCleaned} operations, ${oldDataRecordsDeleted} old records deleted`)
+        for (const table of tablesToClean) {
+            try {
+                let deleteQuery = supabaseAdmin.from(table).delete()
+
+                // Xử lý đặc biệt cho từng bảng
+                switch (table) {
+                    case 'users':
+                        // Không xóa admin users
+                        if (process.env.FACEBOOK_PAGE_ID) {
+                            deleteQuery = deleteQuery.neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
+                        } else {
+                            // Nếu không có FACEBOOK_PAGE_ID, xóa tất cả users
+                            deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
+                        }
+                        break
+                    case 'user_messages':
+                    case 'spam_logs':
+                    case 'admin_users':
+                    case 'bot_settings':
+                        // Các bảng có id là SERIAL (INTEGER) - xóa tất cả
+                        deleteQuery = deleteQuery.gte('id', 0)
+                        break
+                    case 'chat_bot_offer_counts':
+                    case 'user_bot_modes':
+                        // Các bảng có id là BIGSERIAL (BIGINT) - xóa tất cả
+                        deleteQuery = deleteQuery.gte('id', 0)
+                        break
+                    default:
+                        // Các bảng có id là UUID - xóa tất cả
+                        deleteQuery = deleteQuery.gte('id', '00000000-0000-0000-0000-000000000000')
+                        break
+                }
+
+                const { error } = await deleteQuery
+
+                if (error) {
+                    errors.push(`${table}: ${error.message}`)
+                    console.error(`Error cleaning ${table}:`, error)
+                } else {
+                    cleanedTables++
+                    console.log(`✅ Cleaned ${table}`)
+                }
+            } catch (err) {
+                const errorMsg = err instanceof Error ? err.message : String(err)
+                errors.push(`${table}: ${errorMsg}`)
+                console.error(`Exception cleaning ${table}:`, err)
+            }
         }
+
+        // Đặt lại sequences cho các bảng SERIAL
+        await resetSequences()
 
         return NextResponse.json({
             success: true,
-            message: `Comprehensive database cleanup completed successfully!`,
+            message: `Database cleanup completed. Cleaned ${cleanedTables} tables.`,
             details: {
                 cleanedTables,
-                totalRecordsDeleted,
-                oldDataCleaned,
-                oldDataRecordsDeleted,
-                successfulCleanups: successfulCleanups.map((result: any) => ({
-                    table: result.table_name,
-                    recordsDeleted: result.records_deleted
-                })),
-                failedCleanups: failedCleanups.length > 0 ? failedCleanups.map((result: any) => ({
-                    table: result.table_name,
-                    error: result.status
-                })) : null,
-                summary: {
-                    totalTablesProcessed: cleanupResults?.length || 0,
-                    successfulTables: cleanedTables,
-                    failedTables: failedCleanups.length,
-                    totalRecordsDeleted,
-                    oldDataRecordsDeleted
-                }
+                totalTables: tablesToClean.length,
+                errors: errors.length > 0 ? errors : null,
+                warnings: warnings.length > 0 ? warnings : null
             }
         })
 
@@ -422,7 +478,7 @@ async function handleChangePassword(newPassword: string) {
     try {
         console.log('🔐 Changing admin password...')
 
-        // Hash the new password using secure method
+        // Hash the new password (simple hash for demo - use bcrypt in production)
         const hashedPassword = Buffer.from(newPassword).toString('base64')
 
         // Update admin password in database
@@ -516,12 +572,19 @@ async function handleViewLogs() {
     try {
         console.log('📋 Retrieving system logs...')
 
-        // Get recent logs from database
+        // Get recent logs from database (if you have a logs table)
+        // For now, return some sample logs
         const logs = `
 [${new Date().toISOString()}] INFO: System started
-[${new Date().toISOString()}] INFO: Admin login successful
-[${new Date().toISOString()}] INFO: Database cleanup completed
-[${new Date().toISOString()}] INFO: System health check passed
+[${new Date(Date.now() - 60000).toISOString()}] INFO: Admin login successful
+[${new Date(Date.now() - 120000).toISOString()}] INFO: Database cleanup completed
+[${new Date(Date.now() - 180000).toISOString()}] INFO: New user registered
+[${new Date(Date.now() - 240000).toISOString()}] INFO: Payment processed
+[${new Date(Date.now() - 300000).toISOString()}] INFO: Listing approved
+[${new Date(Date.now() - 360000).toISOString()}] INFO: Bot message sent
+[${new Date(Date.now() - 420000).toISOString()}] INFO: Settings updated
+[${new Date(Date.now() - 480000).toISOString()}] INFO: Export completed
+[${new Date(Date.now() - 540000).toISOString()}] INFO: System health check passed
         `.trim()
 
         return NextResponse.json({

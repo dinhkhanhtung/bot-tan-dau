@@ -110,9 +110,13 @@ async function cleanupDatabase() {
         const { error: settingsError } = await supabase
             .from('bot_settings')
             .upsert({
-                key: 'bot_status',
-                value: 'active',
-                description: 'Trạng thái hoạt động của bot'
+                id: 'main',
+                bot_status: 'active',
+                maintenance_mode: false,
+                welcome_message: 'Chào mừng bạn đến với Bot Tân Dậu!',
+                max_daily_messages: 50,
+                spam_threshold: 10,
+                updated_at: new Date().toISOString()
             })
 
         if (settingsError) {
@@ -123,41 +127,35 @@ async function cleanupDatabase() {
 
         // 3. Tạo admin user mặc định (nếu chưa có)
         console.log('👑 Tạo admin user mặc định...')
-        const facebookPageId = process.env.FACEBOOK_PAGE_ID
+        const { data: existingAdmin } = await supabase
+            .from('users')
+            .select('*')
+            .eq('facebook_id', process.env.FACEBOOK_PAGE_ID)
+            .single()
 
-        if (facebookPageId) {
-            const { data: existingAdmin } = await supabase
+        if (!existingAdmin) {
+            const { error: adminError } = await supabase
                 .from('users')
-                .select('*')
-                .eq('facebook_id', facebookPageId)
-                .single()
+                .insert({
+                    facebook_id: process.env.FACEBOOK_PAGE_ID,
+                    name: 'Admin Tân Dậu',
+                    phone: '0000000000',
+                    location: 'Hà Nội',
+                    birthday: 1981,
+                    status: 'active',
+                    membership_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 năm
+                    referral_code: 'ADMIN-1981',
+                    welcome_message_sent: true,
+                    created_at: new Date().toISOString()
+                })
 
-            if (!existingAdmin) {
-                const { error: adminError } = await supabase
-                    .from('users')
-                    .insert({
-                        facebook_id: facebookPageId,
-                        name: 'Admin Tân Dậu',
-                        phone: '0000000000',
-                        location: 'Hà Nội',
-                        birthday: 1981,
-                        status: 'active',
-                        membership_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-                        referral_code: 'ADMIN-1981',
-                        welcome_message_sent: true,
-                        created_at: new Date().toISOString()
-                    })
-
-                if (adminError) {
-                    console.log('⚠️ Lỗi khi tạo admin user:', adminError.message)
-                } else {
-                    console.log('✅ Đã tạo admin user mặc định')
-                }
+            if (adminError) {
+                console.log('⚠️ Lỗi khi tạo admin user:', adminError.message)
             } else {
-                console.log('✅ Admin user đã tồn tại')
+                console.log('✅ Đã tạo admin user mặc định')
             }
         } else {
-            console.log('⚠️ Không có FACEBOOK_PAGE_ID, bỏ qua tạo admin user')
+            console.log('✅ Admin user đã tồn tại')
         }
 
         console.log('🎉 Hoàn thành làm sạch database!')
