@@ -3,7 +3,8 @@ import { SmartContextManager, UserContext, UserType, UserState } from './smart-c
 import { CONFIG } from '../config'
 import { logger, logUserAction, logBotEvent, logError } from '../logger'
 import { errorHandler, createUserError, ErrorType } from '../error-handler'
-import { getUserByFacebookId, getBotSession, updateBotSession, getBotStatus } from '../database-service'
+import { getUserByFacebookId, getBotSession, getBotStatus } from '../database-service'
+import { supabaseAdmin } from '../supabase'
 import { welcomeService, WelcomeType } from '../welcome-service'
 import { messageProcessor } from './message-processor'
 
@@ -219,13 +220,18 @@ export class UnifiedBotSystem {
                     }
 
                     // Đặt cờ để tránh gửi welcome message khi bắt đầu đăng ký
-                    await updateBotSession(user.facebook_id, {
-                        current_flow: 'registration',
-                        step: 'name',
-                        data: {
-                            skip_welcome: true // Cờ này để tránh xung đột với welcome message
-                        }
-                    })
+                    await supabaseAdmin
+                        .from('bot_sessions')
+                        .upsert({
+                            facebook_id: user.facebook_id,
+                            current_flow: 'registration',
+                            step: 0,
+                            current_step: 0,
+                            data: {
+                                skip_welcome: true // Cờ này để tránh xung đột với welcome message
+                            },
+                            updated_at: new Date().toISOString()
+                        })
 
                     await this.startRegistration(user)
                     break
@@ -805,7 +811,10 @@ export class UnifiedBotSystem {
      */
     private static async handleFlowExit(user: any, currentFlow?: string): Promise<void> {
         try {
-            await updateBotSession(user.facebook_id, null)
+            await supabaseAdmin
+                .from('bot_sessions')
+                .delete()
+                .eq('facebook_id', user.facebook_id)
             const flowName = currentFlow ? this.getFlowDisplayName(currentFlow) : 'hiện tại'
             await this.sendMessage(user.facebook_id, `❌ Đã hủy quy trình ${flowName}`)
             await this.showMainMenu(user)
