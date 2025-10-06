@@ -420,16 +420,10 @@ export async function handleAntiSpam(facebookId: string, message: string, userSt
         await setUserBotMode(facebookId)
     }
 
-    // QUAN TRỌNG: Nếu đang trong flow hợp lệ, KHÔNG áp dụng chống spam
-    // Vì user đang nhập thông tin cần thiết cho việc đăng ký/niêm yết/tìm kiếm
-    if (currentFlow && ['registration', 'listing', 'search'].includes(currentFlow)) {
-        console.log('🔄 User đang trong flow:', currentFlow, '- KHÔNG áp dụng chống spam')
-        return { action: 'none', block: false }
-    }
-
-    // ĐẶC BIỆT: User chưa đăng ký đang trong flow đăng ký - cho phép gửi tin nhắn
-    if (!isRegistered(userStatus) && currentFlow === 'registration') {
-        console.log('🔄 Unregistered user in registration flow - allowing messages')
+    // QUAN TRỌNG: Nếu đang trong bất kỳ flow nào, KHÔNG áp dụng chống spam
+    // Vì user đang nhập thông tin cần thiết và đã có logic cảnh báo riêng cho việc không dùng nút
+    if (currentFlow && ['registration', 'listing', 'search', 'community'].includes(currentFlow)) {
+        console.log('🔄 User đang trong flow:', currentFlow, '- KHÔNG áp dụng chống spam (đã có logic cảnh báo riêng)')
         return { action: 'none', block: false }
     }
 
@@ -507,35 +501,35 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
     } else if (newCount >= 2) {
         // Lần 2+: Thông báo admin, bot dừng, ẩn nút - CHỈ GỬI 1 LẦN
         console.log('🚫 Message count >= 2 - stopping bot and notifying admin')
-        
+
         // Kiểm tra xem đã gửi thông báo chưa
         const { data: spamData } = await supabaseAdmin
             .from('spam_tracking')
             .select('warning_count')
             .eq('user_id', facebookId)
             .single()
-        
+
         const warningCount = spamData?.warning_count || 0
-        
+
         if (warningCount === 0) {
             // Chỉ gửi thông báo 1 lần duy nhất
             await sendMessage(facebookId, '🚫 Bot đã dừng. Admin đã được thông báo.')
-            
+
             // Ẩn nút Chat Bot
             const { hideButtons } = await import('./facebook-api')
             await hideButtons(facebookId)
-            
+
             // Thông báo admin
             await notifyAdminOfSpam(facebookId, newCount)
-            
+
             // Đánh dấu đã gửi thông báo
             await updateSpamData(facebookId, { warning_count: 1 })
-            
+
             console.log('✅ Admin notification sent once, bot stopped')
         } else {
             console.log('📝 Admin notification already sent, bot remains stopped')
         }
-        
+
         return { action: 'block', block: true, message: 'Bot stopped, buttons hidden, admin notified' }
     }
 
