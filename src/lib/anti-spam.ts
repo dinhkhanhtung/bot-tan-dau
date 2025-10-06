@@ -493,12 +493,6 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
             console.log('📝 Welcome type:', welcomeType, 'for user status:', userStatus)
             await welcomeService.sendWelcome(facebookId, welcomeType)
             console.log('✅ Welcome sent successfully')
-            
-            // Ẩn nút ngay sau khi gửi welcome để tránh spam
-            const { hideButtons } = await import('./facebook-api')
-            await hideButtons(facebookId)
-            console.log('🔧 Hidden buttons after welcome to prevent spam')
-            
             return { action: 'none', block: false, message: 'Welcome sent' }
         } catch (error) {
             console.error('❌ Error sending welcome:', error)

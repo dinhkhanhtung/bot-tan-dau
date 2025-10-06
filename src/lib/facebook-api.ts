@@ -283,7 +283,7 @@ export async function sendImage(recipientId: string, imageUrl: string) {
 export async function hideButtons(recipientId: string) {
     try {
         console.log('🔧 Attempting to hide buttons for user:', recipientId)
-        
+
         // Send a simple text message without quick_replies to clear buttons
         const response = await axios.post(
             `${FACEBOOK_API_URL}/me/messages`,
@@ -298,7 +298,7 @@ export async function hideButtons(recipientId: string) {
                 headers: { 'Content-Type': 'application/json' }
             }
         )
-        
+
         console.log('✅ Buttons hidden successfully for user:', recipientId, response.data)
         return true
     } catch (error) {

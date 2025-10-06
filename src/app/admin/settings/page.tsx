@@ -320,7 +320,14 @@ export default function AdminSettings() {
     }
 
     const handleCleanupData = async () => {
-        if (!confirm('⚠️ CẢNH BÁO: Thao tác này sẽ xóa TẤT CẢ dữ liệu trong database!\n\nBạn có chắc chắn muốn tiếp tục?')) {
+        const confirmMessage = '⚠️ CẢNH BÁO: Thao tác này sẽ xóa TẤT CẢ dữ liệu trong database!\n\n' +
+                              '• Tất cả users (trừ admin)\n' +
+                              '• Tất cả tin nhắn, cuộc trò chuyện\n' +
+                              '• Tất cả tin đăng, thanh toán\n' +
+                              '• Tất cả dữ liệu spam tracking\n\n' +
+                              'Bạn có chắc chắn muốn tiếp tục?'
+        
+        if (!confirm(confirmMessage)) {
             return
         }
 
@@ -338,9 +345,14 @@ export default function AdminSettings() {
             const data = await response.json()
             
             if (data.success) {
-                showToast(`Đã làm sạch dữ liệu thành công! Cleaned ${data.details.cleanedTables} tables`, 'success')
+                showToast(`✅ Đã xóa dữ liệu triệt để! Cleaned ${data.details.cleanedTables} tables`, 'success')
+                
+                // Hiển thị chi tiết lỗi nếu có
+                if (data.details.errors && data.details.errors.length > 0) {
+                    console.warn('Cleanup errors:', data.details.errors)
+                }
             } else {
-                showToast(`Lỗi cleanup: ${data.message}`, 'error')
+                showToast(`❌ Lỗi cleanup: ${data.message}`, 'error')
             }
         })
     }
@@ -706,7 +718,7 @@ export default function AdminSettings() {
                                             Đang dọn dẹp...
                                         </>
                                     ) : (
-                                        '🧹 Dọn dẹp dữ liệu cũ'
+                                        '🧹 XÓA TẤT CẢ DỮ LIỆU'
                                     )}
                                 </button>
                                 <button

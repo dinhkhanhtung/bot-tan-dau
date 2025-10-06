@@ -20,8 +20,8 @@ export class RegistrationFlow extends BaseFlow {
      */
     canHandle(user: any, session: any): boolean {
         // Can handle if user is not registered and wants to register
-        return user.status === 'new_user' || 
-               (session && session.current_flow === 'registration')
+        return user.status === 'new_user' ||
+            (session && session.current_flow === 'registration')
     }
 
     /**
@@ -120,28 +120,28 @@ export class RegistrationFlow extends BaseFlow {
         try {
             // Message 1: Welcome
             await sendMessage(user.facebook_id, 'Chào mừng bạn tham gia Bot Tân Dậu - Hỗ Trợ Chéo')
-            
+
             // Delay 1.5 seconds
             await this.delay(1500)
-            
+
             // Message 2: Benefits
             await sendMessage(user.facebook_id, '🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu')
-            
+
             // Delay 1.5 seconds
             await this.delay(1500)
-            
+
             // Message 3: Pricing details
             await sendMessage(user.facebook_id, '💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫')
-            
+
             // Delay 1.5 seconds
             await this.delay(1500)
-            
+
             // Message 4: Slogan
             await sendMessage(user.facebook_id, 'Tân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng')
-            
+
             // Delay 1.5 seconds
             await this.delay(1500)
-            
+
             // Message 5: Start registration
             await sendMessage(user.facebook_id, '📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
 
@@ -270,7 +270,7 @@ export class RegistrationFlow extends BaseFlow {
     private async handleLocationStep(user: any, text: string): Promise<void> {
         try {
             console.log(`📍 Processing location step for user: ${user.facebook_id}`)
-            
+
             // For now, just show location buttons
             await this.sendLocationButtons(user.facebook_id)
 
@@ -285,11 +285,11 @@ export class RegistrationFlow extends BaseFlow {
     private async handleBirthdayStep(user: any, text: string): Promise<void> {
         try {
             console.log(`🎂 Processing birthday step for user: ${user.facebook_id}`)
-            
+
             // Validate birthday format (DD/MM/YYYY)
             const birthdayRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
             const match = text.match(birthdayRegex)
-            
+
             if (!match) {
                 await sendMessage(user.facebook_id, '❌ Định dạng ngày sinh không đúng! Vui lòng nhập theo định dạng DD/MM/YYYY')
                 return
@@ -297,7 +297,7 @@ export class RegistrationFlow extends BaseFlow {
 
             const [, day, month, year] = match
             const birthYear = parseInt(year)
-            
+
             // Check if born in 1981 (Tân Dậu)
             if (birthYear !== 1981) {
                 await sendMessage(user.facebook_id, '❌ Chỉ dành cho người sinh năm 1981 (Tân Dậu)!')
@@ -446,7 +446,7 @@ export class RegistrationFlow extends BaseFlow {
      * Send registration welcome message
      */
     private async sendRegistrationWelcome(user: any): Promise<void> {
-        await sendMessage(user.facebook_id, 
+        await sendMessage(user.facebook_id,
             `🎉 CHÀO MỪNG ĐẾN VỚI BOT TÂN DẬU!\n━━━━━━━━━━━━━━━━━━━━\n📝 Bước 1/4: Họ tên\n💡 Nhập họ tên đầy đủ của bạn\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập họ tên:`)
     }
 
@@ -454,7 +454,7 @@ export class RegistrationFlow extends BaseFlow {
      * Send already registered message
      */
     private async sendAlreadyRegisteredMessage(user: any): Promise<void> {
-        await sendMessage(user.facebook_id, 
+        await sendMessage(user.facebook_id,
             `✅ Bạn đã đăng ký rồi!\n━━━━━━━━━━━━━━━━━━━━\n🎯 Sử dụng các tính năng:\n• Đăng tin bán hàng\n• Tìm kiếm sản phẩm\n• Cộng đồng Tân Dậu\n• Thanh toán online\n━━━━━━━━━━━━━━━━━━━━\nChọn tính năng bạn muốn sử dụng:`)
     }
 

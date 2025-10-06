@@ -186,7 +186,7 @@ export class UnifiedBotSystem {
      */
     private static async handlePendingUser(user: any): Promise<void> {
         try {
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `⏳ TÀI KHOẢN ĐANG CHỜ DUYỆT\n━━━━━━━━━━━━━━━━━━━━\n📋 Đơn đăng ký của bạn đang được xem xét\n⏰ Thời gian duyệt: 1-2 ngày làm việc\n📞 Liên hệ admin nếu cần hỗ trợ\n━━━━━━━━━━━━━━━━━━━━`)
 
             await sendQuickReply(user.facebook_id, 'Tùy chọn:', [
@@ -206,7 +206,7 @@ export class UnifiedBotSystem {
      */
     private static async handleRegisteredUser(user: any): Promise<void> {
         try {
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `👋 CHÀO MỪNG TRỞ LẠI!\n━━━━━━━━━━━━━━━━━━━━\n🎯 Bạn có thể sử dụng tất cả tính năng\n🛒 Đăng tin bán hàng\n🔍 Tìm kiếm sản phẩm\n👥 Tham gia cộng đồng\n━━━━━━━━━━━━━━━━━━━━`)
 
             await sendQuickReply(user.facebook_id, 'Chọn tính năng:', [
@@ -231,7 +231,7 @@ export class UnifiedBotSystem {
             const trialEnd = new Date(user.trial_end)
             const daysLeft = Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `🎁 TÀI KHOẢN DÙNG THỬ\n━━━━━━━━━━━━━━━━━━━━\n⏰ Còn lại: ${daysLeft} ngày\n🎯 Sử dụng tất cả tính năng\n💳 Nâng cấp để tiếp tục\n━━━━━━━━━━━━━━━━━━━━`)
 
             await sendQuickReply(user.facebook_id, 'Chọn tính năng:', [
@@ -253,7 +253,7 @@ export class UnifiedBotSystem {
      */
     private static async handleExpiredUser(user: any): Promise<void> {
         try {
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `⏰ TÀI KHOẢN ĐÃ HẾT HẠN\n━━━━━━━━━━━━━━━━━━━━\n💳 Gia hạn để tiếp tục sử dụng\n🎁 Ưu đãi đặc biệt cho thành viên cũ\n📞 Liên hệ admin để được hỗ trợ\n━━━━━━━━━━━━━━━━━━━━`)
 
             await sendQuickReply(user.facebook_id, 'Tùy chọn:', [
@@ -273,7 +273,7 @@ export class UnifiedBotSystem {
      */
     private static async handleUnknownUser(user: any): Promise<void> {
         try {
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `❓ KHÔNG XÁC ĐỊNH ĐƯỢC TRẠNG THÁI\n━━━━━━━━━━━━━━━━━━━━\n🔄 Vui lòng thử lại sau\n📞 Liên hệ admin nếu vấn đề tiếp tục\n━━━━━━━━━━━━━━━━━━━━`)
 
             await sendQuickReply(user.facebook_id, 'Tùy chọn:', [
