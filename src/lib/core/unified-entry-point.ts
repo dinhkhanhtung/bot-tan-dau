@@ -70,14 +70,15 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Step 4: Handle first message (welcome logic)
+            // Step 4: Handle first message (welcome logic) - CẢI THIỆN ĐỂ TRÁNH SPAM
             if (!isPostback && text) {
-                const shouldSendWelcome = await UserInteractionService.handleFirstMessage(user.facebook_id, user.status)
+                // Sử dụng method mới để kiểm tra có nên gửi welcome không
+                const shouldSendWelcome = await UserInteractionService.shouldSendWelcome(user.facebook_id)
                 if (shouldSendWelcome) {
                     await UserInteractionService.sendWelcomeAndMark(user.facebook_id, user.status)
                     return
                 } else {
-                    // Handle subsequent messages
+                    // Handle subsequent messages - chỉ xử lý nếu không phải spam
                     await UserInteractionService.handleSubsequentMessage(user.facebook_id, text)
                 }
             }

@@ -63,7 +63,7 @@ export class UserInteractionService {
     }
 
     /**
-     * Xử lý tin nhắn đầu tiên từ user
+     * Xử lý tin nhắn đầu tiên từ user - CẢI THIỆN LOGIC ĐỂ TRÁNH SPAM
      */
     static async handleFirstMessage(facebookId: string, userStatus: string): Promise<boolean> {
         try {
@@ -81,18 +81,49 @@ export class UserInteractionService {
                 return true // Cần gửi welcome
             }
 
-            // Nếu đã gửi welcome rồi, kiểm tra cooldown
+            // KIỂM TRA KỸ HƠN ĐỂ TRÁNH SPAM WELCOME
+            const now = new Date()
+            const lastInteractionTime = new Date(userState.last_interaction)
+            const timeSinceLastInteraction = now.getTime() - lastInteractionTime.getTime()
+
+            // Nếu đã gửi welcome rồi, kiểm tra cooldown nghiêm ngặt hơn
             if (userState.welcome_sent && userState.last_welcome_sent) {
-                // Kiểm tra thời gian từ lần cuối gửi welcome (24h cooldown)
                 const lastWelcomeTime = new Date(userState.last_welcome_sent)
-                const now = new Date()
                 const timeDiff = now.getTime() - lastWelcomeTime.getTime()
                 const cooldownPeriod = 24 * 60 * 60 * 1000 // 24 giờ
 
+                // Chỉ gửi lại welcome nếu:
+                // 1. Đã quá 24h từ lần cuối gửi welcome
+                // 2. Và user có interaction gần đây (trong vòng 5 phút)
                 if (timeDiff < cooldownPeriod) {
-                    logger.info('Welcome cooldown active', { facebookId, timeDiff, cooldownPeriod })
+                    logger.info('Welcome cooldown active - skipping welcome', {
+                        facebookId,
+                        timeDiff,
+                        cooldownPeriod,
+                        timeSinceLastInteraction
+                    })
                     return false // Chưa đủ thời gian cooldown
                 }
+
+                // Nếu quá 24h nhưng user không có interaction gần đây, có thể là user cũ quay lại
+                // Vẫn cần kiểm tra kỹ để tránh spam
+                if (timeSinceLastInteraction > 5 * 60 * 1000) { // > 5 phút
+                    logger.info('User returned after long time but no recent interaction', {
+                        facebookId,
+                        timeSinceLastInteraction,
+                        timeDiff
+                    })
+                    // Có thể cần đánh giá lại logic ở đây
+                }
+            }
+
+            // KIỂM TRA NẾU USER ĐÃ TƯƠNG TÁC QUÁ NHIỀU LẦN SAU KHI GỬI WELCOME
+            if (userState.welcome_sent && userState.interaction_count > 5) {
+                logger.info('User has interacted many times after welcome - might need re-welcome', {
+                    facebookId,
+                    interactionCount: userState.interaction_count
+                })
+                // Có thể cần gửi welcome lại nếu user đã tương tác nhiều lần
             }
 
             // Cập nhật interaction count
@@ -116,16 +147,31 @@ export class UserInteractionService {
             // Gửi welcome message
             await this.sendWelcomeMessage(facebookId, userStatus)
 
-            // Đánh dấu đã gửi welcome với thời gian chính xác
-            await this.updateUserState(facebookId, {
-                welcome_sent: true,
-                last_welcome_sent: new Date().toISOString(),
-                last_interaction: new Date().toISOString()
-            })
+            // Đánh dấu đã gửi welcome với thời gian chính xác - SỬA LỖI DATABASE
+            const currentTime = new Date().toISOString()
 
-            logger.info('Welcome sent and marked', { facebookId, userStatus })
+            // Cập nhật cả hai bảng để đảm bảo consistency
+            await Promise.all([
+                // Cập nhật user_interactions table
+                this.updateUserState(facebookId, {
+                    welcome_sent: true,
+                    last_welcome_sent: currentTime,
+                    last_interaction: currentTime
+                }),
+                // Cập nhật users table nếu có
+                this.updateUserWelcomeStatus(facebookId, true, currentTime)
+            ])
+
+            logger.info('Welcome sent and marked successfully', { facebookId, userStatus })
         } catch (error) {
             logger.error('Error sending welcome and marking', { facebookId, userStatus, error })
+
+            // Retry mechanism cho database update
+            try {
+                await this.retryWelcomeMark(facebookId)
+            } catch (retryError) {
+                logger.error('Retry welcome mark also failed', { facebookId, retryError })
+            }
         }
     }
 
@@ -227,6 +273,65 @@ export class UserInteractionService {
     }
 
     /**
+     * Kiểm tra xem có nên gửi welcome message không - METHOD CHÍNH ĐỂ TRÁNH SPAM
+     */
+    static async shouldSendWelcome(facebookId: string): Promise<boolean> {
+        try {
+            const userState = await this.getUserState(facebookId)
+            if (!userState) return true // Chưa có state, cần gửi welcome
+
+            const now = new Date()
+
+            // Nếu chưa gửi welcome bao giờ, cần gửi
+            if (!userState.welcome_sent) return true
+
+            // Nếu đã gửi rồi, kiểm tra cooldown nghiêm ngặt
+            if (userState.last_welcome_sent) {
+                const lastWelcomeTime = new Date(userState.last_welcome_sent)
+                const timeDiff = now.getTime() - lastWelcomeTime.getTime()
+                const cooldownPeriod = 24 * 60 * 60 * 1000 // 24 giờ
+
+                if (timeDiff < cooldownPeriod) {
+                    logger.debug('Welcome still in cooldown period', {
+                        facebookId,
+                        timeDiff,
+                        cooldownPeriod,
+                        lastWelcome: userState.last_welcome_sent
+                    })
+                    return false
+                }
+            }
+
+            // Nếu quá thời gian cooldown, kiểm tra interaction gần đây
+            const lastInteractionTime = new Date(userState.last_interaction)
+            const timeSinceLastInteraction = now.getTime() - lastInteractionTime.getTime()
+
+            // Chỉ gửi lại welcome nếu user có interaction gần đây (trong vòng 10 phút)
+            if (timeSinceLastInteraction > 10 * 60 * 1000) {
+                logger.debug('User has no recent interaction, skipping welcome', {
+                    facebookId,
+                    timeSinceLastInteraction
+                })
+                return false
+            }
+
+            // Nếu user đã tương tác quá nhiều lần, có thể cần đánh giá lại
+            if (userState.interaction_count > 10) {
+                logger.debug('User has many interactions, might need re-welcome', {
+                    facebookId,
+                    interactionCount: userState.interaction_count
+                })
+                // Có thể cần logic đặc biệt ở đây
+            }
+
+            return true
+        } catch (error) {
+            logger.error('Error checking if should send welcome', { facebookId, error })
+            return false // Lỗi thì không gửi để tránh spam
+        }
+    }
+
+    /**
      * Kiểm tra xem bot có hoạt động cho user không
      */
     static async isBotActive(facebookId: string): Promise<boolean> {
@@ -259,6 +364,67 @@ export class UserInteractionService {
         } catch (error) {
             logger.error('Error reactivating bot', { facebookId, error })
         }
+    }
+
+    /**
+     * Cập nhật trạng thái welcome trong bảng users
+     */
+    private static async updateUserWelcomeStatus(facebookId: string, welcomeSent: boolean, timestamp: string): Promise<void> {
+        try {
+            const { error } = await supabaseAdmin
+                .from('users')
+                .update({
+                    welcome_message_sent: welcomeSent,
+                    welcome_interaction_count: 1,
+                    updated_at: timestamp
+                })
+                .eq('facebook_id', facebookId)
+
+            if (error) {
+                logger.warn('Failed to update user welcome status in users table', { facebookId, error: error.message })
+            } else {
+                logger.debug('User welcome status updated in users table', { facebookId, welcomeSent })
+            }
+        } catch (error) {
+            logger.error('Exception updating user welcome status', { facebookId, error })
+        }
+    }
+
+    /**
+     * Retry mechanism để đánh dấu welcome đã gửi
+     */
+    private static async retryWelcomeMark(facebookId: string): Promise<void> {
+        const maxRetries = 3
+        const retryDelay = 1000 // 1 second
+
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const currentTime = new Date().toISOString()
+
+                // Thử cập nhật lại
+                await Promise.all([
+                    this.updateUserState(facebookId, {
+                        welcome_sent: true,
+                        last_welcome_sent: currentTime,
+                        last_interaction: currentTime
+                    }),
+                    this.updateUserWelcomeStatus(facebookId, true, currentTime)
+                ])
+
+                logger.info('Welcome mark retry successful', { facebookId, attempt: i + 1 })
+                return
+
+            } catch (error) {
+                logger.warn(`Welcome mark retry attempt ${i + 1} failed`, { facebookId, error })
+
+                if (i < maxRetries - 1) {
+                    // Đợi trước khi thử lại
+                    await new Promise(resolve => setTimeout(resolve, retryDelay))
+                }
+            }
+        }
+
+        logger.error('All welcome mark retry attempts failed', { facebookId, maxRetries })
     }
 
     /**
