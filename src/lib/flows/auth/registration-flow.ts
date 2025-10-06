@@ -284,7 +284,10 @@ export class RegistrationFlow extends BaseFlow {
             })
 
             // Complete registration
-            await this.completeRegistration(user)
+            await this.completeRegistration(user, {
+                ...currentData,
+                birthday: text.trim()
+            })
 
         } catch (error) {
             await this.handleError(user, error, 'handleBirthdayStep')
