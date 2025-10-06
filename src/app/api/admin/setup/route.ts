@@ -4,16 +4,6 @@ import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
     try {
-        // Verify this is a secure request (you can add more security checks)
-        const { secret } = await request.json()
-        
-        if (secret !== process.env.CRON_SECRET) {
-            return NextResponse.json(
-                { success: false, message: 'Unauthorized' },
-                { status: 401 }
-            )
-        }
-
         console.log('🔧 Setting up admin user from Vercel environment...')
 
         // Get admin info from environment variables

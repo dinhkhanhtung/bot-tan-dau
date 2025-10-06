@@ -4,10 +4,9 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
     console.log('🔍 Middleware checking path:', request.nextUrl.pathname)
 
-    // Allow login API and setup APIs without authentication
+    // Allow login API and setup API without authentication
     if (request.nextUrl.pathname === '/api/admin/auth/login' ||
-        request.nextUrl.pathname === '/api/admin/setup' ||
-        request.nextUrl.pathname === '/api/admin/setup-simple') {
+        request.nextUrl.pathname === '/api/admin/setup') {
         console.log('✅ Allowing access to login/setup API')
         return NextResponse.next()
     }
