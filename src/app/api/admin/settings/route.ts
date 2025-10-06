@@ -172,6 +172,8 @@ async function handleCleanupData() {
             'system_metrics',
             'ai_analytics',
             'ai_templates',
+            'admin_users',
+            'bot_settings',
 
             // Bảng có foreign key đến users nhưng không có bảng khác phụ thuộc
             'point_transactions',
@@ -201,7 +203,7 @@ async function handleCleanupData() {
             try {
                 let deleteQuery = supabaseAdmin.from(table).delete()
 
-                // Xử lý đặc biệt cho từng bảng dựa trên kiểu dữ liệu của cột id
+                // Xử lý đặc biệt cho từng bảng
                 switch (table) {
                     case 'users':
                         // Không xóa admin users
@@ -209,41 +211,8 @@ async function handleCleanupData() {
                             deleteQuery = deleteQuery.neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
                         }
                         break
-                    case 'user_messages':
-                    case 'spam_logs':
-                        // Các bảng có id là SERIAL (INTEGER)
-                        deleteQuery = deleteQuery.neq('id', 0)
-                        break
-                    case 'chat_bot_offer_counts':
-                    case 'user_bot_modes':
-                        // Các bảng có id là BIGSERIAL (BIGINT)
-                        deleteQuery = deleteQuery.neq('id', 0)
-                        break
-                    case 'messages':
-                    case 'conversations':
-                    case 'listings':
-                    case 'payments':
-                    case 'ratings':
-                    case 'events':
-                    case 'event_participants':
-                    case 'notifications':
-                    case 'ads':
-                    case 'search_requests':
-                    case 'referrals':
-                    case 'user_points':
-                    case 'point_transactions':
-                    case 'bot_sessions':
-                    case 'admin_chat_sessions':
-                    case 'user_activities':
-                    case 'user_activity_logs':
-                    case 'system_metrics':
-                    case 'ai_templates':
-                    case 'ai_analytics':
-                        // Các bảng có id là UUID
-                        deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
-                        break
                     default:
-                        // Mặc định xóa tất cả (không có điều kiện)
+                        // Xóa tất cả dữ liệu trong bảng (không có điều kiện)
                         // deleteQuery = deleteQuery (không thêm điều kiện)
                         break
                 }
