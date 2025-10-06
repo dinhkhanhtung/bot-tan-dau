@@ -1,5 +1,5 @@
 import { FlowManager } from './flow-manager'
-import { RegistrationFlow } from '../flows/auth'
+import { RegistrationFlow } from '../flows/auth/registration-flow'
 import { ListingFlow, SearchFlow } from '../flows/marketplace'
 import { CommunityFlow } from '../flows/community'
 

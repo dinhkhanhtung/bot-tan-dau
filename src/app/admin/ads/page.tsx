@@ -1,25 +1,26 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 // Toast notification component
 const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
-    useEffect(() => {
-        if (show) {
-            const timer = setTimeout(onClose, 3000)
-            return () => clearTimeout(timer)
-        }
-    }, [show, onClose])
+  useEffect(() => {
+    if (show) {
+      const timer = setTimeout(onClose, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [show, onClose])
 
-    if (!show) return null
+  if (!show) return null
 
-    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+  const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
 
-    return (
-        <div className={`fixed top-4 right-4 z-50 ${bgColor} text-white px-6 py-3 rounded-md shadow-lg`}>
-            {message}
-        </div>
-    )
+  return (
+    <div className={`fixed top-4 right-4 z-50 ${bgColor} text-white px-6 py-3 rounded-md shadow-lg`}>
+      {message}
+    </div>
+  )
 }
 
 interface Ad {
@@ -57,6 +58,7 @@ export default function AdsPage() {
     start_date: '',
     end_date: ''
   })
+  const router = useRouter()
 
   useEffect(() => {
     fetchAds()
@@ -213,9 +215,17 @@ export default function AdsPage() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">📢 Ads Management</h1>
-              <p className="text-gray-600">Manage advertisements on the platform</p>
+            <div className="flex items-center">
+              <button
+                onClick={() => router.push('/admin/dashboard')}
+                className="mr-4 text-gray-600 hover:text-gray-900"
+              >
+                ← Quay lại
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">📢 Ads Management</h1>
+                <p className="text-gray-600">Manage advertisements on the platform</p>
+              </div>
             </div>
             <button
               onClick={() => setIsCreateModalOpen(true)}
@@ -243,11 +253,10 @@ export default function AdsPage() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.key
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.key
                       ? 'border-indigo-500 text-indigo-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>

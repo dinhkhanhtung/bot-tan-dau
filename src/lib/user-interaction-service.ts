@@ -67,7 +67,7 @@ export class UserInteractionService {
     static async handleFirstMessage(facebookId: string, userStatus: string): Promise<boolean> {
         try {
             const userState = await this.getUserState(facebookId)
-            
+
             // Nếu chưa có state, tạo mới
             if (!userState) {
                 await this.updateUserState(facebookId, {
@@ -83,6 +83,16 @@ export class UserInteractionService {
             // Nếu đã gửi welcome rồi, không gửi lại
             if (userState.welcome_sent) {
                 return false
+            }
+
+            // Kiểm tra thời gian gửi welcome cuối cùng (24h cooldown)
+            const lastWelcomeTime = new Date(userState.last_interaction)
+            const now = new Date()
+            const timeDiff = now.getTime() - lastWelcomeTime.getTime()
+            const cooldownPeriod = 24 * 60 * 60 * 1000 // 24 giờ
+
+            if (timeDiff < cooldownPeriod) {
+                return false // Chưa đủ thời gian cooldown
             }
 
             // Cập nhật interaction count
@@ -201,14 +211,14 @@ export class UserInteractionService {
                 bot_active: false
             })
 
-            // Gửi thông báo
-            await sendMessage(facebookId, 
+            // Gửi thông báo và ẩn nút
+            await sendMessage(facebookId,
                 '💬 Cảm ơn bạn đã liên hệ!\n' +
                 '👨‍💼 Admin đã nhận được tin nhắn của bạn và sẽ sớm phản hồi.\n' +
-                '⏰ Vui lòng chờ đợi trong giây lát!'
+                '⏰ Vui lòng chờ đợi trong giây lát!\n\n' +
+                '💡 Các nút chức năng đã được ẩn để Admin có thể hỗ trợ bạn trực tiếp.'
             )
 
-            // Ẩn nút (không gửi quick reply)
             logger.info('Bot stopped for user due to non-button interaction', { facebookId })
         } catch (error) {
             logger.error('Error handling non-button interaction', { facebookId, error })

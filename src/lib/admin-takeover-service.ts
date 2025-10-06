@@ -48,11 +48,18 @@ export class AdminTakeoverService {
                     updated_at: new Date().toISOString()
                 })
 
+            // Dừng bot cho user này
+            const { UserInteractionService } = await import('./user-interaction-service')
+            await UserInteractionService.updateUserState(facebookId, {
+                bot_active: false
+            })
+
             // Gửi thông báo cho user
-            await sendMessage(facebookId, 
+            await sendMessage(facebookId,
                 '👨‍💼 Admin đã tham gia cuộc trò chuyện!\n' +
                 '🤖 Bot sẽ tạm dừng để Admin có thể hỗ trợ bạn trực tiếp.\n' +
-                '💬 Bạn có thể chat trực tiếp với Admin ngay bây giờ!'
+                '💬 Bạn có thể chat trực tiếp với Admin ngay bây giờ!\n\n' +
+                '💡 Các nút chức năng đã được ẩn để Admin hỗ trợ bạn tốt hơn.'
             )
 
             logger.info('Admin started chat', { facebookId, adminId })
@@ -77,8 +84,12 @@ export class AdminTakeoverService {
                 .eq('user_facebook_id', facebookId)
                 .eq('admin_id', adminId)
 
+            // Kích hoạt lại bot cho user này
+            const { UserInteractionService } = await import('./user-interaction-service')
+            await UserInteractionService.reactivateBot(facebookId)
+
             // Gửi thông báo cho user
-            await sendMessage(facebookId, 
+            await sendMessage(facebookId,
                 '👨‍💼 Admin đã kết thúc cuộc trò chuyện.\n' +
                 '🤖 Bot sẽ tiếp tục hoạt động để hỗ trợ bạn!\n' +
                 '💡 Bạn có thể sử dụng các tính năng của bot hoặc nhấn nút để bắt đầu.'
