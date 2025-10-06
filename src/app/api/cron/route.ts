@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         console.log(`🚀 Starting specific cron job: ${job}`)
 
         // Import specific cron job functions
-        const { sendTrialReminders, sendBirthdayNotifications, sendHoroscopeUpdates, sendPaymentFollowUps, cleanupOldData } = await import('@/lib/cron-jobs')
+        const { sendTrialReminders, sendBirthdayNotifications, sendDailyHoroscopeUpdates, sendTrialExpirationReminders, cleanupOldData } = await import('@/lib/cron-jobs')
 
         let result
 
@@ -73,11 +73,11 @@ export async function POST(request: NextRequest) {
                 result = 'Birthday notifications completed'
                 break
             case 'horoscope_updates':
-                await sendHoroscopeUpdates()
+                await sendDailyHoroscopeUpdates()
                 result = 'Horoscope updates completed'
                 break
             case 'payment_followups':
-                await sendPaymentFollowUps()
+                await sendTrialExpirationReminders()
                 result = 'Payment follow-ups completed'
                 break
             case 'cleanup':

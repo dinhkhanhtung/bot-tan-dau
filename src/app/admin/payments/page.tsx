@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 // Toast notification component
@@ -52,13 +52,7 @@ export default function AdminPayments() {
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({})
     const router = useRouter()
 
-    useEffect(() => {
-        checkAuth()
-        fetchPayments()
-    }, [filter])
-
-    // Move functions outside useEffect to fix dependency warnings
-    const checkAuth = () => {
+    const checkAuth = useCallback(() => {
         const token = localStorage.getItem('admin_token')
         const adminInfoStr = localStorage.getItem('admin_info')
 
@@ -68,9 +62,9 @@ export default function AdminPayments() {
         }
 
         setAdminInfo(JSON.parse(adminInfoStr))
-    }
+    }, [router])
 
-    const fetchPayments = async () => {
+    const fetchPayments = useCallback(async () => {
         try {
             const token = localStorage.getItem('admin_token')
             const response = await fetch(`/api/admin/payments?status=${filter}`, {
@@ -91,7 +85,12 @@ export default function AdminPayments() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [filter])
+
+    useEffect(() => {
+        checkAuth()
+        fetchPayments()
+    }, [checkAuth, fetchPayments])
 
     const handleApprovePayment = async (paymentId: string) => {
         if (!confirm('Bạn có chắc chắn muốn duyệt thanh toán này?')) return
