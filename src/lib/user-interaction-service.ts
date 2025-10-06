@@ -270,9 +270,8 @@ export class UserInteractionService {
 
             // Gửi thông báo và ẩn nút
             await sendMessage(facebookId,
-                '📞 Liên hệ:\n' +
-                '📧 Email: dinhkhanhtung@outlook.com\n' +
-                '📱 SĐT: 0982581222\n\n' +
+                '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!\n' +
+                '⏰ Vui lòng chờ đợi trong giây lát!\n\n' +
                 '💡 Các nút chức năng đã được ẩn để Admin có thể hỗ trợ bạn trực tiếp.'
             )
 
