@@ -27,9 +27,9 @@ export class ListingFlow extends BaseFlow {
     }
 
     /**
-     * Handle step input
+     * Handle message input
      */
-    async handleStep(user: any, text: string, session: any): Promise<void> {
+    async handleMessage(user: any, text: string, session: any): Promise<void> {
         try {
             this.logActivity(user, 'handleStep', { text, session })
 

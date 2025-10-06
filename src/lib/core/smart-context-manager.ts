@@ -389,8 +389,19 @@ export class SmartContextManager {
                 return `✅ CHÀO MỪNG ${displayName.toUpperCase()}!\nBạn đã đăng ký thành công và có thể sử dụng đầy đủ tính năng.`
 
             case UserType.TRIAL_USER:
-                const daysLeft = user?.membership_expires_at ?
-                    Math.ceil((new Date(user.membership_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 7
+                let daysLeft = 7 // Default fallback
+                if (user?.membership_expires_at) {
+                    try {
+                        const expiryDate = new Date(user.membership_expires_at)
+                        if (!isNaN(expiryDate.getTime())) {
+                            daysLeft = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                            daysLeft = Math.max(daysLeft, 0) // Ensure non-negative
+                        }
+                    } catch (error) {
+                        console.error('Error calculating trial days:', error)
+                        daysLeft = 7
+                    }
+                }
                 return `🎁 CHÀO MỪNG BẠN ĐẾN VỚI GÓI DÙNG THỬ!\nBạn còn ${daysLeft} ngày sử dụng miễn phí.\n💡 Hãy khám phá các tính năng của bot!`
 
             case UserType.PENDING_USER:
