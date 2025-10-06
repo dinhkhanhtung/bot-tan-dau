@@ -216,6 +216,8 @@ async function handleCleanupData() {
                         break
                     case 'user_messages':
                     case 'spam_logs':
+                    case 'admin_users':
+                    case 'bot_settings':
                         // Các bảng có id là SERIAL (INTEGER)
                         deleteQuery = deleteQuery.neq('id', 0)
                         break
