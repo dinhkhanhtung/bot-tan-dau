@@ -10,6 +10,7 @@ export interface User {
     membership_expires_at: string | null
     rating: number
     referral_code: string
+    chat_mode: 'bot' | 'admin'
     created_at: string
     updated_at: string
 }
@@ -95,14 +96,26 @@ export interface Notification {
 export interface Ad {
     id: string
     user_id: string
+    listing_id?: string
+    ad_type: 'homepage_banner' | 'search_boost' | 'cross_sell_spot' | 'featured_listing'
     title: string
     description: string
     image: string | null
     budget: number
-    status: 'pending' | 'active' | 'paused' | 'completed'
+    daily_budget: number
+    status: 'pending' | 'active' | 'paused' | 'completed' | 'rejected'
     start_date: string
     end_date: string
+    priority: number
+    target_category?: string
+    target_location?: string
+    impressions: number
+    clicks: number
+    conversions: number
+    ctr: number
+    cpc: number
     created_at: string
+    updated_at: string
 }
 
 export interface SearchRequest {

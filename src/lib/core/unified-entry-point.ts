@@ -141,15 +141,7 @@ export class UnifiedBotSystem {
         }
     }
 
-    /**
-     * Xử lý tin nhắn của admin - FANPAGE = ADMIN
-     */
-    private static async handleAdminMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
-        // TIN NHẮN TỪ FANPAGE = ADMIN - CHUYỂN HƯỚNG ĐẾN WEB DASHBOARD
-        await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
-        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
-        await this.sendMessage(user.facebook_id, '📧 Liên hệ admin để được cấp tài khoản quản lý.')
-    }
+
 
 
 
@@ -254,12 +246,7 @@ export class UnifiedBotSystem {
                 case 'MAIN_MENU':
                     await this.showMainMenu(user)
                     break
-                case 'ADMIN':
-                    // Admin chỉ nhận thông báo chuyển hướng đến webapp
-                    await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
-                    await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
-                    await this.sendMessage(user.facebook_id, '📧 Liên hệ admin để được cấp tài khoản quản lý.')
-                    break
+
                 case 'EXIT_BOT':
                     const { handleBotExit } = await import('../anti-spam')
                     await handleBotExit(user.facebook_id)
@@ -268,8 +255,10 @@ export class UnifiedBotSystem {
                     // User ấn nút "Chat Bot" - đưa vào bot mode
                     // Kiểm tra xem có phải admin không
                     if (user.facebook_id === process.env.FACEBOOK_PAGE_ID) {
-                        // Admin không cần vào bot mode - hiện admin dashboard
-                        await this.showAdminDashboard(user)
+                        // Admin chỉ nhận thông báo chuyển hướng đến webapp
+                        await this.sendMessage(user.facebook_id, '🔧 Hệ thống admin đã được chuyển sang trang web.')
+                        await this.sendMessage(user.facebook_id, '🌐 Truy cập: https://bot-tan-dau.vercel.app/admin/login')
+                        await this.sendMessage(user.facebook_id, '📧 Liên hệ admin để được cấp tài khoản quản lý.')
                     } else {
                         // User thường - đưa vào bot mode
                         const { setUserBotMode } = await import('../anti-spam')
@@ -505,7 +494,7 @@ export class UnifiedBotSystem {
             // KIỂM TRA ADMIN TRƯỚC TIÊN - TIN NHẮN TỪ FANPAGE = ADMIN
             if (user.facebook_id === process.env.FACEBOOK_PAGE_ID) {
                 logger.info('Admin message from fanpage detected', { facebook_id: user.facebook_id })
-                await this.handleAdminMessage(user, text)
+                await this.handleAdminTextMessage(user, text)
                 return
             }
 
@@ -921,33 +910,7 @@ export class UnifiedBotSystem {
     }
 
 
-    /**
-     * Show admin dashboard
-     */
-    private static async showAdminDashboard(user: any): Promise<void> {
-        try {
-            await sendTypingIndicator(user.facebook_id)
-            await sendMessage(user.facebook_id, '🔧 ADMIN DASHBOARD')
-            await sendMessage(user.facebook_id, 'Chào mừng Admin! Bạn có toàn quyền quản lý hệ thống.')
 
-            const adminOptions = [
-                createQuickReply('💬 VÀO CUỘC TRÒ CHUYỆN', 'ADMIN_ENTER_CHAT'),
-                createQuickReply('💰 QUẢN LÝ THANH TOÁN', 'ADMIN_PAYMENTS'),
-                createQuickReply('👥 QUẢN LÝ NGƯỜI DÙNG', 'ADMIN_USERS'),
-                createQuickReply('🛒 QUẢN LÝ TIN ĐĂNG', 'ADMIN_LISTINGS'),
-                createQuickReply('📊 XEM THỐNG KÊ', 'ADMIN_STATS'),
-                createQuickReply('🔔 THÔNG BÁO', 'ADMIN_NOTIFICATIONS'),
-                createQuickReply('📤 GỬI LINK ĐĂNG KÝ', 'ADMIN_SEND_REGISTRATION'),
-                createQuickReply('⚙️ QUẢN LÝ ADMIN', 'ADMIN_MANAGE_ADMINS'),
-                createQuickReply('🚫 SPAM LOGS', 'ADMIN_SPAM_LOGS'),
-                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
-            ]
-
-            await sendQuickReply(user.facebook_id, 'Chọn chức năng:', adminOptions)
-        } catch (error) {
-            console.error('Error showing admin dashboard:', error)
-        }
-    }
 
 
     /**

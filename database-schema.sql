@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     welcome_message_sent BOOLEAN DEFAULT FALSE,
     welcome_interaction_count INTEGER DEFAULT 0,
+    chat_mode VARCHAR(20) DEFAULT 'bot' CHECK (chat_mode IN ('bot', 'admin')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -160,18 +161,30 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Ads table
+-- Ads table - ENHANCED FOR MULTIPLE AD TYPES
 CREATE TABLE IF NOT EXISTS ads (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    listing_id UUID REFERENCES listings(id) ON DELETE CASCADE,
+    ad_type VARCHAR(50) NOT NULL CHECK (ad_type IN ('homepage_banner', 'search_boost', 'cross_sell_spot', 'featured_listing')),
     title VARCHAR(500) NOT NULL,
     description TEXT NOT NULL,
     image TEXT,
     budget BIGINT NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'paused', 'completed')),
+    daily_budget BIGINT DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'paused', 'completed', 'rejected')),
     start_date TIMESTAMP WITH TIME ZONE NOT NULL,
     end_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    priority INTEGER DEFAULT 1,
+    target_category VARCHAR(100),
+    target_location VARCHAR(200),
+    impressions INTEGER DEFAULT 0,
+    clicks INTEGER DEFAULT 0,
+    conversions INTEGER DEFAULT 0,
+    ctr DECIMAL(5,2) DEFAULT 0.00,
+    cpc DECIMAL(10,2) DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Search requests table
@@ -223,12 +236,13 @@ CREATE TABLE IF NOT EXISTS point_transactions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Bot sessions table - STANDARDIZED VERSION
+-- Bot sessions table - FIXED với cột step (QUAN TRỌNG)
 CREATE TABLE IF NOT EXISTS bot_sessions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     facebook_id VARCHAR(255) UNIQUE NOT NULL,
     current_flow VARCHAR(100) DEFAULT NULL,
     current_step INTEGER DEFAULT 0,
+    step VARCHAR(50) DEFAULT NULL, -- CỘT QUAN TRỌNG - FIX LỖI REGISTRATION FLOW
     data JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -411,7 +425,7 @@ CREATE TABLE IF NOT EXISTS user_activities (
     last_activity TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
+
     -- Unique constraint to prevent duplicate entries for same user and date
     UNIQUE(facebook_id, date)
 );
@@ -441,7 +455,7 @@ CREATE TABLE IF NOT EXISTS system_metrics (
     average_response_time_ms INTEGER DEFAULT 0,
     error_rate_percentage DECIMAL(5,2) DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
+
     -- Unique constraint to prevent duplicate entries for same date
     UNIQUE(date)
 );
@@ -473,7 +487,7 @@ CREATE INDEX IF NOT EXISTS idx_system_metrics_date ON system_metrics(date);
 CREATE OR REPLACE FUNCTION cleanup_old_activity_logs(days_to_keep INTEGER DEFAULT 30)
 RETURNS void AS $$
 BEGIN
-    DELETE FROM user_activity_logs 
+    DELETE FROM user_activity_logs
     WHERE timestamp < NOW() - INTERVAL '1 day' * days_to_keep;
 END;
 $$ language 'plpgsql';
@@ -482,7 +496,7 @@ $$ language 'plpgsql';
 CREATE OR REPLACE FUNCTION cleanup_old_system_metrics(days_to_keep INTEGER DEFAULT 90)
 RETURNS void AS $$
 BEGIN
-    DELETE FROM system_metrics 
+    DELETE FROM system_metrics
     WHERE date < CURRENT_DATE - INTERVAL '1 day' * days_to_keep;
 END;
 $$ language 'plpgsql';
@@ -499,14 +513,14 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
     RETURN QUERY
-    SELECT 
+    SELECT
         (SELECT COUNT(*) FROM users WHERE status = 'pending')::BIGINT as total_pending_users,
         (SELECT COUNT(*) FROM users WHERE status = 'pending' AND DATE(created_at) = target_date)::BIGINT as pending_users_today,
         (SELECT COALESCE(SUM(searches_count), 0) FROM user_activities WHERE date = target_date)::BIGINT as total_searches_today,
         (SELECT COALESCE(SUM(messages_count), 0) FROM user_activities WHERE date = target_date)::BIGINT as total_messages_today,
         (SELECT COALESCE(AVG(response_time_ms), 0) FROM user_activity_logs WHERE DATE(timestamp) = target_date AND success = true)::NUMERIC as average_response_time_ms,
         (SELECT COALESCE(
-            (COUNT(*) FILTER (WHERE success = false)::NUMERIC / COUNT(*)::NUMERIC) * 100, 
+            (COUNT(*) FILTER (WHERE success = false)::NUMERIC / COUNT(*)::NUMERIC) * 100,
             0
         ) FROM user_activity_logs WHERE DATE(timestamp) = target_date)::NUMERIC as error_rate_percentage;
 END;
@@ -525,7 +539,7 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
     RETURN QUERY
-    SELECT 
+    SELECT
         COUNT(*)::BIGINT as total_activities,
         COALESCE(
             (COUNT(*) FILTER (WHERE success = true)::NUMERIC / COUNT(*)::NUMERIC) * 100,
@@ -534,11 +548,11 @@ BEGIN
         COALESCE(AVG(response_time_ms), 0)::NUMERIC as average_response_time_ms,
         jsonb_object_agg(action, action_count) as action_counts
     FROM (
-        SELECT 
+        SELECT
             action,
             COUNT(*) as action_count
-        FROM user_activity_logs 
-        WHERE facebook_id = target_facebook_id 
+        FROM user_activity_logs
+        WHERE facebook_id = target_facebook_id
         AND timestamp >= NOW() - INTERVAL '1 day' * days_back
         GROUP BY action
     ) action_stats;
@@ -753,12 +767,12 @@ AND table_name IN (
 -- Cập nhật: Thêm cột mới cho tính năng tạm dừng counter khi admin chat
 
 -- Thêm cột paused_for_admin vào bảng user_bot_modes
-ALTER TABLE user_bot_modes 
+ALTER TABLE user_bot_modes
 ADD COLUMN IF NOT EXISTS paused_for_admin BOOLEAN DEFAULT FALSE;
 
 -- Tạo index cho cột mới để tăng tốc query
-CREATE INDEX IF NOT EXISTS idx_user_bot_modes_paused_for_admin 
-ON user_bot_modes(paused_for_admin) 
+CREATE INDEX IF NOT EXISTS idx_user_bot_modes_paused_for_admin
+ON user_bot_modes(paused_for_admin)
 WHERE paused_for_admin = TRUE;
 
 -- Cập nhật comment cho bảng

@@ -484,6 +484,12 @@ export default function AdminDashboard() {
                             >
                                 ⚙️ Cài đặt
                             </button>
+                            <button
+                                onClick={() => router.push('/admin/ads')}
+                                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition-colors duration-200"
+                            >
+                                📢 Quảng cáo
+                            </button>
                         </div>
                     </div>
                 </div>

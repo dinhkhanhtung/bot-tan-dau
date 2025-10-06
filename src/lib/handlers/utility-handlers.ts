@@ -317,6 +317,71 @@ export async function handleSupportAdmin(user: any) {
     )
 }
 
+// Handle chat mode toggle
+export async function handleChatModeToggle(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first to avoid button clutter
+    await hideButtons(user.facebook_id)
+
+    const currentMode = user.chat_mode || 'bot'
+    const newMode = currentMode === 'bot' ? 'admin' : 'bot'
+
+    try {
+        // Update user chat mode in database
+        const { error } = await supabaseAdmin
+            .from('users')
+            .update({ chat_mode: newMode })
+            .eq('facebook_id', user.facebook_id)
+
+        if (error) {
+            console.error('Error updating chat mode:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi chuyển chế độ chat!')
+            return
+        }
+
+        if (newMode === 'admin') {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🔧 CHẾ ĐỘ ADMIN CHAT',
+                'Bạn đã chuyển sang chế độ Admin Chat.',
+                '💬 Trong chế độ này:',
+                '• Không bị giới hạn tin nhắn',
+                '• Có thể liên hệ trực tiếp với admin',
+                '• Không áp dụng bộ đếm welcome',
+                '• Hỗ trợ kỹ thuật chuyên sâu',
+                '',
+                '⚠️ Lưu ý: Chỉ dành cho mục đích hỗ trợ kỹ thuật'
+            ])
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '🤖 CHẾ ĐỘ BOT CHAT',
+                'Bạn đã chuyển về chế độ Bot Chat.',
+                '💬 Trong chế độ này:',
+                '• Tương tác với bot tự động',
+                '• Áp dụng giới hạn tin nhắn',
+                '• Bộ đếm welcome được kích hoạt',
+                '• Phù hợp cho người dùng thông thường',
+                '',
+                '🔄 Bạn có thể chuyển lại chế độ Admin bất cứ lúc nào'
+            ])
+        }
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createQuickReply('🔄 CHUYỂN CHẾ ĐỘ', 'CHAT_MODE_TOGGLE'),
+                createQuickReply('💬 CHAT NGAY', newMode === 'admin' ? 'ADMIN_CHAT' : 'BOT_CHAT'),
+                createQuickReply('🏠 VỀ TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error in chat mode toggle:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+    }
+}
+
 // Handle start admin chat
 export async function handleStartAdminChat(user: any) {
     await sendTypingIndicator(user.facebook_id)
@@ -533,22 +598,82 @@ export async function handleReferralWithdraw(user: any) {
 
 // Handle default message for registered users
 export async function handleDefaultMessageRegistered(user: any) {
-    // Typing indicator removed for quick reply
-    await sendQuickReplyNoTyping(
-        user.facebook_id,
-        'Chọn chức năng:',
-        [
+    try {
+        await sendTypingIndicator(user.facebook_id)
+
+        // Get user status for personalized menu
+        const { data: userData, error } = await supabaseAdmin
+            .from('users')
+            .select('status, membership_expires_at, chat_mode')
+            .eq('facebook_id', user.facebook_id)
+            .single()
+
+        if (error) {
+            console.error('Error fetching user data:', error)
+        }
+
+        const userStatus = userData?.status || 'trial'
+        const chatMode = userData?.chat_mode || 'bot'
+        const isExpiringSoon = userData?.membership_expires_at &&
+            new Date(userData.membership_expires_at).getTime() - Date.now() < 24 * 60 * 60 * 1000
+
+        // Create personalized menu based on user status
+        const menuOptions = []
+
+        if (userStatus === 'trial' || isExpiringSoon) {
+            menuOptions.push(createQuickReply('💰 THANH TOÁN', 'PAYMENT'))
+        }
+
+        menuOptions.push(
             createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
             createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
             createQuickReply('💬 KẾT NỐI', 'CONNECT'),
-            createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
-            createQuickReply('💰 THANH TOÁN', 'PAYMENT'),
-            createQuickReply('⭐ ĐIỂM THƯỞNG', 'POINTS'),
+            createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY')
+        )
+
+        if (userStatus === 'active') {
+            menuOptions.push(
+                createQuickReply('⭐ ĐIỂM THƯỞNG', 'POINTS'),
+                createQuickReply('📢 QUẢNG CÁO', 'CREATE_AD')
+            )
+        }
+
+        menuOptions.push(
             createQuickReply('🔮 TỬ VI', 'HOROSCOPE'),
-            createQuickReply('⚙️ CÀI ĐẶT', 'SETTINGS'),
-            createQuickReply('❌ THOÁT', 'EXIT_BOT')
-        ]
-    )
+            createQuickReply('⚙️ CÀI ĐẶT', 'SETTINGS')
+        )
+
+        if (chatMode === 'bot') {
+            menuOptions.push(createQuickReply('🔧 CHUYỂN CHẾ ĐỘ', 'CHAT_MODE_TOGGLE'))
+        }
+
+        menuOptions.push(createQuickReply('❌ THOÁT', 'EXIT_BOT'))
+
+        await sendQuickReplyNoTyping(
+            user.facebook_id,
+            'Chọn chức năng:',
+            menuOptions
+        )
+
+    } catch (error) {
+        console.error('Error in handleDefaultMessageRegistered:', error)
+        // Fallback to basic menu if error occurs
+        await sendQuickReplyNoTyping(
+            user.facebook_id,
+            'Chọn chức năng:',
+            [
+                createQuickReply('🛒 NIÊM YẾT', 'LISTING'),
+                createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+                createQuickReply('💬 KẾT NỐI', 'CONNECT'),
+                createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
+                createQuickReply('💰 THANH TOÁN', 'PAYMENT'),
+                createQuickReply('⭐ ĐIỂM THƯỞNG', 'POINTS'),
+                createQuickReply('🔮 TỬ VI', 'HOROSCOPE'),
+                createQuickReply('⚙️ CÀI ĐẶT', 'SETTINGS'),
+                createQuickReply('❌ THOÁT', 'EXIT_BOT')
+            ]
+        )
+    }
 }
 
 // Helper functions

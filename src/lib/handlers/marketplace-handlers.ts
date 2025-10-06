@@ -682,6 +682,10 @@ export async function handleContactSeller(user: any, sellerId: string) {
             '💬 Các bạn có thể chat trực tiếp để thương lượng\n🎯 Chúc mua bán thành công!'
         ])
 
+        // Cross-selling: Gợi ý sản phẩm liên quan sau khi kết nối
+        await sendMessage(user.facebook_id, '🔗 Bạn có thể quan tâm đến:')
+        await showRelatedProducts(user.facebook_id, sellerId)
+
         await sendQuickReply(
             user.facebook_id,
             'Tùy chọn:',
@@ -693,6 +697,349 @@ export async function handleContactSeller(user: any, sellerId: string) {
 
     } catch (error) {
         console.error('Error in contact seller:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+    }
+}
+
+// Show related products for cross-selling
+async function showRelatedProducts(userId: string, sellerId: string) {
+    try {
+        // Get seller's other active listings
+        const { data: relatedListings, error } = await supabaseAdmin
+            .from('listings')
+            .select('*')
+            .eq('user_id', sellerId)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(3)
+
+        if (error || !relatedListings || relatedListings.length === 0) {
+            return
+        }
+
+        const elements = relatedListings.map((listing: any, index: number) =>
+            createGenericElement(
+                `🔗 ${listing.title}`,
+                `💰 ${formatCurrency(listing.price)}\n📍 ${listing.location}\n⭐ Sản phẩm cùng người bán`,
+                listing.images?.[0] || '',
+                [
+                    createQuickReply('👀 XEM', `VIEW_LISTING_${listing.id}`),
+                    createQuickReply('💬 LIÊN HỆ', `CONTACT_SELLER_${listing.user_id}`)
+                ]
+            )
+        )
+
+        await sendCarouselTemplate(userId, elements)
+
+    } catch (error) {
+        console.error('Error showing related products:', error)
+    }
+}
+
+// Handle create advertisement
+export async function handleCreateAd(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📢 TẠO QUẢNG CÁO',
+        'Chọn loại quảng cáo bạn muốn tạo:',
+        '💡 Các loại quảng cáo:',
+        '• 🏠 Homepage Banner - Hiển thị trang chủ',
+        '• 🔍 Search Boost - Tăng hiển thị tìm kiếm',
+        '• 🔗 Cross-sell Spot - Gợi ý trong chat',
+        '• ⭐ Featured Listing - Làm nổi bật tin đăng'
+    ])
+
+    await sendQuickReply(
+        user.facebook_id,
+        'Chọn loại quảng cáo:',
+        [
+            createQuickReply('🏠 HOMEPAGE BANNER - ₫50,000', 'AD_TYPE_HOMEPAGE_BANNER'),
+            createQuickReply('🔍 SEARCH BOOST - ₫30,000', 'AD_TYPE_SEARCH_BOOST'),
+            createQuickReply('🔗 CROSS-SELL SPOT - ₫20,000', 'AD_TYPE_CROSS_SELL_SPOT'),
+            createQuickReply('⭐ FEATURED LISTING - ₫15,000', 'AD_TYPE_FEATURED_LISTING'),
+            createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
+        ]
+    )
+}
+
+// Handle advertisement type selection
+export async function handleAdTypeSelection(user: any, adType: string) {
+    await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
+
+    const adTypeMapping: { [key: string]: any } = {
+        'AD_TYPE_HOMEPAGE_BANNER': {
+            name: 'Homepage Banner',
+            price: 50000,
+            description: 'Hiển thị nổi bật trên trang chủ'
+        },
+        'AD_TYPE_SEARCH_BOOST': {
+            name: 'Search Boost',
+            price: 30000,
+            description: 'Tăng 3x khả năng hiển thị trong tìm kiếm'
+        },
+        'AD_TYPE_CROSS_SELL_SPOT': {
+            name: 'Cross-sell Spot',
+            price: 20000,
+            description: 'Ưu tiên hiển thị trong gợi ý sản phẩm'
+        },
+        'AD_TYPE_FEATURED_LISTING': {
+            name: 'Featured Listing',
+            price: 15000,
+            description: 'Làm nổi bật tin đăng với badge "Nổi bật"'
+        }
+    }
+
+    const adInfo = adTypeMapping[adType]
+    if (!adInfo) {
+        await sendMessage(user.facebook_id, '❌ Loại quảng cáo không hợp lệ!')
+        return
+    }
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        `📢 ${adInfo.name}`,
+        `💰 Giá: ${formatCurrency(adInfo.price)}`,
+        `📝 Mô tả: ${adInfo.description}`,
+        '',
+        '⏰ Thời gian chạy: 7 ngày',
+        '🎯 Đối tượng: Tất cả người dùng Tân Dậu',
+        '📊 Thống kê: Impressions, clicks, conversions'
+    ])
+
+    await sendQuickReply(
+        user.facebook_id,
+        'Bạn muốn:',
+        [
+            createQuickReply('✅ TẠO QUẢNG CÁO', `AD_CREATE_${adType}`),
+            createQuickReply('📋 XEM CHI TIẾT', `AD_INFO_${adType}`),
+            createQuickReply('🔙 QUAY LẠI', 'CREATE_AD')
+        ]
+    )
+}
+
+// Handle advertisement creation
+export async function handleAdCreation(user: any, adType: string) {
+    await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
+
+    const adTypeMapping: { [key: string]: any } = {
+        'AD_TYPE_HOMEPAGE_BANNER': {
+            name: 'Homepage Banner',
+            price: 50000,
+            duration: 7
+        },
+        'AD_TYPE_SEARCH_BOOST': {
+            name: 'Search Boost',
+            price: 30000,
+            duration: 7
+        },
+        'AD_TYPE_CROSS_SELL_SPOT': {
+            name: 'Cross-sell Spot',
+            price: 20000,
+            duration: 7
+        },
+        'AD_TYPE_FEATURED_LISTING': {
+            name: 'Featured Listing',
+            price: 15000,
+            duration: 7
+        }
+    }
+
+    const adInfo = adTypeMapping[adType.replace('AD_CREATE_', '')]
+    if (!adInfo) {
+        await sendMessage(user.facebook_id, '❌ Loại quảng cáo không hợp lệ!')
+        return
+    }
+
+    try {
+        // Create advertisement record
+        const { data: ad, error } = await supabaseAdmin
+            .from('ads')
+            .insert({
+                id: generateId(),
+                user_id: user.facebook_id,
+                ad_type: adType.replace('AD_CREATE_', '').toLowerCase(),
+                title: `${adInfo.name} - ${user.name}`,
+                description: `Quảng cáo ${adInfo.name} của ${user.name}`,
+                budget: adInfo.price,
+                status: 'pending',
+                start_date: new Date().toISOString(),
+                end_date: new Date(Date.now() + adInfo.duration * 24 * 60 * 60 * 1000).toISOString(),
+                priority: 1,
+                created_at: new Date().toISOString()
+            })
+            .select()
+            .single()
+
+        if (error) {
+            console.error('Error creating ad:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tạo quảng cáo!')
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '✅ TẠO QUẢNG CÁO THÀNH CÔNG!',
+            `📢 ${adInfo.name}`,
+            `💰 Số tiền: ${formatCurrency(adInfo.price)}`,
+            `⏰ Thời gian: ${adInfo.duration} ngày`,
+            `📋 Mã quảng cáo: #${ad.id}`,
+            '',
+            '🏦 Thông tin thanh toán:',
+            '• STK: 0982581222',
+            '• Ngân hàng: BIDV',
+            '• Chủ TK: Đinh Khánh Tùng',
+            `• Nội dung: QC ${ad.id.slice(-8).toUpperCase()}`,
+            '',
+            '📸 Sau khi chuyển khoản, gửi biên lai để kích hoạt quảng cáo!'
+        ])
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Sau khi thanh toán:',
+            [
+                createQuickReply('📸 GỬI BIÊN LAI', `AD_UPLOAD_RECEIPT_${ad.id}`),
+                createQuickReply('❌ HỦY QUẢNG CÁO', `AD_CANCEL_${ad.id}`),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error in ad creation:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle advertisement receipt upload
+export async function handleAdReceiptUpload(user: any, adId: string) {
+    await sendTypingIndicator(user.facebook_id)
+
+    await sendMessagesWithTyping(user.facebook_id, [
+        '📸 UPLOAD BIÊN LAI QUẢNG CÁO',
+        `📋 Mã quảng cáo: #${adId}`,
+        'Vui lòng gửi hình ảnh biên lai chuyển khoản',
+        'Tôi sẽ xác nhận và kích hoạt quảng cáo cho bạn!'
+    ])
+
+    // Set session for receipt upload
+    await updateBotSession(user.facebook_id, {
+        current_flow: 'ad_receipt',
+        step: 'upload_receipt',
+        data: { ad_id: adId }
+    })
+}
+
+// Handle advertisement receipt processing
+export async function handleAdReceiptProcess(user: any, imageUrl: string, session: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    const adId = session.data.ad_id
+
+    try {
+        // Update advertisement with receipt and activate
+        const { error } = await supabaseAdmin
+            .from('ads')
+            .update({
+                status: 'active',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', adId)
+
+        if (error) {
+            console.error('Error activating ad:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi kích hoạt quảng cáo!')
+            return
+        }
+
+        await sendMessagesWithTyping(user.facebook_id, [
+            '✅ QUẢNG CÁO ĐÃ ĐƯỢC KÍCH HOẠT!',
+            `📢 Mã quảng cáo: #${adId}`,
+            '🎯 Quảng cáo của bạn đang chạy và hiển thị cho cộng đồng',
+            '📊 Bạn có thể theo dõi thống kê trong phần quản lý quảng cáo',
+            '',
+            '💡 Mẹo: Quảng cáo chất lượng sẽ mang lại nhiều khách hàng hơn!'
+        ])
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createQuickReply('📊 QUẢNG CÁO CỦA TÔI', 'MY_ADS'),
+                createQuickReply('📢 TẠO QUẢNG CÁO MỚI', 'CREATE_AD'),
+                createQuickReply('🏠 TRANG CHỦ', 'MAIN_MENU')
+            ]
+        )
+
+        // Clear session
+        await updateBotSession(user.facebook_id, null)
+
+    } catch (error) {
+        console.error('Error in ad receipt process:', error)
+        await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+    }
+}
+
+// Handle my advertisements
+export async function handleMyAds(user: any) {
+    await sendTypingIndicator(user.facebook_id)
+
+    // Hide previous buttons first
+    await hideButtons(user.facebook_id)
+
+    try {
+        const { data: ads, error } = await supabaseAdmin
+            .from('ads')
+            .select('*')
+            .eq('user_id', user.facebook_id)
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+        if (error) {
+            console.error('Error fetching user ads:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra khi tải quảng cáo của bạn.')
+            return
+        }
+
+        if (!ads || ads.length === 0) {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📢 QUẢNG CÁO CỦA TÔI',
+                'Bạn chưa có quảng cáo nào.',
+                'Hãy tạo quảng cáo đầu tiên để tăng hiển thị!'
+            ])
+        } else {
+            await sendMessagesWithTyping(user.facebook_id, [
+                '📢 QUẢNG CÁO CỦA TÔI',
+                `Tổng cộng: ${ads.length} quảng cáo`
+            ])
+
+            const adsText = ads.map((ad, index) => {
+                const status = ad.status === 'active' ? '✅' : ad.status === 'pending' ? '⏳' : '❌'
+                const date = new Date(ad.created_at).toLocaleDateString('vi-VN')
+                return `${index + 1}. ${status} ${ad.title} - ${formatCurrency(ad.budget)} (${date})`
+            }).join('\n')
+
+            await sendMessage(user.facebook_id, adsText)
+        }
+
+        await sendQuickReply(
+            user.facebook_id,
+            'Tùy chọn:',
+            [
+                createQuickReply('📢 TẠO QUẢNG CÁO MỚI', 'CREATE_AD'),
+                createQuickReply('📊 THỐNG KÊ', 'AD_STATS'),
+                createQuickReply('🔙 QUAY LẠI', 'MAIN_MENU')
+            ]
+        )
+
+    } catch (error) {
+        console.error('Error in my ads:', error)
         await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
     }
 }
