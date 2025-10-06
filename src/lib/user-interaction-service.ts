@@ -12,6 +12,7 @@ export interface UserInteractionState {
     facebook_id: string
     welcome_sent: boolean
     last_interaction: string
+    last_welcome_sent?: string
     interaction_count: number
     bot_active: boolean
     created_at: string
@@ -80,19 +81,18 @@ export class UserInteractionService {
                 return true // Cần gửi welcome
             }
 
-            // Nếu đã gửi welcome rồi, không gửi lại
-            if (userState.welcome_sent) {
-                return false
-            }
+            // Nếu đã gửi welcome rồi, kiểm tra cooldown
+            if (userState.welcome_sent && userState.last_welcome_sent) {
+                // Kiểm tra thời gian từ lần cuối gửi welcome (24h cooldown)
+                const lastWelcomeTime = new Date(userState.last_welcome_sent)
+                const now = new Date()
+                const timeDiff = now.getTime() - lastWelcomeTime.getTime()
+                const cooldownPeriod = 24 * 60 * 60 * 1000 // 24 giờ
 
-            // Kiểm tra thời gian gửi welcome cuối cùng (24h cooldown)
-            const lastWelcomeTime = new Date(userState.last_interaction)
-            const now = new Date()
-            const timeDiff = now.getTime() - lastWelcomeTime.getTime()
-            const cooldownPeriod = 24 * 60 * 60 * 1000 // 24 giờ
-
-            if (timeDiff < cooldownPeriod) {
-                return false // Chưa đủ thời gian cooldown
+                if (timeDiff < cooldownPeriod) {
+                    logger.info('Welcome cooldown active', { facebookId, timeDiff, cooldownPeriod })
+                    return false // Chưa đủ thời gian cooldown
+                }
             }
 
             // Cập nhật interaction count
@@ -115,10 +115,11 @@ export class UserInteractionService {
         try {
             // Gửi welcome message
             await this.sendWelcomeMessage(facebookId, userStatus)
-            
-            // Đánh dấu đã gửi welcome
+
+            // Đánh dấu đã gửi welcome với thời gian chính xác
             await this.updateUserState(facebookId, {
                 welcome_sent: true,
+                last_welcome_sent: new Date().toISOString(),
                 last_interaction: new Date().toISOString()
             })
 

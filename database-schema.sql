@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS user_interactions (
     facebook_id VARCHAR(255) UNIQUE NOT NULL,
     welcome_sent BOOLEAN DEFAULT FALSE,
     last_interaction TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    last_welcome_sent TIMESTAMP WITH TIME ZONE,
     interaction_count INTEGER DEFAULT 0,
     bot_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -846,12 +847,47 @@ SET step = COALESCE(current_step, 0)
 WHERE step IS NULL OR step = 0;
 
 -- Hiển thị thông tin về cột step
-SELECT 
-    column_name, 
-    data_type, 
-    is_nullable, 
+SELECT
+    column_name,
+    data_type,
+    is_nullable,
     column_default
-FROM information_schema.columns 
-WHERE table_name = 'bot_sessions' 
+FROM information_schema.columns
+WHERE table_name = 'bot_sessions'
 AND column_name IN ('step', 'current_step')
 ORDER BY column_name;
+
+-- ========================================
+-- MIGRATION: Thêm cột last_welcome_sent vào user_interactions
+-- ========================================
+-- Cập nhật: Thêm cột để lưu thời gian gửi welcome cuối cùng
+
+-- Thêm cột last_welcome_sent vào bảng user_interactions (nếu chưa có)
+ALTER TABLE user_interactions
+ADD COLUMN IF NOT EXISTS last_welcome_sent TIMESTAMP WITH TIME ZONE;
+
+-- Tạo index cho cột mới để tăng tốc query
+CREATE INDEX IF NOT EXISTS idx_user_interactions_last_welcome_sent
+ON user_interactions(last_welcome_sent)
+WHERE last_welcome_sent IS NOT NULL;
+
+-- Cập nhật comment cho cột mới
+COMMENT ON COLUMN user_interactions.last_welcome_sent IS 'Thời gian gửi welcome message cuối cùng (để tính 24h cooldown)';
+
+-- Migration: Cập nhật dữ liệu hiện có
+-- Nếu user đã gửi welcome (welcome_sent = true) nhưng không có last_welcome_sent
+-- thì đặt last_welcome_sent = last_interaction
+UPDATE user_interactions
+SET last_welcome_sent = last_interaction
+WHERE welcome_sent = true
+AND (last_welcome_sent IS NULL OR last_welcome_sent = '');
+
+-- Hiển thị thông tin về bảng user_interactions sau khi cập nhật
+SELECT
+    column_name,
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'user_interactions'
+ORDER BY ordinal_position;
