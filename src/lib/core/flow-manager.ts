@@ -208,7 +208,7 @@ export class FlowManager {
     private static async sendDetailedInfo(user: any): Promise<void> {
         try {
             const { sendMessage } = await import('../facebook-api')
-            
+
             // Send detailed information in 2 compact messages
             const infoMessage = `📋 THÔNG TIN CHI TIẾT BOT TÂN DẬU
 
@@ -232,12 +232,12 @@ Kết nối với hơn 2 triệu Tân Dậu để cùng nhau phát triển và t
 • Hỗ trợ 24/7 từ admin
 
 Bạn có muốn đăng ký ngay không?`
-            
+
             await sendMessage(user.facebook_id, infoMessage)
             await this.delay(1000)
             await sendMessage(user.facebook_id, processMessage)
             await this.delay(1000)
-            
+
             // Send action buttons
             const { sendQuickReply, createQuickReply } = await import('../facebook-api')
             await sendQuickReply(user.facebook_id, 'Bạn muốn làm gì tiếp theo?', [
@@ -245,7 +245,7 @@ Bạn có muốn đăng ký ngay không?`
                 createQuickReply('🛒 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
                 createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
             ])
-            
+
         } catch (error) {
             console.error('Error sending detailed info:', error)
             await this.sendErrorMessage(user.facebook_id)
@@ -259,8 +259,8 @@ Bạn có muốn đăng ký ngay không?`
         try {
             const { sendMessage, hideButtons } = await import('../facebook-api')
 
-            // Send contact message
-            await sendMessage(user.facebook_id, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!')
+            // Send contact information
+            await sendMessage(user.facebook_id, '💬 THÔNG TIN LIÊN HỆ:\n\n📧 Email: dinhkhanhtung@outlook.com\n📱 SĐT: 0982581222\n\nCảm ơn bạn đã quan tâm!')
 
             // Hide buttons
             const hideResult = await hideButtons(user.facebook_id)

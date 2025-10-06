@@ -270,9 +270,7 @@ export class UserInteractionService {
 
             // Gửi thông báo và ẩn nút
             await sendMessage(facebookId,
-                '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!\n' +
-                '⏰ Vui lòng chờ đợi trong giây lát!\n\n' +
-                '💡 Các nút chức năng đã được ẩn để Admin có thể hỗ trợ bạn trực tiếp.'
+                '💬 THÔNG TIN LIÊN HỆ:\n\n📧 Email: dinhkhanhtung@outlook.com\n📱 SĐT: 0982581222\n\nCảm ơn bạn đã quan tâm!'
             )
 
             logger.info('Bot stopped for user due to non-button interaction', { facebookId })

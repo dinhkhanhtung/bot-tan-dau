@@ -513,7 +513,7 @@ async function handleUnregisteredSpam(facebookId: string, message: string, userS
 
         if (warningCount === 0) {
             // Chỉ gửi thông báo 1 lần duy nhất
-            await sendMessage(facebookId, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!')
+            await sendMessage(facebookId, '💬 THÔNG TIN LIÊN HỆ:\n\n📧 Email: dinhkhanhtung@outlook.com\n📱 SĐT: 0982581222\n\nCảm ơn bạn đã quan tâm!')
 
             // Ẩn nút Chat Bot
             const { hideButtons } = await import('./facebook-api')
