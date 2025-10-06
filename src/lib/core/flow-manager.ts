@@ -259,8 +259,8 @@ Bạn có muốn đăng ký ngay không?`
         try {
             const { sendMessage, hideButtons } = await import('../facebook-api')
 
-            // Send contact information
-            await sendMessage(user.facebook_id, '💬 THÔNG TIN LIÊN HỆ:\n\n📧 Email: dinhkhanhtung@outlook.com\n📱 SĐT: 0982581222\n\nCảm ơn bạn đã quan tâm!')
+            // Send contact message
+            await sendMessage(user.facebook_id, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!')
 
             // Hide buttons
             const hideResult = await hideButtons(user.facebook_id)
