@@ -590,7 +590,7 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
 
         // Đơn giản hóa: chỉ lưu những gì cần thiết - FIX STEP HANDLING
         let stepValue: number = 0
-        if (sessionData?.step !== undefined) {
+        if (sessionData?.step !== undefined && sessionData?.step !== null) {
             stepValue = typeof sessionData.step === 'string' ? parseInt(sessionData.step) || 0 : sessionData.step
         }
 
@@ -607,7 +607,8 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
             facebookId,
             currentFlow: sessionToSave.current_flow,
             step: sessionToSave.step,
-            current_step: sessionToSave.current_step
+            current_step: sessionToSave.current_step,
+            data: sessionToSave.data
         })
 
         // Sử dụng upsert đơn giản
@@ -630,7 +631,8 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
             facebookId,
             currentFlow: sessionToSave.current_flow,
             step: sessionToSave.step,
-            current_step: sessionToSave.current_step
+            current_step: sessionToSave.current_step,
+            data: sessionToSave.data
         })
 
     } catch (error) {

@@ -7,7 +7,8 @@ import {
     createQuickReply,
     sendMessagesWithTyping
 } from '../facebook-api'
-import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId, updateBotSession, getBotSession } from '../utils'
+import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId } from '../utils'
+import { updateBotSession, getBotSession } from '../database-service'
 import { LOCATIONS, DISTRICTS, BOT_INFO, BOT_CONFIG } from '../constants'
 
 export class AuthFlow {
@@ -46,15 +47,20 @@ export class AuthFlow {
             // Get current step from session - ensure consistent numeric comparison
             let currentStep: number
 
-            if (session?.step !== undefined) {
+            if (session?.step !== undefined && session?.step !== null) {
                 currentStep = typeof session.step === 'string' ? parseInt(session.step) || 0 : session.step
-            } else if (session?.current_step !== undefined) {
+            } else if (session?.current_step !== undefined && session?.current_step !== null) {
                 currentStep = typeof session.current_step === 'string' ? parseInt(session.current_step) || 0 : session.current_step
             } else {
                 currentStep = 0
             }
 
             console.log('🔍 Current step value:', currentStep, 'Type:', typeof currentStep)
+            console.log('[DEBUG] Session step details:', {
+                sessionStep: session?.step,
+                sessionCurrentStep: session?.current_step,
+                resolvedStep: currentStep
+            })
 
             // Handle name step (step 0)
             if (currentStep === 0) {
@@ -78,6 +84,7 @@ export class AuthFlow {
             }
             else {
                 console.log('❌ Unknown step:', currentStep, 'Type:', typeof currentStep)
+                console.log('[DEBUG] Session data:', JSON.stringify(session, null, 2))
                 await this.sendErrorMessage(user.facebook_id)
             }
 
@@ -106,7 +113,12 @@ export class AuthFlow {
             data: { name: text.trim() }
         }
 
+        console.log('[DEBUG] Saving name step session:', JSON.stringify(sessionData))
         await updateBotSession(user.facebook_id, sessionData)
+
+        // Verify session was updated
+        const updatedSession = await getBotSession(user.facebook_id)
+        console.log('[DEBUG] Session after name step update:', JSON.stringify(updatedSession))
 
         // Send phone prompt
         await this.sendMessage(user.facebook_id, `✅ Họ tên: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📱 Bước 2/4: Số điện thoại\n💡 Nhập số điện thoại để nhận thông báo quan trọng\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập số điện thoại:`)
