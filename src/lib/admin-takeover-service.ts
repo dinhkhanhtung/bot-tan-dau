@@ -88,6 +88,12 @@ export class AdminTakeoverService {
             const { UserInteractionService } = await import('./user-interaction-service')
             await UserInteractionService.reactivateBot(facebookId)
 
+            // Reset spam data để user có thể sử dụng bot lại
+            await supabaseAdmin
+                .from('spam_tracking')
+                .delete()
+                .eq('user_id', facebookId)
+
             // Gửi thông báo cho user
             await sendMessage(facebookId,
                 '👨‍💼 Admin đã kết thúc cuộc trò chuyện.\n' +
