@@ -24,34 +24,43 @@ async function cleanupDatabase() {
         // 1. Xóa tất cả dữ liệu trong các bảng chính
         console.log('📝 Xóa dữ liệu trong các bảng...')
 
+        // Thứ tự xóa quan trọng để tránh foreign key constraints
+        // Xóa từ bảng con đến bảng cha
         const tables = [
-            'messages',
-            'conversations',
-            'listings',
-            'payments',
-            'ratings',
-            'events',
-            'event_participants',
-            'notifications',
-            'ads',
-            'search_requests',
-            'referrals',
-            'user_points',
-            'point_transactions',
-            'bot_sessions',
+            // Bảng không có foreign key dependencies
             'user_messages',
             'spam_logs',
             'spam_tracking',
             'chat_bot_offer_counts',
             'user_bot_modes',
+            'bot_sessions',
             'admin_chat_sessions',
             'user_activities',
             'user_activity_logs',
             'system_metrics',
+            'ai_analytics',
+            'ai_templates',
             'admin_users',
             'bot_settings',
-            'ai_analytics',
-            'ai_templates'
+
+            // Bảng có foreign key đến users nhưng không có bảng khác phụ thuộc
+            'point_transactions',
+            'user_points',
+            'referrals',
+            'search_requests',
+            'ads',
+            'notifications',
+            'event_participants',
+            'events',
+            'ratings',
+            'payments',
+            'listings',
+            'conversations',
+            'messages',
+            'user_interactions',
+
+            // Bảng chính - users (cuối cùng)
+            'users'
         ]
 
         for (const table of tables) {
@@ -64,17 +73,21 @@ async function cleanupDatabase() {
                     case 'spam_logs':
                     case 'admin_users':
                     case 'bot_settings':
-                        // Các bảng có id là SERIAL (INTEGER)
-                        deleteQuery = deleteQuery.neq('id', 0)
+                        // Các bảng có id là SERIAL (INTEGER) - xóa tất cả
+                        deleteQuery = deleteQuery.gte('id', 0)
                         break
                     case 'chat_bot_offer_counts':
                     case 'user_bot_modes':
-                        // Các bảng có id là BIGSERIAL (BIGINT)
-                        deleteQuery = deleteQuery.neq('id', 0)
+                        // Các bảng có id là BIGSERIAL (BIGINT) - xóa tất cả
+                        deleteQuery = deleteQuery.gte('id', 0)
+                        break
+                    case 'users':
+                        // Bảng users - xóa tất cả trừ admin
+                        deleteQuery = deleteQuery.neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
                         break
                     default:
-                        // Các bảng có id là UUID hoặc không có điều kiện
-                        deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
+                        // Các bảng có id là UUID - xóa tất cả
+                        deleteQuery = deleteQuery.gte('id', '00000000-0000-0000-0000-000000000000')
                         break
                 }
 
@@ -90,20 +103,9 @@ async function cleanupDatabase() {
             }
         }
 
-        // 2. Xóa tất cả users (trừ admin)
-        console.log('👥 Xóa tất cả users (trừ admin)...')
-        const { error: usersError } = await supabase
-            .from('users')
-            .delete()
-            .neq('facebook_id', process.env.FACEBOOK_PAGE_ID) // Giữ lại admin
+        // 2. Users đã được xóa trong vòng lặp trên
 
-        if (usersError) {
-            console.log('⚠️ Lỗi khi xóa users:', usersError.message)
-        } else {
-            console.log('✅ Đã xóa tất cả users (trừ admin)')
-        }
-
-        // 3. Reset bot settings
+        // 2. Reset bot settings
         console.log('🤖 Reset bot settings...')
         const { error: settingsError } = await supabase
             .from('bot_settings')
@@ -123,7 +125,7 @@ async function cleanupDatabase() {
             console.log('✅ Đã reset bot settings')
         }
 
-        // 4. Tạo admin user mặc định (nếu chưa có)
+        // 3. Tạo admin user mặc định (nếu chưa có)
         console.log('👑 Tạo admin user mặc định...')
         const { data: existingAdmin } = await supabase
             .from('users')

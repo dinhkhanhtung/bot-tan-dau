@@ -189,6 +189,7 @@ async function handleCleanupData() {
             'listings',
             'conversations',
             'messages',
+            'user_interactions',
 
             // Bảng chính - users (cuối cùng)
             'users'
@@ -218,17 +219,17 @@ async function handleCleanupData() {
                     case 'spam_logs':
                     case 'admin_users':
                     case 'bot_settings':
-                        // Các bảng có id là SERIAL (INTEGER)
-                        deleteQuery = deleteQuery.neq('id', 0)
+                        // Các bảng có id là SERIAL (INTEGER) - xóa tất cả
+                        deleteQuery = deleteQuery.gte('id', 0)
                         break
                     case 'chat_bot_offer_counts':
                     case 'user_bot_modes':
-                        // Các bảng có id là BIGSERIAL (BIGINT)
-                        deleteQuery = deleteQuery.neq('id', 0)
+                        // Các bảng có id là BIGSERIAL (BIGINT) - xóa tất cả
+                        deleteQuery = deleteQuery.gte('id', 0)
                         break
                     default:
-                        // Các bảng có id là UUID
-                        deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
+                        // Các bảng có id là UUID - xóa tất cả
+                        deleteQuery = deleteQuery.gte('id', '00000000-0000-0000-0000-000000000000')
                         break
                 }
 
