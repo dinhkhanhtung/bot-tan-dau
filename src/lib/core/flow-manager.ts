@@ -3,7 +3,7 @@ import { SessionManager } from './session-manager'
 
 /**
  * Centralized Flow Manager
- * Routes messages to appropriate flows and manages flow lifecycle
+ * Routes messages to appropriate flows, and manages flow lifecycle
  */
 export class FlowManager {
     private static flows: Map<string, IFlow> = new Map()
