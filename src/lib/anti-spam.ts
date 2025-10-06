@@ -415,8 +415,9 @@ export async function handleAntiSpam(facebookId: string, message: string, userSt
     // QUAN TRỌNG: Kiểm tra user có đang trong bot mode không
     const isInBotMode = await checkUserBotMode(facebookId)
     if (!isInBotMode) {
-        console.log('🚫 User not in bot mode - skipping anti-spam check')
-        return { action: 'none', block: false }
+        console.log('🚫 User not in bot mode - auto-entering bot mode for first message')
+        // Tự động đặt user vào bot mode cho tin nhắn đầu tiên
+        await setUserBotMode(facebookId)
     }
 
     // QUAN TRỌNG: Nếu đang trong flow hợp lệ, KHÔNG áp dụng chống spam
