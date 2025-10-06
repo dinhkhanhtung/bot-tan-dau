@@ -5,6 +5,9 @@ import { logger, logSystemEvent, logError } from '@/lib/logger'
 import { errorHandler, createApiError, ErrorType } from '@/lib/error-handler'
 import { UnifiedBotSystem } from '@/lib/core/unified-entry-point'
 
+// Initialize bot system once
+let systemInitialized = false
+
 // Verify webhook signature
 function verifySignature(payload: string, signature: string): boolean {
     const expectedSignature = crypto
@@ -43,6 +46,12 @@ export async function POST(request: NextRequest) {
     const startTime = Date.now()
 
     try {
+        // Initialize bot system if not already done
+        if (!systemInitialized) {
+            UnifiedBotSystem.initialize()
+            systemInitialized = true
+        }
+
         const body = await request.text()
         const signature = request.headers.get('x-hub-signature-256')
 

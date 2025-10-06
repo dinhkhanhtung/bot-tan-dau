@@ -7,12 +7,30 @@ import { getUserByFacebookId, getBotSession, getBotStatus } from '../database-se
 import { supabaseAdmin } from '../supabase'
 import { welcomeService, WelcomeType } from '../welcome-service'
 import { messageProcessor } from './message-processor'
+import { FlowManager } from './flow-manager'
+import { FlowInitializer } from './flow-initializer'
 
 /**
  * Unified Bot System - Main entry point for bot message processing
  * Handles all incoming messages with proper routing and flow management
  */
 export class UnifiedBotSystem {
+    private static initialized = false
+
+    /**
+     * Initialize the bot system (call once at startup)
+     */
+    static initialize(): void {
+        if (this.initialized) {
+            console.log('⚠️ Bot system already initialized')
+            return
+        }
+
+        console.log('🚀 Initializing Unified Bot System...')
+        FlowInitializer.initialize()
+        this.initialized = true
+        console.log('✅ Unified Bot System initialized successfully')
+    }
 
     /**
      * Main entry point for processing all incoming messages
@@ -52,22 +70,11 @@ export class UnifiedBotSystem {
                 sessionData: session?.data
             })
 
-            // If user is in an active flow, handle flow first - ƯU TIÊN CAO NHẤT
-            if (currentFlow && ['registration', 'listing', 'search'].includes(currentFlow)) {
-                logger.info('User in active flow - PRIORITIZING FLOW', {
-                    currentFlow,
-                    facebook_id: user.facebook_id,
-                    step: session?.step
-                })
-                await this.handleFlowMessage(user, text, session)
-                return
-            }
-
-            // Step 4: Handle regular message
+            // Step 3: Use FlowManager to handle message
             if (isPostback && postback) {
-                await this.handlePostbackAction(user, postback)
+                await FlowManager.handlePostback(user, postback)
             } else if (text) {
-                await this.handleTextMessage(user, text)
+                await FlowManager.handleMessage(user, text)
             } else {
                 await this.handleDefaultMessage(user)
             }
