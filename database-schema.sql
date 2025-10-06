@@ -12,6 +12,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 1. DROP EXISTING TABLES (Nếu có)
 -- ========================================
 
+DROP TABLE IF EXISTS user_interactions CASCADE;
 DROP TABLE IF EXISTS admin_chat_sessions CASCADE;
 DROP TABLE IF EXISTS messages CASCADE;
 DROP TABLE IF EXISTS conversations CASCADE;
@@ -35,6 +36,22 @@ DROP TABLE IF EXISTS admin_users CASCADE;
 -- ========================================
 -- 2. MAIN TABLES
 -- ========================================
+
+-- User interactions table (Quản lý trạng thái tương tác)
+CREATE TABLE IF NOT EXISTS user_interactions (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    facebook_id VARCHAR(255) UNIQUE NOT NULL,
+    welcome_sent BOOLEAN DEFAULT FALSE,
+    last_interaction TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    interaction_count INTEGER DEFAULT 0,
+    bot_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for user_interactions
+CREATE INDEX IF NOT EXISTS idx_user_interactions_facebook_id ON user_interactions(facebook_id);
+CREATE INDEX IF NOT EXISTS idx_user_interactions_bot_active ON user_interactions(bot_active);
 
 -- Users table (Đã thêm welcome_message_sent column)
 CREATE TABLE IF NOT EXISTS users (
@@ -332,9 +349,9 @@ CREATE TABLE IF NOT EXISTS bot_settings (
 -- Admin chat sessions table (MỚI)
 CREATE TABLE IF NOT EXISTS admin_chat_sessions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id VARCHAR(255) NOT NULL,
-    status VARCHAR(20) DEFAULT 'waiting' CHECK (status IN ('waiting', 'active', 'closed')),
-    admin_id VARCHAR(255),
+    user_facebook_id VARCHAR(255) NOT NULL,
+    admin_id VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
     started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     ended_at TIMESTAMP WITH TIME ZONE,
     last_message_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -367,8 +384,8 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
 
 -- Admin chat sessions indexes (MỚI)
-CREATE INDEX IF NOT EXISTS idx_admin_chat_sessions_user_id ON admin_chat_sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_admin_chat_sessions_status ON admin_chat_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_admin_chat_sessions_user_facebook_id ON admin_chat_sessions(user_facebook_id);
+CREATE INDEX IF NOT EXISTS idx_admin_chat_sessions_is_active ON admin_chat_sessions(is_active);
 CREATE INDEX IF NOT EXISTS idx_admin_chat_sessions_admin_id ON admin_chat_sessions(admin_id);
 
 -- ========================================

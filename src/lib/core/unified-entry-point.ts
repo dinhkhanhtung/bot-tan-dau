@@ -9,6 +9,8 @@ import { welcomeService, WelcomeType } from '../welcome-service'
 import { messageProcessor } from './message-processor'
 import { FlowManager } from './flow-manager'
 import { FlowInitializer } from './flow-initializer'
+import { UserInteractionService } from '../user-interaction-service'
+import { AdminTakeoverService } from '../admin-takeover-service'
 
 /**
  * Unified Bot System - Main entry point for bot message processing
@@ -54,7 +56,33 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Step 2: Use FlowManager to handle message
+            // Step 2: Check if admin is active for this user
+            const isAdminActive = await AdminTakeoverService.isAdminActive(user.facebook_id)
+            if (isAdminActive) {
+                logger.info('Admin is active for user, ignoring bot message', { facebook_id: user.facebook_id })
+                return
+            }
+
+            // Step 3: Check if bot is active for this user
+            const isBotActive = await UserInteractionService.isBotActive(user.facebook_id)
+            if (!isBotActive) {
+                logger.info('Bot is not active for user, ignoring message', { facebook_id: user.facebook_id })
+                return
+            }
+
+            // Step 4: Handle first message (welcome logic)
+            if (!isPostback && text) {
+                const shouldSendWelcome = await UserInteractionService.handleFirstMessage(user.facebook_id, user.status)
+                if (shouldSendWelcome) {
+                    await UserInteractionService.sendWelcomeAndMark(user.facebook_id, user.status)
+                    return
+                } else {
+                    // Handle subsequent messages
+                    await UserInteractionService.handleSubsequentMessage(user.facebook_id, text)
+                }
+            }
+
+            // Step 5: Use FlowManager to handle message
             if (isPostback && postback) {
                 await FlowManager.handlePostback(user, postback)
             } else if (text) {

@@ -4,9 +4,14 @@ import { CONFIG } from '@/lib/config'
 import { logger, logSystemEvent, logError } from '@/lib/logger'
 import { errorHandler, createApiError, ErrorType } from '@/lib/error-handler'
 import { UnifiedBotSystem } from '@/lib/core/unified-entry-point'
+import { AdminTakeoverService } from '@/lib/admin-takeover-service'
+import { supabaseAdmin } from '@/lib/supabase'
 
 // Initialize bot system once
 let systemInitialized = false
+
+// Track processed messages to avoid duplicates
+const processedMessages = new Set<string>()
 
 // Verify webhook signature
 function verifySignature(payload: string, signature: string): boolean {
@@ -170,6 +175,13 @@ async function handleMessageEvent(event: any) {
             entries.slice(-500).forEach(entry => processedMessages.add(entry))
         }
 
+        // Check if this is an admin message
+        const isAdminMessage = await checkIfAdminMessage(senderId)
+        if (isAdminMessage) {
+            await handleAdminMessage(event)
+            return
+        }
+
         // Get user data
         const { getUserByFacebookId } = await import('@/lib/database-service')
         const user = await getUserByFacebookId(senderId)
@@ -235,7 +247,6 @@ async function handleMessageEvent(event: any) {
 
 // Cache to prevent duplicate postback processing
 const processedPostbacks = new Set<string>()
-const processedMessages = new Set<string>()
 
 // Handle postback events (button clicks)
 async function handlePostbackEvent(event: any) {
@@ -297,5 +308,59 @@ async function handlePostbackEvent(event: any) {
         )
 
         logError(postbackError, { operation: 'postback_handling', event })
+    }
+}
+
+// Check if message is from admin
+async function checkIfAdminMessage(senderId: string): Promise<boolean> {
+    try {
+        // Check if sender is admin (Facebook Page ID)
+        if (senderId === CONFIG.BOT.APP_ID) {
+            return true
+        }
+
+        // Check if sender is in admin_users table
+        const { data } = await supabaseAdmin
+            .from('admin_users')
+            .select('facebook_id')
+            .eq('facebook_id', senderId)
+            .eq('is_active', true)
+            .single()
+
+        return !!data
+    } catch (error) {
+        logger.error('Error checking admin message', { senderId, error })
+        return false
+    }
+}
+
+// Handle admin message
+async function handleAdminMessage(event: any) {
+    try {
+        const senderId = event.sender.id
+        const message = event.message
+        const text = message.text || ''
+
+        logger.info('Processing admin message', { senderId, text })
+
+        // Check if admin is chatting with any user
+        const { data: activeChats } = await supabaseAdmin
+            .from('admin_chat_sessions')
+            .select('user_facebook_id')
+            .eq('admin_id', senderId)
+            .eq('is_active', true)
+
+        if (activeChats && activeChats.length > 0) {
+            // Admin is chatting with users, forward message to all active chats
+            for (const chat of activeChats) {
+                await AdminTakeoverService.handleAdminMessage(chat.user_facebook_id, senderId, text)
+            }
+        } else {
+            // Admin is not in active chat, this might be a command or general message
+            logger.info('Admin message but no active chats', { senderId, text })
+        }
+
+    } catch (error) {
+        logger.error('Error handling admin message', { event, error })
     }
 }
