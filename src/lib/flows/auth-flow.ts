@@ -81,15 +81,22 @@ export class AuthFlow {
             return
         }
 
-        // Save name to database directly - NO SESSION COMPLEXITY
+        // FIX: Delete existing session first, then create new one
+        await supabaseAdmin
+            .from('bot_sessions')
+            .delete()
+            .eq('facebook_id', user.facebook_id)
+
+        // Create new session with name data
         const { error } = await supabaseAdmin
             .from('bot_sessions')
-            .upsert({
+            .insert({
                 facebook_id: user.facebook_id,
                 current_flow: 'registration',
                 step: 1,
                 current_step: 1,
                 data: { name: text.trim() },
+                created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             })
 
@@ -145,10 +152,16 @@ export class AuthFlow {
 
         const currentData = sessionData?.data || {}
 
-        // Update session with phone data
+        // FIX: Delete existing session first, then create new one
+        await supabaseAdmin
+            .from('bot_sessions')
+            .delete()
+            .eq('facebook_id', user.facebook_id)
+
+        // Create new session with phone data
         const { error } = await supabaseAdmin
             .from('bot_sessions')
-            .upsert({
+            .insert({
                 facebook_id: user.facebook_id,
                 current_flow: 'registration',
                 step: 2,
@@ -157,6 +170,7 @@ export class AuthFlow {
                     ...currentData,
                     phone: phone
                 },
+                created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             })
 
@@ -212,10 +226,16 @@ export class AuthFlow {
 
             const currentData = sessionData?.data || {}
 
-            // Update session with location
+            // FIX: Delete existing session first, then create new one
+            await supabaseAdmin
+                .from('bot_sessions')
+                .delete()
+                .eq('facebook_id', user.facebook_id)
+
+            // Create new session with location
             const { error } = await supabaseAdmin
                 .from('bot_sessions')
-                .upsert({
+                .insert({
                     facebook_id: user.facebook_id,
                     current_flow: 'registration',
                     step: 3,
@@ -224,6 +244,7 @@ export class AuthFlow {
                         ...currentData,
                         location: location
                     },
+                    created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 })
 
