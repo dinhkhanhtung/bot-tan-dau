@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 // Toast notification component
 const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
@@ -57,6 +58,7 @@ export default function AdsPage() {
     start_date: '',
     end_date: ''
   })
+  const router = useRouter()
 
   useEffect(() => {
     fetchAds()
@@ -213,9 +215,17 @@ export default function AdsPage() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">📢 Ads Management</h1>
-              <p className="text-gray-600">Manage advertisements on the platform</p>
+            <div className="flex items-center">
+              <button
+                onClick={() => router.push('/admin/dashboard')}
+                className="mr-4 text-gray-600 hover:text-gray-900"
+              >
+                ← Quay lại
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">📢 Ads Management</h1>
+                <p className="text-gray-600">Manage advertisements on the platform</p>
+              </div>
             </div>
             <button
               onClick={() => setIsCreateModalOpen(true)}
