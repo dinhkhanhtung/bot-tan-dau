@@ -19,14 +19,14 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function cleanupDatabase() {
     console.log('🧹 Bắt đầu làm sạch database...')
-    
+
     try {
         // 1. Xóa tất cả dữ liệu trong các bảng chính
         console.log('📝 Xóa dữ liệu trong các bảng...')
-        
+
         const tables = [
             'messages',
-            'conversations', 
+            'conversations',
             'listings',
             'payments',
             'ratings',
@@ -47,17 +47,23 @@ async function cleanupDatabase() {
             'admin_chat_sessions',
             'user_activities',
             'user_activity_logs',
-            'system_metrics'
+            'system_metrics',
+            'admin_users',
+            'bot_settings',
+            'ai_analytics',
+            'ai_templates'
         ]
 
         for (const table of tables) {
             try {
                 let deleteQuery = supabase.from(table).delete()
-                
+
                 // Xử lý đặc biệt cho từng bảng dựa trên kiểu dữ liệu của cột id
                 switch (table) {
                     case 'user_messages':
                     case 'spam_logs':
+                    case 'admin_users':
+                    case 'bot_settings':
                         // Các bảng có id là SERIAL (INTEGER)
                         deleteQuery = deleteQuery.neq('id', 0)
                         break
@@ -71,9 +77,9 @@ async function cleanupDatabase() {
                         deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
                         break
                 }
-                
+
                 const { error } = await deleteQuery
-                
+
                 if (error) {
                     console.log(`⚠️ Không thể xóa bảng ${table}:`, error.message)
                 } else {
@@ -90,7 +96,7 @@ async function cleanupDatabase() {
             .from('users')
             .delete()
             .neq('facebook_id', process.env.FACEBOOK_PAGE_ID) // Giữ lại admin
-        
+
         if (usersError) {
             console.log('⚠️ Lỗi khi xóa users:', usersError.message)
         } else {
@@ -110,7 +116,7 @@ async function cleanupDatabase() {
                 spam_threshold: 10,
                 updated_at: new Date().toISOString()
             })
-        
+
         if (settingsError) {
             console.log('⚠️ Lỗi khi reset bot settings:', settingsError.message)
         } else {
@@ -140,7 +146,7 @@ async function cleanupDatabase() {
                     welcome_message_sent: true,
                     created_at: new Date().toISOString()
                 })
-            
+
             if (adminError) {
                 console.log('⚠️ Lỗi khi tạo admin user:', adminError.message)
             } else {
