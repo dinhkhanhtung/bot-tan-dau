@@ -120,6 +120,12 @@ export class FlowManager {
      * Handle postback triggers
      */
     private static async handlePostbackTriggers(user: any, payload: string): Promise<void> {
+        // Handle special postbacks first
+        if (payload === 'INFO' || payload === 'CONTACT_ADMIN') {
+            await this.handleSpecialPostbacks(user, payload)
+            return
+        }
+
         // Check each flow for postback triggers
         for (const [flowName, flow] of Array.from(this.flows.entries())) {
             if (flow.canHandle(user, null)) {
@@ -177,6 +183,93 @@ export class FlowManager {
         // Use the original logic from unified-entry-point
         const { UnifiedBotSystem } = await import('./unified-entry-point')
         await UnifiedBotSystem.handleDefaultMessage(user)
+    }
+
+    /**
+     * Handle special postbacks that don't trigger flows
+     */
+    private static async handleSpecialPostbacks(user: any, payload: string): Promise<void> {
+        switch (payload) {
+            case 'INFO':
+                await this.sendDetailedInfo(user)
+                break
+            case 'CONTACT_ADMIN':
+                await this.contactAdmin(user)
+                break
+            default:
+                // Not a special postback, continue with normal flow
+                return
+        }
+    }
+
+    /**
+     * Send detailed information about the bot
+     */
+    private static async sendDetailedInfo(user: any): Promise<void> {
+        try {
+            const { sendMessage } = await import('../facebook-api')
+            
+            // Send detailed information with smooth flow
+            await sendMessage(user.facebook_id, '📋 THÔNG TIN CHI TIẾT BOT TÂN DẬU')
+            await this.delay(1500)
+            
+            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+            await sendMessage(user.facebook_id, '📋 QUY TRÌNH ĐĂNG KÝ:')
+            await sendMessage(user.facebook_id, '1️⃣ Họ tên đầy đủ')
+            await sendMessage(user.facebook_id, '2️⃣ Số điện thoại')
+            await sendMessage(user.facebook_id, '3️⃣ Tỉnh/thành phố')
+            await sendMessage(user.facebook_id, '4️⃣ Xác nhận sinh năm 1981')
+            await this.delay(1500)
+            
+            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+            await sendMessage(user.facebook_id, '💡 LƯU Ý QUAN TRỌNG:')
+            await sendMessage(user.facebook_id, '• Chỉ dành cho Tân Dậu (1981)')
+            await sendMessage(user.facebook_id, '• Thông tin được bảo mật tuyệt đối')
+            await sendMessage(user.facebook_id, '• Hỗ trợ 24/7 từ admin')
+            await this.delay(1500)
+            
+            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+            await sendMessage(user.facebook_id, '🎯 TÍNH NĂNG CHÍNH:')
+            await sendMessage(user.facebook_id, '• 🛒 Tìm kiếm và niêm yết sản phẩm')
+            await sendMessage(user.facebook_id, '• 💬 Kết nối với người dùng khác')
+            await sendMessage(user.facebook_id, '• 📊 Xem thống kê và báo cáo')
+            await sendMessage(user.facebook_id, '• 🎁 Nhận điểm thưởng và quà tặng')
+            await this.delay(1500)
+            
+            await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+            await sendMessage(user.facebook_id, 'Bạn có muốn đăng ký ngay không?')
+            
+            // Send action buttons
+            const { sendQuickReply, createQuickReply } = await import('../facebook-api')
+            await sendQuickReply(user.facebook_id, 'Chọn hành động:', [
+                createQuickReply('🚀 ĐĂNG KÝ NGAY', 'REGISTER'),
+                createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
+            ])
+            
+        } catch (error) {
+            console.error('Error sending detailed info:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Contact admin
+     */
+    private static async contactAdmin(user: any): Promise<void> {
+        try {
+            const { sendMessage } = await import('../facebook-api')
+            await sendMessage(user.facebook_id, '💬 Bạn đã yêu cầu hỗ trợ từ admin. Admin sẽ liên hệ với bạn sớm nhất có thể!')
+        } catch (error) {
+            console.error('Error contacting admin:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Delay helper for smooth message flow
+     */
+    private static async delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms))
     }
 
     /**
