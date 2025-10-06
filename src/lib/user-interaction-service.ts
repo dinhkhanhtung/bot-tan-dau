@@ -179,43 +179,18 @@ export class UserInteractionService {
      * Gửi welcome message
      */
     private static async sendWelcomeMessage(facebookId: string, userStatus: string): Promise<void> {
-        if (userStatus === 'new_user') {
-            // User chưa đăng ký
-            await sendMessage(facebookId, '🎉 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!')
-            await sendMessage(facebookId, '🤖 Tôi là trợ lý AI giúp bạn kết nối và mua bán trong cộng đồng Tân Dậu')
-            await sendMessage(facebookId, '━━━━━━━━━━━━━━━━━━━━')
-            await sendMessage(facebookId, '💡 Bạn có thể:')
-            await sendMessage(facebookId, '• 🚀 Đăng ký thành viên')
-            await sendMessage(facebookId, '• 🛒 Tìm kiếm sản phẩm')
-            await sendMessage(facebookId, '• 💬 Liên hệ Admin')
-            await sendMessage(facebookId, '• ℹ️ Tìm hiểu thêm')
-            await sendMessage(facebookId, '━━━━━━━━━━━━━━━━━━━━')
-            
-            await sendQuickReply(facebookId, 'Chọn chức năng:', [
-                createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
-                createQuickReply('🛒 TÌM KIẾM', 'SEARCH'),
-                createQuickReply('💬 HỖ TRỢ ADMIN', 'CONTACT_ADMIN'),
-                createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO')
-            ])
-        } else {
-            // User đã đăng ký
-            await sendMessage(facebookId, '👋 Chào mừng bạn quay trở lại!')
-            await sendMessage(facebookId, '🤖 Tôi đã sẵn sàng hỗ trợ bạn tiếp tục hành trình trong cộng đồng Tân Dậu')
-            await sendMessage(facebookId, '━━━━━━━━━━━━━━━━━━━━')
-            await sendMessage(facebookId, '💡 Bạn có thể:')
-            await sendMessage(facebookId, '• 🛒 Tìm kiếm sản phẩm')
-            await sendMessage(facebookId, '• 📝 Đăng bán sản phẩm')
-            await sendMessage(facebookId, '• 💬 Hỗ trợ Admin')
-            await sendMessage(facebookId, '• 📊 Xem thống kê')
-            await sendMessage(facebookId, '━━━━━━━━━━━━━━━━━━━━')
-            
-            await sendQuickReply(facebookId, 'Chọn chức năng:', [
-                createQuickReply('🛒 TÌM KIẾM', 'SEARCH'),
-                createQuickReply('📝 ĐĂNG BÁN', 'LISTING'),
-                createQuickReply('💬 HỖ TRỢ ADMIN', 'CONTACT_ADMIN'),
-                createQuickReply('📊 THỐNG KÊ', 'STATS')
-            ])
+        // Sử dụng logic anti-spam đã được cải thiện
+        const { handleAntiSpam } = await import('./anti-spam')
+        
+        // Gọi handleAntiSpam để xử lý welcome và spam detection
+        const result = await handleAntiSpam(facebookId, 'welcome', userStatus, null)
+        
+        if (result.block) {
+            logger.info('Welcome blocked due to spam detection', { facebookId, result })
+            return
         }
+        
+        logger.info('Welcome sent via anti-spam logic', { facebookId, userStatus, result })
     }
 
     /**
@@ -233,16 +208,28 @@ export class UserInteractionService {
                 return
             }
 
+            // Sử dụng logic anti-spam để xử lý tin nhắn tiếp theo
+            const { handleAntiSpam } = await import('./anti-spam')
+            
+            // Lấy user status từ bảng users
+            const { getUserByFacebookId } = await import('./database-service')
+            const userData = await getUserByFacebookId(facebookId)
+            const userStatus = userData?.status || 'new_user'
+            
+            const result = await handleAntiSpam(facebookId, message, userStatus, null)
+            
+            if (result.block) {
+                logger.info('Message blocked due to spam detection', { facebookId, result })
+                return
+            }
+
             // Cập nhật interaction count
             await this.updateUserState(facebookId, {
                 interaction_count: userState.interaction_count + 1,
                 last_interaction: new Date().toISOString()
             })
 
-            // Nếu user không ấn nút mà gửi tin nhắn text
-            if (userState.interaction_count >= 2) {
-                await this.handleNonButtonInteraction(facebookId)
-            }
+            logger.info('Subsequent message handled via anti-spam logic', { facebookId, result })
         } catch (error) {
             logger.error('Error handling subsequent message', { facebookId, error })
         }
