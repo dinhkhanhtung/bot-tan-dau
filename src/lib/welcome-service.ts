@@ -25,7 +25,7 @@ const WELCOME_TEMPLATES = {
         description: '',
         intro: '',
         features: [],
-        callToAction: 'Bạn muốn bắt đầu với chức năng nào?'
+        callToAction: 'Chọn một trong các tùy chọn bên dưới nhé!'
     },
     [WelcomeType.RETURNING_USER]: {
         greeting: '👋 Chào mừng bạn quay trở lại!',
