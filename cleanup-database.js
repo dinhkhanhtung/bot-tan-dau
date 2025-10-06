@@ -52,10 +52,27 @@ async function cleanupDatabase() {
 
         for (const table of tables) {
             try {
-                const { error } = await supabase
-                    .from(table)
-                    .delete()
-                    .neq('id', '00000000-0000-0000-0000-000000000000') // Xóa tất cả
+                let deleteQuery = supabase.from(table).delete()
+                
+                // Xử lý đặc biệt cho từng bảng dựa trên kiểu dữ liệu của cột id
+                switch (table) {
+                    case 'user_messages':
+                    case 'spam_logs':
+                        // Các bảng có id là SERIAL (INTEGER)
+                        deleteQuery = deleteQuery.neq('id', 0)
+                        break
+                    case 'chat_bot_offer_counts':
+                    case 'user_bot_modes':
+                        // Các bảng có id là BIGSERIAL (BIGINT)
+                        deleteQuery = deleteQuery.neq('id', 0)
+                        break
+                    default:
+                        // Các bảng có id là UUID hoặc không có điều kiện
+                        deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
+                        break
+                }
+                
+                const { error } = await deleteQuery
                 
                 if (error) {
                     console.log(`⚠️ Không thể xóa bảng ${table}:`, error.message)

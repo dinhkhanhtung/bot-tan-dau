@@ -201,7 +201,7 @@ async function handleCleanupData() {
             try {
                 let deleteQuery = supabaseAdmin.from(table).delete()
 
-                // Xử lý đặc biệt cho từng bảng
+                // Xử lý đặc biệt cho từng bảng dựa trên kiểu dữ liệu của cột id
                 switch (table) {
                     case 'users':
                         // Không xóa admin users
@@ -209,13 +209,43 @@ async function handleCleanupData() {
                             deleteQuery = deleteQuery.neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
                         }
                         break
+                    case 'user_messages':
+                    case 'spam_logs':
+                        // Các bảng có id là SERIAL (INTEGER)
+                        deleteQuery = deleteQuery.neq('id', 0)
+                        break
+                    case 'chat_bot_offer_counts':
+                    case 'user_bot_modes':
+                        // Các bảng có id là BIGSERIAL (BIGINT)
+                        deleteQuery = deleteQuery.neq('id', 0)
+                        break
                     case 'messages':
-                        // Xóa tất cả messages
+                    case 'conversations':
+                    case 'listings':
+                    case 'payments':
+                    case 'ratings':
+                    case 'events':
+                    case 'event_participants':
+                    case 'notifications':
+                    case 'ads':
+                    case 'search_requests':
+                    case 'referrals':
+                    case 'user_points':
+                    case 'point_transactions':
+                    case 'bot_sessions':
+                    case 'admin_chat_sessions':
+                    case 'user_activities':
+                    case 'user_activity_logs':
+                    case 'system_metrics':
+                    case 'ai_templates':
+                    case 'ai_analytics':
+                        // Các bảng có id là UUID
                         deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
                         break
                     default:
-                        // Xóa tất cả records cho các bảng khác
-                        deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
+                        // Mặc định xóa tất cả (không có điều kiện)
+                        // deleteQuery = deleteQuery (không thêm điều kiện)
+                        break
                 }
 
                 const { error } = await deleteQuery
