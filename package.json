@@ -16,6 +16,7 @@
         "cleanup:simple": "node scripts/cleanup.js --mode=simple",
         "cleanup:quick": "node scripts/cleanup.js --mode=quick",
         "setup:admin": "node scripts/setup-admin.js",
+        "setup:admin:vercel": "node scripts/vercel-setup-admin.js",
         "test:integration": "node tests/test-registration-flow.js"
     },
     "dependencies": {
