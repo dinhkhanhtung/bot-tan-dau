@@ -816,15 +816,15 @@ BEGIN
                     GET DIAGNOSTICS deleted_count = ROW_COUNT;
                 WHEN 'user_messages', 'spam_logs', 'admin_users', 'bot_settings' THEN
                     -- Các bảng có id là SERIAL - xóa tất cả
-                    EXECUTE format('DELETE FROM %I WHERE id >= 0', table_name);
+                    EXECUTE format('DELETE FROM %I', table_name);
                     GET DIAGNOSTICS deleted_count = ROW_COUNT;
                 WHEN 'chat_bot_offer_counts', 'user_bot_modes' THEN
                     -- Các bảng có id là BIGSERIAL - xóa tất cả
-                    EXECUTE format('DELETE FROM %I WHERE id >= 0', table_name);
+                    EXECUTE format('DELETE FROM %I', table_name);
                     GET DIAGNOSTICS deleted_count = ROW_COUNT;
                 ELSE
                     -- Các bảng có id là UUID - xóa tất cả
-                    EXECUTE format('DELETE FROM %I WHERE id IS NOT NULL', table_name);
+                    EXECUTE format('DELETE FROM %I', table_name);
                     GET DIAGNOSTICS deleted_count = ROW_COUNT;
             END CASE;
             
