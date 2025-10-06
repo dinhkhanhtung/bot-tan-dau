@@ -23,19 +23,19 @@ const WELCOME_TEMPLATES = {
     [WelcomeType.NEW_USER]: {
         greeting: '🎉 Chào bạn ghé thăm Đinh Khánh Tùng!',
         description: '👋 Hôm nay mình có thể giúp gì cho bạn?',
+        intro: 'Có thể bạn cũng muốn tham gia Bot Tân Dậu - Hỗ Trợ Chéo. Ở đây bạn có thể kết nối với hơn 2 triệu Tân Dậu khác để cùng nhau phát triển và thịnh vượng.',
         features: [
-            'Có thể bạn cũng muốn tham gia Bot Tân Dậu - Hỗ Trợ Chéo. Ở đây bạn có thể...',
-            'Cùng nhau kết nối - cùng nhau thịnh vượng',
-            '🎁 QUYỀN LỢI: Trial 3 ngày miễn phí',
-            '💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu',
-            '💳 Phí duy trì: 3,000đ/ngày',
-            '📅 Gói tối thiểu: 3 ngày = 9.000 ₫'
+            '🛒 Tìm kiếm và niêm yết sản phẩm',
+            '💬 Kết nối với người dùng khác',
+            '📊 Xem thống kê và báo cáo',
+            '🎁 Nhận điểm thưởng và quà tặng'
         ],
         callToAction: 'Bạn muốn bắt đầu với chức năng nào?'
     },
     [WelcomeType.RETURNING_USER]: {
         greeting: '👋 Chào mừng bạn quay trở lại!',
         description: '🤖 Tôi đã sẵn sàng hỗ trợ bạn tiếp tục hành trình trong cộng đồng Tân Dậu',
+        intro: '',
         features: [
             '📈 Xem thống kê hoạt động của bạn',
             '🛒 Tiếp tục tìm kiếm sản phẩm',
@@ -47,6 +47,7 @@ const WELCOME_TEMPLATES = {
     [WelcomeType.PENDING_USER]: {
         greeting: '⏳ Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo!',
         description: '📋 Tài khoản của bạn đang chờ Admin duyệt. Trong thời gian này, bạn có thể:',
+        intro: '',
         features: [
             '🔍 Tìm kiếm và xem sản phẩm',
             '👀 Duyệt qua các tin đăng',
@@ -58,6 +59,7 @@ const WELCOME_TEMPLATES = {
     [WelcomeType.EXPIRED_USER]: {
         greeting: '⏰ Chào mừng bạn quay trở lại!',
         description: '💰 Tài khoản của bạn đã hết hạn. Để tiếp tục sử dụng đầy đủ tính năng, vui lòng gia hạn:',
+        intro: '',
         features: [
             '💳 Thanh toán phí duy trì',
             '📊 Xem lịch sử giao dịch',
@@ -69,6 +71,7 @@ const WELCOME_TEMPLATES = {
     [WelcomeType.ADMIN]: {
         greeting: '🔧 Chào mừng Admin!',
         description: '🛠️ Bạn có toàn quyền quản lý hệ thống Bot Tân Dậu - Hỗ Trợ Chéo',
+        intro: '',
         features: [
             '👥 Quản lý người dùng',
             '💰 Quản lý thanh toán',
@@ -115,7 +118,14 @@ export class WelcomeService {
             const combinedMessage = `${template.greeting}\n\n${template.description}`
             await sendMessage(facebookId, combinedMessage)
 
+            // Send intro if available
+            if (template.intro) {
+                await this.delay(1000)
+                await sendMessage(facebookId, template.intro)
+            }
+
             // Send features as a single message with bullet points
+            await this.delay(1000)
             const featuresMessage = template.features.join('\n')
             await sendMessage(facebookId, featuresMessage)
 
