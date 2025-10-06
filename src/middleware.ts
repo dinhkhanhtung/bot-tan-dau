@@ -23,22 +23,23 @@ export function middleware(request: NextRequest) {
         }
 
         try {
-            // Simple token validation - just check if it exists and has basic structure
-            // In production, you might want to implement proper JWT verification
-            if (token && token.length > 10) {
-                console.log('✅ Token validation passed')
-
-                // Add admin info to request headers for API routes
-                const response = NextResponse.next()
-                response.headers.set('x-admin-id', '1')
-                response.headers.set('x-admin-role', 'super_admin')
-
-                return response
-            } else {
-                throw new Error('Invalid token format')
+            // Basic token validation - check if it exists and has reasonable length
+            if (!token || token.length < 10) {
+                console.log('❌ Invalid token format or length')
+                return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
             }
+
+            // For now, we'll allow the token through and let the API routes handle JWT verification
+            // This prevents middleware from blocking valid requests
+            console.log('✅ Token format valid, allowing request to proceed')
+
+            // Add admin info to request headers for API routes
+            const response = NextResponse.next()
+            response.headers.set('x-admin-token', token)
+
+            return response
         } catch (error) {
-            console.log('❌ Token verification failed:', error)
+            console.log('❌ Token verification error:', error)
             return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
         }
     }

@@ -16,7 +16,19 @@ export async function GET(request: NextRequest) {
         }
 
         // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production')
+        let decoded
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production')
+            console.log('✅ JWT token verified successfully for admin dashboard stats')
+        } catch (jwtError: any) {
+            console.error('❌ JWT verification failed:', jwtError)
+            console.error('🔍 Token that failed:', token)
+            console.error('🔑 JWT Secret being used:', process.env.JWT_SECRET ? 'Secret exists' : 'No secret found')
+            return NextResponse.json(
+                { success: false, message: 'Invalid token', error: jwtError?.message || 'Unknown JWT error' },
+                { status: 401 }
+            )
+        }
 
         // Get comprehensive statistics
         const [usersResult, paymentsResult, listingsResult] = await Promise.all([

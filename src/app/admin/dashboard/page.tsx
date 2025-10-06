@@ -73,21 +73,36 @@ export default function AdminDashboard() {
     const fetchStats = async () => {
         try {
             const token = localStorage.getItem('admin_token')
+            console.log('🔑 Fetching stats with token:', token ? 'Token exists' : 'No token')
+
+            if (!token) {
+                console.log('❌ No token found, redirecting to login')
+                router.push('/admin/login')
+                return
+            }
+
+            console.log('🚀 Making API request to /api/admin/dashboard/stats')
             const response = await fetch('/api/admin/dashboard/stats', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             })
-            const data = await response.json()
 
-            if (response.ok) {
+            console.log('📡 Response status:', response.status)
+            const data = await response.json()
+            console.log('📦 Response data:', data)
+
+            if (response.ok && data.success) {
+                console.log('✅ Stats loaded successfully')
                 setStats(data.stats)
             } else {
-                console.error('Failed to fetch stats:', data.message)
+                console.error('❌ Failed to fetch stats:', data.message)
+                // Don't show error state for now, just log it
             }
         } catch (error) {
-            console.error('Error fetching stats:', error)
+            console.error('💥 Error fetching stats:', error)
+            // Don't show error state for now, just log it
         } finally {
             setIsLoading(false)
         }
