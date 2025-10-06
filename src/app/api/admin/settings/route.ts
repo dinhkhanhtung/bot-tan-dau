@@ -209,11 +209,24 @@ async function handleCleanupData() {
                         // Không xóa admin users
                         if (process.env.FACEBOOK_PAGE_ID) {
                             deleteQuery = deleteQuery.neq('facebook_id', process.env.FACEBOOK_PAGE_ID)
+                        } else {
+                            // Nếu không có FACEBOOK_PAGE_ID, xóa tất cả users
+                            deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
                         }
                         break
+                    case 'user_messages':
+                    case 'spam_logs':
+                        // Các bảng có id là SERIAL (INTEGER)
+                        deleteQuery = deleteQuery.neq('id', 0)
+                        break
+                    case 'chat_bot_offer_counts':
+                    case 'user_bot_modes':
+                        // Các bảng có id là BIGSERIAL (BIGINT)
+                        deleteQuery = deleteQuery.neq('id', 0)
+                        break
                     default:
-                        // Xóa tất cả dữ liệu trong bảng (không có điều kiện)
-                        // deleteQuery = deleteQuery (không thêm điều kiện)
+                        // Các bảng có id là UUID
+                        deleteQuery = deleteQuery.neq('id', '00000000-0000-0000-0000-000000000000')
                         break
                 }
 

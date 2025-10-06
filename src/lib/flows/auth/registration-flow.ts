@@ -25,9 +25,9 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Handle step input
+     * Handle message input
      */
-    async handleStep(user: any, text: string, session: any): Promise<void> {
+    async handleMessage(user: any, text: string, session: any): Promise<void> {
         try {
             console.log('🔍 Processing step for user:', user.facebook_id)
             console.log('[DEBUG] Session:', JSON.stringify(session, null, 2))
