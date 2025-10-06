@@ -16,8 +16,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Verify token
-        const jwtSecret = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production'
-        const decoded = jwt.verify(token, jwtSecret) as any
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production')
 
         // Get comprehensive statistics
         const [usersResult, paymentsResult, listingsResult] = await Promise.all([
