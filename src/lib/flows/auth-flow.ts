@@ -62,9 +62,6 @@ export class AuthFlow {
                 resolvedStep: currentStep
             })
 
-            // CRITICAL DEBUG: Log the exact session object
-            console.log('🚨 CRITICAL DEBUG - Full session object:', JSON.stringify(session, null, 2))
-
             // Handle name step (step 0)
             if (currentStep === 0) {
                 console.log('📝 Processing name step')
@@ -98,7 +95,7 @@ export class AuthFlow {
     }
 
     /**
-     * Handle name input step
+     * Handle name input step - FIXED VERSION
      */
     private async handleNameStep(user: any, text: string, session: any): Promise<void> {
         console.log('📝 Processing name step for user:', user.facebook_id)
@@ -109,30 +106,30 @@ export class AuthFlow {
             return
         }
 
-        // Save name and move to phone step
+        // Save name and move to phone step - FIX STEP HANDLING
+        const nextStep = 1 // Always use number
         const sessionData = {
             current_flow: 'registration',
-            step: 1,  // Use numeric step for consistency
+            step: nextStep,  // Use number consistently
             data: { name: text.trim() }
         }
 
         console.log('[DEBUG] Saving name step session:', JSON.stringify(sessionData))
-        
-        // CRITICAL DEBUG: Log before update
-        console.log('🚨 BEFORE UPDATE - Current session:', JSON.stringify(session, null, 2))
-        
-        const updateResult = await updateBotSession(user.facebook_id, sessionData)
-        console.log('🚨 UPDATE RESULT:', updateResult)
 
-        // Verify session was updated
-        const updatedSession = await getBotSession(user.facebook_id)
-        console.log('[DEBUG] Session after name step update:', JSON.stringify(updatedSession))
-        
-        // CRITICAL DEBUG: Verify step was actually updated
-        if (updatedSession && updatedSession.step !== 1) {
-            console.log('🚨 CRITICAL ERROR: Step was not updated! Expected: 1, Got:', updatedSession.step)
-        } else {
-            console.log('✅ Step update successful:', updatedSession?.step)
+        // Add error handling for session update
+        try {
+            await updateBotSession(user.facebook_id, sessionData)
+
+            // Verify session was updated correctly
+            const updatedSession = await getBotSession(user.facebook_id)
+            if (!updatedSession || updatedSession.step !== nextStep) {
+                console.error('❌ Session update failed - retrying...')
+                await updateBotSession(user.facebook_id, sessionData)
+            }
+        } catch (error) {
+            console.error('❌ Critical session update error:', error)
+            await this.sendErrorMessage(user.facebook_id)
+            return
         }
 
         // Send phone prompt
@@ -142,7 +139,7 @@ export class AuthFlow {
     }
 
     /**
-     * Handle phone input step
+     * Handle phone input step - FIXED VERSION
      */
     private async handlePhoneStep(user: any, text: string, session: any): Promise<void> {
         console.log('📱 Processing phone step for user:', user.facebook_id)
@@ -175,10 +172,11 @@ export class AuthFlow {
 
         console.log('[DEBUG] Phone validation passed, updating session...')
 
-        // Update session with phone data
+        // Update session with phone data - FIX STEP HANDLING
+        const nextStep = 2 // Always use number
         const sessionData = {
             current_flow: 'registration',
-            step: 2,  // Use numeric step for consistency
+            step: nextStep,  // Use numeric step for consistency
             data: {
                 ...session.data,
                 phone: phone
@@ -186,11 +184,22 @@ export class AuthFlow {
         }
 
         console.log('[DEBUG] New session data:', JSON.stringify(sessionData))
-        await updateBotSession(user.facebook_id, sessionData)
 
-        // Verify session was updated
-        const updatedSession = await getBotSession(user.facebook_id)
-        console.log('[DEBUG] Session after update:', JSON.stringify(updatedSession))
+        // Add error handling for session update
+        try {
+            await updateBotSession(user.facebook_id, sessionData)
+
+            // Verify session was updated correctly
+            const updatedSession = await getBotSession(user.facebook_id)
+            if (!updatedSession || updatedSession.step !== nextStep) {
+                console.error('❌ Session update failed - retrying...')
+                await updateBotSession(user.facebook_id, sessionData)
+            }
+        } catch (error) {
+            console.error('❌ Critical session update error:', error)
+            await this.sendErrorMessage(user.facebook_id)
+            return
+        }
 
         // Send location prompt
         await this.sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━`)
@@ -224,7 +233,7 @@ export class AuthFlow {
     }
 
     /**
-     * Handle location postback
+     * Handle location postback - FIXED VERSION
      */
     async handleLocationPostback(user: any, location: string): Promise<void> {
         try {
@@ -237,17 +246,32 @@ export class AuthFlow {
                 return
             }
 
-            // Move to final step - birthday verification
+            // Move to final step - birthday verification - FIX STEP HANDLING
+            const nextStep = 3 // Always use number
             const sessionData = {
                 current_flow: 'registration',
-                step: 3,  // Use numeric step for consistency
+                step: nextStep,  // Use numeric step for consistency
                 data: {
                     ...session.data,
                     location: location
                 }
             }
 
-            await updateBotSession(user.facebook_id, sessionData)
+            // Add error handling for session update
+            try {
+                await updateBotSession(user.facebook_id, sessionData)
+
+                // Verify session was updated correctly
+                const updatedSession = await getBotSession(user.facebook_id)
+                if (!updatedSession || updatedSession.step !== nextStep) {
+                    console.error('❌ Session update failed - retrying...')
+                    await updateBotSession(user.facebook_id, sessionData)
+                }
+            } catch (error) {
+                console.error('❌ Critical session update error:', error)
+                await this.sendErrorMessage(user.facebook_id)
+                return
+            }
 
             // Send birthday verification prompt
             await this.sendMessage(user.facebook_id, `✅ Địa điểm: ${location}\n━━━━━━━━━━━━━━━━━━━━\n🎂 Bước 4/4: Xác nhận sinh năm\n💡 Chỉ dành cho Tân Dậu (sinh năm 1981)\n━━━━━━━━━━━━━━━━━━━━`)
@@ -260,7 +284,7 @@ export class AuthFlow {
     }
 
     /**
-     * Complete registration process
+     * Complete registration process - FIXED VERSION
      */
     private async completeRegistration(user: any, data: any): Promise<void> {
         try {
@@ -296,8 +320,14 @@ export class AuthFlow {
                 return
             }
 
-            // Clear session
-            await updateBotSession(user.facebook_id, null)
+            // Clear session - ADD ERROR HANDLING
+            try {
+                await updateBotSession(user.facebook_id, null)
+                console.log('✅ Session cleared successfully')
+            } catch (error) {
+                console.error('❌ Error clearing session:', error)
+                // Don't return here - registration was successful, just log the error
+            }
 
             // Send success message
             await this.sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 3 ngày!\n🚀 Chúc bạn sử dụng bot vui vẻ!`)
@@ -311,29 +341,52 @@ export class AuthFlow {
     }
 
     /**
-     * Start registration process
+     * Start registration process - FIXED VERSION
      */
     private async startRegistration(user: any): Promise<void> {
-        // Create initial session with numeric step 0
-        await updateBotSession(user.facebook_id, {
-            current_flow: 'registration',
-            step: 0,  // Use numeric step for consistency
-            data: {}
-        })
+        try {
+            // Create initial session with numeric step 0 - FIX STEP HANDLING
+            const initialStep = 0 // Always use number
+            const sessionData = {
+                current_flow: 'registration',
+                step: initialStep,  // Use numeric step for consistency
+                data: {}
+            }
 
-        // Send welcome message with quick guide
-        await this.sendMessage(user.facebook_id, '🚀 ĐĂNG KÝ BOT TÂN DẬU - Hỗ Trợ Chéo')
-        await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
-        await this.sendMessage(user.facebook_id, '📋 QUY TRÌNH ĐĂNG KÝ:')
-        await this.sendMessage(user.facebook_id, '1️⃣ Họ tên đầy đủ')
-        await this.sendMessage(user.facebook_id, '2️⃣ Số điện thoại')
-        await this.sendMessage(user.facebook_id, '3️⃣ Tỉnh/thành phố')
-        await this.sendMessage(user.facebook_id, '4️⃣ Xác nhận sinh năm 1981')
-        await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
-        await this.sendMessage(user.facebook_id, '💡 LƯU Ý QUAN TRỌNG:')
-        await this.sendMessage(user.facebook_id, '• Chỉ dành cho Tân Dậu (1981)')
-        await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
-        await this.sendMessage(user.facebook_id, '📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
+            // Add error handling for session update
+            try {
+                await updateBotSession(user.facebook_id, sessionData)
+
+                // Verify session was updated correctly
+                const updatedSession = await getBotSession(user.facebook_id)
+                if (!updatedSession || updatedSession.step !== initialStep) {
+                    console.error('❌ Initial session update failed - retrying...')
+                    await updateBotSession(user.facebook_id, sessionData)
+                }
+            } catch (error) {
+                console.error('❌ Critical initial session update error:', error)
+                await this.sendErrorMessage(user.facebook_id)
+                return
+            }
+
+            // Send welcome message with quick guide
+            await this.sendMessage(user.facebook_id, '🚀 ĐĂNG KÝ BOT TÂN DẬU - Hỗ Trợ Chéo')
+            await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+            await this.sendMessage(user.facebook_id, '📋 QUY TRÌNH ĐĂNG KÝ:')
+            await this.sendMessage(user.facebook_id, '1️⃣ Họ tên đầy đủ')
+            await this.sendMessage(user.facebook_id, '2️⃣ Số điện thoại')
+            await this.sendMessage(user.facebook_id, '3️⃣ Tỉnh/thành phố')
+            await this.sendMessage(user.facebook_id, '4️⃣ Xác nhận sinh năm 1981')
+            await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+            await this.sendMessage(user.facebook_id, '💡 LƯU Ý QUAN TRỌNG:')
+            await this.sendMessage(user.facebook_id, '• Chỉ dành cho Tân Dậu (1981)')
+            await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
+            await this.sendMessage(user.facebook_id, '📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
+
+        } catch (error) {
+            console.error('❌ Registration start error:', error)
+            await this.sendErrorMessage(user.facebook_id)
+        }
     }
 
     /**
@@ -427,8 +480,14 @@ export class AuthFlow {
                     await this.sendErrorMessage(user.facebook_id)
                 }
             } else if (answer === 'NO') {
-                // User is not born in 1981 - cannot register
-                await updateBotSession(user.facebook_id, null)
+                // User is not born in 1981 - cannot register - ADD ERROR HANDLING
+                try {
+                    await updateBotSession(user.facebook_id, null)
+                    console.log('✅ Session cleared for non-1981 user')
+                } catch (error) {
+                    console.error('❌ Error clearing session for non-1981 user:', error)
+                    // Don't return here - still show the rejection message
+                }
 
                 await this.sendMessage(user.facebook_id, '❌ XIN LỖI')
                 await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')

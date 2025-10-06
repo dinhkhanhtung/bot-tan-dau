@@ -318,20 +318,13 @@ export class DatabaseService {
             'updateBotSession',
             async () => {
                 try {
-                    // Ensure step is always a number
-                    let stepValue = 0
-                    if (sessionData?.step !== undefined && sessionData?.step !== null) {
-                        stepValue = typeof sessionData.step === 'string' ? parseInt(sessionData.step) || 0 : sessionData.step
-                    }
-
                     // Use facebook_id directly (matching database schema)
                     const { data, error } = await supabaseAdmin
                         .from('bot_sessions')
                         .upsert({
                             facebook_id: facebookId,
                             current_flow: sessionData?.current_flow || null,
-                            current_step: stepValue,
-                            step: stepValue, // FIXED: Now both fields use the same numeric value
+                            current_step: sessionData?.step ? parseInt(sessionData.step) || 0 : 0,
                             data: sessionData?.data || {},
                             updated_at: new Date().toISOString()
                         })

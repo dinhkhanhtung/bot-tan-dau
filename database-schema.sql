@@ -242,51 +242,11 @@ CREATE TABLE IF NOT EXISTS bot_sessions (
     facebook_id VARCHAR(255) UNIQUE NOT NULL,
     current_flow VARCHAR(100) DEFAULT NULL,
     current_step INTEGER DEFAULT 0,
-    step INTEGER DEFAULT 0, -- FIXED: Changed to INTEGER for proper step handling
+    step VARCHAR(50) DEFAULT NULL, -- CỘT QUAN TRỌNG - FIX LỖI REGISTRATION FLOW
     data JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
--- ========================================
--- MIGRATION: Fix step column type
--- ========================================
--- Run this to fix existing bot_sessions data
-
--- Update existing step values to be numeric
-UPDATE bot_sessions 
-SET step = CASE 
-    WHEN step IS NULL THEN 0
-    ELSE COALESCE(step::INTEGER, 0)
-END;
-
--- Alter the column type from VARCHAR to INTEGER (if needed)
--- Note: This might fail if column is already INTEGER, that's OK
-DO $$ 
-BEGIN
-    BEGIN
-        ALTER TABLE bot_sessions 
-        ALTER COLUMN step TYPE INTEGER USING COALESCE(step::INTEGER, 0);
-        
-        ALTER TABLE bot_sessions 
-        ALTER COLUMN step SET DEFAULT 0;
-        
-        RAISE NOTICE 'Successfully updated step column to INTEGER';
-    EXCEPTION
-        WHEN OTHERS THEN
-            RAISE NOTICE 'Step column might already be INTEGER: %', SQLERRM;
-    END;
-END $$;
-
--- Update any NULL values to 0
-UPDATE bot_sessions 
-SET step = 0 
-WHERE step IS NULL;
-
--- Ensure current_step matches step
-UPDATE bot_sessions 
-SET current_step = COALESCE(step::INTEGER, 0)
-WHERE current_step IS NULL OR current_step != COALESCE(step::INTEGER, 0);
 
 -- Create index for better performance
 CREATE INDEX IF NOT EXISTS idx_bot_sessions_facebook_id ON bot_sessions(facebook_id);
