@@ -1,5 +1,7 @@
 import { FlowManager } from './flow-manager'
 import { RegistrationFlow } from '../flows/auth'
+import { ListingFlow, SearchFlow } from '../flows/marketplace'
+import { CommunityFlow } from '../flows/community'
 
 /**
  * Initialize all flows in the system
@@ -14,8 +16,8 @@ export class FlowInitializer {
 
         // Register all flows
         this.registerAuthFlows()
-        // this.registerMarketplaceFlows() // TODO: Implement
-        // this.registerCommunityFlows()   // TODO: Implement
+        this.registerMarketplaceFlows()
+        this.registerCommunityFlows()
         // this.registerPaymentFlows()     // TODO: Implement
 
         console.log('✅ All flows initialized successfully')
@@ -30,19 +32,21 @@ export class FlowInitializer {
     }
 
     /**
-     * Register marketplace flows (TODO)
+     * Register marketplace flows
      */
     private static registerMarketplaceFlows(): void {
-        // TODO: Implement marketplace flows
-        console.log('📝 TODO: Register marketplace flows')
+        const listingFlow = new ListingFlow()
+        const searchFlow = new SearchFlow()
+        FlowManager.registerFlow(listingFlow)
+        FlowManager.registerFlow(searchFlow)
     }
 
     /**
-     * Register community flows (TODO)
+     * Register community flows
      */
     private static registerCommunityFlows(): void {
-        // TODO: Implement community flows
-        console.log('📝 TODO: Register community flows')
+        const communityFlow = new CommunityFlow()
+        FlowManager.registerFlow(communityFlow)
     }
 
     /**

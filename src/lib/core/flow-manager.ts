@@ -136,7 +136,8 @@ export class FlowManager {
     private static isFlowTrigger(flowName: string, text: string): boolean {
         const triggers: { [key: string]: string[] } = {
             'registration': ['dkt', 'đăng ký', 'register'],
-            'marketplace': ['đăng tin', 'bán hàng', 'marketplace'],
+            'listing': ['đăng tin', 'bán hàng', 'listing'],
+            'search': ['tìm kiếm', 'search', 'tìm'],
             'community': ['cộng đồng', 'community'],
             'payment': ['thanh toán', 'payment', 'nạp tiền']
         }
@@ -151,7 +152,8 @@ export class FlowManager {
     private static isPostbackTrigger(flowName: string, payload: string): boolean {
         const triggers: { [key: string]: string[] } = {
             'registration': ['REGISTER', 'DKT'],
-            'marketplace': ['LISTING', 'MARKETPLACE'],
+            'listing': ['LISTING', 'LIST'],
+            'search': ['SEARCH', 'FIND'],
             'community': ['COMMUNITY'],
             'payment': ['PAYMENT']
         }
