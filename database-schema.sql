@@ -880,7 +880,7 @@ COMMENT ON COLUMN user_interactions.last_welcome_sent IS 'Thời gian gửi welc
 UPDATE user_interactions
 SET last_welcome_sent = last_interaction
 WHERE welcome_sent = true
-AND (last_welcome_sent IS NULL OR last_welcome_sent = '');
+AND last_welcome_sent IS NULL;
 
 -- Hiển thị thông tin về bảng user_interactions sau khi cập nhật
 SELECT
