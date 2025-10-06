@@ -823,8 +823,8 @@ BEGIN
                     EXECUTE format('DELETE FROM %I WHERE id >= 0', table_name);
                     GET DIAGNOSTICS deleted_count = ROW_COUNT;
                 ELSE
-                    -- Các bảng có id là UUID - xóa tất cả
-                    EXECUTE format('DELETE FROM %I WHERE id >= %L', table_name, '00000000-0000-0000-0000-000000000000');
+                    -- Các bảng có id là UUID - xóa tất cả (sử dụng WHERE TRUE để tránh lỗi)
+                    EXECUTE format('DELETE FROM %I WHERE TRUE', table_name);
                     GET DIAGNOSTICS deleted_count = ROW_COUNT;
             END CASE;
             
