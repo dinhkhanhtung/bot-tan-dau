@@ -172,23 +172,13 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Handle new user
+     * Handle new user - REMOVED DUPLICATE WELCOME LOGIC
+     * Welcome logic is now handled by welcome-service.ts
      */
     private static async handleNewUser(user: any): Promise<void> {
-        try {
-            await sendMessage(user.facebook_id, 
-                `🎉 CHÀO MỪNG ĐẾN VỚI BOT TÂN DẬU!\n━━━━━━━━━━━━━━━━━━━━\n👥 Cộng đồng dành riêng cho Tân Dậu (1981)\n🛒 Mua bán nội bộ an toàn\n💬 Kết nối bạn bè cùng tuổi\n🎁 Dùng thử 7 ngày miễn phí\n━━━━━━━━━━━━━━━━━━━━`)
-
-            await sendQuickReply(user.facebook_id, 'Bạn muốn làm gì?', [
-                createQuickReply('📝 ĐĂNG KÝ', 'REGISTER'),
-                createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
-                createQuickReply('❌ HỦY', 'CANCEL')
-            ])
-
-        } catch (error) {
-            logError(error as Error, { operation: 'handle_new_user', user })
-            await this.sendErrorMessage(user.facebook_id)
-        }
+        // This method is no longer needed as welcome logic is handled by welcome-service.ts
+        // Keeping method for compatibility but removing duplicate welcome messages
+        console.log('handleNewUser called but welcome handled by welcome-service.ts')
     }
 
     /**
