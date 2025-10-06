@@ -45,7 +45,9 @@ export class FlowManager {
                 const flow = this.flows.get(session.current_flow)
                 if (flow && flow.canHandle(user, session)) {
                     console.log(`📤 Routing to flow: ${session.current_flow}`)
-                    await flow.handleStep(user, text, session)
+                    if (flow.handleMessage) {
+                        await flow.handleMessage(user, text, session)
+                    }
                     return
                 }
             }
@@ -74,7 +76,9 @@ export class FlowManager {
                 const flow = this.flows.get(session.current_flow)
                 if (flow && flow.canHandle(user, session)) {
                     console.log(`📤 Routing postback to flow: ${session.current_flow}`)
-                    await flow.handlePostback(user, payload, session)
+                    if (flow.handlePostback) {
+                        await flow.handlePostback(user, payload, session)
+                    }
                     return
                 }
             }
@@ -100,7 +104,9 @@ export class FlowManager {
                 // Check if this is a trigger for this flow
                 if (this.isFlowTrigger(flowName, lowerText)) {
                     console.log(`🚀 Triggering flow: ${flowName}`)
-                    await flow.handleStep(user, text, null)
+                    if (flow.handleMessage) {
+                        await flow.handleMessage(user, text, null)
+                    }
                     return
                 }
             }
@@ -120,7 +126,9 @@ export class FlowManager {
                 // Check if this postback triggers this flow
                 if (this.isPostbackTrigger(flowName, payload)) {
                     console.log(`🚀 Triggering flow via postback: ${flowName}`)
-                    await flow.handlePostback(user, payload, null)
+                    if (flow.handlePostback) {
+                        await flow.handlePostback(user, payload, null)
+                    }
                     return
                 }
             }

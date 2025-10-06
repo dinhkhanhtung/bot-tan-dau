@@ -5,8 +5,8 @@ import { sendMessage } from '../facebook-api'
  */
 export interface IFlow {
     readonly flowName: string
-    handleStep(user: any, input: string, session: any): Promise<void>
-    handlePostback(user: any, payload: string, session: any): Promise<void>
+    handleMessage?(user: any, text: string, session: any): Promise<void>
+    handlePostback?(user: any, payload: string, session: any): Promise<void>
     canHandle(user: any, session: any): boolean
 }
 
@@ -19,8 +19,6 @@ export abstract class BaseFlow implements IFlow {
     /**
      * Abstract methods that must be implemented by subclasses
      */
-    abstract handleStep(user: any, input: string, session: any): Promise<void>
-    abstract handlePostback(user: any, payload: string, session: any): Promise<void>
     abstract canHandle(user: any, session: any): boolean
 
     /**
