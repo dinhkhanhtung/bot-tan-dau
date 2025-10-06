@@ -166,8 +166,9 @@ export class FlowManager {
      * Send default message when no flow is triggered
      */
     private static async sendDefaultMessage(user: any): Promise<void> {
-        const { sendMessage } = await import('../facebook-api')
-        await sendMessage(user.facebook_id, '👋 Xin chào! Tôi có thể giúp gì cho bạn?')
+        // Use the original logic from unified-entry-point
+        const { UnifiedBotSystem } = await import('./unified-entry-point')
+        await UnifiedBotSystem.handleDefaultMessage(user)
     }
 
     /**

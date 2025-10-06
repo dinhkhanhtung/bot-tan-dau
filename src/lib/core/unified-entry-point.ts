@@ -93,7 +93,7 @@ export class UnifiedBotSystem {
     /**
      * Handle default message when no flow is triggered
      */
-    private static async handleDefaultMessage(user: any): Promise<void> {
+    static async handleDefaultMessage(user: any): Promise<void> {
         try {
             // Analyze user context
             const context = await this.analyzeUserContext(user)
