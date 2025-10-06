@@ -217,25 +217,25 @@ export class UserInteractionService {
             const { getBotSession } = await import('./utils')
             const sessionData = await getBotSession(facebookId)
             const currentFlow = sessionData?.current_flow || null
-            
+
             // Nếu đang trong luồng, KHÔNG gọi anti-spam - để FlowManager xử lý
             if (currentFlow && ['registration', 'listing', 'search', 'community'].includes(currentFlow)) {
                 console.log('🔄 User đang trong flow:', currentFlow, '- để FlowManager xử lý, không gọi anti-spam')
                 return
             }
-            
+
             // Chỉ gọi anti-spam khi KHÔNG trong luồng
             const { handleAntiSpam } = await import('./anti-spam')
-            
+
             // Lấy user status từ bảng users
             const { getUserByFacebookId } = await import('./database-service')
             const userData = await getUserByFacebookId(facebookId)
             const userStatus = userData?.status || 'new_user'
-            
+
             console.log('🔍 Anti-spam check (no active flow):', { facebookId, userStatus, message })
-            
+
             const result = await handleAntiSpam(facebookId, message, userStatus, currentFlow)
-            
+
             if (result.block) {
                 logger.info('Message blocked due to spam detection', { facebookId, result })
                 return
@@ -265,8 +265,7 @@ export class UserInteractionService {
 
             // Gửi thông báo và ẩn nút
             await sendMessage(facebookId,
-                '💬 Cảm ơn bạn đã liên hệ!\n' +
-                '👨‍💼 Admin đã nhận được tin nhắn của bạn và sẽ sớm phản hồi.\n' +
+                '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!\n' +
                 '⏰ Vui lòng chờ đợi trong giây lát!\n\n' +
                 '💡 Các nút chức năng đã được ẩn để Admin có thể hỗ trợ bạn trực tiếp.'
             )
