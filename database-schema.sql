@@ -753,7 +753,7 @@ COMMENT ON COLUMN chat_bot_offer_counts.last_offer IS 'Thời gian gửi tin nh�
 -- COMPREHENSIVE CLEANUP FUNCTIONS
 -- ========================================
 
--- Function to perform comprehensive database cleanup
+-- Function to perform comprehensive database cleanup - CHỈ XÓA DỮ LIỆU, GIỮ LẠI BẢNG
 CREATE OR REPLACE FUNCTION comprehensive_cleanup()
 RETURNS TABLE (
     table_name TEXT,
@@ -808,13 +808,21 @@ BEGIN
     FOREACH table_name IN ARRAY cleanup_order
     LOOP
         BEGIN
-            -- Xóa dữ liệu theo từng bảng
+            -- CHỈ XÓA DỮ LIỆU, GIỮ LẠI CẤU TRÚC BẢNG
             CASE table_name
                 WHEN 'users' THEN
                     -- Xóa tất cả users trừ admin
                     DELETE FROM users WHERE facebook_id != admin_facebook_id;
                     GET DIAGNOSTICS deleted_count = ROW_COUNT;
-                WHEN 'user_messages', 'spam_logs', 'admin_users', 'bot_settings' THEN
+                WHEN 'bot_settings' THEN
+                    -- GIỮ LẠI bot_settings, chỉ reset values
+                    DELETE FROM bot_settings WHERE TRUE;
+                    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+                WHEN 'admin_users' THEN
+                    -- GIỮ LẠI admin_users, chỉ xóa nếu không phải admin chính
+                    DELETE FROM admin_users WHERE username != 'admin';
+                    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+                WHEN 'user_messages', 'spam_logs' THEN
                     -- Các bảng có id là SERIAL - xóa tất cả
                     EXECUTE format('DELETE FROM %I WHERE id >= 0', table_name);
                     GET DIAGNOSTICS deleted_count = ROW_COUNT;
@@ -823,7 +831,7 @@ BEGIN
                     EXECUTE format('DELETE FROM %I WHERE id >= 0', table_name);
                     GET DIAGNOSTICS deleted_count = ROW_COUNT;
                 ELSE
-                    -- Các bảng có id là UUID - xóa tất cả (sử dụng WHERE TRUE để tránh lỗi)
+                    -- Các bảng có id là UUID - xóa tất cả dữ liệu nhưng giữ bảng
                     EXECUTE format('DELETE FROM %I WHERE TRUE', table_name);
                     GET DIAGNOSTICS deleted_count = ROW_COUNT;
             END CASE;
