@@ -212,17 +212,17 @@ export class FlowManager {
             // Send detailed information with smooth flow
             await sendMessage(user.facebook_id, '📋 THÔNG TIN CHI TIẾT BOT TÂN DẬU')
             await this.delay(1500)
-            
+
             await sendMessage(user.facebook_id, 'Kết nối với hơn 2 triệu Tân Dậu để cùng nhau phát triển và thịnh vượng.')
             await this.delay(1500)
-            
+
             await sendMessage(user.facebook_id, '🎯 TÍNH NĂNG CHÍNH:')
             await sendMessage(user.facebook_id, '🛒 Tìm kiếm & niêm yết sản phẩm')
             await sendMessage(user.facebook_id, '💬 Kết nối với cộng đồng')
             await sendMessage(user.facebook_id, '📊 Thống kê & báo cáo')
             await sendMessage(user.facebook_id, '🎁 Điểm thưởng & quà tặng')
             await this.delay(1500)
-            
+
             await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
             await sendMessage(user.facebook_id, '📋 QUY TRÌNH ĐĂNG KÝ:')
             await sendMessage(user.facebook_id, '1️⃣ Họ tên đầy đủ')
@@ -230,21 +230,22 @@ export class FlowManager {
             await sendMessage(user.facebook_id, '3️⃣ Tỉnh/thành phố')
             await sendMessage(user.facebook_id, '4️⃣ Xác nhận sinh năm 1981')
             await this.delay(1500)
-            
+
             await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
             await sendMessage(user.facebook_id, '💡 LƯU Ý QUAN TRỌNG:')
             await sendMessage(user.facebook_id, '• Chỉ dành cho Tân Dậu (1981)')
             await sendMessage(user.facebook_id, '• Thông tin được bảo mật tuyệt đối')
             await sendMessage(user.facebook_id, '• Hỗ trợ 24/7 từ admin')
             await this.delay(1500)
-            
+
             await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
             await sendMessage(user.facebook_id, 'Bạn có muốn đăng ký ngay không?')
 
             // Send action buttons
             const { sendQuickReply, createQuickReply } = await import('../facebook-api')
-            await sendQuickReply(user.facebook_id, 'Chọn hành động:', [
+            await sendQuickReply(user.facebook_id, 'Bạn muốn làm gì tiếp theo?', [
                 createQuickReply('🚀 ĐĂNG KÝ NGAY', 'REGISTER'),
+                createQuickReply('🛒 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
                 createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
             ])
 
@@ -255,12 +256,27 @@ export class FlowManager {
     }
 
     /**
-     * Contact admin
+     * Contact admin - Bot stops and hides buttons
      */
     private static async contactAdmin(user: any): Promise<void> {
         try {
-            const { sendMessage } = await import('../facebook-api')
-            await sendMessage(user.facebook_id, '💬 Bạn đã yêu cầu hỗ trợ từ admin. Admin sẽ liên hệ với bạn sớm nhất có thể!')
+            const { sendMessage, hideButtons } = await import('../facebook-api')
+            
+            // Send contact message
+            await sendMessage(user.facebook_id, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!')
+            
+            // Hide buttons
+            await hideButtons(user.facebook_id)
+            
+            // Stop bot for this user
+            const { UserInteractionService } = await import('../user-interaction-service')
+            await UserInteractionService.updateUserState(user.facebook_id, {
+                bot_active: false
+            })
+            
+            // Notify admin (you can add admin notification logic here)
+            console.log('User requested support:', user.facebook_id)
+            
         } catch (error) {
             console.error('Error contacting admin:', error)
             await this.sendErrorMessage(user.facebook_id)
