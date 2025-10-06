@@ -1,14 +1,10 @@
 import { supabaseAdmin } from '../supabase'
 import {
     sendMessage,
-    sendTypingIndicator,
-    sendQuickReplyNoTyping,
     sendQuickReply,
-    createQuickReply,
-    sendMessagesWithTyping
+    createQuickReply
 } from '../facebook-api'
-import { formatCurrency, generateReferralCode, isTrialUser, isExpiredUser, daysUntilExpiry, generateId } from '../utils'
-import { LOCATIONS, DISTRICTS, BOT_INFO, BOT_CONFIG } from '../constants'
+import { generateId } from '../utils'
 
 export class AuthFlow {
     // SIMPLE REGISTRATION FLOW - REWRITTEN FROM SCRATCH
@@ -341,7 +337,7 @@ export class AuthFlow {
             await this.sendMessage(user.facebook_id, '4️⃣ Xác nhận sinh năm 1981')
             await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
             await this.sendMessage(user.facebook_id, '💡 LƯU Ý QUAN TRỌNG:')
-            await this.sendMessage(user.facebook_id, '• Chỉ dành cho Tân Dậu (1981)')
+            await this.sendMessage(user.facebook_id, '• Chỉ dành cho Tân Dậu ( Sinh năm 1981)')
             await this.sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
             await this.sendMessage(user.facebook_id, '📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
 
