@@ -560,7 +560,7 @@ export async function getFacebookDisplayName(facebookId: string): Promise<string
 
 
 
-// Update bot session - Simplified version
+// Update bot session - FIXED VERSION
 export async function updateBotSession(facebookId: string, sessionData: any) {
     try {
         const { supabaseAdmin } = await import('./supabase')
@@ -611,19 +611,36 @@ export async function updateBotSession(facebookId: string, sessionData: any) {
             data: sessionToSave.data
         })
 
-        // Sử dụng upsert đơn giản
+        // FIX: Sử dụng upsert với onConflict để tránh lỗi duplicate key
         const { error } = await supabaseAdmin
             .from('bot_sessions')
             .upsert(sessionToSave, {
-                onConflict: 'facebook_id'
+                onConflict: 'facebook_id',
+                ignoreDuplicates: false
             })
 
         if (error) {
             console.error('❌ updateBotSession error:', {
                 facebookId,
                 error: error.message,
+                code: error.code,
+                details: error.details,
                 sessionData: sessionToSave
             })
+
+            // FIX: Thử insert thay vì upsert nếu upsert thất bại
+            if (error.code === '23505' || error.message.includes('duplicate')) {
+                console.log('🔄 Retrying with insert for user:', facebookId)
+                const { error: insertError } = await supabaseAdmin
+                    .from('bot_sessions')
+                    .insert(sessionToSave)
+
+                if (insertError) {
+                    console.error('❌ Insert also failed:', insertError)
+                } else {
+                    console.log('✅ Session inserted successfully')
+                }
+            }
             return
         }
 
