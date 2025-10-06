@@ -181,20 +181,20 @@ export class UserInteractionService {
     private static async sendWelcomeMessage(facebookId: string, userStatus: string): Promise<void> {
         // Sử dụng logic anti-spam đã được cải thiện
         const { handleAntiSpam } = await import('./anti-spam')
-        
+
         // Lấy current flow từ session data
         const { getBotSession } = await import('./utils')
         const sessionData = await getBotSession(facebookId)
         const currentFlow = sessionData?.current_flow || null
-        
+
         // Gọi handleAntiSpam để xử lý welcome và spam detection
         const result = await handleAntiSpam(facebookId, 'welcome', userStatus, currentFlow)
-        
+
         if (result.block) {
             logger.info('Welcome blocked due to spam detection', { facebookId, result })
             return
         }
-        
+
         logger.info('Welcome sent via anti-spam logic', { facebookId, userStatus, currentFlow, result })
     }
 
@@ -213,7 +213,18 @@ export class UserInteractionService {
                 return
             }
 
-            // Sử dụng logic anti-spam để xử lý tin nhắn tiếp theo
+            // Lấy current flow từ session data
+            const { getBotSession } = await import('./utils')
+            const sessionData = await getBotSession(facebookId)
+            const currentFlow = sessionData?.current_flow || null
+            
+            // Nếu đang trong luồng, KHÔNG gọi anti-spam - để FlowManager xử lý
+            if (currentFlow && ['registration', 'listing', 'search', 'community'].includes(currentFlow)) {
+                console.log('🔄 User đang trong flow:', currentFlow, '- để FlowManager xử lý, không gọi anti-spam')
+                return
+            }
+            
+            // Chỉ gọi anti-spam khi KHÔNG trong luồng
             const { handleAntiSpam } = await import('./anti-spam')
             
             // Lấy user status từ bảng users
@@ -221,15 +232,10 @@ export class UserInteractionService {
             const userData = await getUserByFacebookId(facebookId)
             const userStatus = userData?.status || 'new_user'
             
-            // Lấy current flow từ session data
-            const { getBotSession } = await import('./utils')
-            const sessionData = await getBotSession(facebookId)
-            const currentFlow = sessionData?.current_flow || null
-            
-            console.log('🔍 Anti-spam check:', { facebookId, userStatus, currentFlow, message })
+            console.log('🔍 Anti-spam check (no active flow):', { facebookId, userStatus, message })
             
             const result = await handleAntiSpam(facebookId, message, userStatus, currentFlow)
-
+            
             if (result.block) {
                 logger.info('Message blocked due to spam detection', { facebookId, result })
                 return
