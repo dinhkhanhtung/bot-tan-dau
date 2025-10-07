@@ -71,11 +71,15 @@ export class AdminTakeoverService {
             if (newCount >= 2) {
                 logger.info('User needs admin support', { userId, messageCount: newCount })
 
-                // Thông báo cho user
-                await this.notifyUserWaitingForAdmin(userId)
+                // Thông báo cho user - không await để tránh lỗi làm gián đoạn luồng chính
+                this.notifyUserWaitingForAdmin(userId).catch(err =>
+                    logger.error('Error in notifyUserWaitingForAdmin', { userId, error: err })
+                )
 
-                // Thông báo cho tất cả admin
-                await this.notifyAdminsUserNeedsSupport(userId)
+                // Thông báo cho tất cả admin - không await để tránh lỗi
+                this.notifyAdminsUserNeedsSupport(userId).catch(err =>
+                    logger.error('Error in notifyAdminsUserNeedsSupport', { userId, error: err })
+                )
 
                 // Đánh dấu user đang chờ admin
                 await this.updateTakeoverState(userId, {
@@ -88,6 +92,7 @@ export class AdminTakeoverService {
             return false // Chưa cần admin hỗ trợ
         } catch (error) {
             logger.error('Error handling consecutive user messages', { userId, error })
+            // Không throw error để tránh làm gián đoạn luồng chính
             return false
         }
     }
@@ -288,13 +293,22 @@ export class AdminTakeoverService {
      */
     static async notifyUserWaitingForAdmin(userId: string): Promise<void> {
         try {
+            logger.info('Sending admin notification to user', { userId })
+
+            // Đảm bảo không có lỗi nào làm gián đoạn luồng chính
             await sendMessage(userId,
                 '👨‍💼 Admin đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!\n' +
                 '⏰ Vui lòng đợi trong giây lát...\n' +
                 '💬 Bạn có thể tiếp tục gửi tin nhắn nếu cần hỗ trợ thêm.'
             )
+
+            logger.info('Admin notification sent successfully', { userId })
         } catch (error) {
-            logger.error('Error notifying user waiting for admin', { userId, error })
+            logger.error('Error sending admin notification to user', { userId, error })
+
+            // Không throw error để tránh làm gián đoạn luồng chính
+            // Chỉ log lỗi và tiếp tục
+            console.error('Failed to send admin notification:', error)
         }
     }
 
@@ -319,13 +333,19 @@ export class AdminTakeoverService {
      */
     static async notifyUserAdminLeft(userId: string): Promise<void> {
         try {
+            logger.info('Sending admin left notification', { userId })
+
             await sendMessage(userId,
                 '👨‍💼 Admin đã kết thúc cuộc trò chuyện.\n' +
                 '🤖 Bot sẽ tiếp tục hoạt động để hỗ trợ bạn!\n' +
                 '💡 Bạn có thể sử dụng các tính năng của bot hoặc nhấn nút để bắt đầu.'
             )
+
+            logger.info('Admin left notification sent successfully', { userId })
         } catch (error) {
-            logger.error('Error notifying user admin left', { userId, error })
+            logger.error('Error sending admin left notification', { userId, error })
+            // Không throw error để tránh làm gián đoạn luồng chính
+            console.error('Failed to send admin left notification:', error)
         }
     }
 
