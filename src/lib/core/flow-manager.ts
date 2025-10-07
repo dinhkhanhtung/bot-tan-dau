@@ -103,10 +103,10 @@ export class FlowManager {
 
         if (selectedFlow) {
             const flow = this.flows.get(selectedFlow)
-            if (flow && flow.canHandle(user, null)) {
+            if (flow && flow.canHandle(user, { current_flow: selectedFlow })) {
                 console.log(`🚀 Triggering flow: ${selectedFlow} (priority-based selection)`)
                 if (flow.handleMessage) {
-                    await flow.handleMessage(user, text, null)
+                    await flow.handleMessage(user, text, { current_flow: selectedFlow })
                 }
                 return
             }
@@ -128,12 +128,12 @@ export class FlowManager {
 
         // Check each flow for postback triggers
         for (const [flowName, flow] of Array.from(this.flows.entries())) {
-            if (flow.canHandle(user, null)) {
+            if (flow.canHandle(user, { current_flow: flowName })) {
                 // Check if this postback triggers this flow
                 if (this.isPostbackTrigger(flowName, payload)) {
                     console.log(`🚀 Triggering flow via postback: ${flowName}`)
                     if (flow.handlePostback) {
-                        await flow.handlePostback(user, payload, null)
+                        await flow.handlePostback(user, payload, { current_flow: flowName })
                     }
                     return
                 }
