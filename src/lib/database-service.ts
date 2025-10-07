@@ -603,6 +603,152 @@ export class DatabaseService {
         this.queryCount = 0
         this.totalQueryTime = 0
     }
+
+    // Admin Takeover States operations
+    public async getAdminTakeoverState(userId: string) {
+        return this.executeQuery(
+            'getAdminTakeoverState',
+            async () => {
+                const { data, error } = await supabaseAdmin
+                    .from('admin_takeover_states')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .single()
+
+                if (error && error.code !== 'PGRST116') {
+                    throw error
+                }
+
+                return data
+            },
+            `takeover_state:${userId}`,
+            CONFIG.DATABASE.CACHE_TTL
+        )
+    }
+
+    public async upsertAdminTakeoverState(userId: string, stateData: any) {
+        return this.executeQuery(
+            'upsertAdminTakeoverState',
+            async () => {
+                const { data, error } = await supabaseAdmin
+                    .from('admin_takeover_states')
+                    .upsert({
+                        user_id: userId,
+                        ...stateData,
+                        updated_at: new Date().toISOString()
+                    })
+                    .select()
+                    .single()
+
+                if (error) throw error
+
+                // Invalidate takeover state cache
+                invalidatePattern(`takeover_state:${userId}`)
+
+                return data
+            }
+        )
+    }
+
+    public async deleteAdminTakeoverState(userId: string) {
+        return this.executeQuery(
+            'deleteAdminTakeoverState',
+            async () => {
+                const { error } = await supabaseAdmin
+                    .from('admin_takeover_states')
+                    .delete()
+                    .eq('user_id', userId)
+
+                if (error) throw error
+
+                // Invalidate takeover state cache
+                invalidatePattern(`takeover_state:${userId}`)
+
+                return true
+            }
+        )
+    }
+
+    public async getUsersWaitingForAdmin() {
+        return this.executeQuery(
+            'getUsersWaitingForAdmin',
+            async () => {
+                const { data, error } = await supabaseAdmin
+                    .from('admin_takeover_states')
+                    .select('user_id')
+                    .eq('user_waiting_for_admin', true)
+                    .eq('is_active', false)
+
+                if (error) throw error
+
+                return data?.map(item => item.user_id) || []
+            },
+            'waiting_users',
+            CONFIG.DATABASE.CACHE_TTL
+        )
+    }
+
+    public async getActiveTakeovers() {
+        return this.executeQuery(
+            'getActiveTakeovers',
+            async () => {
+                const { data, error } = await supabaseAdmin
+                    .from('admin_takeover_states')
+                    .select(`
+                        *,
+                        users:user_id (
+                            facebook_id,
+                            name,
+                            phone,
+                            status
+                        )
+                    `)
+                    .eq('is_active', true)
+
+                if (error) throw error
+
+                return data || []
+            },
+            'active_takeovers',
+            CONFIG.DATABASE.CACHE_TTL
+        )
+    }
+
+    public async getTakeoverStats() {
+        return this.executeQuery(
+            'getTakeoverStats',
+            async () => {
+                // Đếm user đang chờ admin
+                const { count: waitingCount } = await supabaseAdmin
+                    .from('admin_takeover_states')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_waiting_for_admin', true)
+                    .eq('is_active', false)
+
+                // Đếm takeover đang active
+                const { count: activeCount } = await supabaseAdmin
+                    .from('admin_takeover_states')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('is_active', true)
+
+                // Đếm takeover trong ngày hôm nay
+                const today = new Date().toISOString().split('T')[0]
+                const { count: todayCount } = await supabaseAdmin
+                    .from('admin_takeover_states')
+                    .select('*', { count: 'exact', head: true })
+                    .gte('takeover_started_at', today)
+                    .eq('is_active', true)
+
+                return {
+                    totalWaitingUsers: waitingCount || 0,
+                    totalActiveTakeovers: activeCount || 0,
+                    totalTodayTakeovers: todayCount || 0
+                }
+            },
+            'takeover_stats',
+            CONFIG.DATABASE.CACHE_TTL
+        )
+    }
 }
 
 // Export singleton instance
@@ -662,6 +808,25 @@ export const getDatabaseStats = () =>
 
 export const resetDatabaseStats = () =>
     dbService.resetStats()
+
+// Admin Takeover States operations exports
+export const getAdminTakeoverState = (userId: string) =>
+    dbService.getAdminTakeoverState(userId)
+
+export const upsertAdminTakeoverState = (userId: string, stateData: any) =>
+    dbService.upsertAdminTakeoverState(userId, stateData)
+
+export const deleteAdminTakeoverState = (userId: string) =>
+    dbService.deleteAdminTakeoverState(userId)
+
+export const getUsersWaitingForAdmin = () =>
+    dbService.getUsersWaitingForAdmin()
+
+export const getActiveTakeovers = () =>
+    dbService.getActiveTakeovers()
+
+export const getTakeoverStats = () =>
+    dbService.getTakeoverStats()
 
 // Export the service instance
 export { dbService as databaseService }

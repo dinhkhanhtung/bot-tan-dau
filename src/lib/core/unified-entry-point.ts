@@ -65,6 +65,15 @@ export class UnifiedBotSystem {
                 return
             }
 
+            // Step 2.5: Handle consecutive user messages (Message Counting & Detection)
+            if (text && !isPostback) {
+                const needsAdminSupport = await AdminTakeoverService.handleConsecutiveUserMessages(user.facebook_id, text)
+                if (needsAdminSupport) {
+                    logger.info('User needs admin support, message counting triggered', { facebook_id: user.facebook_id })
+                    // Vẫn tiếp tục xử lý message bình thường, nhưng đã đánh dấu cần admin hỗ trợ
+                }
+            }
+
             // Step 3: Check if bot is active for this user
             const isBotActive = await UserInteractionService.isBotActive(user.facebook_id)
             if (!isBotActive) {
