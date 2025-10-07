@@ -93,22 +93,22 @@ export class FlowManager {
     }
 
     /**
-     * Handle flow triggers from text messages
-     */
+      * Handle flow triggers from text messages with priority system
+      */
     private static async handleFlowTriggers(user: any, text: string): Promise<void> {
         const lowerText = text.toLowerCase().trim()
 
-        // Check each flow for triggers
-        for (const [flowName, flow] of Array.from(this.flows.entries())) {
-            if (flow.canHandle(user, null)) {
-                // Check if this is a trigger for this flow
-                if (this.isFlowTrigger(flowName, lowerText)) {
-                    console.log(`🚀 Triggering flow: ${flowName}`)
-                    if (flow.handleMessage) {
-                        await flow.handleMessage(user, text, null)
-                    }
-                    return
+        // Use priority system to select best flow
+        const selectedFlow = this.selectBestFlow(lowerText)
+
+        if (selectedFlow) {
+            const flow = this.flows.get(selectedFlow)
+            if (flow && flow.canHandle(user, null)) {
+                console.log(`🚀 Triggering flow: ${selectedFlow} (priority-based selection)`)
+                if (flow.handleMessage) {
+                    await flow.handleMessage(user, text, null)
                 }
+                return
             }
         }
 
@@ -145,19 +145,65 @@ export class FlowManager {
     }
 
     /**
-     * Check if text is a trigger for specific flow
-     */
+      * Check if text is a trigger for specific flow with priority system
+      */
     private static isFlowTrigger(flowName: string, text: string): boolean {
+        // Define flow priority (lower number = higher priority)
+        const flowPriority: { [key: string]: number } = {
+            'registration': 1, // Highest priority - user registration is critical
+            'payment': 2,      // Second priority - financial transactions
+            'listing': 3,      // Third priority - creating listings
+            'search': 4,       // Fourth priority - searching products
+            'community': 5     // Lowest priority - community features
+        }
+
         const triggers: { [key: string]: string[] } = {
-            'registration': ['dkt', 'đăng ký', 'register'],
-            'listing': ['đăng tin', 'bán hàng', 'listing'],
-            'search': ['tìm kiếm', 'search', 'tìm'],
-            'community': ['cộng đồng', 'community'],
-            'payment': ['thanh toán', 'payment', 'nạp tiền']
+            'registration': ['dkt', 'đăng ký', 'register', 'dang ky', 'dangky'],
+            'listing': ['đăng tin', 'bán hàng', 'listing', 'dang tin', 'ban hang'],
+            'search': ['tìm kiếm', 'search', 'tìm', 'tim kiem', 'tim'],
+            'community': ['cộng đồng', 'community', 'cong dong'],
+            'payment': ['thanh toán', 'payment', 'nạp tiền', 'nap tien', 'thanh toan']
         }
 
         const flowTriggers = triggers[flowName] || []
         return flowTriggers.some(trigger => text.includes(trigger))
+    }
+
+    /**
+      * Get flow priority (lower number = higher priority)
+      */
+    private static getFlowPriority(flowName: string): number {
+        const priorities: { [key: string]: number } = {
+            'registration': 1,
+            'payment': 2,
+            'listing': 3,
+            'search': 4,
+            'community': 5
+        }
+        return priorities[flowName] || 999
+    }
+
+    /**
+      * Determine which flow should be triggered based on priority
+      */
+    private static selectBestFlow(text: string): string | null {
+        const triggeredFlows: Array<{name: string, priority: number}> = []
+
+        // Check all flows for triggers
+        for (const [flowName, flow] of Array.from(this.flows.entries())) {
+            if (flow.canHandle(null, null) && this.isFlowTrigger(flowName, text)) {
+                triggeredFlows.push({
+                    name: flowName,
+                    priority: this.getFlowPriority(flowName)
+                })
+            }
+        }
+
+        if (triggeredFlows.length === 0) return null
+
+        // Sort by priority and return highest priority flow
+        triggeredFlows.sort((a, b) => a.priority - b.priority)
+        return triggeredFlows[0].name
     }
 
     /**

@@ -11,6 +11,8 @@ import { FlowManager } from './flow-manager'
 import { FlowInitializer } from './flow-initializer'
 import { UserInteractionService } from '../user-interaction-service'
 import { AdminTakeoverService } from '../admin-takeover-service'
+import { UtilityHandlers } from '../handlers/utility-handlers'
+import { MarketplaceHandlers } from '../handlers/marketplace-handlers'
 
 /**
  * Unified Bot System - Main entry point for bot message processing
@@ -83,11 +85,20 @@ export class UnifiedBotSystem {
                 }
             }
 
-            // Step 5: Use FlowManager to handle message
+            // Step 5: Pre-process message with handlers before flows
             if (isPostback && postback) {
                 await FlowManager.handlePostback(user, postback)
             } else if (text) {
-                await FlowManager.handleMessage(user, text)
+                // Try utility handlers first
+                const handledByUtility = await UtilityHandlers.handleSpecialKeywords(user, text)
+                if (!handledByUtility) {
+                    // Try marketplace handlers if not handled by utility
+                    const handledByMarketplace = await MarketplaceHandlers.handleMarketplaceKeywords(user, text)
+                    if (!handledByMarketplace) {
+                        // No handlers processed it, use FlowManager
+                        await FlowManager.handleMessage(user, text)
+                    }
+                }
             } else {
                 await this.handleDefaultMessage(user)
             }

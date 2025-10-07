@@ -6,10 +6,16 @@ import { supabaseAdmin } from '../supabase'
  */
 export class SessionManager {
     /**
-     * Create a new session
-     */
+      * Create a new session
+      */
     static async createSession(facebookId: string, flowName: string, step: number = 0, data: any = {}): Promise<any> {
         try {
+            // Check if user has active session of different flow
+            const existingSession = await this.getSession(facebookId)
+            if (existingSession && existingSession.current_flow !== flowName) {
+                console.warn(`🔄 Switching from flow '${existingSession.current_flow}' to '${flowName}' for user ${facebookId}`)
+            }
+
             // Delete any existing session first
             await this.deleteSession(facebookId)
 
@@ -149,10 +155,55 @@ export class SessionManager {
     }
 
     /**
-     * Get session data
-     */
+      * Get session data
+      */
     static async getSessionData(facebookId: string): Promise<any> {
         const session = await this.getSession(facebookId)
         return session?.data || {}
+    }
+
+    /**
+      * Safely delete session with validation
+      */
+    static async safeDeleteSession(facebookId: string, reason: string = 'unknown'): Promise<boolean> {
+        try {
+            const session = await this.getSession(facebookId)
+
+            // Don't delete if session is still active and processing
+            if (session && session.step < 10) { // Assuming max 10 steps per flow
+                console.warn(`⚠️ Attempted to delete active session for ${facebookId}. Reason: ${reason}`)
+                return false
+            }
+
+            await this.deleteSession(facebookId)
+            console.log(`✅ Session safely deleted for ${facebookId}. Reason: ${reason}`)
+            return true
+
+        } catch (error) {
+            console.error('❌ SessionManager.safeDeleteSession error:', error)
+            return false
+        }
+    }
+
+    /**
+      * Check if session should be preserved
+      */
+    static shouldPreserveSession(currentFlow: string, newFlow: string): boolean {
+        // Define which flows should not interrupt others
+        const criticalFlows = ['registration', 'payment']
+        const interruptableFlows = ['search', 'community']
+
+        // Never interrupt critical flows
+        if (criticalFlows.includes(currentFlow)) {
+            return true
+        }
+
+        // Can interrupt interruptable flows
+        if (interruptableFlows.includes(currentFlow)) {
+            return false
+        }
+
+        // Default: preserve session
+        return true
     }
 }
