@@ -73,6 +73,8 @@ export class RegistrationFlow extends BaseFlow {
                 await this.startRegistration(user)
             } else if (payload.startsWith('LOC_')) {
                 await this.handleLocationPostback(user, payload, session)
+            } else if (payload === 'LOC_SHOW_MORE') {
+                await this.showMoreLocations(user)
             } else if (payload === 'REG_BIRTHDAY_YES') {
                 await this.handleBirthdayVerification(user, 'YES')
             } else if (payload === 'REG_BIRTHDAY_NO') {
@@ -103,7 +105,9 @@ export class RegistrationFlow extends BaseFlow {
             await SessionManager.deleteSession(user.facebook_id)
 
             // Create new session
-            await SessionManager.createSession(user.facebook_id, 'registration', 0, {})
+            await SessionManager.createSession(user.facebook_id, 'registration', 0, {
+                inactivity_timeout: Date.now() + (5 * 60 * 1000) // 5 minutes timeout
+            })
 
             // Send pricing and benefits info first
             await this.sendRegistrationPricingInfo(user)
@@ -149,6 +153,45 @@ export class RegistrationFlow extends BaseFlow {
             console.error('Error sending registration pricing info:', error)
             // Fallback to simple message
             await sendMessage(user.facebook_id, '📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
+        }
+    }
+
+    /**
+     * Show more locations (second page)
+     */
+    private async showMoreLocations(user: any): Promise<void> {
+        try {
+            console.log('[DEBUG] Showing more locations for user:', user.facebook_id)
+
+            // Complete list of Vietnamese provinces + overseas option
+            const locations = [
+                // Central Vietnam (Miền Trung) - continued
+                '🏭 QUẢNG BÌNH', '🏔️ QUẢNG TRỊ', '🏘️ THỪA THIÊN HUẾ', '🏭 THỪA THIÊN HUẾ',
+
+                // Southern Vietnam (Miền Nam) - continued
+                '🏢 TP.HCM', '🏘️ ĐỒNG NAI', '🏭 BÌNH DƯƠNG', '🏔️ BÌNH PHƯỚC', '🏘️ TÂY NINH',
+                '🏭 BÀ RỊA - VŨNG TÀU', '🏖️ CẦN THƠ', '🏘️ AN GIANG', '🏔️ KIÊN GIANG', '🏭 HẬU GIANG',
+                '🏘️ SÓC TRĂNG', '🏔️ BẠC LIÊU', '🏭 CÀ MAU', '🏘️ ĐỒNG THÁP', '🏔️ TIỀN GIANG',
+                '🏘️ BẾN TRE', '🏭 TRÀ VINH', '🏔️ VĨNH LONG', '🏘️ LONG AN', '🏭 TIỀN GIANG',
+
+                // Special Administrative Regions
+                '🌊 QUẦN ĐẢO TRƯỜNG SA', '🏝️ QUẦN ĐẢO HOÀNG SA',
+
+                // Overseas option
+                '🌍 NƯỚC NGOÀI'
+            ]
+
+            const buttons = locations.map(location => {
+                const locationCode = location.split(' ')[1] || location.replace(/\s+/g, '_')
+                const payload = `LOC_${locationCode}`
+                return createQuickReply(location, payload)
+            })
+
+            await sendQuickReply(user.facebook_id, '📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống (Trang 2/2 - Các tỉnh còn lại):', buttons)
+            console.log('[DEBUG] More location buttons sent successfully')
+
+        } catch (error) {
+            await this.handleError(user, error, 'showMoreLocations')
         }
     }
 
@@ -459,28 +502,69 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Send location buttons
+     * Send location buttons - COMPLETE VIETNAMESE PROVINCES LIST
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
         console.log('[DEBUG] sendLocationButtons: Creating location buttons for user:', facebookId)
 
+        // Complete list of Vietnamese provinces + overseas option
         const locations = [
-            '🏠 HÀ NỘI', '🏢 TP.HCM', '🏖️ ĐÀ NẴNG',
-            '🌊 HẢI PHÒNG', '🏔️ CẦN THƠ', '🏘️ BÌNH DƯƠNG'
+            // Northern Vietnam (Miền Bắc)
+            '🏠 HÀ NỘI', '🏭 HẢI PHÒNG', '🏔️ QUẢNG NINH', '🌊 NAM ĐỊNH', '🏘️ THÁI BÌNH',
+            '🌾 NINH BÌNH', '🏛️ HẢI DƯƠNG', '🏭 HƯNG YÊN', '🌳 BẮC NINH', '🏔️ BẮC GIANG',
+            '🏘️ BẮC KẠN', '🌲 CAO BẰNG', '🏔️ LẠNG SƠN', '🌲 THÁI NGUYÊN', '🏭 PHÚ THỌ',
+            '🏘️ TUYÊN QUANG', '🌲 HÀ GIANG', '🏔️ LAO CAI', '🌊 YÊN BÁI', '🏘️ ĐIỆN BIÊN',
+            '🏭 HÒA BÌNH', '🌲 SƠN LA', '🏔️ LAI CHÂU', '🏘️ VĨNH PHÚC',
+
+            // Central Vietnam (Miền Trung)
+            '🏛️ THỪA THIÊN HUẾ', '🏖️ ĐÀ NẴNG', '🏔️ QUẢNG NAM', '🏘️ QUẢNG NGÃI', '🏭 BÌNH ĐỊNH',
+            '🏔️ PHÚ YÊN', '🏘️ KHÁNH HÒA', '🏖️ NINH THUẬN', '🏜️ BÌNH THUẬN', '🏔️ KON TUM',
+            '🏘️ GIA LAI', '🏭 ĐẮK LẮK', '🏔️ ĐẮK NÔNG', '🏘️ LÂM ĐỒNG', '🏭 QUẢNG BÌNH',
+            '🏔️ QUẢNG TRỊ', '🏘️ THỪA THIÊN HUẾ', '🏭 THỪA THIÊN HUẾ', '🏔️ QUẢNG NAM',
+
+            // Southern Vietnam (Miền Nam)
+            '🏢 TP.HCM', '🏘️ ĐỒNG NAI', '🏭 BÌNH DƯƠNG', '🏔️ BÌNH PHƯỚC', '🏘️ TÂY NINH',
+            '🏭 BÀ RỊA - VŨNG TÀU', '🏖️ CẦN THƠ', '🏘️ AN GIANG', '🏔️ KIÊN GIANG', '🏭 HẬU GIANG',
+            '🏘️ SÓC TRĂNG', '🏔️ BẠC LIÊU', '🏭 CÀ MAU', '🏘️ ĐỒNG THÁP', '🏔️ TIỀN GIANG',
+            '🏘️ BẾN TRE', '🏭 TRÀ VINH', '🏔️ VĨNH LONG', '🏘️ LONG AN', '🏭 TIỀN GIANG',
+
+            // Special Administrative Regions
+            '🌊 QUẦN ĐẢO TRƯỜNG SA', '🏝️ QUẦN ĐẢO HOÀNG SA',
+
+            // Overseas option
+            '🌍 NƯỚC NGOÀI'
         ]
 
-        console.log('[DEBUG] Location options:', locations)
+        console.log('[DEBUG] Location options count:', locations.length)
 
-        const buttons = locations.map(location => {
-            const locationCode = location.split(' ')[1]
-            const payload = `LOC_${locationCode}`
-            console.log('[DEBUG] Creating button:', location, '->', payload)
-            return createQuickReply(location, payload)
-        })
+        // Split into multiple pages if needed (Facebook allows max 11 buttons per message)
+        const buttonsPerPage = 10
+        const totalPages = Math.ceil(locations.length / buttonsPerPage)
 
-        console.log('[DEBUG] Total buttons created:', buttons.length)
+        if (totalPages === 1) {
+            // Single page - send all buttons
+            const buttons = locations.map(location => {
+                const locationCode = location.split(' ')[1] || location.replace(/\s+/g, '_')
+                const payload = `LOC_${locationCode}`
+                return createQuickReply(location, payload)
+            })
 
-        await sendQuickReply(facebookId, '📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống:', buttons)
+            await sendQuickReply(facebookId, '📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống (Tất cả tỉnh thành Việt Nam + Nước ngoài):', buttons)
+        } else {
+            // Multiple pages - send first page with "Xem thêm" option
+            const firstPageLocations = locations.slice(0, buttonsPerPage - 1) // Reserve 1 slot for "Xem thêm"
+            const buttons = firstPageLocations.map(location => {
+                const locationCode = location.split(' ')[1] || location.replace(/\s+/g, '_')
+                const payload = `LOC_${locationCode}`
+                return createQuickReply(location, payload)
+            })
+
+            // Add "Xem thêm" button
+            buttons.push(createQuickReply('📋 XEM THÊM TỈNH THÀNH', 'LOC_SHOW_MORE'))
+
+            await sendQuickReply(facebookId, '📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống (Trang 1/' + totalPages + '):', buttons)
+        }
+
         console.log('[DEBUG] Location buttons sent successfully')
     }
 
