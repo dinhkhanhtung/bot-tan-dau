@@ -156,13 +156,13 @@ export class UnifiedBotSystem {
             switch (postback) {
                 case 'USE_BOT':
                     await UserModeService.handleUseBot(user.facebook_id)
-                    return
+                    return // Không gọi FlowManager nữa
                 case 'CHAT_ADMIN':
                     await UserModeService.handleChatWithAdmin(user.facebook_id)
-                    return
+                    return // Không gọi FlowManager nữa
                 case 'BACK_TO_MAIN':
                     await UserModeService.handleBackToMain(user.facebook_id)
-                    return
+                    return // Không gọi FlowManager nữa
             }
 
             // Các postback khác xử lý bằng FlowManager

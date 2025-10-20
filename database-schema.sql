@@ -363,6 +363,18 @@ CREATE TABLE IF NOT EXISTS admin_chat_sessions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Admin takeover states table (FIX lỗi trong logs)
+CREATE TABLE IF NOT EXISTS admin_takeover_states (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_facebook_id VARCHAR(255) UNIQUE NOT NULL,
+    admin_id VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT FALSE,
+    started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    ended_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ========================================
 -- 5. INDEXES
 -- ========================================
