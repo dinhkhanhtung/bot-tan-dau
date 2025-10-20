@@ -105,7 +105,7 @@ export class AdminTakeoverService {
             const { data, error } = await supabaseAdmin
                 .from('admin_takeover_states')
                 .select('*')
-                .eq('user_id', userId)
+                .eq('user_facebook_id', userId)
                 .single()
 
             if (error && error.code !== 'PGRST116') {
