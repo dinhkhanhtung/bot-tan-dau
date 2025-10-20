@@ -46,6 +46,9 @@ CREATE TABLE IF NOT EXISTS user_interactions (
     last_welcome_sent TIMESTAMP WITH TIME ZONE,
     interaction_count INTEGER DEFAULT 0,
     bot_active BOOLEAN DEFAULT TRUE,
+    current_mode VARCHAR(20) DEFAULT 'choosing' CHECK (current_mode IN ('choosing', 'using_bot', 'chatting_admin')),
+    last_mode_change TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    mode_change_count INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -1120,3 +1123,48 @@ SELECT
 FROM information_schema.columns
 WHERE table_name = 'user_interactions'
 ORDER BY ordinal_position;
+
+-- ========================================
+-- UserModeService Migration - THÊM VÀO ĐÂY
+-- ========================================
+-- Các lệnh SQL để cập nhật database cho UserModeService
+-- Chạy phần này để thêm tính năng phân luồng user
+
+-- 1. Thêm các cột mới vào bảng user_interactions
+ALTER TABLE user_interactions
+ADD COLUMN IF NOT EXISTS current_mode VARCHAR(20) DEFAULT 'choosing'
+    CHECK (current_mode IN ('choosing', 'using_bot', 'chatting_admin'));
+
+ALTER TABLE user_interactions
+ADD COLUMN IF NOT EXISTS last_mode_change TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
+ALTER TABLE user_interactions
+ADD COLUMN IF NOT EXISTS mode_change_count INTEGER DEFAULT 0;
+
+-- 2. Tạo indexes cho hiệu suất tốt hơn
+CREATE INDEX IF NOT EXISTS idx_user_interactions_current_mode
+ON user_interactions(current_mode);
+
+CREATE INDEX IF NOT EXISTS idx_user_interactions_last_mode_change
+ON user_interactions(last_mode_change);
+
+-- 3. Cập nhật dữ liệu hiện có
+UPDATE user_interactions
+SET
+    current_mode = 'choosing',
+    last_mode_change = NOW(),
+    mode_change_count = 0
+WHERE current_mode IS NULL;
+
+-- 4. Kiểm tra kết quả
+SELECT
+    facebook_id,
+    current_mode,
+    last_mode_change,
+    mode_change_count,
+    updated_at
+FROM user_interactions
+LIMIT 5;
+
+-- 5. Thông báo hoàn thành
+SELECT '✅ UserModeService migration completed successfully!' as status;

@@ -13,6 +13,7 @@ import { UserInteractionService } from '../user-interaction-service'
 import { AdminTakeoverService } from '../admin-takeover-service'
 import { UtilityHandlers } from '../handlers/utility-handlers'
 import { MarketplaceHandlers } from '../handlers/marketplace-handlers'
+import { UserModeService, UserMode } from './user-mode-service'
 
 /**
  * Unified Bot System - Main entry point for bot message processing
@@ -38,7 +39,7 @@ export class UnifiedBotSystem {
 
     /**
      * Main entry point for processing all incoming messages
-     * This is the single entry point for message handling with proper routing and flow management
+     * Đơn giản hóa logic với UserModeService
      */
     static async handleMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
         const startTime = Date.now()
@@ -65,52 +66,30 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Step 2.5: Handle consecutive user messages (Message Counting & Detection)
-            if (text && !isPostback) {
-                const needsAdminSupport = await AdminTakeoverService.handleConsecutiveUserMessages(user.facebook_id, text)
-                if (needsAdminSupport) {
-                    logger.info('User needs admin support, message counting triggered', { facebook_id: user.facebook_id })
-                    // Vẫn tiếp tục xử lý message bình thường, nhưng đã đánh dấu cần admin hỗ trợ
-                }
-            }
+            // Step 3: Kiểm tra trạng thái user mode
+            const currentMode = await UserModeService.getUserMode(user.facebook_id)
 
-            // Step 3: Check if bot is active for this user
-            const isBotActive = await UserInteractionService.isBotActive(user.facebook_id)
-            if (!isBotActive) {
-                logger.info('Bot is not active for user, ignoring message', { facebook_id: user.facebook_id })
+            // Nếu chưa có mode, gửi menu chọn chế độ
+            if (!currentMode) {
+                await UserModeService.sendChoosingMenu(user.facebook_id)
                 return
             }
 
-            // Step 4: Handle first message (welcome logic) - CẢI THIỆN ĐỂ TRÁNH SPAM
-            if (!isPostback && text) {
-                // Sử dụng method mới để kiểm tra có nên gửi welcome không
-                const shouldSendWelcome = await UserInteractionService.shouldSendWelcome(user.facebook_id)
-                if (shouldSendWelcome) {
-                    await UserInteractionService.sendWelcomeAndMark(user.facebook_id, user.status)
-                    return
-                } else {
-                    // Handle subsequent messages - chỉ xử lý nếu không phải spam
-                    await UserInteractionService.handleSubsequentMessage(user.facebook_id, text)
-                }
+            // Step 4: Xử lý theo mode hiện tại
+            if (currentMode.current_mode === UserMode.CHATTING_ADMIN) {
+                // User đang chat với admin - không xử lý bot
+                logger.info('User is chatting with admin, ignoring bot message', { facebook_id: user.facebook_id })
+                return
             }
 
-            // Step 5: Pre-process message with handlers before flows
-            if (isPostback && postback) {
-                await FlowManager.handlePostback(user, postback)
-            } else if (text) {
-                // Try utility handlers first
-                const handledByUtility = await UtilityHandlers.handleSpecialKeywords(user, text)
-                if (!handledByUtility) {
-                    // Try marketplace handlers if not handled by utility
-                    const handledByMarketplace = await MarketplaceHandlers.handleMarketplaceKeywords(user, text)
-                    if (!handledByMarketplace) {
-                        // No handlers processed it, use FlowManager
-                        await FlowManager.handleMessage(user, text)
-                    }
-                }
-            } else {
-                await this.handleDefaultMessage(user)
+            if (currentMode.current_mode === UserMode.USING_BOT) {
+                // User đang dùng bot - xử lý bình thường
+                await this.handleBotUserMessage(user, text, isPostback, postback)
+                return
             }
+
+            // Nếu đang ở chế độ CHOOSING hoặc không xác định - gửi menu chọn lại
+            await UserModeService.sendChoosingMenu(user.facebook_id)
 
             const duration = Date.now() - startTime
             logBotEvent('message_processed', {
@@ -135,6 +114,61 @@ export class UnifiedBotSystem {
             )
 
             logError(messageError, { operation: 'message_processing', user, text, isPostback, postback })
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Xử lý tin nhắn của user đang dùng bot
+     */
+    private static async handleBotUserMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
+        try {
+            // Xử lý postback
+            if (isPostback && postback) {
+                await this.handleBotPostback(user, postback)
+                return
+            }
+
+            // Xử lý text message
+            if (text) {
+                // Thử xử lý bằng handlers trước
+                const handledByUtility = await UtilityHandlers.handleSpecialKeywords(user, text)
+                if (!handledByUtility) {
+                    const handledByMarketplace = await MarketplaceHandlers.handleMarketplaceKeywords(user, text)
+                    if (!handledByMarketplace) {
+                        // Không handler nào xử lý được, dùng FlowManager
+                        await FlowManager.handleMessage(user, text)
+                    }
+                }
+            }
+        } catch (error) {
+            logError(error as Error, { operation: 'handle_bot_user_message', user, text, postback })
+            await this.sendErrorMessage(user.facebook_id)
+        }
+    }
+
+    /**
+     * Xử lý postback cho user đang dùng bot
+     */
+    private static async handleBotPostback(user: any, postback: string): Promise<void> {
+        try {
+            // Xử lý các postback đặc biệt của UserModeService
+            switch (postback) {
+                case 'USE_BOT':
+                    await UserModeService.handleUseBot(user.facebook_id)
+                    return
+                case 'CHAT_ADMIN':
+                    await UserModeService.handleChatWithAdmin(user.facebook_id)
+                    return
+                case 'BACK_TO_MAIN':
+                    await UserModeService.handleBackToMain(user.facebook_id)
+                    return
+            }
+
+            // Các postback khác xử lý bằng FlowManager
+            await FlowManager.handlePostback(user, postback)
+        } catch (error) {
+            logError(error as Error, { operation: 'handle_bot_postback', user, postback })
             await this.sendErrorMessage(user.facebook_id)
         }
     }
