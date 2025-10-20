@@ -118,13 +118,14 @@ export class UserModeService {
     }
 
     /**
-     * Xử lý khi user chọn dùng bot
+     * Xử lý khi user chọn dùng bot - UPDATED để tránh xung đột
      */
     static async handleUseBot(facebookId: string): Promise<void> {
         try {
+            // Cập nhật mode trước
             await this.updateUserMode(facebookId, UserMode.USING_BOT)
 
-            // Gửi welcome message đơn giản
+            // Gửi welcome message đơn giản - chỉ gửi 1 lần
             await sendMessage(facebookId,
                 `🎉 CHÀO MỪNG BẠN ĐẾN VỚI BOT TÂN DẬU!\n━━━━━━━━━━━━━━━━━━━━\n🌟 Bạn có thể:\n🛒 Đăng tin bán hàng (cần đóng phí 3,000đ/ngày)\n🔍 Tìm kiếm sản phẩm miễn phí\n👥 Kết nối cộng đồng Tân Dậu\n━━━━━━━━━━━━━━━━━━━━`
             )

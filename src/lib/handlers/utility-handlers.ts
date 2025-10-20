@@ -1,6 +1,7 @@
 /**
  * Utility Handlers - Handle special messages and edge cases
  * Prevents conflicts with main flows and provides fallback handling
+ * Updated to use SmartMenuService for consistent UX
  */
 
 import {
@@ -9,6 +10,7 @@ import {
     createQuickReply
 } from '../facebook-api'
 import { logger } from '../logger'
+import { SmartMenuService } from '../core/smart-menu-service'
 
 export class UtilityHandlers {
     /**
@@ -55,16 +57,11 @@ export class UtilityHandlers {
     }
 
     /**
-     * Send main menu when user is confused
+     * Send main menu when user is confused - UPDATED to use SmartMenuService
      */
     static async sendMainMenu(facebookId: string): Promise<void> {
-        await sendQuickReply(facebookId, 'Chọn chức năng bạn muốn sử dụng:', [
-            createQuickReply('🚀 ĐĂNG KÝ', 'REGISTER'),
-            createQuickReply('🛒 TÌM KIẾM', 'SEARCH'),
-            createQuickReply('📝 ĐĂNG TIN', 'LISTING'),
-            createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
-            createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
-        ])
+        // Sử dụng SmartMenuService để có menu nhất quán
+        await SmartMenuService.sendChoosingModeMenu(facebookId)
     }
 
     /**
