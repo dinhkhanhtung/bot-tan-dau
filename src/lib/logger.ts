@@ -4,6 +4,8 @@
  */
 
 import { CONFIG, LoggingConfig } from './config'
+import * as fs from 'fs'
+import * as path from 'path'
 
 // Log levels
 export enum LogLevel {
@@ -95,6 +97,23 @@ export class Logger {
         })
     }
 
+    private writeToRealtimeLog(entry: LogEntry): void {
+        try {
+            // Only write INFO, WARN, ERROR to realtime log (skip DEBUG unless enabled)
+            if (entry.level === LogLevel.DEBUG && !this.enableDebug) {
+                return
+            }
+
+            const logFile = path.join(process.cwd(), 'realtime-logs.jsonl')
+            const logLine = JSON.stringify(entry) + '\n'
+
+            fs.appendFileSync(logFile, logLine)
+        } catch (error) {
+            // Don't log errors from the logger itself to avoid infinite loops
+            console.error('Failed to write to realtime log:', error)
+        }
+    }
+
     private log(level: LogLevel, message: string, context?: Record<string, any>, error?: Error, metadata?: Record<string, any>): void {
         if (!this.shouldLog(level)) return
 
@@ -126,6 +145,9 @@ export class Logger {
                 }
                 break
         }
+
+        // Write to realtime log file for monitoring
+        this.writeToRealtimeLog(entry)
     }
 
     // Public logging methods

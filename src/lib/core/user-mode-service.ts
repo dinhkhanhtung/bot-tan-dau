@@ -125,12 +125,13 @@ export class UserModeService {
             // Cập nhật mode trước
             await this.updateUserMode(facebookId, UserMode.USING_BOT)
 
-            // Gửi welcome message đơn giản - chỉ gửi 1 lần
+            // Gửi thông báo chuyển mode thành công
             await sendMessage(facebookId,
-                `🎉 CHÀO MỪNG BẠN ĐẾN VỚI BOT TÂN DẬU!\n━━━━━━━━━━━━━━━━━━━━\n🌟 Bạn có thể:\n🛒 Đăng tin bán hàng (cần đóng phí 3,000đ/ngày)\n🔍 Tìm kiếm sản phẩm miễn phí\n👥 Kết nối cộng đồng Tân Dậu\n━━━━━━━━━━━━━━━━━━━━`
+                `✅ ĐÃ CHUYỂN SANG CHẾ ĐỘ BOT!\n━━━━━━━━━━━━━━━━━━━━\n🎯 Bạn có thể sử dụng tất cả tính năng bot ngay bây giờ\n━━━━━━━━━━━━━━━━━━━━`
             )
 
-            // Gửi menu chức năng bot
+            // Đợi 1 giây rồi gửi menu chức năng bot
+            await this.delay(1000)
             await this.sendBotMenu(facebookId)
 
             logger.info('User started using bot', { facebookId })
@@ -203,5 +204,12 @@ export class UserModeService {
         } catch (error) {
             logger.error('Error resetting user mode', { facebookId, error })
         }
+    }
+
+    /**
+     * Helper method to add delay between messages
+     */
+    private static async delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms))
     }
 }

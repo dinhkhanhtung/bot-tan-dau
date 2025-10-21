@@ -39,7 +39,7 @@ export class UnifiedBotSystem {
 
     /**
      * Main entry point for processing all incoming messages
-     * Đơn giản hóa logic với UserModeService
+     * Đơn giản hóa logic với UserModeService và welcome service tích hợp
      */
     static async handleMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
         const startTime = Date.now()
@@ -69,9 +69,21 @@ export class UnifiedBotSystem {
             // Step 3: Kiểm tra trạng thái user mode
             const currentMode = await UserModeService.getUserMode(user.facebook_id)
 
-            // Nếu chưa có mode, gửi menu chọn chế độ
+            // Nếu chưa có mode, kiểm tra xem đã gửi welcome chưa
             if (!currentMode) {
-                await UserModeService.sendChoosingMenu(user.facebook_id)
+                const userData = await getUserByFacebookId(user.facebook_id)
+                const welcomeAlreadySent = userData?.welcome_sent || userData?.welcome_message_sent
+
+                if (!welcomeAlreadySent) {
+                    // Chưa gửi welcome, gửi welcome kèm menu chọn chế độ
+                    await welcomeService.sendWelcome(user.facebook_id, WelcomeType.NEW_USER)
+                    // Đợi 2 giây để user đọc welcome message
+                    await this.delay(2000)
+                    await UserModeService.sendChoosingMenu(user.facebook_id)
+                } else {
+                    // Đã gửi welcome rồi, chỉ gửi menu chọn chế độ
+                    await UserModeService.sendChoosingMenu(user.facebook_id)
+                }
                 return
             }
 
@@ -351,5 +363,12 @@ export class UnifiedBotSystem {
         } catch (error) {
             logError(error as Error, { operation: 'send_error_message', facebookId })
         }
+    }
+
+    /**
+     * Helper method to add delay between messages
+     */
+    private static async delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms))
     }
 }
