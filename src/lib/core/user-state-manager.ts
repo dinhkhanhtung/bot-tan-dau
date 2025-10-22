@@ -142,18 +142,31 @@ export class UserStateManager {
     }
 
     /**
-     * Gửi menu chức năng bot
+     * Gửi menu chức năng bot - điều chỉnh theo trạng thái đăng ký
      */
     static async sendBotMenu(facebookId: string): Promise<void> {
         try {
-            await sendQuickReply(facebookId, 'Chọn chức năng bạn muốn sử dụng:', [
-                createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+            // Lấy thông tin user để kiểm tra trạng thái đăng ký
+            const userData = await getUserByFacebookId(facebookId)
+
+            // Tạo danh sách buttons dựa trên trạng thái user
+            const buttons = []
+
+            // Nếu user chưa đăng ký (new_user, pending) thì hiển thị nút đăng ký
+            if (!userData || userData.status === 'new_user' || userData.status === 'pending') {
+                buttons.push(createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'))
+            }
+
+            // Các nút khác luôn hiển thị
+            buttons.push(
                 createQuickReply('🛒 ĐĂNG TIN BÁN HÀNG', 'LISTING'),
                 createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
                 createQuickReply('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
                 createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
                 createQuickReply('🏠 VỀ MENU CHÍNH', 'BACK_TO_MAIN')
-            ])
+            )
+
+            await sendQuickReply(facebookId, 'Chọn chức năng bạn muốn sử dụng:', buttons)
         } catch (error) {
             logger.error('Error sending bot menu', { facebookId, error })
         }
@@ -164,7 +177,9 @@ export class UserStateManager {
      */
     static async handleBackToMain(facebookId: string): Promise<void> {
         try {
-            await this.sendChoosingMenu(facebookId)
+            // Send welcome message again (which will check registration status and show appropriate buttons)
+            const { welcomeService } = await import('../welcome-service')
+            await welcomeService.sendWelcome(facebookId, undefined)
         } catch (error) {
             logger.error('Error handling back to main', { facebookId, error })
         }

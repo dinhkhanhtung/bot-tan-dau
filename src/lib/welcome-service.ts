@@ -109,9 +109,12 @@ export class WelcomeService {
         }
     }
 
-    // Simple welcome buttons for common actions
+    // Simple welcome buttons for common actions - điều chỉnh theo trạng thái đăng ký
     private async sendWelcomeButtons(facebookId: string): Promise<void> {
         try {
+            // Lấy thông tin user để kiểm tra trạng thái đăng ký
+            const userData = await getUserByFacebookId(facebookId)
+
             const buttons = [
                 createQuickReply('🤖 DÙNG BOT', 'USE_BOT'),
                 createQuickReply('💬 CHAT VỚI ADMIN', 'CHAT_ADMIN'),
@@ -190,7 +193,7 @@ export class WelcomeService {
             await sendMessage(facebookId, returningMessage)
             logger.info(`✅ Returning user message sent to user: ${facebookId}`)
 
-            // Send the same buttons as welcome
+            // Send the same buttons as welcome (with dynamic registration status)
             await this.sendWelcomeButtons(facebookId)
             logger.info(`✅ Returning user buttons sent to user: ${facebookId}`)
 
