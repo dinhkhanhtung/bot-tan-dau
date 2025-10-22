@@ -261,13 +261,15 @@ export class UnifiedBotSystem {
     }
 
     /**
-     * Handle new user - REMOVED DUPLICATE WELCOME LOGIC
-     * Welcome logic is now handled by welcome-service.ts
+     * Handle new user - delegate to UserStateManager to send welcome once
      */
     private static async handleNewUser(user: any): Promise<void> {
-        // This method is no longer needed as welcome logic is handled by welcome-service.ts
-        // Keeping method for compatibility but removing duplicate welcome messages
-        console.log('handleNewUser called but welcome handled by welcome-service.ts')
+        try {
+            // Send welcome via WelcomeService (through UserStateManager)
+            await UserStateManager.handleNewUser(user.facebook_id)
+        } catch (error) {
+            logger.error('Error handling new user in UnifiedBotSystem', { facebookId: user.facebook_id, error })
+        }
     }
 
     /**
