@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 // Toast notification component
@@ -60,11 +60,7 @@ export default function AdsPage() {
   })
   const router = useRouter()
 
-  useEffect(() => {
-    fetchAds()
-  }, [])
-
-  const fetchAds = async () => {
+  const fetchAds = useCallback(async () => {
     try {
       const response = await fetch('/api/ads')
       const data = await response.json()
@@ -80,7 +76,11 @@ export default function AdsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchAds()
+  }, [fetchAds])
 
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type, show: true })
