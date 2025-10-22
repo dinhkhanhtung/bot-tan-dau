@@ -75,7 +75,11 @@ export class SearchFlow extends BaseFlow {
         try {
             this.logActivity(user, 'handlePostback', { payload, session })
 
-            if (payload.startsWith('CATEGORY_')) {
+            if (payload === 'SEARCH') {
+                // Start search flow by prompting for keyword
+                await SessionManager.createSession(user.facebook_id, 'search', 0, {})
+                await sendMessage(user.facebook_id, '🔍 Bạn muốn tìm sản phẩm gì? Hãy nhập từ khóa tìm kiếm.')
+            } else if (payload.startsWith('CATEGORY_')) {
                 await this.handleCategoryPostback(user, payload, session)
             } else if (payload.startsWith('LOCATION_')) {
                 await this.handleLocationPostback(user, payload, session)
