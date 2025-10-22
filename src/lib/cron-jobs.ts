@@ -3,7 +3,6 @@
  */
 
 import { logger } from './logger'
-import { databaseService } from './database-service'
 import { supabaseAdmin } from './supabase'
 
 // Run all cron jobs

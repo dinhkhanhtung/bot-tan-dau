@@ -1,215 +1,265 @@
 /**
- * User Mode Service - Quản lý trạng thái user tập trung
- * Đơn giản hóa logic phân biệt người dùng bot vs người chat thường
+ * User Mode Service
+ * Quản lý các chế độ hoạt động của user (normal, premium, admin)
+ * Xử lý logic phân luồng dựa trên mode của user
  */
 
-import { supabaseAdmin } from '../supabase'
-import { sendMessage, sendQuickReply, createQuickReply } from '../facebook-api'
-import { logger } from '../logger'
+import { supabaseAdmin } from '../supabase.js'
+import { logger } from '../logger.js'
 
 export enum UserMode {
-    CHOOSING = 'choosing',      // Đang chọn giữa bot/admin
-    USING_BOT = 'using_bot',    // Đang sử dụng bot
-    CHATTING_ADMIN = 'chatting_admin' // Đang chat với admin
+    NORMAL = 'normal',
+    PREMIUM = 'premium',
+    ADMIN = 'admin'
 }
 
-export interface UserModeState {
-    facebook_id: string
+export interface UserState {
+    user_id: string
     current_mode: UserMode
-    last_mode_change: string
-    mode_change_count: number
     bot_active: boolean
-    created_at: string
-    updated_at: string
+    last_activity: string
+    preferences?: Record<string, any>
+    created_at?: string
+    updated_at?: string
 }
 
 export class UserModeService {
     /**
-     * Lấy trạng thái mode hiện tại của user
+     * Lấy mode hiện tại của user
      */
-    static async getUserMode(facebookId: string): Promise<UserModeState | null> {
+    static async getUserMode(userId: string): Promise<UserMode> {
+        try {
+            const { data, error } = await supabaseAdmin
+                .from('user_interactions')
+                .select('current_mode')
+                .eq('user_id', userId)
+                .single()
+
+            if (error && error.code !== 'PGRST116') {
+                logger.error('Error getting user mode', { userId, error: error.message })
+                return UserMode.NORMAL // Default fallback
+            }
+
+            return (data?.current_mode as UserMode) || UserMode.NORMAL
+        } catch (error) {
+            logger.error('Exception getting user mode', { userId, error })
+            return UserMode.NORMAL
+        }
+    }
+
+    /**
+     * Cập nhật mode của user
+     */
+    static async setUserMode(userId: string, mode: UserMode): Promise<void> {
+        try {
+            const { error } = await supabaseAdmin
+                .from('user_interactions')
+                .upsert({
+                    user_id: userId,
+                    current_mode: mode,
+                    last_activity: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                })
+
+            if (error) {
+                logger.error('Error setting user mode', { userId, mode, error: error.message })
+            } else {
+                logger.info('User mode updated', { userId, mode })
+            }
+        } catch (error) {
+            logger.error('Exception setting user mode', { userId, mode, error })
+        }
+    }
+
+    /**
+     * Kiểm tra user có mode cao hơn không
+     */
+    static async hasHigherMode(userId: string, requiredMode: UserMode): Promise<boolean> {
+        try {
+            const currentMode = await this.getUserMode(userId)
+            const modeHierarchy = {
+                [UserMode.NORMAL]: 0,
+                [UserMode.PREMIUM]: 1,
+                [UserMode.ADMIN]: 2
+            }
+
+            return modeHierarchy[currentMode] >= modeHierarchy[requiredMode]
+        } catch (error) {
+            logger.error('Exception checking user mode', { userId, requiredMode, error })
+            return false
+        }
+    }
+
+    /**
+     * Lấy trạng thái đầy đủ của user
+     */
+    static async getUserState(userId: string): Promise<UserState | null> {
         try {
             const { data, error } = await supabaseAdmin
                 .from('user_interactions')
                 .select('*')
-                .eq('facebook_id', facebookId)
+                .eq('user_id', userId)
                 .single()
 
             if (error && error.code !== 'PGRST116') {
-                logger.error('Error getting user mode', { facebookId, error: error.message })
+                logger.error('Error getting user state', { userId, error: error.message })
                 return null
             }
 
             return data
         } catch (error) {
-            logger.error('Exception getting user mode', { facebookId, error })
+            logger.error('Exception getting user state', { userId, error })
             return null
         }
     }
 
     /**
-     * Cập nhật trạng thái mode của user
+     * Cập nhật trạng thái của user
      */
-    static async updateUserMode(facebookId: string, mode: UserMode): Promise<void> {
+    static async updateUserState(userId: string, updates: Partial<UserState>): Promise<void> {
         try {
-            const currentState = await this.getUserMode(facebookId)
-
-            await supabaseAdmin
+            const { error } = await supabaseAdmin
                 .from('user_interactions')
                 .upsert({
-                    facebook_id: facebookId,
-                    current_mode: mode,
-                    last_mode_change: new Date().toISOString(),
-                    mode_change_count: currentState ? currentState.mode_change_count + 1 : 1,
-                    bot_active: mode === UserMode.USING_BOT,
+                    user_id: userId,
+                    ...updates,
                     updated_at: new Date().toISOString()
                 })
 
-            logger.info('User mode updated', { facebookId, mode })
+            if (error) {
+                logger.error('Error updating user state', { userId, updates, error: error.message })
+            }
         } catch (error) {
-            logger.error('Error updating user mode', { facebookId, mode, error })
+            logger.error('Exception updating user state', { userId, error })
         }
     }
 
     /**
-     * Kiểm tra user có đang ở chế độ bot không
+     * Kiểm tra và nâng cấp mode nếu cần thiết
      */
-    static async isUsingBot(facebookId: string): Promise<boolean> {
+    static async upgradeUserModeIfEligible(userId: string): Promise<void> {
         try {
-            const userState = await this.getUserMode(facebookId)
-            return userState?.current_mode === UserMode.USING_BOT && userState?.bot_active === true
+            // Logic kiểm tra điều kiện nâng cấp mode
+            // Ví dụ: dựa trên điểm tích lũy, thời gian sử dụng, etc.
+
+            const userState = await this.getUserState(userId)
+            if (!userState) return
+
+            // Kiểm tra điều kiện để nâng cấp lên PREMIUM
+            if (userState.current_mode === UserMode.NORMAL) {
+                // Logic kiểm tra điều kiện premium
+                const isEligibleForPremium = await this.checkPremiumEligibility(userId)
+
+                if (isEligibleForPremium) {
+                    await this.setUserMode(userId, UserMode.PREMIUM)
+                    logger.info('User upgraded to premium', { userId })
+                }
+            }
+
         } catch (error) {
-            logger.error('Error checking if user is using bot', { facebookId, error })
+            logger.error('Exception upgrading user mode', { userId, error })
+        }
+    }
+
+    /**
+     * Kiểm tra điều kiện để được nâng cấp lên premium
+     */
+    private static async checkPremiumEligibility(userId: string): Promise<boolean> {
+        try {
+            // Kiểm tra dựa trên các điều kiện:
+            // 1. Số điểm tích lũy
+            // 2. Thời gian sử dụng
+            // 3. Số giao dịch thành công
+            // 4. Hoạt động tích cực
+
+            const { data: userData } = await supabaseAdmin
+                .from('users')
+                .select('created_at, status')
+                .eq('facebook_id', userId)
+                .single()
+
+            if (!userData) return false
+
+            // Kiểm tra thời gian sử dụng (tối thiểu 30 ngày)
+            const accountAge = Date.now() - new Date(userData.created_at).getTime()
+            const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000
+
+            if (accountAge < thirtyDaysInMs) return false
+
+            // Kiểm tra trạng thái active
+            if (userData.status !== 'active') return false
+
+            // Kiểm tra số giao dịch thành công (tối thiểu 5)
+            const { count: transactionCount } = await supabaseAdmin
+                .from('payments')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .eq('status', 'completed')
+
+            if (transactionCount && transactionCount >= 5) {
+                return true
+            }
+
+            return false
+
+        } catch (error) {
+            logger.error('Exception checking premium eligibility', { userId, error })
             return false
         }
     }
 
     /**
-     * Kiểm tra user có đang chat với admin không
+     * Reset mode về normal
      */
-    static async isChattingWithAdmin(facebookId: string): Promise<boolean> {
+    static async resetToNormalMode(userId: string): Promise<void> {
         try {
-            const userState = await this.getUserMode(facebookId)
-            return userState?.current_mode === UserMode.CHATTING_ADMIN
+            await this.setUserMode(userId, UserMode.NORMAL)
+            logger.info('User mode reset to normal', { userId })
         } catch (error) {
-            logger.error('Error checking if user is chatting with admin', { facebookId, error })
-            return false
+            logger.error('Exception resetting user mode', { userId, error })
         }
     }
 
     /**
-     * Gửi menu phân luồng cho user đang chọn
+     * Lấy thống kê theo mode
      */
-    static async sendChoosingMenu(facebookId: string): Promise<void> {
+    static async getModeStats(): Promise<Record<UserMode, number>> {
         try {
-            await sendMessage(facebookId,
-                `🎯 CHỌN CHẾ ĐỘ SỬ DỤNG\n━━━━━━━━━━━━━━━━━━━━\n🚀 Dùng bot: Tự động mua bán với cộng đồng\n💬 Chat với admin: Đinh Khánh Tùng hỗ trợ trực tiếp\n━━━━━━━━━━━━━━━━━━━━`
-            )
-
-            await sendQuickReply(facebookId, 'Bạn muốn làm gì?', [
-                createQuickReply('🚀 DÙNG BOT', 'USE_BOT'),
-                createQuickReply('💬 CHAT VỚI ADMIN', 'CHAT_ADMIN')
-            ])
-
-            await this.updateUserMode(facebookId, UserMode.CHOOSING)
-        } catch (error) {
-            logger.error('Error sending choosing menu', { facebookId, error })
-        }
-    }
-
-    /**
-     * Xử lý khi user chọn dùng bot - UPDATED để tránh xung đột
-     */
-    static async handleUseBot(facebookId: string): Promise<void> {
-        try {
-            // Cập nhật mode trước
-            await this.updateUserMode(facebookId, UserMode.USING_BOT)
-
-            // Gửi thông báo chuyển mode thành công
-            await sendMessage(facebookId,
-                `✅ ĐÃ CHUYỂN SANG CHẾ ĐỘ BOT!\n━━━━━━━━━━━━━━━━━━━━\n🎯 Bạn có thể sử dụng tất cả tính năng bot ngay bây giờ\n━━━━━━━━━━━━━━━━━━━━`
-            )
-
-            // Đợi 1 giây rồi gửi menu chức năng bot
-            await this.delay(1000)
-            await this.sendBotMenu(facebookId)
-
-            logger.info('User started using bot', { facebookId })
-        } catch (error) {
-            logger.error('Error handling use bot', { facebookId, error })
-        }
-    }
-
-    /**
-     * Xử lý khi user chọn chat với admin
-     */
-    static async handleChatWithAdmin(facebookId: string): Promise<void> {
-        try {
-            await this.updateUserMode(facebookId, UserMode.CHATTING_ADMIN)
-
-            await sendMessage(facebookId,
-                `💬 ĐINH KHÁNH TÙNG ĐÃ NHẬN ĐƯỢC TIN NHẮN CỦA BẠN!\n━━━━━━━━━━━━━━━━━━━━\n⏰ Admin sẽ phản hồi trong thời gian sớm nhất\n📞 SĐT: 0982581222 (nếu cần gấp)\n━━━━━━━━━━━━━━━━━━━━`
-            )
-
-            logger.info('User requested admin chat', { facebookId })
-        } catch (error) {
-            logger.error('Error handling chat with admin', { facebookId, error })
-        }
-    }
-
-    /**
-     * Gửi menu chức năng bot
-     */
-    static async sendBotMenu(facebookId: string): Promise<void> {
-        try {
-            await sendQuickReply(facebookId, 'Chọn chức năng bạn muốn sử dụng:', [
-                createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
-                createQuickReply('🛒 ĐĂNG TIN BÁN HÀNG', 'LISTING'),
-                createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
-                createQuickReply('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
-                createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
-                createQuickReply('🏠 VỀ MENU CHÍNH', 'BACK_TO_MAIN')
-            ])
-        } catch (error) {
-            logger.error('Error sending bot menu', { facebookId, error })
-        }
-    }
-
-    /**
-     * Xử lý khi user muốn về menu chính
-     */
-    static async handleBackToMain(facebookId: string): Promise<void> {
-        try {
-            await this.sendChoosingMenu(facebookId)
-        } catch (error) {
-            logger.error('Error handling back to main', { facebookId, error })
-        }
-    }
-
-    /**
-     * Reset trạng thái user về choosing mode
-     */
-    static async resetUserMode(facebookId: string): Promise<void> {
-        try {
-            await supabaseAdmin
+            const { data, error } = await supabaseAdmin
                 .from('user_interactions')
-                .update({
-                    current_mode: UserMode.CHOOSING,
-                    bot_active: true,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('facebook_id', facebookId)
+                .select('current_mode')
 
-            logger.info('User mode reset to choosing', { facebookId })
+            if (error) {
+                logger.error('Error getting mode stats', { error: error.message })
+                return {
+                    [UserMode.NORMAL]: 0,
+                    [UserMode.PREMIUM]: 0,
+                    [UserMode.ADMIN]: 0
+                }
+            }
+
+            const stats = {
+                [UserMode.NORMAL]: 0,
+                [UserMode.PREMIUM]: 0,
+                [UserMode.ADMIN]: 0
+            }
+
+            data?.forEach(user => {
+                const mode = user.current_mode as UserMode
+                if (mode && stats[mode] !== undefined) {
+                    stats[mode]++
+                }
+            })
+
+            return stats
+
         } catch (error) {
-            logger.error('Error resetting user mode', { facebookId, error })
+            logger.error('Exception getting mode stats', { error })
+            return {
+                [UserMode.NORMAL]: 0,
+                [UserMode.PREMIUM]: 0,
+                [UserMode.ADMIN]: 0
+            }
         }
-    }
-
-    /**
-     * Helper method to add delay between messages
-     */
-    private static async delay(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms))
     }
 }

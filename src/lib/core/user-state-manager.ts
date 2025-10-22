@@ -1,26 +1,26 @@
 /**
  * User State Manager - Quản lý trạng thái user THỐNG NHẤT
- * Gộp logic từ UserModeService và UnifiedBotSystem để tránh xung đột
+ * Quản lý state và mode của user trong một service duy nhất
  */
 
 import { supabaseAdmin } from '../supabase'
 import { sendMessage, sendQuickReply, createQuickReply } from '../facebook-api'
 import { logger } from '../logger'
 import { welcomeService, WelcomeType } from '../welcome-service'
-import { getUserByFacebookId } from '../database-service'
+import { getUserByFacebookId } from '../user-service'
 
 export enum UserState {
     NEW_USER = 'new_user',              // User mới, chưa gửi welcome
-    CHOOSING_MODE = 'choosing_mode',    // Đang chọn chế độ sử dụng
+    CHOOSING = 'choosing',              // Đang chọn chế độ sử dụng
     USING_BOT = 'using_bot',            // Đang sử dụng bot
     CHATTING_ADMIN = 'chatting_admin'   // Đang chat với admin
 }
 
 export interface UserStateData {
     facebook_id: string
-    current_state: UserState
-    last_state_change: string
-    state_change_count: number
+    current_mode: UserState
+    last_mode_change: string
+    mode_change_count: number
     bot_active: boolean
     welcome_sent: boolean
     created_at: string
@@ -62,9 +62,9 @@ export class UserStateManager {
                 .from('user_interactions')
                 .upsert({
                     facebook_id: facebookId,
-                    current_state: state,
-                    last_state_change: new Date().toISOString(),
-                    state_change_count: currentState ? currentState.state_change_count + 1 : 1,
+                    current_mode: state,
+                    last_mode_change: new Date().toISOString(),
+                    mode_change_count: currentState ? currentState.mode_change_count + 1 : 1,
                     bot_active: state === UserState.USING_BOT,
                     updated_at: new Date().toISOString()
                 })
@@ -109,7 +109,7 @@ export class UserStateManager {
                 createQuickReply('💬 CHAT VỚI ADMIN', 'CHAT_ADMIN')
             ])
 
-            await this.updateUserState(facebookId, UserState.CHOOSING_MODE)
+            await this.updateUserState(facebookId, UserState.CHOOSING)
         } catch (error) {
             logger.error('Error sending choosing menu', { facebookId, error })
         }
@@ -190,7 +190,7 @@ export class UserStateManager {
     static async isUsingBot(facebookId: string): Promise<boolean> {
         try {
             const userState = await this.getUserState(facebookId)
-            return userState?.current_state === UserState.USING_BOT && userState?.bot_active === true
+            return userState?.current_mode === UserState.USING_BOT && userState?.bot_active === true
         } catch (error) {
             logger.error('Error checking if user is using bot', { facebookId, error })
             return false
@@ -203,7 +203,7 @@ export class UserStateManager {
     static async isChattingWithAdmin(facebookId: string): Promise<boolean> {
         try {
             const userState = await this.getUserState(facebookId)
-            return userState?.current_state === UserState.CHATTING_ADMIN
+            return userState?.current_mode === UserState.CHATTING_ADMIN
         } catch (error) {
             logger.error('Error checking if user is chatting with admin', { facebookId, error })
             return false
@@ -218,7 +218,7 @@ export class UserStateManager {
             await supabaseAdmin
                 .from('user_interactions')
                 .update({
-                    current_state: UserState.CHOOSING_MODE,
+                    current_mode: UserState.CHOOSING,
                     bot_active: true,
                     updated_at: new Date().toISOString()
                 })
@@ -238,30 +238,44 @@ export class UserStateManager {
             // Lấy trạng thái hiện tại
             const currentState = await this.getUserState(facebookId)
 
-            // Nếu chưa có state, kiểm tra user data
+            // Nếu chưa có state, kiểm tra user data và session
             if (!currentState) {
                 const userData = await getUserByFacebookId(facebookId)
                 const welcomeAlreadySent = userData?.welcome_sent || userData?.welcome_message_sent
 
+                // Kiểm tra xem user có đang trong session nào không
+                const { SessionManager } = await import('./session-manager')
+                const activeSession = await SessionManager.getSession(facebookId)
+
+                if (activeSession) {
+                    // User đang trong session (ví dụ: registration flow)
+                    // Không reset state, giữ nguyên để flow tiếp tục
+                    logger.info('User in active session, preserving state', {
+                        facebookId,
+                        flow: activeSession.current_flow
+                    })
+                    return UserState.USING_BOT // Trả về state mặc định nhưng không reset
+                }
+
                 if (!welcomeAlreadySent) {
                     // User mới - gửi welcome và chuyển sang choosing
                     await this.handleNewUser(facebookId)
-                    return UserState.CHOOSING_MODE
+                    return UserState.CHOOSING
                 } else {
                     // Đã gửi welcome rồi - chỉ gửi menu choosing
                     await this.sendChoosingMenu(facebookId)
-                    return UserState.CHOOSING_MODE
+                    return UserState.CHOOSING
                 }
             }
 
             // Trả về trạng thái hiện tại
-            return currentState.current_state
+            return currentState.current_mode
 
         } catch (error) {
             logger.error('Error in handleIncomingMessage', { facebookId, error })
             // Fallback: gửi menu choosing
             await this.sendChoosingMenu(facebookId)
-            return UserState.CHOOSING_MODE
+            return UserState.CHOOSING
         }
     }
 

@@ -6,7 +6,7 @@
 import { logger, logUserAction, logBotEvent } from './logger'
 import { errorHandler, createUserError, ErrorType } from './error-handler'
 import { sendMessage, sendQuickReply, createQuickReply, sendTypingIndicator } from './facebook-api'
-import { getUserByFacebookId, updateUser } from './database-service'
+import { getUserByFacebookId, updateUser } from './user-service'
 
 // Simple welcome types
 export enum WelcomeType {

@@ -118,7 +118,7 @@ async function handleWebhookEvent(event: any) {
         })
 
         // Check if bot is stopped
-        const { getBotStatus } = await import('@/lib/database-service')
+        const { getBotStatus } = await import('@/lib/bot-service')
         const botStatus = await getBotStatus()
 
         if (botStatus === 'stopped') {
@@ -187,7 +187,7 @@ async function handleMessageEvent(event: any) {
         }
 
         // Get user data
-        const { getUserByFacebookId } = await import('@/lib/database-service')
+        const { getUserByFacebookId } = await import('@/lib/user-service')
         const user = await getUserByFacebookId(senderId)
 
         // Create user object for UnifiedBotSystem - ENSURE CORRECT FACEBOOK_ID
@@ -283,7 +283,7 @@ async function handlePostbackEvent(event: any) {
         }
 
         // Get user data
-        const { getUserByFacebookId } = await import('@/lib/database-service')
+        const { getUserByFacebookId } = await import('@/lib/user-service')
         const user = await getUserByFacebookId(senderId)
 
         // Create user object for UnifiedBotSystem

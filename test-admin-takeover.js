@@ -3,7 +3,10 @@
  * Kiểm tra các chức năng chính của AdminTakeoverService
  */
 
-const { AdminTakeoverService } = require('./src/lib/admin-takeover-service');
+import dotenv from 'dotenv';
+dotenv.config();
+
+import { AdminTakeoverService } from './src/lib/admin-takeover-service.js';
 
 // Mock data for testing
 const TEST_USER_ID = 'test_user_123'
@@ -88,7 +91,7 @@ async function testAdminTakeoverService() {
 }
 
 // Chạy test nếu file được thực thi trực tiếp
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     testAdminTakeoverService()
         .then(() => {
             console.log('\n🎉 Test execution completed')
@@ -100,4 +103,4 @@ if (require.main === module) {
         })
 }
 
-module.exports = { testAdminTakeoverService }
+export { testAdminTakeoverService }

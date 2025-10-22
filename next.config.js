@@ -27,4 +27,4 @@ const nextConfig = {
     // generateBuildId: async () => { return 'build-' + Date.now() } // This conflicts with Vercel
 }
 
-module.exports = nextConfig
+export default nextConfig

@@ -3,6 +3,7 @@
     "version": "2.1.0",
     "description": "Facebook Messenger Bot cho cộng đồng Tân Dậu - Hỗ Trợ Chéo (Fixed registration flow)",
     "private": true,
+    "type": "module",
     "scripts": {
         "dev": "next dev",
         "build": "next build",

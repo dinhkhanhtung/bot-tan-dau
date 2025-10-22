@@ -3,11 +3,14 @@
  * Chạy script này để test các chức năng của hệ thống phân luồng user
  */
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 async function loadModules() {
     try {
         // Import các module TypeScript một cách dynamic
-        const userModeModule = await import('./src/lib/core/user-mode-service.ts')
-        const smartMenuModule = await import('./src/lib/core/smart-menu-service.ts')
+        const userModeModule = await import('./src/lib/core/user-mode-service.js')
+        const smartMenuModule = await import('./src/lib/core/smart-menu-service.js')
 
         return {
             UserModeService: userModeModule.UserModeService,
@@ -89,11 +92,11 @@ async function testDatabaseIntegration() {
 }
 
 // Chạy test nếu file được gọi trực tiếp
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     (async () => {
         await testUserModeService()
         await testDatabaseIntegration()
     })()
 }
 
-module.exports = { testUserModeService, testDatabaseIntegration }
+export { testUserModeService, testDatabaseIntegration }

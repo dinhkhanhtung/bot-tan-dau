@@ -4,9 +4,9 @@
  * Bao gồm message counting, state management và notification system
  */
 
-import { supabaseAdmin } from './supabase'
-import { sendMessage } from './facebook-api'
-import { logger } from './logger'
+import { supabaseAdmin } from './supabase.js'
+import { sendMessage } from './facebook-api.js'
+import { logger } from './logger.js'
 
 interface AdminTakeoverState {
   id?: string
@@ -273,7 +273,7 @@ export class AdminTakeoverService {
 
             // Nếu user không còn chờ admin và không có admin active, kích hoạt lại bot
             if (!state?.user_waiting_for_admin && !state?.is_active) {
-                const { UserInteractionService } = await import('./user-interaction-service')
+                const { UserInteractionService } = await import('./user-interaction-service.js')
                 await UserInteractionService.reactivateBot(userId)
 
                 logger.info('Bot reactivated for user', { userId })
@@ -591,6 +591,36 @@ export class AdminTakeoverService {
             logger.info('Message counter reset for user', { userId })
         } catch (error) {
             logger.error('Error resetting message counter', { userId, error })
+        }
+    }
+
+    /**
+      * Lấy danh sách takeover đang active
+      */
+    static async getActiveTakeovers(): Promise<any[]> {
+        try {
+            const { data, error } = await supabaseAdmin
+                .from('admin_takeover_states')
+                .select(`
+                    *,
+                    users:user_id (
+                        facebook_id,
+                        name,
+                        phone,
+                        status
+                    )
+                `)
+                .eq('is_active', true)
+
+            if (error) {
+                logger.error('Error getting active takeovers', { error: error.message })
+                return []
+            }
+
+            return data || []
+        } catch (error) {
+            logger.error('Exception getting active takeovers', { error })
+            return []
         }
     }
 }

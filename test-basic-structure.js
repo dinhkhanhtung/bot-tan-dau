@@ -3,8 +3,8 @@
  * Không cần import TypeScript modules
  */
 
-const fs = require('fs')
-const path = require('path')
+import fs from 'fs'
+import path from 'path'
 
 function testFileStructure() {
     console.log('🧪 Testing file structure...')
@@ -145,7 +145,7 @@ testDatabaseSchema()
 testMigrationScript()
 showSummary()
 
-module.exports = {
+export {
     testFileStructure,
     testTypeScriptSyntax,
     testDatabaseSchema,

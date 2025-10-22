@@ -1,9 +1,10 @@
 import { sendMessage, sendTypingIndicator, sendQuickReply, createQuickReply } from '../facebook-api'
-import { SmartContextManager, UserContext, UserType, UserState } from './smart-context-manager'
+import { SmartContextManager, UserContext, UserType, UserState as SmartContextUserState } from './smart-context-manager'
 import { CONFIG } from '../config'
 import { logger, logUserAction, logBotEvent, logError } from '../logger'
 import { errorHandler, createUserError, ErrorType } from '../error-handler'
-import { getUserByFacebookId, getBotSession, getBotStatus } from '../database-service'
+import { getUserByFacebookId } from '../user-service'
+import { getBotSession, getBotStatus } from '../bot-service'
 import { supabaseAdmin } from '../supabase'
 import { welcomeService, WelcomeType } from '../welcome-service'
 import { messageProcessor } from './message-processor'
@@ -13,7 +14,7 @@ import { UserInteractionService } from '../user-interaction-service'
 import { AdminTakeoverService } from '../admin-takeover-service'
 import { UtilityHandlers } from '../handlers/utility-handlers'
 import { MarketplaceHandlers } from '../handlers/marketplace-handlers'
-import { UserStateManager } from './user-state-manager'
+import { UserStateManager, UserState } from './user-state-manager'
 
 /**
  * Unified Bot System - Main entry point for bot message processing
@@ -91,13 +92,13 @@ export class UnifiedBotSystem {
             }
 
             // Step 5: Xử lý theo trạng thái hiện tại
-            if (currentState.current_state === 'chatting_admin') {
+            if (currentState.current_mode === UserState.CHATTING_ADMIN) {
                 // User đang chat với admin - không xử lý bot
                 logger.info('User is chatting with admin, ignoring bot message', { facebook_id: user.facebook_id })
                 return
             }
 
-            if (currentState.current_state === 'using_bot') {
+            if (currentState.current_mode === UserState.USING_BOT) {
                 // User đang dùng bot - xử lý bình thường
                 await this.handleBotUserMessage(user, text, isPostback, postback)
                 return
@@ -220,7 +221,7 @@ export class UnifiedBotSystem {
             logError(error as Error, { operation: 'analyze_user_context', user })
             return {
                 userType: UserType.NEW_USER,
-                userState: UserState.IDLE,
+                userState: SmartContextUserState.IDLE,
                 user: user,
                 session: null,
                 isInFlow: false

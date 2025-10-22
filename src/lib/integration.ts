@@ -4,7 +4,7 @@
  */
 
 import { logger } from './logger'
-import { databaseService } from './database-service'
+import { getBotStatus } from './bot-service'
 import { CONFIG } from './config'
 
 // Health check interface
@@ -74,7 +74,7 @@ export async function healthCheck(): Promise<HealthStatus> {
 async function checkDatabaseHealth(): Promise<boolean> {
     try {
         // Simple query to check database connection
-        await databaseService.getBotStatus()
+        await getBotStatus()
         return true
     } catch (error) {
         logger.error('Database health check failed', { error })
