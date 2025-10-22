@@ -76,6 +76,9 @@ export class UnifiedBotSystem {
                     case 'CHAT_ADMIN':
                         await UserStateManager.handleChatWithAdmin(user.facebook_id)
                         return
+                    case 'STOP_BOT':
+                        await UserStateManager.handleStopBot(user.facebook_id)
+                        return
                     case 'BACK_TO_MAIN':
                         await UserStateManager.handleBackToMain(user.facebook_id)
                         return

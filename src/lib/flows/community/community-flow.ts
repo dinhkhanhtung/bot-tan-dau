@@ -102,9 +102,7 @@ export class CommunityFlow extends BaseFlow {
             // Create new session
             await SessionManager.createSession(user.facebook_id, 'community', 0, {})
 
-            // Send welcome message
-            await sendMessage(user.facebook_id,
-                `👥 CỘNG ĐỒNG TÂN DẬU - Hỗ Trợ Chéo\n━━━━━━━━━━━━━━━━━━━━\n🎯 KẾT NỐI CÙNG TUỔI:\n• Chia sẻ kỷ niệm tuổi trẻ\n• Hỗ trợ mua bán nội bộ\n• Kết nối bạn bè cùng trang lứa\n• Tổ chức sự kiện cộng đồng\n━━━━━━━━━━━━━━━━━━━━`)
+            // No intro message - user already has buttons from welcome
 
             // Send community options
             await sendQuickReply(user.facebook_id, 'Chọn hoạt động cộng đồng:', [

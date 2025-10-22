@@ -171,6 +171,23 @@ export class UserStateManager {
     }
 
     /**
+     * Xử lý khi user chọn dừng bot
+     */
+    static async handleStopBot(facebookId: string): Promise<void> {
+        try {
+            await this.updateUserState(facebookId, UserState.CHOOSING)
+
+            await sendMessage(facebookId,
+                `🛑 ĐÃ DỪNG BOT!\n━━━━━━━━━━━━━━━━━━━━\n✅ Bot đã được tạm dừng\n💬 Bạn có thể chat trực tiếp với admin\n━━━━━━━━━━━━━━━━━━━━`
+            )
+
+            logger.info('User stopped bot', { facebookId })
+        } catch (error) {
+            logger.error('Error handling stop bot', { facebookId, error })
+        }
+    }
+
+    /**
      * Kiểm tra user có đang dùng bot không
      */
     static async isUsingBot(facebookId: string): Promise<boolean> {

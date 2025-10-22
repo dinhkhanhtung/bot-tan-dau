@@ -16,15 +16,12 @@ export enum WelcomeType {
 
 // Simple welcome message template for all users
 const SIMPLE_WELCOME_TEMPLATE = {
-    greeting: '👋 XIN CHÀO!\n━━━━━━━━━━━━━━━━━━━━\nChào mừng bạn đến với cộng đồng Tân Dậu!',
-    description: '💡 Tôi có thể giúp bạn:',
-    features: [
-        '• Đăng ký thành viên',
-        '• Tìm kiếm sản phẩm',
-        '• Đăng tin bán hàng',
-        '• Tham gia cộng đồng',
-        '• Thanh toán dịch vụ'
-    ]
+    greeting: 'CHỌN CHẾ ĐỘ SỬ DỤNG',
+    options: [
+        'Dùng bot: Tự động mua bán với cộng đồng',
+        'Chat với admin: Đinh Khánh Tùng hỗ trợ trực tiếp'
+    ],
+    question: 'Bạn muốn làm gì?'
 }
 
 // Simple welcome service class
@@ -65,15 +62,10 @@ export class WelcomeService {
             // Send typing indicator
             await sendTypingIndicator(facebookId)
 
-            // Send simple greeting and description
-            const welcomeMessage = `${SIMPLE_WELCOME_TEMPLATE.greeting}\n\n${SIMPLE_WELCOME_TEMPLATE.description}`
-            await sendMessage(facebookId, welcomeMessage)
-            logger.info(`✅ Welcome message sent to user: ${facebookId}`)
-
-            // Send features as bullet points
-            const featuresMessage = SIMPLE_WELCOME_TEMPLATE.features.join('\n')
-            await sendMessage(facebookId, featuresMessage)
-            logger.info(`✅ Features message sent to user: ${facebookId}`)
+            // Send unified welcome message
+            const unifiedMessage = `${SIMPLE_WELCOME_TEMPLATE.greeting}\n\n${SIMPLE_WELCOME_TEMPLATE.options.join('\n')}\n\n${SIMPLE_WELCOME_TEMPLATE.question}`
+            await sendMessage(facebookId, unifiedMessage)
+            logger.info(`✅ Unified welcome message sent to user: ${facebookId}`)
 
             // Send simple buttons
             await this.sendWelcomeButtons(facebookId)
@@ -105,18 +97,15 @@ export class WelcomeService {
     // Simple welcome buttons for common actions
     private async sendWelcomeButtons(facebookId: string): Promise<void> {
         try {
-            // For new users, always show registration button
-            // Don't check user status to avoid database errors
             const buttons = [
-                createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
-                createQuickReply('🛒 ĐĂNG BÁN', 'LISTING'),
-                createQuickReply('👥 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
-                createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
+                createQuickReply('🤖 DÙNG BOT', 'USE_BOT'),
+                createQuickReply('💬 CHAT VỚI ADMIN', 'CHAT_ADMIN'),
+                createQuickReply('🛑 DỪNG BOT', 'STOP_BOT')
             ]
 
             await sendQuickReply(
                 facebookId,
-                'Chọn một trong các tùy chọn bên dưới để bắt đầu:',
+                '',
                 buttons
             )
 

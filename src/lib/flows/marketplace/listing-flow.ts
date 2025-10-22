@@ -120,9 +120,7 @@ export class ListingFlow extends BaseFlow {
             // Create new session
             await SessionManager.createSession(user.facebook_id, 'listing', 0, {})
 
-            // Send welcome message
-            await sendMessage(user.facebook_id,
-                `📝 ĐĂNG TIN BÁN HÀNG\n━━━━━━━━━━━━━━━━━━━━\n📋 Bước 1/5: Tiêu đề sản phẩm\n💡 Viết tiêu đề hấp dẫn để thu hút người mua\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập tiêu đề sản phẩm:`)
+            // No intro message - user already has buttons from welcome
 
         } catch (error) {
             await this.handleError(user, error, 'startListing')

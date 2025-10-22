@@ -102,9 +102,7 @@ export class SearchFlow extends BaseFlow {
                 keyword: keyword.trim()
             })
 
-            // Send search options
-            await sendMessage(user.facebook_id, 
-                `🔍 TÌM KIẾM SẢN PHẨM\n━━━━━━━━━━━━━━━━━━━━\n🔑 Từ khóa: ${keyword.trim()}\n━━━━━━━━━━━━━━━━━━━━\n💡 Bạn có thể tìm kiếm theo danh mục hoặc địa điểm\n━━━━━━━━━━━━━━━━━━━━`)
+            // No intro message - user already has buttons from welcome
 
             // Send search options
             await sendQuickReply(user.facebook_id, 'Chọn cách tìm kiếm:', [

@@ -131,32 +131,8 @@ export class RegistrationFlow extends BaseFlow {
      */
     private async sendRegistrationPricingInfo(user: any): Promise<void> {
         try {
-            // Message 1: Welcome
-            await sendMessage(user.facebook_id, 'Chào mừng bạn tham gia Bot Tân Dậu - Hỗ Trợ Chéo')
-
-            // Delay 1.5 seconds
-            await this.delay(1500)
-
-            // Message 2: Benefits
-            await sendMessage(user.facebook_id, '🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu')
-
-            // Delay 1.5 seconds
-            await this.delay(1500)
-
-            // Message 3: Pricing details
-            await sendMessage(user.facebook_id, '💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫')
-
-            // Delay 1.5 seconds
-            await this.delay(1500)
-
-            // Message 4: Slogan
-            await sendMessage(user.facebook_id, 'Tân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng')
-
-            // Delay 1.5 seconds
-            await this.delay(1500)
-
-            // Message 5: Start registration
-            await sendMessage(user.facebook_id, '📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
+            // Unified message
+            await sendMessage(user.facebook_id, 'Chào mừng bạn tham gia Bot Tân Dậu - Hỗ Trợ Chéo\n\n🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu\n💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫\n\nTân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng\n\n📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
 
         } catch (error) {
             console.error('Error sending registration pricing info:', error)
