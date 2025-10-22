@@ -19,6 +19,11 @@ export class CommunityFlow extends BaseFlow {
      * Check if this flow can handle the user/session
      */
     canHandle(user: any, session: any): boolean {
+        // Handle null user case
+        if (!user || !user.status) {
+            return false
+        }
+
         // Can handle if user is registered and wants community features
         return (user.status === 'registered' || user.status === 'trial') &&
             (session?.current_flow === 'community' || !session)

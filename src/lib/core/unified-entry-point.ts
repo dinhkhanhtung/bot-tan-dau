@@ -125,7 +125,9 @@ export class UnifiedBotSystem {
                 if (isPostback && postback) {
                     await FlowManager.handlePostback(user, postback)
                 } else {
-                    await this.handleBotUserMessage(user, text, isPostback, postback)
+                    // For text messages in CHOOSING state, don't call FlowManager
+                    // Let UserStateManager handle it
+                    await this.handleDefaultMessage(user)
                 }
                 return
             }
