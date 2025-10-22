@@ -43,10 +43,12 @@ export class WelcomeService {
     // Simple welcome message - only send once per user
     public async sendWelcome(facebookId: string, userType?: WelcomeType): Promise<void> {
         try {
+            logger.info(`🎉 Starting welcome process for user: ${facebookId}`)
+
             // Check if welcome was already sent (one-time welcome)
             const user = await getUserByFacebookId(facebookId)
             if (user?.welcome_sent) {
-                logger.debug(`Skipping welcome for user: ${facebookId} - already sent before`)
+                logger.info(`Skipping welcome for user: ${facebookId} - already sent before`)
                 return
             }
 
@@ -54,9 +56,11 @@ export class WelcomeService {
             const { SessionManager } = await import('./core/session-manager')
             const activeSession = await SessionManager.getSession(facebookId)
             if (activeSession && activeSession.current_flow === 'registration') {
-                logger.debug(`Skipping welcome for user: ${facebookId} - currently in registration flow`)
+                logger.info(`Skipping welcome for user: ${facebookId} - currently in registration flow`)
                 return
             }
+
+            logger.info(`📤 Sending welcome message to user: ${facebookId}`)
 
             // Send typing indicator
             await sendTypingIndicator(facebookId)
@@ -64,20 +68,26 @@ export class WelcomeService {
             // Send simple greeting and description
             const welcomeMessage = `${SIMPLE_WELCOME_TEMPLATE.greeting}\n\n${SIMPLE_WELCOME_TEMPLATE.description}`
             await sendMessage(facebookId, welcomeMessage)
+            logger.info(`✅ Welcome message sent to user: ${facebookId}`)
 
             // Send features as bullet points
             const featuresMessage = SIMPLE_WELCOME_TEMPLATE.features.join('\n')
             await sendMessage(facebookId, featuresMessage)
+            logger.info(`✅ Features message sent to user: ${facebookId}`)
 
             // Send simple buttons
             await this.sendWelcomeButtons(facebookId)
+            logger.info(`✅ Welcome buttons sent to user: ${facebookId}`)
 
             // Mark welcome as sent in database
             await this.markWelcomeAsSent(facebookId)
+            logger.info(`✅ Welcome marked as sent for user: ${facebookId}`)
 
             // Log welcome sent
             logUserAction(facebookId, 'welcome_sent', { userType })
             logBotEvent('welcome_sent', { userId: facebookId, userType })
+
+            logger.info(`🎉 Welcome process completed successfully for user: ${facebookId}`)
 
         } catch (error) {
             const welcomeError = createUserError(
@@ -94,27 +104,34 @@ export class WelcomeService {
 
     // Simple welcome buttons for common actions
     private async sendWelcomeButtons(facebookId: string): Promise<void> {
-        // Check user registration status
-        const user = await getUserByFacebookId(facebookId)
-        const isRegistered = user && (user.status === 'registered' || user.status === 'trial')
+        try {
+            // Check user registration status
+            const user = await getUserByFacebookId(facebookId)
+            const isRegistered = user && (user.status === 'registered' || user.status === 'trial')
 
-        const buttons = [
-            createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
-            createQuickReply('🛒 ĐĂNG BÁN', 'LISTING')
-        ]
+            const buttons = [
+                createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                createQuickReply('🛒 ĐĂNG BÁN', 'LISTING')
+            ]
 
-        // Only show registration button if user is not registered
-        if (!isRegistered) {
-            buttons.push(createQuickReply('👥 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'))
+            // Only show registration button if user is not registered
+            if (!isRegistered) {
+                buttons.push(createQuickReply('👥 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'))
+            }
+
+            buttons.push(createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN'))
+
+            await sendQuickReply(
+                facebookId,
+                'Chọn một trong các tùy chọn bên dưới để bắt đầu:',
+                buttons
+            )
+
+            logger.info(`✅ Welcome buttons sent successfully to user: ${facebookId}`)
+        } catch (error) {
+            logger.error(`❌ Failed to send welcome buttons to user: ${facebookId}`, { error: error.message })
+            throw error
         }
-
-        buttons.push(createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN'))
-
-        await sendQuickReply(
-            facebookId,
-            'Chọn một trong các tùy chọn bên dưới để bắt đầu:',
-            buttons
-        )
     }
 
     // Mark welcome as sent in database (simple tracking)
