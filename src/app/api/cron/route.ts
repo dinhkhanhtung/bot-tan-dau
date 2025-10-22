@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runAllCronJobs } from '@/lib/cron-jobs'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
+
 // API route to trigger cron jobs
 export async function GET(request: NextRequest) {
     try {

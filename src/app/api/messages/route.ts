@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
+
 // Create new message
 export async function POST(request: NextRequest) {
     try {

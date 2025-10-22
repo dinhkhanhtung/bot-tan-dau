@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { generateReferralCode } from '@/lib/utils'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
+
 // Handle Facebook authentication and user creation
 export async function POST(request: NextRequest) {
     try {

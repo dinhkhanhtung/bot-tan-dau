@@ -4,6 +4,10 @@ import { AdminTakeoverService } from '@/lib/admin-takeover-service'
 import { sendMessage } from '@/lib/facebook-api'
 import { logger } from '@/lib/logger'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
+
 // POST: Gửi tin nhắn từ admin đến user
 export async function POST(request: NextRequest) {
     try {

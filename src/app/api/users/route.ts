@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { generateReferralCode, validatePhoneNumber } from '@/lib/utils'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 // Create new user
 export async function POST(request: NextRequest) {
     try {

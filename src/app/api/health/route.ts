@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { healthCheck } from '@/lib/integration'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
+
 // Health check API endpoint
 export async function GET(request: NextRequest) {
     try {

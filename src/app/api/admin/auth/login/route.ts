@@ -3,6 +3,9 @@ import { supabaseAdmin } from '@/lib/supabase'
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 // Handle CORS preflight requests
 export async function OPTIONS(request: NextRequest) {
     return new NextResponse(null, {

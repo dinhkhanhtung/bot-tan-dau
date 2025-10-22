@@ -5,6 +5,10 @@ import { UserInteractionService } from '@/lib/user-interaction-service'
 import { logger } from '@/lib/logger'
 import { getUsersWaitingForAdmin, getActiveTakeovers, getTakeoverStats } from '@/lib/database-service'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
+
 // GET: Lấy danh sách chat sessions và thông tin takeover
 export async function GET(request: NextRequest) {
     try {

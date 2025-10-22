@@ -7,6 +7,10 @@ import { UnifiedBotSystem } from '@/lib/core/unified-entry-point'
 import { AdminTakeoverService } from '@/lib/admin-takeover-service'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
+
 // Initialize bot system once
 let systemInitialized = false
 

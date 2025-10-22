@@ -7,6 +7,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as fs from 'fs'
 import * as path from 'path'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 // Types for log analysis
 interface LogStats {
     total: number
