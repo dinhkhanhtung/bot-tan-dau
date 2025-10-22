@@ -20,11 +20,6 @@ export class RegistrationFlow extends BaseFlow {
      * Check if this flow can handle the user/session
      */
     canHandle(user: any, session: any): boolean {
-        // Handle null user case (for flow trigger checking)
-        if (!user) {
-            return true // Allow flow to be triggered for new users
-        }
-
         // Can handle if user is not registered and wants to register
         return user.status === 'new_user' ||
             (session && session.current_flow === 'registration')

@@ -182,6 +182,9 @@ export class UnifiedBotSystem {
                         await FlowManager.handleMessage(user, text)
                     }
                 }
+            } else {
+                // No text message - send default message based on user type
+                await this.handleDefaultMessage(user)
             }
         } catch (error) {
             logError(error as Error, { operation: 'handle_bot_user_message', user, text, postback })
@@ -312,11 +315,20 @@ export class UnifiedBotSystem {
      */
     private static async handleTrialUser(user: any): Promise<void> {
         try {
-            const trialEnd = new Date(user.trial_end)
-            const daysLeft = Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+            // Fix: Use membership_expires_at instead of trial_end
+            const expiryDate = user.membership_expires_at
+            let daysLeft = 0
+
+            if (expiryDate) {
+                const trialEnd = new Date(expiryDate)
+                const now = new Date()
+                const diffTime = trialEnd.getTime() - now.getTime()
+                daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                daysLeft = Math.max(daysLeft, 0) // Ensure non-negative
+            }
 
             await sendMessage(user.facebook_id,
-                `🎁 TÀI KHOẢN DÙNG THỬ\n━━━━━━━━━━━━━━━━━━━━\n⏰ Còn lại: ${daysLeft} ngày\n🎯 Sử dụng tất cả tính năng\n💳 Nâng cấp để tiếp tục\n━━━━━━━━━━━━━━━━━━━━`)
+                `🎁 TÀI KHOẢN DÙNG THỬ\n━━━━━━━━━━━━━━━━━━━━\n⏰ Còn lại: ${daysLeft} ngày\n🎯 Sử dụng FULL tính năng miễn phí\n💳 Nâng cấp để tiếp tục\n━━━━━━━━━━━━━━━━━━━━`)
 
             await sendQuickReply(user.facebook_id, 'Chọn tính năng:', [
                 createQuickReply('📝 ĐĂNG TIN', 'LISTING'),
