@@ -82,30 +82,40 @@ export class UnifiedBotSystem {
                 }
             }
 
-            // Step 4: Kiểm tra trạng thái user và xử lý
-            const currentState = await UserStateManager.getUserState(user.facebook_id)
+            // Step 4: Kiểm tra xem state manager có nên xử lý user này không
+            const shouldHandleByStateManager = await UserStateManager.shouldHandleByStateManager(user.facebook_id)
 
-            if (!currentState) {
-                // User mới - xử lý welcome và chuyển sang choosing mode
-                await UserStateManager.handleNewUser(user.facebook_id)
-                return
-            }
+            if (shouldHandleByStateManager) {
+                // State manager should handle this user
+                const currentState = await UserStateManager.getUserState(user.facebook_id)
 
-            // Step 5: Xử lý theo trạng thái hiện tại
-            if (currentState.current_mode === UserState.CHATTING_ADMIN) {
-                // User đang chat với admin - không xử lý bot
-                logger.info('User is chatting with admin, ignoring bot message', { facebook_id: user.facebook_id })
-                return
-            }
+                if (!currentState) {
+                    // User mới - xử lý welcome và chuyển sang choosing mode
+                    await UserStateManager.handleNewUser(user.facebook_id)
+                    return
+                }
 
-            if (currentState.current_mode === UserState.USING_BOT) {
-                // User đang dùng bot - xử lý bình thường
+                // Step 5: Xử lý theo trạng thái hiện tại
+                if (currentState.current_mode === UserState.CHATTING_ADMIN) {
+                    // User đang chat với admin - không xử lý bot
+                    logger.info('User is chatting with admin, ignoring bot message', { facebook_id: user.facebook_id })
+                    return
+                }
+
+                if (currentState.current_mode === UserState.USING_BOT) {
+                    // User đang dùng bot - xử lý bình thường
+                    await this.handleBotUserMessage(user, text, isPostback, postback)
+                    return
+                }
+
+                // Nếu đang ở trạng thái choosing hoặc không xác định - gửi menu chọn lại
+                await UserStateManager.sendChoosingMenu(user.facebook_id)
+            } else {
+                // User is in an active flow (e.g., registration) - let the flow handle it
+                logger.info('User is in active flow, letting flow handle the message', { facebook_id: user.facebook_id })
                 await this.handleBotUserMessage(user, text, isPostback, postback)
                 return
             }
-
-            // Nếu đang ở trạng thái choosing hoặc không xác định - gửi menu chọn lại
-            await UserStateManager.sendChoosingMenu(user.facebook_id)
 
             const duration = Date.now() - startTime
             logBotEvent('message_processed', {

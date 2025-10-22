@@ -1,5 +1,6 @@
 import { BaseFlow } from '../../core/flow-base'
 import { SessionManager } from '../../core/session-manager'
+import { UserStateManager, UserState } from '../../core/user-state-manager'
 import { supabaseAdmin } from '../../supabase'
 import {
     sendMessage,
@@ -108,6 +109,9 @@ export class RegistrationFlow extends BaseFlow {
             await SessionManager.createSession(user.facebook_id, 'registration', 0, {
                 inactivity_timeout: Date.now() + (5 * 60 * 1000) // 5 minutes timeout
             })
+
+            // Update user state to prevent welcome service interference
+            await UserStateManager.updateUserState(user.facebook_id, UserState.USING_BOT)
 
             // Send pricing and benefits info first
             await this.sendRegistrationPricingInfo(user)
@@ -485,13 +489,7 @@ export class RegistrationFlow extends BaseFlow {
         }
     }
 
-    /**
-     * Send registration welcome message
-     */
-    private async sendRegistrationWelcome(user: any): Promise<void> {
-        await sendMessage(user.facebook_id,
-            `🎉 CHÀO MỪNG ĐẾN VỚI BOT TÂN DẬU!\n━━━━━━━━━━━━━━━━━━━━\n📝 Bước 1/4: Họ tên\n💡 Nhập họ tên đầy đủ của bạn\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập họ tên:`)
-    }
+
 
     /**
      * Send already registered message

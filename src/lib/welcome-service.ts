@@ -49,6 +49,14 @@ export class WelcomeService {
                 return
             }
 
+            // Check if user is currently in a registration flow
+            const { SessionManager } = await import('./core/session-manager')
+            const activeSession = await SessionManager.getSession(facebookId)
+            if (activeSession && activeSession.current_flow === 'registration') {
+                logger.debug(`Skipping welcome for user: ${facebookId} - currently in registration flow`)
+                return
+            }
+
             // Send typing indicator
             await sendTypingIndicator(facebookId)
 
