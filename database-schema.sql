@@ -783,6 +783,23 @@ VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- ========================================
+-- ADMIN SETUP INSTRUCTIONS
+-- ========================================
+-- Admin user sẽ được tạo tự động từ Environment Variables:
+-- ADMIN_USERNAME=admin
+-- ADMIN_PASSWORD=pem05vrGNV8aIe
+-- ADMIN_NAME=Administrator
+-- ADMIN_EMAIL=dinhkhanhtung@outlook.com
+--
+-- Cách tạo admin user:
+-- 1. Login trực tiếp: https://bot-tan-dau.vercel.app/admin/login
+-- 2. Hoặc chạy: npm run setup:admin
+-- 3. Hoặc gọi API: POST /api/admin/setup
+--
+-- Admin credentials: admin / pem05vrGNV8aIe
+-- ========================================
+
+-- ========================================
 -- ADDITIONAL INDEXES FOR PERFORMANCE
 -- ========================================
 
