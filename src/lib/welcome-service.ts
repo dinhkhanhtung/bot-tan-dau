@@ -123,7 +123,7 @@ export class WelcomeService {
 
             await sendQuickReply(
                 facebookId,
-                '',
+                'Chọn một tùy chọn:',
                 buttons
             )
 

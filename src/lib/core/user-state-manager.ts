@@ -166,7 +166,7 @@ export class UserStateManager {
                 createQuickReply('🏠 VỀ MENU CHÍNH', 'BACK_TO_MAIN')
             )
 
-            await sendQuickReply(facebookId, 'Chọn chức năng bạn muốn sử dụng:', buttons)
+            await sendQuickReply(facebookId, 'Chọn chức năng:', buttons)
         } catch (error) {
             logger.error('Error sending bot menu', { facebookId, error })
         }
