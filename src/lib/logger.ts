@@ -104,10 +104,12 @@ export class Logger {
                 return
             }
 
-            const logFile = path.join(process.cwd(), 'realtime-logs.jsonl')
-            const logLine = JSON.stringify(entry) + '\n'
+            // In Vercel environment, we don't write to files - logs go to stdout/stderr
+            // The JSON format will be captured by Vercel's logging system
+            const logLine = JSON.stringify(entry)
 
-            fs.appendFileSync(logFile, logLine)
+            // Also write to console for immediate visibility
+            console.log(`[BOT_LOG] ${logLine}`)
         } catch (error) {
             // Don't log errors from the logger itself to avoid infinite loops
             console.error('Failed to write to realtime log:', error)
