@@ -12,6 +12,10 @@
         }
     ],
     "env": {
-        "ADMIN_IDS": "100074107869848,10000699238053,10026336745820"
+        "ADMIN_IDS": "100074107869848,10000699238053,10026336745820",
+        "ADMIN_USERNAME": "admin",
+        "ADMIN_PASSWORD": "pem05vrGNV8aIe",
+        "ADMIN_NAME": "Administrator",
+        "ADMIN_EMAIL": "dinhkhanhtung@outlook.com"
     }
 }

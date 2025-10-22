@@ -6,6 +6,43 @@ import jwt from 'jsonwebtoken'
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
 
+// Helper function to create admin user from environment variables
+async function createAdminUserFromEnv() {
+    const envUsername = process.env.ADMIN_USERNAME
+    const envPassword = process.env.ADMIN_PASSWORD
+    const envName = process.env.ADMIN_NAME || 'Administrator'
+    const envEmail = process.env.ADMIN_EMAIL || 'admin@example.com'
+
+    if (!envUsername || !envPassword) {
+        throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required')
+    }
+
+    const salt = 'bot_tan_dau_admin_salt_2024'
+    const passwordHash = crypto.createHash('sha256').update(envPassword + salt).digest('hex')
+
+    const { data: newAdminUser, error: createError } = await supabaseAdmin
+        .from('admin_users')
+        .insert({
+            username: envUsername,
+            password_hash: passwordHash,
+            name: envName,
+            email: envEmail,
+            role: 'super_admin',
+            permissions: JSON.stringify(['all']),
+            is_active: true,
+            created_at: new Date().toISOString(),
+            last_login: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+    if (createError) {
+        throw createError
+    }
+
+    return newAdminUser
+}
+
 // Handle CORS preflight requests
 export async function OPTIONS(request: NextRequest) {
     return new NextResponse(null, {
@@ -25,7 +62,7 @@ export async function POST(request: NextRequest) {
         if (!username || !password) {
             return NextResponse.json(
                 { success: false, message: 'Vui lòng nhập đầy đủ thông tin' },
-                { 
+                {
                     status: 400,
                     headers: {
                         'Access-Control-Allow-Origin': '*',
@@ -36,18 +73,78 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Get admin user from database
-        const { data: adminUser, error } = await supabaseAdmin
+        // Check if admin user exists, if not create from environment variables
+        let { data: adminUser, error } = await supabaseAdmin
             .from('admin_users')
             .select('*')
             .eq('username', username)
             .eq('is_active', true)
             .single()
 
-        if (error || !adminUser) {
+        // If admin user doesn't exist, create it from environment variables
+        if (error && error.code === 'PGRST116') {
+            console.log('Admin user not found, creating from environment variables...')
+
+            const envUsername = process.env.ADMIN_USERNAME
+            const envPassword = process.env.ADMIN_PASSWORD
+            const envName = process.env.ADMIN_NAME || 'Administrator'
+            const envEmail = process.env.ADMIN_EMAIL || 'admin@example.com'
+
+            if (username === envUsername && password === envPassword) {
+                // Create admin user
+                const salt = 'bot_tan_dau_admin_salt_2024'
+                const passwordHash = crypto.createHash('sha256').update(password + salt).digest('hex')
+
+                const { data: newAdminUser, error: createError } = await supabaseAdmin
+                    .from('admin_users')
+                    .insert({
+                        username: envUsername,
+                        password_hash: passwordHash,
+                        name: envName,
+                        email: envEmail,
+                        role: 'super_admin',
+                        permissions: JSON.stringify(['all']),
+                        is_active: true,
+                        created_at: new Date().toISOString(),
+                        last_login: new Date().toISOString()
+                    })
+                    .select()
+                    .single()
+
+                if (createError) {
+                    console.error('Error creating admin user:', createError)
+                    return NextResponse.json(
+                        { success: false, message: 'Không thể tạo tài khoản admin' },
+                        {
+                            status: 500,
+                            headers: {
+                                'Access-Control-Allow-Origin': '*',
+                                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                            }
+                        }
+                    )
+                }
+
+                adminUser = newAdminUser
+                console.log('Admin user created successfully:', adminUser.username)
+            } else {
+                return NextResponse.json(
+                    { success: false, message: 'Tên đăng nhập hoặc mật khẩu không đúng' },
+                    {
+                        status: 401,
+                        headers: {
+                            'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                        }
+                    }
+                )
+            }
+        } else if (error || !adminUser) {
             return NextResponse.json(
                 { success: false, message: 'Tên đăng nhập hoặc mật khẩu không đúng' },
-                { 
+                {
                     status: 401,
                     headers: {
                         'Access-Control-Allow-Origin': '*',
