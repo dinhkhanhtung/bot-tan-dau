@@ -84,9 +84,9 @@ export class SearchFlow extends BaseFlow {
                 await this.startLocationSearch(user)
             } else if (payload === 'SEARCH_ALL') {
                 await this.performSearchAll(user)
-            } else if (payload.startsWith('CATEGORY_')) {
+            } else if (payload.startsWith('SEARCH_CATEGORY_')) {
                 await this.handleCategoryPostback(user, payload, session)
-            } else if (payload.startsWith('LOCATION_')) {
+            } else if (payload.startsWith('SEARCH_LOCATION_')) {
                 await this.handleLocationPostback(user, payload, session)
             } else if (payload.startsWith('VIEW_LISTING_')) {
                 await this.handleViewListingPostback(user, payload, session)
@@ -191,7 +191,7 @@ export class SearchFlow extends BaseFlow {
         try {
             console.log(`📂 Processing category postback for user: ${user.facebook_id}`)
 
-            const category = payload.replace('CATEGORY_', '')
+            const category = payload.replace('SEARCH_CATEGORY_', '')
             console.log(`[DEBUG] Selected category: ${category}`)
 
             // Get current session data
@@ -207,7 +207,7 @@ export class SearchFlow extends BaseFlow {
             })
 
             // Send location prompt
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `✅ Danh mục: ${category}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/3: Chọn địa điểm (tùy chọn)\n💡 Chọn địa điểm để thu hẹp kết quả tìm kiếm\n━━━━━━━━━━━━━━━━━━━━`)
 
             // Send location buttons
@@ -227,7 +227,7 @@ export class SearchFlow extends BaseFlow {
         try {
             console.log(`📍 Processing location postback for user: ${user.facebook_id}`)
 
-            const location = payload.replace('LOCATION_', '')
+            const location = payload.replace('SEARCH_LOCATION_', '')
             console.log(`[DEBUG] Selected location: ${location}`)
 
             // Get current session data
@@ -386,8 +386,8 @@ export class SearchFlow extends BaseFlow {
      * Send category buttons
      */
     private async sendCategoryButtons(facebookId: string): Promise<void> {
-        const quickReplies = Object.keys(CATEGORIES).map(category => 
-            createQuickReply(category, `CATEGORY_${category}`)
+        const quickReplies = Object.keys(CATEGORIES).map(category =>
+            createQuickReply(category, `SEARCH_CATEGORY_${category}`)
         )
 
         await sendQuickReply(facebookId, 'Chọn danh mục:', quickReplies)
@@ -398,7 +398,7 @@ export class SearchFlow extends BaseFlow {
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
         const quickReplies = Object.keys(LOCATIONS).map(location =>
-            createQuickReply(location, `LOCATION_${location}`)
+            createQuickReply(location, `SEARCH_LOCATION_${location}`)
         )
 
         await sendQuickReply(facebookId, 'Chọn địa điểm:', quickReplies)

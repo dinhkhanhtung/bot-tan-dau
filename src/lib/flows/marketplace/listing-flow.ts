@@ -84,9 +84,9 @@ export class ListingFlow extends BaseFlow {
 
             if (payload === 'LISTING') {
                 await this.startListing(user)
-            } else if (payload.startsWith('CATEGORY_')) {
+            } else if (payload.startsWith('LISTING_CATEGORY_')) {
                 await this.handleCategoryPostback(user, payload, session)
-            } else if (payload.startsWith('LOCATION_')) {
+            } else if (payload.startsWith('LISTING_LOCATION_')) {
                 await this.handleLocationPostback(user, payload, session)
             } else if (payload === 'CANCEL_LISTING') {
                 await this.cancelListing(user)
@@ -277,7 +277,7 @@ export class ListingFlow extends BaseFlow {
         try {
             console.log(`📂 Processing category postback for user: ${user.facebook_id}`)
 
-            const category = payload.replace('CATEGORY_', '')
+            const category = payload.replace('LISTING_CATEGORY_', '')
             console.log(`[DEBUG] Selected category: ${category}`)
 
             // Get current session data
@@ -310,7 +310,7 @@ export class ListingFlow extends BaseFlow {
         try {
             console.log(`📍 Processing location postback for user: ${user.facebook_id}`)
 
-            const location = payload.replace('LOCATION_', '')
+            const location = payload.replace('LISTING_LOCATION_', '')
             console.log(`[DEBUG] Selected location: ${location}`)
 
             // Get current session data
@@ -398,7 +398,7 @@ export class ListingFlow extends BaseFlow {
      */
     private async sendCategoryButtons(facebookId: string): Promise<void> {
         const quickReplies = Object.keys(CATEGORIES).map(category =>
-            createQuickReply(category, `CATEGORY_${category}`)
+            createQuickReply(category, `LISTING_CATEGORY_${category}`)
         )
 
         await sendQuickReply(facebookId, 'Chọn danh mục sản phẩm:', quickReplies)
@@ -409,7 +409,7 @@ export class ListingFlow extends BaseFlow {
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
         const quickReplies = Object.keys(LOCATIONS).map(location =>
-            createQuickReply(location, `LOCATION_${location}`)
+            createQuickReply(location, `LISTING_LOCATION_${location}`)
         )
 
         await sendQuickReply(facebookId, 'Chọn địa điểm:', quickReplies)
