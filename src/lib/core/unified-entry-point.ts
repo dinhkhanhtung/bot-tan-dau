@@ -13,7 +13,7 @@ import { UserInteractionService } from '../user-interaction-service'
 import { AdminTakeoverService } from '../admin-takeover-service'
 import { UtilityHandlers } from '../handlers/utility-handlers'
 import { MarketplaceHandlers } from '../handlers/marketplace-handlers'
-import { UserModeService, UserMode } from './user-mode-service'
+import { UserStateManager } from './user-state-manager'
 
 /**
  * Unified Bot System - Main entry point for bot message processing
@@ -39,7 +39,7 @@ export class UnifiedBotSystem {
 
     /**
      * Main entry point for processing all incoming messages
-     * Đơn giản hóa logic với UserModeService và welcome service tích hợp
+     * Sử dụng UserStateManager thống nhất để tránh xung đột logic
      */
     static async handleMessage(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
         const startTime = Date.now()
@@ -66,42 +66,45 @@ export class UnifiedBotSystem {
                 return
             }
 
-            // Step 3: Kiểm tra trạng thái user mode
-            const currentMode = await UserModeService.getUserMode(user.facebook_id)
-
-            // Nếu chưa có mode, kiểm tra xem đã gửi welcome chưa
-            if (!currentMode) {
-                const userData = await getUserByFacebookId(user.facebook_id)
-                const welcomeAlreadySent = userData?.welcome_sent || userData?.welcome_message_sent
-
-                if (!welcomeAlreadySent) {
-                    // Chưa gửi welcome, gửi welcome kèm menu chọn chế độ
-                    await welcomeService.sendWelcome(user.facebook_id, WelcomeType.NEW_USER)
-                    // Đợi 2 giây để user đọc welcome message
-                    await this.delay(2000)
-                    await UserModeService.sendChoosingMenu(user.facebook_id)
-                } else {
-                    // Đã gửi welcome rồi, chỉ gửi menu chọn chế độ
-                    await UserModeService.sendChoosingMenu(user.facebook_id)
+            // Step 3: Xử lý postback đặc biệt trước (cho user đang chọn mode)
+            if (isPostback && postback) {
+                switch (postback) {
+                    case 'USE_BOT':
+                        await UserStateManager.handleUseBot(user.facebook_id)
+                        return
+                    case 'CHAT_ADMIN':
+                        await UserStateManager.handleChatWithAdmin(user.facebook_id)
+                        return
+                    case 'BACK_TO_MAIN':
+                        await UserStateManager.handleBackToMain(user.facebook_id)
+                        return
                 }
+            }
+
+            // Step 4: Kiểm tra trạng thái user và xử lý
+            const currentState = await UserStateManager.getUserState(user.facebook_id)
+
+            if (!currentState) {
+                // User mới - xử lý welcome và chuyển sang choosing mode
+                await UserStateManager.handleNewUser(user.facebook_id)
                 return
             }
 
-            // Step 4: Xử lý theo mode hiện tại
-            if (currentMode.current_mode === UserMode.CHATTING_ADMIN) {
+            // Step 5: Xử lý theo trạng thái hiện tại
+            if (currentState.current_state === 'chatting_admin') {
                 // User đang chat với admin - không xử lý bot
                 logger.info('User is chatting with admin, ignoring bot message', { facebook_id: user.facebook_id })
                 return
             }
 
-            if (currentMode.current_mode === UserMode.USING_BOT) {
+            if (currentState.current_state === 'using_bot') {
                 // User đang dùng bot - xử lý bình thường
                 await this.handleBotUserMessage(user, text, isPostback, postback)
                 return
             }
 
-            // Nếu đang ở chế độ CHOOSING hoặc không xác định - gửi menu chọn lại
-            await UserModeService.sendChoosingMenu(user.facebook_id)
+            // Nếu đang ở trạng thái choosing hoặc không xác định - gửi menu chọn lại
+            await UserStateManager.sendChoosingMenu(user.facebook_id)
 
             const duration = Date.now() - startTime
             logBotEvent('message_processed', {
@@ -164,19 +167,7 @@ export class UnifiedBotSystem {
      */
     private static async handleBotPostback(user: any, postback: string): Promise<void> {
         try {
-            // Xử lý các postback đặc biệt của UserModeService
-            switch (postback) {
-                case 'USE_BOT':
-                    await UserModeService.handleUseBot(user.facebook_id)
-                    return // Không gọi FlowManager nữa
-                case 'CHAT_ADMIN':
-                    await UserModeService.handleChatWithAdmin(user.facebook_id)
-                    return // Không gọi FlowManager nữa
-                case 'BACK_TO_MAIN':
-                    await UserModeService.handleBackToMain(user.facebook_id)
-                    return // Không gọi FlowManager nữa
-            }
-
+            // Các postback đặc biệt đã được xử lý ở handleMessage rồi
             // Các postback khác xử lý bằng FlowManager
             await FlowManager.handlePostback(user, postback)
         } catch (error) {
