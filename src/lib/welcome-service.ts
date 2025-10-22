@@ -18,8 +18,8 @@ export enum WelcomeType {
 const SIMPLE_WELCOME_TEMPLATE = {
     greeting: 'CHỌN CHẾ ĐỘ SỬ DỤNG',
     options: [
-        'Dùng bot: Tự động mua bán với cộng đồng',
-        'Chat với admin: Đinh Khánh Tùng hỗ trợ trực tiếp'
+        '🤖 Dùng bot: Tự động mua bán với cộng đồng',
+        '💬 Chat với admin: Đinh Khánh Tùng hỗ trợ trực tiếp'
     ],
     question: 'Bạn muốn làm gì?'
 }
