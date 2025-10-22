@@ -33,16 +33,23 @@ export async function sendChatBotWelcome(userId: string, userStatus: string): Pr
 
         await sendMessage(userId, '🌟 Có thể bạn muốn tham gia cùng cộng đồng Tân Dậu - Hỗ Trợ Chéo!')
         await sendMessage(userId, '🤝 Nơi đây chúng ta có thể cùng nhau kết nối - Cùng nhau thịnh vượng!')
-        await sendQuickReply(
-            userId,
-            'Bạn muốn:',
-            [
-                createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
-                createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
-                createQuickReply('💬 HỖ TRỢ', 'SUPPORT'),
-                createQuickReply('🚪 THOÁT BOT', 'EXIT_BOT')
-            ]
-        );
+        // Check if user is already registered
+        const { getUserByFacebookId } = await import('./user-service');
+        const user = await getUserByFacebookId(userId);
+        const isAlreadyRegistered = user && (user.status === 'registered' || user.status === 'trial');
+
+        const buttons = [
+            createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
+            createQuickReply('💬 HỖ TRỢ', 'SUPPORT'),
+            createQuickReply('🚪 THOÁT BOT', 'EXIT_BOT')
+        ];
+
+        // Only show registration button if user is not registered
+        if (!isAlreadyRegistered) {
+            buttons.unshift(createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'));
+        }
+
+        await sendQuickReply(userId, 'Bạn muốn:', buttons);
     }
 }
 

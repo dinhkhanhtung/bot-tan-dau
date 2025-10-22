@@ -30,7 +30,7 @@ const SIMPLE_WELCOME_TEMPLATE = {
 export class WelcomeService {
     private static instance: WelcomeService
 
-    private constructor() {}
+    private constructor() { }
 
     public static getInstance(): WelcomeService {
         if (!WelcomeService.instance) {
@@ -93,12 +93,21 @@ export class WelcomeService {
 
     // Simple welcome buttons for common actions
     private async sendWelcomeButtons(facebookId: string): Promise<void> {
+        // Check user registration status
+        const user = await getUserByFacebookId(facebookId)
+        const isRegistered = user && (user.status === 'registered' || user.status === 'trial')
+
         const buttons = [
             createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
-            createQuickReply('🛒 ĐĂNG BÁN', 'LISTING'),
-            createQuickReply('👥 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
-            createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
+            createQuickReply('🛒 ĐĂNG BÁN', 'LISTING')
         ]
+
+        // Only show registration button if user is not registered
+        if (!isRegistered) {
+            buttons.push(createQuickReply('👥 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'))
+        }
+
+        buttons.push(createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN'))
 
         await sendQuickReply(
             facebookId,

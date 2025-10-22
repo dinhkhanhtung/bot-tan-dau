@@ -186,7 +186,9 @@ export class RegistrationFlow extends BaseFlow {
             ]
 
             const buttons = locations.map(location => {
-                const locationCode = location.split(' ')[1] || location.replace(/\s+/g, '_')
+                // Extract location name without emoji (everything after the first space)
+                const locationName = location.substring(location.indexOf(' ') + 1)
+                const locationCode = locationName.replace(/\s+/g, '_')
                 const payload = `LOC_${locationCode}`
                 return createQuickReply(location, payload)
             })
@@ -381,7 +383,9 @@ export class RegistrationFlow extends BaseFlow {
         try {
             console.log('🏠 Processing location postback:', payload, 'for user:', user.facebook_id)
 
-            const location = payload.replace('LOC_', '')
+            const locationCode = payload.replace('LOC_', '')
+            // Convert location code back to proper location name
+            const location = locationCode.replace(/_/g, ' ')
             console.log('[DEBUG] Selected location:', location)
 
             // Get current session data
@@ -469,6 +473,21 @@ export class RegistrationFlow extends BaseFlow {
             // Send success message
             await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 3 ngày!\n🚀 Chúc bạn sử dụng bot vui vẻ!`)
 
+            // Add delay for better UX
+            await this.delay(1500)
+
+            // Send navigation buttons for new registered user
+            await sendQuickReply(user.facebook_id, '🎯 Bây giờ bạn có thể sử dụng tất cả tính năng của bot:', [
+                createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                createQuickReply('📝 ĐĂNG BÁN HÀNG', 'LISTING'),
+                createQuickReply('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
+                createQuickReply('💰 THANH TOÁN', 'PAYMENT'),
+                createQuickReply('ℹ️ THÔNG TIN', 'INFO')
+            ])
+
+            // Update user state to USING_BOT since they're now registered
+            await UserStateManager.updateUserState(user.facebook_id, UserState.USING_BOT)
+
             console.log('✅ Registration completed successfully!')
 
         } catch (error) {
@@ -542,7 +561,9 @@ export class RegistrationFlow extends BaseFlow {
         if (totalPages === 1) {
             // Single page - send all buttons
             const buttons = locations.map(location => {
-                const locationCode = location.split(' ')[1] || location.replace(/\s+/g, '_')
+                // Extract location name without emoji (everything after the first space)
+                const locationName = location.substring(location.indexOf(' ') + 1)
+                const locationCode = locationName.replace(/\s+/g, '_')
                 const payload = `LOC_${locationCode}`
                 return createQuickReply(location, payload)
             })
@@ -552,7 +573,9 @@ export class RegistrationFlow extends BaseFlow {
             // Multiple pages - send first page with "Xem thêm" option
             const firstPageLocations = locations.slice(0, buttonsPerPage - 1) // Reserve 1 slot for "Xem thêm"
             const buttons = firstPageLocations.map(location => {
-                const locationCode = location.split(' ')[1] || location.replace(/\s+/g, '_')
+                // Extract location name without emoji (everything after the first space)
+                const locationName = location.substring(location.indexOf(' ') + 1)
+                const locationCode = locationName.replace(/\s+/g, '_')
                 const payload = `LOC_${locationCode}`
                 return createQuickReply(location, payload)
             })
