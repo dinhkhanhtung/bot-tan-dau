@@ -21,6 +21,11 @@ export class SearchFlow extends BaseFlow {
      * Check if this flow can handle the user/session
      */
     canHandle(user: any, session: any): boolean {
+        // Handle null user case (for flow trigger checking)
+        if (!user) {
+            return true // Allow flow to be triggered for all users
+        }
+
         // Can handle if user wants to search products
         return session?.current_flow === 'search' || !session
     }
