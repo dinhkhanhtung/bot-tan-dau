@@ -11,6 +11,11 @@
             ]
         }
     ],
+    "functions": {
+        "src/app/api/**/*.ts": {
+            "runtime": "@vercel/node"
+        }
+    },
     "env": {
         "ADMIN_IDS": "100074107869848,10000699238053,10026336745820"
     }

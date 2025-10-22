@@ -22,12 +22,9 @@ const nextConfig = {
         OPENAI_MODEL: process.env.OPENAI_MODEL,
         GOOGLE_AI_MODEL: process.env.GOOGLE_AI_MODEL,
     },
-    // Enable API routes to be properly built
-    output: 'standalone',
-    // Fix dynamic API routes
-    generateBuildId: async () => {
-        return 'build-' + Date.now()
-    },
+    // Remove problematic configurations that interfere with Vercel deployment
+    // output: 'standalone', // This can cause API route issues
+    // generateBuildId: async () => { return 'build-' + Date.now() } // This conflicts with Vercel
 }
 
 module.exports = nextConfig
