@@ -6,7 +6,7 @@ import { errorHandler, createUserError, ErrorType } from '../error-handler'
 import { getUserByFacebookId } from '../user-service'
 import { getBotSession, getBotStatus } from '../bot-service'
 import { supabaseAdmin } from '../supabase'
-import { welcomeService, WelcomeType } from '../welcome-service'
+import { WelcomeType, sendReturningUserMessage } from '../welcome-service'
 import { messageProcessor } from './message-processor'
 import { FlowManager } from './flow-manager'
 import { FlowInitializer } from './flow-initializer'
@@ -111,6 +111,20 @@ export class UnifiedBotSystem {
                 // User mới - xử lý welcome và chuyển sang choosing mode
                 await UserStateManager.handleNewUser(user.facebook_id)
                 return
+            }
+
+            // Check if user is returning within 24 hours
+            const userData = await getUserByFacebookId(user.facebook_id)
+            if (userData?.welcome_sent && userData?.last_welcome_sent) {
+                const lastWelcomeTime = new Date(userData.last_welcome_sent)
+                const now = new Date()
+                const hoursDiff = (now.getTime() - lastWelcomeTime.getTime()) / (1000 * 60 * 60)
+
+                if (hoursDiff < 24) {
+                    // User is returning within 24 hours - send returning message
+                    await sendReturningUserMessage(user.facebook_id)
+                    return
+                }
             }
 
             // Handle based on current state

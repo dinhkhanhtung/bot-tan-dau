@@ -42,11 +42,26 @@ export class WelcomeService {
         try {
             logger.info(`🎉 Starting welcome process for user: ${facebookId}`)
 
-            // Check if welcome was already sent (one-time welcome)
+            // Check if welcome was already sent and cooldown period
             const user = await getUserByFacebookId(facebookId)
             if (user?.welcome_sent) {
-                logger.info(`Skipping welcome for user: ${facebookId} - already sent before`)
-                return
+                // Check if 24 hours have passed since last welcome
+                if (user.last_welcome_sent) {
+                    const lastWelcomeTime = new Date(user.last_welcome_sent)
+                    const now = new Date()
+                    const hoursDiff = (now.getTime() - lastWelcomeTime.getTime()) / (1000 * 60 * 60)
+
+                    if (hoursDiff < 24) {
+                        logger.info(`Welcome cooldown active for user: ${facebookId} - sent ${hoursDiff.toFixed(1)} hours ago`)
+                        // Send returning user message instead
+                        await this.sendReturningUserMessage(facebookId)
+                        return
+                    }
+                } else {
+                    // If welcome_sent is true but no timestamp, still skip to avoid spam
+                    logger.info(`Skipping welcome for user: ${facebookId} - already sent before (no timestamp)`)
+                    return
+                }
             }
 
             // Check if user is currently in a registration flow
@@ -119,12 +134,15 @@ export class WelcomeService {
     // Mark welcome as sent in database (simple tracking)
     private async markWelcomeAsSent(facebookId: string): Promise<void> {
         try {
+            const currentTime = new Date().toISOString()
+
             // Check if user exists first
             const user = await getUserByFacebookId(facebookId)
             if (user) {
-                // User exists, update welcome_sent
+                // User exists, update welcome_sent and timestamp
                 await updateUser(facebookId, {
-                    welcome_sent: true
+                    welcome_sent: true,
+                    last_welcome_sent: currentTime
                 })
                 logger.info(`✅ Welcome marked as sent for existing user: ${facebookId}`)
             } else {
@@ -144,7 +162,8 @@ export class WelcomeService {
                         birthday: 1981,
                         status: 'new_user',
                         referral_code: referralCode,
-                        welcome_sent: true
+                        welcome_sent: true,
+                        last_welcome_sent: currentTime
                     })
 
                 if (error) {
@@ -155,6 +174,28 @@ export class WelcomeService {
             }
         } catch (error) {
             logger.warn(`Failed to mark welcome as sent for user: ${facebookId}`, { error: error instanceof Error ? error.message : String(error) })
+        }
+    }
+
+    // Send returning user message (within 24 hours)
+    public async sendReturningUserMessage(facebookId: string): Promise<void> {
+        try {
+            logger.info(`📤 Sending returning user message to: ${facebookId}`)
+
+            // Send typing indicator
+            await sendTypingIndicator(facebookId)
+
+            // Send returning user message
+            const returningMessage = `Bạn đã quay lại. Bạn muốn làm gì?`
+            await sendMessage(facebookId, returningMessage)
+            logger.info(`✅ Returning user message sent to user: ${facebookId}`)
+
+            // Send the same buttons as welcome
+            await this.sendWelcomeButtons(facebookId)
+            logger.info(`✅ Returning user buttons sent to user: ${facebookId}`)
+
+        } catch (error) {
+            logger.error(`❌ Failed to send returning user message to: ${facebookId}`, { error: error instanceof Error ? error.message : String(error) })
         }
     }
 
@@ -200,5 +241,8 @@ export const sendWelcome = (facebookId: string, userType?: WelcomeType) =>
 
 export const sendPersonalizedWelcome = (facebookId: string, userData: any) =>
     welcomeService.sendPersonalizedWelcome(facebookId, userData)
+
+export const sendReturningUserMessage = (facebookId: string) =>
+    welcomeService.sendReturningUserMessage(facebookId)
 
 export default welcomeService

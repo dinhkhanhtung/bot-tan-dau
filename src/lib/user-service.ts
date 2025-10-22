@@ -18,6 +18,7 @@ export interface User {
   trial_end?: string | null
   welcome_sent?: boolean
   welcome_message_sent?: boolean
+  last_welcome_sent?: string
   created_at?: string
   updated_at?: string
 }
