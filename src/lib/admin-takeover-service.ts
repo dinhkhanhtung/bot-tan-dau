@@ -10,7 +10,7 @@ import { logger } from './logger.js'
 
 interface AdminTakeoverState {
   id?: string
-  user_id: string
+  user_facebook_id: string
   admin_id?: string
   is_active: boolean
   consecutive_message_count: number
@@ -128,7 +128,7 @@ export class AdminTakeoverService {
             const { error } = await supabaseAdmin
                 .from('admin_takeover_states')
                 .upsert({
-                    user_id: userId,
+                    user_facebook_id: userId,
                     ...updates,
                     updated_at: new Date().toISOString()
                 })
@@ -493,7 +493,7 @@ export class AdminTakeoverService {
         try {
             const { data, error } = await supabaseAdmin
                 .from('admin_takeover_states')
-                .select('user_id')
+                .select('user_facebook_id')
                 .eq('user_waiting_for_admin', true)
                 .eq('is_active', false)
 
@@ -502,7 +502,7 @@ export class AdminTakeoverService {
                 return []
             }
 
-            return data?.map(item => item.user_id) || []
+            return data?.map(item => item.user_facebook_id) || []
         } catch (error) {
             logger.error('Exception getting users waiting for admin', { error })
             return []
@@ -603,7 +603,7 @@ export class AdminTakeoverService {
                 .from('admin_takeover_states')
                 .select(`
                     *,
-                    users:user_id (
+                    users:facebook_id (
                         facebook_id,
                         name,
                         phone,

@@ -19,7 +19,7 @@ export class AdminTakeoverService {
             const { data, error } = await supabaseAdmin
                 .from('admin_takeover_states')
                 .select('*')
-                .eq('user_id', userId)
+                .eq('user_facebook_id', userId)
                 .single()
 
             if (error && error.code !== 'PGRST116') {
@@ -39,7 +39,7 @@ export class AdminTakeoverService {
             const { error } = await supabaseAdmin
                 .from('admin_takeover_states')
                 .upsert({
-                    user_id: userId,
+                    user_facebook_id: userId,
                     ...updates,
                     updated_at: new Date().toISOString()
                 })
@@ -141,7 +141,7 @@ export class AdminTakeoverService {
         try {
             const { data, error } = await supabaseAdmin
                 .from('admin_takeover_states')
-                .select('user_id')
+                .select('user_facebook_id')
                 .eq('user_waiting_for_admin', true)
                 .eq('is_active', false)
 
@@ -150,7 +150,7 @@ export class AdminTakeoverService {
                 return []
             }
 
-            return data?.map(item => item.user_id) || []
+            return data?.map(item => item.user_facebook_id) || []
         } catch (error) {
             console.error('Exception getting users waiting for admin', { error })
             return []
