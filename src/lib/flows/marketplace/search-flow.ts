@@ -47,16 +47,16 @@ export class SearchFlow extends BaseFlow {
             const currentStep = session.step || 0
             console.log(`🔍 Current step: ${currentStep}`)
 
-            // Route to appropriate step handler
+            // Route to appropriate step handler - ignore text, always show buttons
             switch (currentStep) {
                 case 0:
-                    await this.handleKeywordStep(user, text)
+                    await this.sendCategoryButtons(user.facebook_id)
                     break
                 case 1:
-                    await this.handleCategoryStep(user, text)
+                    await this.sendCategoryButtons(user.facebook_id)
                     break
                 case 2:
-                    await this.handleLocationStep(user, text)
+                    await this.sendLocationButtons(user.facebook_id)
                     break
                 default:
                     console.log(`❌ Unknown step: ${currentStep}`)
@@ -76,9 +76,17 @@ export class SearchFlow extends BaseFlow {
             this.logActivity(user, 'handlePostback', { payload, session })
 
             if (payload === 'SEARCH') {
-                // Start search flow by prompting for keyword
-                await SessionManager.createSession(user.facebook_id, 'search', 0, {})
-                await sendMessage(user.facebook_id, '🔍 Bạn muốn tìm sản phẩm gì? Hãy nhập từ khóa tìm kiếm.')
+                // Start search flow with buttons only
+                await this.startSearch(user, '')
+            } else if (payload === 'CATEGORY_SEARCH') {
+                await SessionManager.updateSession(user.facebook_id, { step: 1, data: {} })
+                await this.sendCategoryButtons(user.facebook_id)
+            } else if (payload === 'LOCATION_SEARCH') {
+                await SessionManager.updateSession(user.facebook_id, { step: 2, data: {} })
+                await this.sendLocationButtons(user.facebook_id)
+            } else if (payload === 'SEARCH_ALL') {
+                await SessionManager.updateSession(user.facebook_id, { step: 3, data: {} })
+                await this.performSearch(user)
             } else if (payload.startsWith('CATEGORY_')) {
                 await this.handleCategoryPostback(user, payload, session)
             } else if (payload.startsWith('LOCATION_')) {
