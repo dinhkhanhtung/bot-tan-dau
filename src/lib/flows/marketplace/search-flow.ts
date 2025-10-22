@@ -144,13 +144,14 @@ export class SearchFlow extends BaseFlow {
     }
 
     /**
-     * Handle category step
+     * Handle category step - Only show buttons, no text processing
      */
     private async handleCategoryStep(user: any, text: string): Promise<void> {
         try {
             console.log(`📂 Processing category step for user: ${user.facebook_id}`)
-            
-            // For now, just show category buttons
+
+            // Always show category buttons for user selection
+            // Ignore any text input - only buttons are valid
             await this.sendCategoryButtons(user.facebook_id)
 
         } catch (error) {
@@ -159,13 +160,14 @@ export class SearchFlow extends BaseFlow {
     }
 
     /**
-     * Handle location step
+     * Handle location step - Only show buttons, no text processing
      */
     private async handleLocationStep(user: any, text: string): Promise<void> {
         try {
             console.log(`📍 Processing location step for user: ${user.facebook_id}`)
-            
-            // For now, just show location buttons
+
+            // Always show location buttons for user selection
+            // Ignore any text input - only buttons are valid
             await this.sendLocationButtons(user.facebook_id)
 
         } catch (error) {

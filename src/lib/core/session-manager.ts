@@ -6,6 +6,29 @@ import { supabaseAdmin } from '../supabase'
  */
 export class SessionManager {
     /**
+     * Get session data
+     */
+    static async getSession(facebookId: string): Promise<any> {
+        try {
+            const { data: session, error } = await supabaseAdmin
+                .from('bot_sessions')
+                .select('*')
+                .eq('facebook_id', facebookId)
+                .single()
+
+            if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+                console.error('❌ Session get error:', error)
+                throw error
+            }
+
+            return session || null
+        } catch (error) {
+            console.error('❌ SessionManager.getSession error:', error)
+            return null
+        }
+    }
+
+    /**
       * Create a new session
       */
     static async createSession(facebookId: string, flowName: string, step: number = 0, data: any = {}): Promise<any> {
@@ -90,29 +113,6 @@ export class SessionManager {
         } catch (error) {
             console.error('❌ SessionManager.updateSession error:', error)
             throw error
-        }
-    }
-
-    /**
-     * Get session data
-     */
-    static async getSession(facebookId: string): Promise<any> {
-        try {
-            const { data: session, error } = await supabaseAdmin
-                .from('bot_sessions')
-                .select('*')
-                .eq('facebook_id', facebookId)
-                .single()
-
-            if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-                console.error('❌ Session get error:', error)
-                throw error
-            }
-
-            return session || null
-        } catch (error) {
-            console.error('❌ SessionManager.getSession error:', error)
-            return null
         }
     }
 
