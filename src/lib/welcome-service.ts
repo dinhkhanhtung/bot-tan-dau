@@ -129,7 +129,7 @@ export class WelcomeService {
 
             logger.info(`✅ Welcome buttons sent successfully to user: ${facebookId}`)
         } catch (error) {
-            logger.error(`❌ Failed to send welcome buttons to user: ${facebookId}`, { error: error.message })
+            logger.error(`❌ Failed to send welcome buttons to user: ${facebookId}`, { error: error instanceof Error ? error.message : String(error) })
             throw error
         }
     }
