@@ -80,6 +80,11 @@ export class UnifiedBotSystem {
                         await UserStateManager.handleBackToMain(user.facebook_id)
                         return
                 }
+
+                // Route all other postbacks (e.g., REGISTER) directly to FlowManager
+                // to avoid welcome/choosing logic interfering before a flow starts
+                await FlowManager.handlePostback(user, postback)
+                return
             }
 
             // Step 4: Kiểm tra xem state manager có nên xử lý user này không
