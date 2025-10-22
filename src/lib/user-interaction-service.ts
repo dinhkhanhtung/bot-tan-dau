@@ -176,26 +176,12 @@ export class UserInteractionService {
     }
 
     /**
-     * Gửi welcome message
+     * Gửi welcome message - DISABLED to avoid duplicates
      */
     private static async sendWelcomeMessage(facebookId: string, userStatus: string): Promise<void> {
-        // Sử dụng logic anti-spam đã được cải thiện
-        const { handleAntiSpam } = await import('./anti-spam')
-
-        // Lấy current flow từ session data
-        const { getBotSession } = await import('./utils')
-        const sessionData = await getBotSession(facebookId)
-        const currentFlow = sessionData?.current_flow || null
-
-        // Gọi handleAntiSpam để xử lý welcome và spam detection
-        const result = await handleAntiSpam(facebookId, 'welcome', userStatus, currentFlow)
-
-        if (result.block) {
-            logger.info('Welcome blocked due to spam detection', { facebookId, result })
-            return
-        }
-
-        logger.info('Welcome sent via anti-spam logic', { facebookId, userStatus, currentFlow, result })
+        // DISABLED - Welcome is now handled by WelcomeService only
+        // This prevents duplicate welcome messages
+        logger.info('Welcome message disabled - handled by WelcomeService', { facebookId, userStatus })
     }
 
     /**

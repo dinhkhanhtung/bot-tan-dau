@@ -16,13 +16,14 @@ export enum WelcomeType {
 
 // Simple welcome message template for all users
 const SIMPLE_WELCOME_TEMPLATE = {
-    greeting: '🎉 Chào mừng bạn đến với Bot Tân Dậu - Hỗ Trợ Chéo! 👋',
-    description: '🌟 Mình có thể giúp bạn kết nối và hỗ trợ trong cộng đồng. Bạn muốn làm gì hôm nay?',
+    greeting: '👋 XIN CHÀO!\n━━━━━━━━━━━━━━━━━━━━\nChào mừng bạn đến với cộng đồng Tân Dậu!',
+    description: '💡 Tôi có thể giúp bạn:',
     features: [
-        '🔍 Tìm kiếm sản phẩm',
-        '🛒 Đăng bán sản phẩm',
-        '👥 Kết nối cộng đồng',
-        '💬 Hỗ trợ trực tiếp'
+        '• Đăng ký thành viên',
+        '• Tìm kiếm sản phẩm',
+        '• Đăng tin bán hàng',
+        '• Tham gia cộng đồng',
+        '• Thanh toán dịch vụ'
     ]
 }
 

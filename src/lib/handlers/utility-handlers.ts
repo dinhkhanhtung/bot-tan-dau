@@ -25,11 +25,11 @@ export class UtilityHandlers {
             return true
         }
 
-        // Greeting keywords
-        if (this.isGreetingKeyword(lowerText)) {
-            await this.sendGreetingMessage(user.facebook_id)
-            return true
-        }
+        // Greeting keywords - DISABLED to avoid conflict with WelcomeService
+        // if (this.isGreetingKeyword(lowerText)) {
+        //     await this.sendGreetingMessage(user.facebook_id)
+        //     return true
+        // }
 
         // Info keywords
         if (this.isInfoKeyword(lowerText)) {
@@ -74,14 +74,12 @@ export class UtilityHandlers {
     }
 
     /**
-     * Send greeting message
+     * Send greeting message - DISABLED to avoid conflict with WelcomeService
      */
     private static async sendGreetingMessage(facebookId: string): Promise<void> {
-        await sendMessage(facebookId,
-            `👋 XIN CHÀO!\n━━━━━━━━━━━━━━━━━━━━\nChào mừng bạn đến với cộng đồng Tân Dậu!\n\n💡 Tôi có thể giúp bạn:\n• Đăng ký thành viên\n• Tìm kiếm sản phẩm\n• Đăng tin bán hàng\n• Tham gia cộng đồng\n• Thanh toán dịch vụ\n━━━━━━━━━━━━━━━━━━━━`
-        )
-
-        await this.sendMainMenu(facebookId)
+        // Disabled to avoid conflict with WelcomeService
+        // Welcome message is now handled by WelcomeService
+        console.log('Greeting message disabled - handled by WelcomeService')
     }
 
     /**

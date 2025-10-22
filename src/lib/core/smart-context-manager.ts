@@ -371,51 +371,13 @@ export class SmartContextManager {
     }
 
     /**
-     * Lấy welcome message phù hợp với ngữ cảnh
+     * Lấy welcome message phù hợp với ngữ cảnh - DISABLED
+     * Welcome is now handled by WelcomeService only
      */
     static getContextualWelcomeMessage(context: UserContext): string {
-        const { userType, userState, user, isInFlow } = context
-
-        if (isInFlow) {
-            return this.getFlowWelcomeMessage(userState, context)
-        }
-
-        switch (userType) {
-            case UserType.ADMIN:
-                return '🔧 ADMIN DASHBOARD\nChào mừng Admin! Bạn có toàn quyền quản lý hệ thống.'
-
-            case UserType.REGISTERED_USER:
-                const displayName = user?.name || 'bạn'
-                return `✅ CHÀO MỪNG ${displayName.toUpperCase()}!\nBạn đã đăng ký thành công và có thể sử dụng đầy đủ tính năng.`
-
-            case UserType.TRIAL_USER:
-                let daysLeft = 7 // Default fallback
-                if (user?.membership_expires_at) {
-                    try {
-                        const expiryDate = new Date(user.membership_expires_at)
-                        if (!isNaN(expiryDate.getTime())) {
-                            daysLeft = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                            daysLeft = Math.max(daysLeft, 0) // Ensure non-negative
-                        }
-                    } catch (error) {
-                        console.error('Error calculating trial days:', error)
-                        daysLeft = 7
-                    }
-                }
-                return `🎁 CHÀO MỪNG BẠN ĐẾN VỚI GÓI DÙNG THỬ!\nBạn còn ${daysLeft} ngày sử dụng miễn phí.\n💡 Hãy khám phá các tính năng của bot!`
-
-            case UserType.PENDING_USER:
-                const pendingDays = user?.created_at ?
-                    Math.ceil((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
-                return `⏳ CHÀO MỪNG ${(user?.name || 'bạn').toUpperCase()}!\n\n📋 Trạng thái: Đang chờ Admin duyệt (${pendingDays} ngày)\n🔍 Bạn có thể tìm kiếm và xem sản phẩm\n🚫 Chưa thể niêm yết hoặc liên hệ người bán\n\n💡 Admin sẽ duyệt sớm nhất có thể!`
-
-            case UserType.EXPIRED_USER:
-                return '⏰ TÀI KHOẢN ĐÃ HẾT HẠN\nĐể tiếp tục sử dụng, vui lòng thanh toán để gia hạn.'
-
-            case UserType.NEW_USER:
-            default:
-                return '🎉 CHÀO MỪNG ĐẾN VỚI BOT Tân Dậu - Hỗ Trợ Chéo!\n🤝 Cộng đồng dành riêng cho những người con Tân Dậu.\n\n💡 Để bắt đầu, bạn cần đăng ký thành viên.'
-        }
+        // DISABLED - Welcome is now handled by WelcomeService only
+        // This prevents duplicate welcome messages
+        return ''
     }
 
     /**

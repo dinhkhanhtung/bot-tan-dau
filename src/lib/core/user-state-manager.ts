@@ -277,28 +277,13 @@ export class UserStateManager {
     }
 
     /**
-     * Check if user should be handled by state manager or flows
-     * This prevents state manager from interfering with active flows
+     * Check if user should be handled by state manager or flows - DISABLED
+     * This logic is now handled in UnifiedBotSystem for better clarity
      */
     static async shouldHandleByStateManager(facebookId: string): Promise<boolean> {
-        try {
-            // Check if user has an active session (e.g., registration flow)
-            const { SessionManager } = await import('./session-manager')
-            const activeSession = await SessionManager.getSession(facebookId)
-
-            if (activeSession) {
-                logger.info('User has active session, state manager should not interfere', {
-                    facebookId,
-                    flow: activeSession.current_flow
-                })
-                return false
-            }
-
-            return true
-        } catch (error) {
-            logger.error('Error checking if state manager should handle user', { facebookId, error })
-            return true // Default to handling by state manager
-        }
+        // DISABLED - Logic moved to UnifiedBotSystem for better clarity
+        // This prevents duplicate routing logic
+        return true
     }
 
     /**
