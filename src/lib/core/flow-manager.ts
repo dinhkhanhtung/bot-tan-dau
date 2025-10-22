@@ -212,8 +212,8 @@ export class FlowManager {
     private static isPostbackTrigger(flowName: string, payload: string): boolean {
         const triggers: { [key: string]: string[] } = {
             'registration': ['REGISTER', 'DKT'],
-            'listing': ['LISTING', 'LIST', 'LISTING_CATEGORY_', 'LISTING_LOCATION_'],
-            'search': ['SEARCH', 'FIND', 'CATEGORY_SEARCH', 'LOCATION_SEARCH', 'SEARCH_ALL', 'SEARCH_CATEGORY_', 'SEARCH_LOCATION_'],
+            'listing': ['LISTING', 'LIST', 'SELECT_CATEGORY_', 'SELECT_LOCATION_'],
+            'search': ['SEARCH', 'FIND', 'CATEGORY_SEARCH', 'LOCATION_SEARCH', 'SEARCH_ALL', 'SELECT_CATEGORY_', 'SELECT_LOCATION_'],
             'community': ['COMMUNITY'],
             'payment': ['PAYMENT']
         }

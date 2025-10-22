@@ -166,35 +166,200 @@ export const CATEGORIES = {
             { key: 'XẾP_HÌNH', icon: '🧩', name: 'XẾP HÌNH', keywords: ['xếp hình', 'puzzle', 'lego', 'rubik', 'jigsaw'] },
             { key: 'ĐỒ_CHƠI_GIÁO_DỤC', icon: '🎓', name: 'ĐỒ CHƠI GIÁO DỤC', keywords: ['đồ chơi giáo dục', 'flashcard', 'educational toys', 'learning toys'] }
         ]
+    },
+    'NÔNG NGHIỆP': {
+        icon: '🌾',
+        name: 'NÔNG NGHIỆP',
+        keywords: ['nông nghiệp', 'trồng trọt', 'chăn nuôi', 'thủy sản', 'cây trồng', 'vật nuôi', 'phân bón', 'thuốc trừ sâu', 'máy nông nghiệp', 'agriculture', 'farming', 'crops', 'livestock'],
+        subcategories: [
+            { key: 'CÂY_TRỒNG', icon: '🌱', name: 'CÂY TRỒNG', keywords: ['cây giống', 'hạt giống', 'cây ăn quả', 'cây công nghiệp', 'rau củ', 'hoa màu', 'seeds', 'plants', 'crops'] },
+            { key: 'VẬT_NUÔI', icon: '🐄', name: 'VẬT NUÔI', keywords: ['gia súc', 'gia cầm', 'thú cưng', 'cá cảnh', 'chim cảnh', 'livestock', 'poultry', 'pets', 'fish', 'birds'] },
+            { key: 'PHÂN_BÓN', icon: '🌿', name: 'PHÂN BÓN', keywords: ['phân hữu cơ', 'phân hóa học', 'phân bón lá', 'phân vi sinh', 'fertilizer', 'organic fertilizer', 'chemical fertilizer'] },
+            { key: 'THUỐC_TRỪ_SÂU', icon: '🛡️', name: 'THUỐC TRỪ SÂU', keywords: ['thuốc trừ sâu', 'thuốc diệt cỏ', 'thuốc kích thích', 'pesticides', 'herbicides', 'growth stimulants'] },
+            { key: 'MÁY_NÔNG_NGHIỆP', icon: '🚜', name: 'MÁY NÔNG NGHIỆP', keywords: ['máy cày', 'máy gặt', 'máy phun thuốc', 'máy tưới', 'agricultural machinery', 'tractor', 'harvester'] },
+            { key: 'THỦY_SẢN', icon: '🐟', name: 'THỦY SẢN', keywords: ['cá', 'tôm', 'cua', 'nhuyễn thể', 'thức ăn thủy sản', 'fish', 'shrimp', 'crab', 'shellfish', 'aquaculture'] }
+        ]
+    },
+    'XÂY DỰNG': {
+        icon: '🏗️',
+        name: 'XÂY DỰNG',
+        keywords: ['xây dựng', 'thi công', 'vật liệu xây dựng', 'thiết kế', 'kiến trúc', 'nội thất', 'construction', 'building materials', 'design', 'architecture', 'interior'],
+        subcategories: [
+            { key: 'VẬT_LIỆU', icon: '🧱', name: 'VẬT LIỆU XÂY DỰNG', keywords: ['xi măng', 'cát', 'đá', 'gạch', 'sắt thép', 'cement', 'sand', 'stone', 'brick', 'steel'] },
+            { key: 'THI_CÔNG', icon: '👷', name: 'THI CÔNG', keywords: ['thi công xây dựng', 'nhà thầu', 'đội thợ', 'construction contractor', 'builder', 'construction team'] },
+            { key: 'THIẾT_KẾ', icon: '📐', name: 'THIẾT KẾ', keywords: ['thiết kế nhà', 'kiến trúc sư', 'bản vẽ', 'architect', 'design', 'blueprint'] },
+            { key: 'NỘI_THẤT', icon: '🛋️', name: 'NỘI THẤT', keywords: ['thiết kế nội thất', 'đồ gỗ', 'trang trí nội thất', 'interior design', 'furniture', 'decoration'] },
+            { key: 'ĐIỆN_NƯỚC', icon: '🔌', name: 'ĐIỆN NƯỚC', keywords: ['lắp đặt điện', 'lắp đặt nước', 'điều hòa', 'electrical', 'plumbing', 'air conditioning'] }
+        ]
+    },
+    'MỸ PHẨM': {
+        icon: '💄',
+        name: 'MỸ PHẨM',
+        keywords: ['mỹ phẩm', 'làm đẹp', 'chăm sóc da', 'trang điểm', 'nước hoa', 'son môi', 'kem dưỡng', 'cosmetics', 'beauty', 'skincare', 'makeup', 'perfume'],
+        subcategories: [
+            { key: 'CHĂM_SÓC_DA', icon: '🧴', name: 'CHĂM SÓC DA', keywords: ['kem dưỡng da', 'sữa rửa mặt', 'toner', 'serum', 'mặt nạ', 'skincare', 'moisturizer', 'cleanser'] },
+            { key: 'TRANG_ĐIỂM', icon: '💅', name: 'TRANG ĐIỂM', keywords: ['son môi', 'phấn nền', 'mascara', 'eyeliner', 'makeup', 'lipstick', 'foundation'] },
+            { key: 'NƯỚC_HOA', icon: '🌸', name: 'NƯỚC HOA', keywords: ['nước hoa nam', 'nước hoa nữ', 'xịt phòng', 'perfume', 'cologne', 'room spray'] },
+            { key: 'CHĂM_SÓC_TÓC', icon: '💇', name: 'CHĂM SÓC TÓC', keywords: ['dầu gội', 'dầu xả', 'thuốc nhuộm tóc', 'uốn tóc', 'shampoo', 'conditioner', 'hair dye'] },
+            { key: 'CHĂM_SÓC_MÓNG', icon: '💅', name: 'CHĂM SÓC MÓNG', keywords: ['sơn móng tay', 'dụng cụ làm móng', 'nail polish', 'nail tools', 'manicure', 'pedicure'] }
+        ]
+    },
+    'ĐỒ THỂ THAO': {
+        icon: '🏃',
+        name: 'ĐỒ THỂ THAO',
+        keywords: ['đồ thể thao', 'quần áo thể thao', 'giày thể thao', 'dụng cụ thể thao', 'gym', 'fitness', 'sports wear', 'sportswear', 'athletic wear'],
+        subcategories: [
+            { key: 'QUẦN_ÁO', icon: '👕', name: 'QUẦN ÁO THỂ THAO', keywords: ['áo thun thể thao', 'quần short', 'áo tank top', 'leggings', 'sports shirt', 'athletic wear'] },
+            { key: 'GIÀY_DÉP', icon: '👟', name: 'GIÀY THỂ THAO', keywords: ['giày chạy bộ', 'giày bóng đá', 'giày tennis', 'dép sandal', 'running shoes', 'soccer shoes'] },
+            { key: 'DỤNG_CỤ', icon: '🏋️', name: 'DỤNG CỤ THỂ THAO', keywords: ['tạ tay', 'máy chạy bộ', 'xà đơn', 'bóng rổ', 'dumbbells', 'treadmill', 'pull-up bar'] },
+            { key: 'PHỤ_KIỆN', icon: '🧢', name: 'PHỤ KIỆN THỂ THAO', keywords: ['mũ lưỡi trai', 'túi thể thao', 'bình nước', 'đồng hồ thể thao', 'sports cap', 'sports bag'] }
+        ]
+    },
+    'ĐỒ ĐIỆN GIA DỤNG': {
+        icon: '🔌',
+        name: 'ĐỒ ĐIỆN GIA DỤNG',
+        keywords: ['đồ điện', 'điện gia dụng', 'điện tử gia đình', 'điện lạnh', 'điều hòa', 'tủ lạnh', 'máy giặt', 'appliances', 'electronics', 'home appliances'],
+        subcategories: [
+            { key: 'ĐIỆN_LẠNH', icon: '❄️', name: 'ĐIỆN LẠNH', keywords: ['điều hòa', 'tủ lạnh', 'máy lạnh', 'quạt điều hòa', 'air conditioner', 'refrigerator', 'air conditioning'] },
+            { key: 'MÁY_GIẶT', icon: '💧', name: 'MÁY GIẶT', keywords: ['máy giặt cửa trước', 'máy giặt cửa trên', 'máy sấy', 'washing machine', 'dryer'] },
+            { key: 'NHÀ_BẾP', icon: '🍳', name: 'ĐỒ ĐIỆN NHÀ BẾP', keywords: ['lò vi sóng', 'bếp điện', 'máy xay sinh tố', 'nồi cơm điện', 'microwave', 'electric stove'] },
+            { key: 'LÀM_SẠCH', icon: '🧹', name: 'MÁY LÀM SẠCH', keywords: ['máy hút bụi', 'máy lau nhà', 'máy lọc không khí', 'vacuum cleaner', 'floor cleaner'] }
+        ]
+    },
+    'SỨC KHỎE': {
+        icon: '💊',
+        name: 'SỨC KHỎE',
+        keywords: ['sức khỏe', 'dinh dưỡng', 'thực phẩm chức năng', 'vitamin', 'thuốc bổ', 'health', 'nutrition', 'supplements', 'vitamins', 'medicine'],
+        subcategories: [
+            { key: 'THỰC_PHẨM_CHỨC_NĂNG', icon: '💊', name: 'THỰC PHẨM CHỨC NĂNG', keywords: ['vitamin', 'khoáng chất', 'collagen', 'omega 3', 'supplements', 'vitamins', 'minerals'] },
+            { key: 'DINH_DƯỠNG', icon: '🥗', name: 'DINH DƯỠNG', keywords: ['sữa bột', 'ngũ cốc', 'thực phẩm ăn kiêng', 'protein', 'milk powder', 'cereals', 'diet food'] },
+            { key: 'CHĂM_SÓC_CÁ_NHÂN', icon: '🧴', name: 'CHĂM SÓC CÁ NHÂN', keywords: ['bàn chải đánh răng', 'kem đánh răng', 'xà phòng', 'dầu gội', 'toothbrush', 'toothpaste'] },
+            { key: 'Y_TẾ_GIA_ĐÌNH', icon: '🏥', name: 'Y TẾ GIA ĐÌNH', keywords: ['nhiệt kế', 'máy đo huyết áp', 'khẩu trang', 'thermometer', 'blood pressure monitor'] }
+        ]
+    },
+    'SÁCH VÀ VĂN PHÒNG PHẨM': {
+        icon: '📚',
+        name: 'SÁCH VÀ VĂN PHÒNG PHẨM',
+        keywords: ['sách', 'vở', 'bút', 'tập', 'dụng cụ học tập', 'văn phòng phẩm', 'books', 'notebooks', 'pens', 'stationery', 'office supplies'],
+        subcategories: [
+            { key: 'SÁCH', icon: '📖', name: 'SÁCH', keywords: ['sách giáo khoa', 'tiểu thuyết', 'sách tham khảo', 'truyện tranh', 'textbooks', 'novels'] },
+            { key: 'VỞ_TẬP', icon: '📓', name: 'VỞ TẬP', keywords: ['vở học sinh', 'tập học sinh', 'sổ tay', 'notebooks', 'student notebooks'] },
+            { key: 'BÚT_VIẾT', icon: '🖊️', name: 'BÚT VIẾT', keywords: ['bút bi', 'bút chì', 'bút máy', 'bút màu', 'ballpoint pen', 'pencil', 'fountain pen'] },
+            { key: 'VĂN_PHÒNG_PHẨM', icon: '📎', name: 'VĂN PHÒNG PHẨM', keywords: ['kẹp giấy', 'băng keo', 'file hồ sơ', 'stapler', 'tape', 'folders'] }
+        ]
+    },
+    'Ô TÔ VÀ XE MÁY': {
+        icon: '🚗',
+        name: 'Ô TÔ VÀ XE MÁY',
+        keywords: ['ô tô', 'xe máy', 'phụ tùng', 'phụ kiện xe', 'dầu nhớt', 'lốp xe', 'car', 'motorcycle', 'auto parts', 'accessories', 'oil', 'tires'],
+        subcategories: [
+            { key: 'Ô_TÔ', icon: '🚗', name: 'Ô TÔ', keywords: ['xe hơi', 'phụ tùng ô tô', 'đồ chơi ô tô', 'car', 'auto parts', 'car accessories'] },
+            { key: 'XE_MÁY', icon: '🏍️', name: 'XE MÁY', keywords: ['xe máy', 'phụ tùng xe máy', 'nón bảo hiểm', 'motorcycle', 'bike parts', 'helmet'] },
+            { key: 'DẦU_NHỚT', icon: '⛽', name: 'DẦU NHỚT', keywords: ['dầu động cơ', 'nhớt xe máy', 'dầu hộp số', 'engine oil', 'motor oil', 'gear oil'] },
+            { key: 'LỐP_XE', icon: '🛞', name: 'LỐP XE', keywords: ['lốp ô tô', 'lốp xe máy', 'vá lốp', 'car tires', 'motorcycle tires', 'tire repair'] }
+        ]
+    },
+    'ĐỒ CỔ VÀ ĐỒ SƯU TẦM': {
+        icon: '🏺',
+        name: 'ĐỒ CỔ VÀ ĐỒ SƯU TẦM',
+        keywords: ['đồ cổ', 'tiền cổ', 'tem thư', 'đồ sưu tầm', 'antiques', 'ancient coins', 'stamps', 'collectibles', 'vintage items'],
+        subcategories: [
+            { key: 'ĐỒ_CỔ', icon: '🏺', name: 'ĐỒ CỔ', keywords: ['đồ cổ Việt Nam', 'đồ cổ Trung Quốc', 'gốm sứ cổ', 'vietnamese antiques', 'chinese antiques'] },
+            { key: 'TIỀN_CỔ', icon: '🪙', name: 'TIỀN CỔ', keywords: ['tiền cổ Việt Nam', 'tiền xu cổ', 'giấy bạc cổ', 'ancient coins', 'old currency'] },
+            { key: 'TEM_THƯ', icon: '📮', name: 'TEM THƯ', keywords: ['tem thư Việt Nam', 'tem thư thế giới', 'album tem', 'vietnamese stamps', 'world stamps'] },
+            { key: 'ĐỒ_SƯU_TẦM', icon: '🎴', name: 'ĐỒ SƯU TẦM', keywords: ['card sưu tầm', 'mô hình', 'figurine', 'collectible cards', 'models'] }
+        ]
+    },
+    'ĐỒ CHƠI VÀ GAME': {
+        icon: '🎮',
+        name: 'ĐỒ CHƠI VÀ GAME',
+        keywords: ['đồ chơi', 'game', 'trò chơi', 'board game', 'video game', 'toys', 'games', 'puzzle', 'lego', 'rubik'],
+        subcategories: [
+            { key: 'ĐỒ_CHƠI_TRẺ_EM', icon: '🧸', name: 'ĐỒ CHƠI TRẺ EM', keywords: ['xe đồ chơi', 'búp bê', 'xếp hình', 'kids toys', 'dolls', 'building blocks'] },
+            { key: 'BOARD_GAME', icon: '🎲', name: 'BOARD GAME', keywords: ['cờ vua', 'cờ caro', 'uno', 'monopoly', 'chess', 'checkers', 'card games'] },
+            { key: 'VIDEO_GAME', icon: '🎮', name: 'VIDEO GAME', keywords: ['game ps4', 'game ps5', 'game nintendo', 'playstation', 'xbox', 'nintendo switch'] },
+            { key: 'PUZZLE', icon: '🧩', name: 'PUZZLE', keywords: ['xếp hình', 'rubik', 'jigsaw puzzle', 'lego', 'rubik cube'] }
+        ]
+    },
+    'ĐỒ DÙNG GIA ĐÌNH': {
+        icon: '🏠',
+        name: 'ĐỒ DÙNG GIA ĐÌNH',
+        keywords: ['đồ dùng gia đình', 'đồ gia dụng', 'nội thất', 'đồ dùng nhà bếp', 'đồ dùng phòng ngủ', 'household items', 'home supplies', 'furniture', 'kitchenware'],
+        subcategories: [
+            { key: 'NỘI_THẤT', icon: '🛏️', name: 'NỘI THẤT', keywords: ['sofa', 'bàn ghế', 'tủ quần áo', 'giường ngủ', 'sofa', 'tables', 'wardrobe', 'bed'] },
+            { key: 'NHÀ_BẾP', icon: '🍳', name: 'ĐỒ DÙNG NHÀ BẾP', keywords: ['nồi', 'chảo', 'bát', 'đĩa', 'đồ dùng nấu ăn', 'pots', 'pans', 'bowls', 'plates'] },
+            { key: 'PHÒNG_NGỦ', icon: '🛏️', name: 'ĐỒ DÙNG PHÒNG NGỦ', keywords: ['chăn ga gối', 'tủ đầu giường', 'đèn ngủ', 'bedding', 'nightstand', 'bed lamp'] },
+            { key: 'PHÒNG_KHÁCH', icon: '🛋️', name: 'ĐỒ DÙNG PHÒNG KHÁCH', keywords: ['kệ tivi', 'tủ rượu', 'đèn trang trí', 'tv stand', 'wine cabinet', 'decoration lights'] }
+        ]
+    },
+    'ĐỒ DÙNG CÁ NHÂN': {
+        icon: '👜',
+        name: 'ĐỒ DÙNG CÁ NHÂN',
+        keywords: ['đồ dùng cá nhân', 'túi xách', 'ví tiền', 'đồng hồ', 'mắt kính', 'personal items', 'handbags', 'wallets', 'watches', 'glasses'],
+        subcategories: [
+            { key: 'TÚI_XÁCH', icon: '👜', name: 'TÚI XÁCH', keywords: ['túi nữ', 'balo', 'cặp sách', 'handbags', 'backpacks', 'briefcases'] },
+            { key: 'VÍ_TIỀN', icon: '👛', name: 'VÍ TIỀN', keywords: ['ví nam', 'ví nữ', 'ví cầm tay', 'wallets', 'purses', 'clutches'] },
+            { key: 'ĐỒNG_HỒ', icon: '⌚', name: 'ĐỒNG HỒ', keywords: ['đồng hồ nam', 'đồng hồ nữ', 'đồng hồ treo tường', 'watches', 'wall clocks'] },
+            { key: 'MẮT_KÍNH', icon: '👓', name: 'MẮT KÍNH', keywords: ['kính mát', 'gọng kính', 'tròng kính', 'sunglasses', 'eyeglasses', 'lenses'] }
+        ]
+    },
+    'ĐỒ ĂN VÀ ĐỒ UỐNG': {
+        icon: '🍜',
+        name: 'ĐỒ ĂN VÀ ĐỒ UỐNG',
+        keywords: ['đồ ăn', 'đồ uống', 'thực phẩm', 'bánh kẹo', 'trái cây', 'rau củ', 'food', 'beverages', 'groceries', 'snacks', 'fruits', 'vegetables'],
+        subcategories: [
+            { key: 'THỰC_PHẨM_TƯƠI', icon: '🥩', name: 'THỰC PHẨM TƯƠI', keywords: ['thịt', 'cá', 'rau củ', 'trái cây', 'meat', 'fish', 'vegetables', 'fruits'] },
+            { key: 'ĐỒ_KHÔ', icon: '🍜', name: 'ĐỒ KHÔ', keywords: ['mì gói', 'ngũ cốc', 'đồ hộp', 'instant noodles', 'cereals', 'canned food'] },
+            { key: 'BÁNH_KẸO', icon: '🍬', name: 'BÁNH KẸO', keywords: ['kẹo', 'bánh ngọt', 'snack', 'candy', 'cakes', 'snacks'] },
+            { key: 'ĐỒ_UỐNG', icon: '🥤', name: 'ĐỒ UỐNG', keywords: ['nước ngọt', 'bia', 'rượu', 'trà', 'cà phê', 'soft drinks', 'beer', 'wine', 'tea', 'coffee'] }
+        ]
+    },
+    'ĐỒ DÙNG MẸ VÀ BÉ': {
+        icon: '👶',
+        name: 'ĐỒ DÙNG MẸ VÀ BÉ',
+        keywords: ['đồ dùng mẹ bé', 'sữa bột', 'tã bỉm', 'quần áo trẻ em', 'đồ chơi trẻ em', 'baby supplies', 'milk powder', 'diapers', 'baby clothes', 'baby toys'],
+        subcategories: [
+            { key: 'SỮA_BỘT', icon: '🍼', name: 'SỮA BỘT', keywords: ['sữa cho bé', 'sữa công thức', 'sữa mẹ', 'baby formula', 'infant formula'] },
+            { key: 'TÃ_BỈM', icon: '🧷', name: 'TÃ BỈM', keywords: ['tã dán', 'tã quần', 'bỉm', 'diapers', 'baby diapers'] },
+            { key: 'QUẦN_ÁO_TRẺ_EM', icon: '👕', name: 'QUẦN ÁO TRẺ EM', keywords: ['quần áo sơ sinh', 'quần áo trẻ em', 'baby clothes', 'kids clothing'] },
+            { key: 'ĐỒ_DÙNG_TRẺ_EM', icon: '🧸', name: 'ĐỒ DÙNG TRẺ EM', keywords: ['xe đẩy', 'cũi', 'ghế ăn', 'stroller', 'crib', 'high chair'] }
+        ]
     }
 } as const
 
-// Complete locations - All provinces and cities in Vietnam
+// Complete locations - All provinces and cities in Vietnam (63 tỉnh thành)
 export const LOCATIONS = [
-    // Major cities (Thành phố lớn)
-    'THÁI NGUYÊN', 'HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ',
+    // Thành phố trực thuộc trung ương (5 thành phố lớn)
+    'HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ',
 
-    // Northern provinces (Miền Bắc)
+    // Miền Bắc (25 tỉnh)
     'BẮC GIANG', 'BẮC KẠN', 'BẮC NINH', 'CAO BẰNG', 'ĐIỆN BIÊN',
     'HÀ GIANG', 'HÀ NAM', 'HÀ TĨNH', 'HẢI DƯƠNG', 'HÒA BÌNH',
     'HƯNG YÊN', 'LẠNG SƠN', 'LÀO CAI', 'NAM ĐỊNH', 'NGHỆ AN',
     'NINH BÌNH', 'PHÚ THỌ', 'QUẢNG NINH', 'SƠN LA', 'THÁI BÌNH',
     'THÁI NGUYÊN', 'THANH HÓA', 'TUYÊN QUANG', 'VĨNH PHÚC', 'YÊN BÁI',
 
-    // Central provinces (Miền Trung)
-    'BÌNH ĐỊNH', 'BÌNH THUẬN', 'KHÁNH HÒA', 'KONTUM', 'LÂM ĐỒNG', 'NINH THUẬN',
-    'PHÚ YÊN', 'QUẢNG BÌNH', 'QUẢNG NAM', 'QUẢNG NGÃI', 'QUẢNG TRỊ',
-    'THỪA THIÊN HUẾ',
+    // Miền Trung (14 tỉnh)
+    'BÌNH ĐỊNH', 'BÌNH THUẬN', 'KHÁNH HÒA', 'KONTUM', 'LÂM ĐỒNG',
+    'NINH THUẬN', 'PHÚ YÊN', 'QUẢNG BÌNH', 'QUẢNG NAM', 'QUẢNG NGÃI',
+    'QUẢNG TRỊ', 'THỪA THIÊN HUẾ',
 
-    // Southern provinces (Miền Nam)
+    // Miền Nam (19 tỉnh)
     'AN GIANG', 'BẠC LIÊU', 'BẾN TRE', 'BÌNH DƯƠNG', 'BÌNH PHƯỚC',
     'CÀ MAU', 'ĐẮK LẮK', 'ĐẮK NÔNG', 'ĐỒNG NAI', 'ĐỒNG THÁP',
     'GIA LAI', 'HẬU GIANG', 'KIÊN GIANG', 'LONG AN', 'SÓC TRĂNG',
-    'TÂY NINH', 'TIỀN GIANG', 'TRÀ VINH', 'VĨNH LONG'
+    'TÂY NINH', 'TIỀN GIANG', 'TRÀ VINH', 'VĨNH LONG',
+
+    // Các địa danh phổ biến khác
+    'VŨNG TÀU', 'BUÔN MA THUỘT', 'QUY NHƠN', 'NHA TRANG', 'ĐÀ LẠT',
+    'PHAN THIẾT', 'MỸ THO', 'VĨNH YÊN', 'BẮC NINH', 'THỦ DẦU MỘT',
+    'BIÊN HÒA', 'VŨNG TÀU', 'RẠCH GIÁ', 'CẦU GIẤY', 'TÂN BÌNH',
+    'BÌNH THẠNH', 'QUẬN 1', 'QUẬN 3', 'QUẬN 7', 'QUẬN 10'
 ] as const
 
-// Districts and cities for major provinces
-export const DISTRICTS = {
+// Districts and cities for major provinces - Đầy đủ hành chính Việt Nam
+export const DISTRICTS: Record<string, string[]> = {
+    // Hà Nội - 30 quận huyện
     'HÀ NỘI': [
         'QUẬN BA ĐÌNH', 'QUẬN HOÀN KIẾM', 'QUẬN TÂY HỒ', 'QUẬN LONG BIÊN',
         'QUẬN CẦU GIẤY', 'QUẬN ĐỐNG ĐA', 'QUẬN HAI BÀ TRƯNG', 'QUẬN HOÀNG MAI',
@@ -206,6 +371,8 @@ export const DISTRICTS = {
         'HUYỆN THANH OAI', 'HUYỆN THƯỜNG TÍN', 'HUYỆN PHÚ XUYÊN', 'HUYỆN ỨNG HÒA',
         'HUYỆN MỸ ĐỨC'
     ],
+
+    // TP.HCM - 24 quận huyện
     'TP.HỒ CHÍ MINH': [
         'QUẬN 1', 'QUẬN 2', 'QUẬN 3', 'QUẬN 4', 'QUẬN 5', 'QUẬN 6',
         'QUẬN 7', 'QUẬN 8', 'QUẬN 9', 'QUẬN 10', 'QUẬN 11', 'QUẬN 12',
@@ -213,6 +380,8 @@ export const DISTRICTS = {
         'QUẬN TÂN PHÚ', 'QUẬN PHÚ NHUẬN', 'QUẬN BÌNH TÂN', 'QUẬN HỐC MÔN',
         'QUẬN CỦ CHI', 'QUẬN BÌNH CHÁNH', 'QUẬN NHÀ BÈ', 'QUẬN CẦN GIỜ'
     ],
+
+    // Các tỉnh lớn khác
     'ĐÀ NẴNG': [
         'QUẬN HẢI CHÂU', 'QUẬN THANH KHÊ', 'QUẬN SƠN TRÀ', 'QUẬN NGŨ HÀNH SƠN',
         'QUẬN LIÊN CHIỂU', 'QUẬN CẨM LỆ', 'HUYỆN HÒA VANG', 'HUYỆN HOÀNG SA'
@@ -239,24 +408,70 @@ export const DISTRICTS = {
         'HUYỆN THỐNG NHẤT', 'HUYỆN CẨM MỸ', 'HUYỆN LONG THÀNH',
         'HUYỆN XUÂN LỘC', 'HUYỆN NHƠN TRẠCH'
     ],
-    'KHÁNH HÒA': [
-        'THÀNH PHỐ NHA TRANG', 'THÀNH PHỐ CAM RANH', 'THÀNH PHỐ CAM LÂM',
-        'HUYỆN CAM LÂM', 'HUYỆN VẠN NINH', 'HUYỆN NINH HÒA',
-        'HUYỆN KHÁNH VĨNH', 'HUYỆN DIÊN KHÁNH', 'HUYỆN KHÁNH SƠN',
-        'HUYỆN TRƯỜNG SA'
+
+    // Các tỉnh khác sẽ trả về mảng rỗng và xử lý chung
+    'AN GIANG': [], 'BẠC LIÊU': [], 'BẾN TRE': [], 'BÌNH PHƯỚC': [],
+    'CÀ MAU': [], 'ĐẮK LẮK': [], 'ĐẮK NÔNG': [], 'ĐỒNG THÁP': [],
+    'GIA LAI': [], 'HẬU GIANG': [], 'KIÊN GIANG': [], 'LONG AN': [],
+    'SÓC TRĂNG': [], 'TÂY NINH': [], 'TIỀN GIANG': [], 'TRÀ VINH': [],
+    'VĨNH LONG': [], 'BẮC GIANG': [], 'BẮC KẠN': [], 'BẮC NINH': [],
+    'CAO BẰNG': [], 'ĐIỆN BIÊN': [], 'HÀ GIANG': [], 'HÀ NAM': [],
+    'HÀ TĨNH': [], 'HẢI DƯƠNG': [], 'HÒA BÌNH': [], 'HƯNG YÊN': [],
+    'LẠNG SƠN': [], 'LÀO CAI': [], 'NAM ĐỊNH': [], 'NGHỆ AN': [],
+    'NINH BÌNH': [], 'PHÚ THỌ': [], 'QUẢNG NINH': [], 'SƠN LA': [],
+    'THÁI BÌNH': [], 'THÁI NGUYÊN': [], 'THANH HÓA': [], 'TUYÊN QUANG': [],
+    'VĨNH PHÚC': [], 'YÊN BÁI': [], 'BÌNH ĐỊNH': [], 'BÌNH THUẬN': [],
+    'KHÁNH HÒA': [], 'KONTUM': [], 'LÂM ĐỒNG': [], 'NINH THUẬN': [],
+    'PHÚ YÊN': [], 'QUẢNG BÌNH': [], 'QUẢNG NAM': [], 'QUẢNG NGÃI': [],
+    'QUẢNG TRỊ': [], 'THỪA THIÊN HUẾ': []
+}
+
+// Wards for major districts (Phường xã cho các quận huyện lớn)
+export const WARDS: Record<string, string[]> = {
+    'QUẬN 1': [
+        'PHƯỜNG BẾN NGHÉ', 'PHƯỜNG BẾN THÀNH', 'PHƯỜNG CẦU KHO', 'PHƯỜNG CẦU ÔNG LÃNH',
+        'PHƯỜNG CÔ GIANG', 'PHƯỜNG ĐA KAO', 'PHƯỜNG NGUYỄN CƯ TRINH', 'PHƯỜNG NGUYỄN THÁI BÌNH',
+        'PHƯỜNG PHẠM NGŨ LÃO', 'PHƯỜNG TÂN ĐỊNH'
     ],
-    'LÂM ĐỒNG': [
-        'THÀNH PHỐ ĐÀ LẠT', 'THÀNH PHỐ BẢO LỘC', 'HUYỆN ĐAM RÔNG',
-        'HUYỆN LẠC DƯƠNG', 'HUYỆN LÂM HÀ', 'HUYỆN ĐỨC TRỌNG',
-        'HUYỆN ĐƠN DƯƠNG', 'HUYỆN ĐỨC LINH', 'HUYỆN BẢO LÂM',
-        'HUYỆN CÁT TIÊN', 'HUYỆN DI LINH'
+    'QUẬN 3': [
+        'PHƯỜNG 1', 'PHƯỜNG 2', 'PHƯỜNG 3', 'PHƯỜNG 4', 'PHƯỜNG 5',
+        'PHƯỜNG 6', 'PHƯỜNG 7', 'PHƯỜNG 8', 'PHƯỜNG 9', 'PHƯỜNG 10',
+        'PHƯỜNG 11', 'PHƯỜNG 12', 'PHƯỜNG 13', 'PHƯỜNG 14'
     ],
-    'THỪA THIÊN HUẾ': [
-        'THÀNH PHỐ HUẾ', 'THỊ XÃ HƯƠNG THỦY', 'THỊ XÃ HƯƠNG TRÀ',
-        'HUYỆN PHONG ĐIỀN', 'HUYỆN QUẢNG ĐIỀN', 'HUYỆN PHÚ VANG',
-        'HUYỆN PHÚ LỘC', 'HUYỆN A LƯỚI', 'HUYỆN NAM ĐÔNG'
+    'QUẬN 7': [
+        'PHƯỜNG BÌNH THUẬN', 'PHƯỜNG PHÚ MỸ', 'PHƯỜNG PHÚ THUẬN', 'PHƯỜNG TÂN HƯNG',
+        'PHƯỜNG TÂN KIÊNG', 'PHƯỜNG TÂN PHÚ', 'PHƯỜNG TÂN QUY', 'PHƯỜNG TÂN THUẬN ĐÔNG',
+        'PHƯỜNG TÂN THUẬN TÂY'
+    ],
+    'QUẬN BÌNH THẠNH': [
+        'PHƯỜNG 1', 'PHƯỜNG 2', 'PHƯỜNG 3', 'PHƯỜNG 5', 'PHƯỜNG 6',
+        'PHƯỜNG 7', 'PHƯỜNG 11', 'PHƯỜNG 12', 'PHƯỜNG 13', 'PHƯỜNG 14',
+        'PHƯỜNG 15', 'PHƯỜNG 17', 'PHƯỜNG 19', 'PHƯỜNG 21', 'PHƯỜNG 22',
+        'PHƯỜNG 24', 'PHƯỜNG 25', 'PHƯỜNG 26', 'PHƯỜNG 27', 'PHƯỜNG 28'
+    ],
+    'QUẬN TÂN BÌNH': [
+        'PHƯỜNG 1', 'PHƯỜNG 2', 'PHƯỜNG 3', 'PHƯỜNG 4', 'PHƯỜNG 5',
+        'PHƯỜNG 6', 'PHƯỜNG 7', 'PHƯỜNG 8', 'PHƯỜNG 9', 'PHƯỜNG 10',
+        'PHƯỜNG 11', 'PHƯỜNG 12', 'PHƯỜNG 13', 'PHƯỜNG 14', 'PHƯỜNG 15'
+    ],
+    'QUẬN GÒ VẤP': [
+        'PHƯỜNG 1', 'PHƯỜNG 3', 'PHƯỜNG 4', 'PHƯỜNG 5', 'PHƯỜNG 6',
+        'PHƯỜNG 7', 'PHƯỜNG 8', 'PHƯỜNG 9', 'PHƯỜNG 10', 'PHƯỜNG 11',
+        'PHƯỜNG 12', 'PHƯỜNG 13', 'PHƯỜNG 14', 'PHƯỜNG 15', 'PHƯỜNG 16',
+        'PHƯỜNG 17'
+    ],
+    'QUẬN THỦ ĐỨC': [
+        'PHƯỜNG AN KHÁNH', 'PHƯỜNG AN PHÚ', 'PHƯỜNG BÌNH CHỬU', 'PHƯỜNG BÌNH THỌ',
+        'PHƯỜNG CÁT LÁI', 'PHƯỜNG HIỆP BÌNH CHÁNH', 'PHƯỜNG HIỆP BÌNH PHƯỚC',
+        'PHƯỜNG HIỆP PHÚ', 'PHƯỜNG LINH CHIỂU', 'PHƯỜNG LINH ĐÔNG',
+        'PHƯỜNG LINH TÂY', 'PHƯỜNG LINH TRUNG', 'PHƯỜNG LINH XUÂN',
+        'PHƯỜNG LONG BÌNH', 'PHƯỜNG LONG PHƯỚC', 'PHƯỜNG LONG THẠNH MỸ',
+        'PHƯỜNG LONG TRƯỜNG', 'PHƯỜNG PHÚ HỮU', 'PHƯỜNG PHƯỚC BÌNH',
+        'PHƯỜNG PHƯỚC LONG A', 'PHƯỜNG PHƯỚC LONG B', 'PHƯỜNG TÂN PHÚ',
+        'PHƯỜNG THẢO ĐIỀN', 'PHƯỜNG THỦ THIÊM', 'PHƯỜNG TRƯỜNG THẠNH',
+        'PHƯỜNG TRƯỜNG THỌ'
     ]
-} as const
+}
 
 // Price ranges
 export const PRICE_RANGES = [
@@ -402,6 +617,393 @@ export const POPULAR_HASHTAGS = [
     '#re', '#moi', '#tot', '#mienphi', '#spa'
 ] as const
 
+// Enhanced Keywords System for Better UX
+export const KEYWORDS_SYSTEM = {
+    // Từ khóa phổ biến nhất - Hiển thị đầu tiên
+    POPULAR_KEYWORDS: [
+        'nhà', 'xe', 'điện thoại', 'laptop', 'gia sư', 'massage',
+        'cơm', 'phở', 'cà phê', 'trà sữa', 'váy', 'áo', 'giày',
+        'thuốc', 'bệnh viện', 'sửa chữa', 'vận chuyển', 'nội thất'
+    ],
+
+    // Từ khóa theo danh mục - Tổ chức thông minh
+    CATEGORIES_KEYWORDS: {
+        'Y TẾ': {
+            primary: [
+                'khám bệnh', 'thuốc', 'bệnh viện', 'phòng khám', 'nha khoa',
+                'mắt', 'da liễu', 'sản phụ khoa', 'nội khoa', 'nhi khoa'
+            ],
+            secondary: [
+                'đông y', 'thuốc nam', 'thuốc bắc', 'châm cứu', 'bấm huyệt',
+                'siêu âm', 'xét nghiệm', 'vật lý trị liệu', 'tâm lý', 'thẩm mỹ',
+                'thú y', 'chẩn đoán hình ảnh', 'x-quang', 'ct scan', 'mri'
+            ],
+            specialized: [
+                'huyết áp', 'tiểu đường', 'tim mạch', 'ung thư', 'thần kinh',
+                'hô hấp', 'tiêu hóa', 'thận tiết niệu', 'cơ xương khớp', 'dị ứng',
+                'tai mũi họng', 'nhiễm trùng', 'dinh dưỡng', 'vaccine', 'khám sức khỏe'
+            ]
+        },
+        'BẤT ĐỘNG SẢN': {
+            primary: [
+                'nhà ở', 'chung cư', 'mặt bằng', 'đất nền', 'biệt thự',
+                'nhà phố', 'căn hộ', 'văn phòng', 'kho bãi', 'đất thổ cư'
+            ],
+            secondary: [
+                'nhà cấp 4', 'nhà mặt tiền', 'nhà hẻm', 'penthouse', 'duplex',
+                'studio', 'loft', 'officetel', 'shophouse', 'condotel'
+            ],
+            specialized: [
+                'nhà nguyên căn', 'nhà xây sẵn', 'đất dự án', 'đất nông nghiệp',
+                'nhà xưởng', 'khu công nghiệp', 'nhà trọ', 'phòng trọ', 'căn hộ dịch vụ'
+            ]
+        },
+        'Ô TÔ': {
+            primary: [
+                'xe hơi', 'ô tô', 'honda', 'toyota', 'mazda',
+                'hyundai', 'kia', 'ford', 'nissan', 'mitsubishi'
+            ],
+            secondary: [
+                'sedan', 'suv', 'hatchback', 'pickup', 'crossover',
+                'xe điện', 'xe hybrid', 'xe số sàn', 'xe số tự động', 'xe nhập khẩu'
+            ],
+            specialized: [
+                'honda city', 'toyota vios', 'mazda cx-5', 'ford ranger', 'toyota fortuner',
+                'honda cr-v', 'hyundai tucson', 'kia cerato', 'toyota hilux', 'isuzu d-max'
+            ]
+        },
+        'ĐIỆN TỬ': {
+            primary: [
+                'điện thoại', 'laptop', 'máy tính', 'tablet', 'phụ kiện',
+                'iphone', 'samsung', 'xiaomi', 'oppo', 'vivo'
+            ],
+            secondary: [
+                'macbook', 'dell', 'hp', 'asus', 'lenovo',
+                'ipad', 'surface', 'gaming laptop', 'ultrabook', 'chromebook'
+            ],
+            specialized: [
+                'tai nghe', 'sạc dự phòng', 'ốp lưng', 'củ sạc', 'cáp sạc',
+                'miếng dán màn hình', 'thẻ nhớ', 'usb', 'chuột máy tính', 'bàn phím'
+            ]
+        },
+        'THỜI TRANG': {
+            primary: [
+                'quần áo', 'váy', 'áo', 'quần', 'giày dép',
+                'túi xách', 'đồng hồ', 'trang sức', 'nước hoa', 'phụ kiện'
+            ],
+            secondary: [
+                'áo sơ mi', 'quần jean', 'áo thun', 'váy maxi', 'váy ngắn',
+                'giày sneaker', 'giày cao gót', 'túi tote', 'túi clutch', 'đồng hồ cơ'
+            ],
+            specialized: [
+                'áo khoác', 'quần short', 'áo polo', 'váy công sở', 'giày boot',
+                'túi backpack', 'ví da', 'nhẫn', 'dây chuyền', 'bông tai'
+            ]
+        },
+        'ẨM THỰC': {
+            primary: [
+                'cơm', 'phở', 'bún', 'cà phê', 'trà sữa',
+                'bánh mì', 'bánh ngọt', 'trái cây', 'thức uống', 'đồ ăn'
+            ],
+            secondary: [
+                'cơm tấm', 'phở bò', 'bún chả', 'cà phê sữa đá', 'trà sữa trân châu',
+                'bánh mì thịt', 'bánh kem', 'sinh tố', 'nước ép', 'bia rượu'
+            ],
+            specialized: [
+                'cơm văn phòng', 'phở gà', 'bún bò', 'cappuccino', 'latte',
+                'croissant', 'macaron', 'smoothie', 'cocktail', 'mocktail'
+            ]
+        },
+        'DỊCH VỤ': {
+            primary: [
+                'gia sư', 'massage', 'sửa chữa', 'vận chuyển', 'nấu ăn',
+                'dọn dẹp', 'trông trẻ', 'làm đẹp', 'taxi', 'giao hàng'
+            ],
+            secondary: [
+                'dạy kèm', 'xoa bóp', 'sửa điện', 'chuyển nhà', 'đầu bếp',
+                'giúp việc', 'babysitter', 'spa', 'grab', 'uber'
+            ],
+            specialized: [
+                'luyện thi', 'bấm huyệt', 'sửa chữa ô tô', 'cho thuê xe', 'catering',
+                'tổng vệ sinh', 'chăm sóc người già', 'nails', 'makeup', 'haircut'
+            ]
+        },
+        'ĐỒ GIA DỤNG': {
+            primary: [
+                'nội thất', 'điện gia dụng', 'nhà bếp', 'trang trí', 'đồ dùng',
+                'sofa', 'tủ lạnh', 'máy giặt', 'điều hòa', 'bếp gas'
+            ],
+            secondary: [
+                'bàn ghế', 'tủ quần áo', 'giường ngủ', 'lò vi sóng', 'máy hút bụi',
+                'nồi cơm điện', 'chảo chống dính', 'bình đun siêu tốc', 'quạt điện', 'đèn trang trí'
+            ],
+            specialized: [
+                'kệ sách', 'tủ giày', 'gương soi', 'ấm trà', 'dao thớt',
+                'ly tách', 'đèn ngủ', 'thảm trải sàn', 'rèm cửa', 'đồng hồ treo tường'
+            ]
+        },
+        'THỂ THAO': {
+            primary: [
+                'gym', 'bóng đá', 'cầu lông', 'bơi lội', 'yoga',
+                'fitness', 'tennis', 'chạy bộ', 'đạp xe', 'aerobics'
+            ],
+            secondary: [
+                'máy chạy bộ', 'tạ tay', 'quả bóng', 'vợt cầu lông', 'áo bóng đá',
+                'giày sneaker', 'áo thun thể thao', 'quần short', 'kính bơi', 'mũ bảo hiểm'
+            ],
+            specialized: [
+                'protein', 'whey', 'thảm yoga', 'dây nhảy', 'găng tay boxing',
+                'vợt tennis', 'giày đá bóng', 'áo bơi', 'mũ lưỡi trai', 'balo thể thao'
+            ]
+        },
+        'SÁCH': {
+            primary: [
+                'sách giáo khoa', 'tiểu thuyết', 'sách kinh tế', 'sách thiếu nhi', 'tài liệu',
+                'truyện tranh', 'sách học tiếng anh', 'sách kỹ năng', 'sách nấu ăn', 'sách lịch sử'
+            ],
+            secondary: [
+                'sách toán', 'sách lý', 'sách hóa', 'sách văn', 'sách anh văn',
+                'harry potter', 'doraemon', 'conan', 'one piece', 'dragon ball'
+            ],
+            specialized: [
+                'ielts', 'toeic', 'toeic', 'tiếng nhật', 'tiếng hàn', 'tiếng trung',
+                'marketing', 'kinh doanh', 'tài chính', 'ngân hàng', 'bất động sản'
+            ]
+        },
+        'ĐỒ CHƠI': {
+            primary: [
+                'đồ chơi trẻ em', 'lego', 'puzzle', 'board game', 'video game',
+                'xe đồ chơi', 'búp bê', 'khối xếp hình', 'trò chơi giáo dục', 'đồ chơi gỗ'
+            ],
+            secondary: [
+                'rubik', 'cờ vua', 'cờ caro', 'uno', 'domino',
+                'xếp hình', 'truyện tranh', 'mô hình', 'đồ chơi điều khiển', 'bóng rổ mini'
+            ],
+            specialized: [
+                'flashcard', 'thẻ học', 'đồ chơi phát triển trí tuệ', 'đồ chơi vận động',
+                'đồ chơi nhập vai', 'đồ chơi âm nhạc', 'đồ chơi khoa học', 'stem toys'
+            ]
+        },
+        'NÔNG NGHIỆP': {
+            primary: [
+                'cây giống', 'vật nuôi', 'phân bón', 'thuốc trừ sâu', 'máy nông nghiệp',
+                'thủy sản', 'cây ăn quả', 'gia súc', 'gia cầm', 'cá giống'
+            ],
+            secondary: [
+                'hạt giống', 'cây công nghiệp', 'thú cưng', 'phân hữu cơ', 'thuốc diệt cỏ',
+                'máy cày', 'tôm giống', 'cua giống', 'thức ăn chăn nuôi', 'máy tưới'
+            ],
+            specialized: [
+                'cây giống nhập khẩu', 'giống thuần chủng', 'phân vi sinh', 'thuốc sinh học',
+                'máy gặt đập liên hợp', 'lưới nuôi cá', 'hệ thống tưới nhỏ giọt', 'nhà kính',
+                'máy ấp trứng', 'máy chế biến thức ăn chăn nuôi'
+            ]
+        },
+        'XÂY DỰNG': {
+            primary: [
+                'vật liệu xây dựng', 'thi công', 'thiết kế', 'nội thất', 'điện nước',
+                'xi măng', 'gạch', 'sắt thép', 'cát đá', 'nhà thầu'
+            ],
+            secondary: [
+                'thiết kế nhà', 'kiến trúc sư', 'đội thợ', 'lắp đặt điện', 'lắp đặt nước',
+                'điều hòa', 'cửa nhôm', 'cửa gỗ', 'sơn nước', 'gạch men'
+            ],
+            specialized: [
+                'thiết kế biệt thự', 'thi công nhà xưởng', 'lắp đặt điện thông minh', 'hệ thống nước nóng',
+                'cửa chống cháy', 'sơn chống thấm', 'gạch nhập khẩu', 'thép xây dựng',
+                'máy khoan bê tông', 'giàn giáo xây dựng'
+            ]
+        },
+        'MỸ PHẨM': {
+            primary: [
+                'chăm sóc da', 'trang điểm', 'nước hoa', 'chăm sóc tóc', 'chăm sóc móng',
+                'kem dưỡng', 'son môi', 'phấn nền', 'dầu gội', 'sơn móng'
+            ],
+            secondary: [
+                'sữa rửa mặt', 'toner', 'serum', 'mặt nạ', 'mascara', 'eyeliner',
+                'nước hoa nam', 'nước hoa nữ', 'dầu xả', 'thuốc nhuộm tóc'
+            ],
+            specialized: [
+                'kem chống nắng', 'serum vitamin c', 'mặt nạ đất sét', 'son lì', 'phấn nước',
+                'nước hoa chính hãng', 'dầu dưỡng tóc', 'gel vuốt tóc', 'sơn gel', 'dụng cụ nail'
+            ]
+        },
+        'ĐỒ THỂ THAO': {
+            primary: [
+                'quần áo thể thao', 'giày thể thao', 'dụng cụ thể thao', 'phụ kiện thể thao',
+                'áo thun', 'quần short', 'giày sneaker', 'tạ tay', 'bóng đá'
+            ],
+            secondary: [
+                'áo tank top', 'leggings', 'giày chạy bộ', 'máy chạy bộ', 'xà đơn',
+                'mũ lưỡi trai', 'túi thể thao', 'bình nước', 'đồng hồ thể thao', 'găng tay'
+            ],
+            specialized: [
+                'áo compression', 'quần bó cơ', 'giày bóng rổ', 'vợt cầu lông', 'thảm yoga',
+                'protein whey', 'bcaa', 'dây nhảy', 'bóng rổ', 'lưới cầu lông'
+            ]
+        },
+        'ĐỒ ĐIỆN GIA DỤNG': {
+            primary: [
+                'điện lạnh', 'máy giặt', 'nhà bếp', 'làm sạch', 'điều hòa',
+                'tủ lạnh', 'máy sấy', 'lò vi sóng', 'máy hút bụi', 'quạt điện'
+            ],
+            secondary: [
+                'máy lạnh', 'máy giặt cửa trước', 'bếp điện', 'máy lau nhà', 'quạt điều hòa',
+                'tủ đông', 'máy sấy quần áo', 'nồi cơm điện', 'máy lọc không khí', 'quạt trần'
+            ],
+            specialized: [
+                'điều hòa inverter', 'tủ lạnh side by side', 'máy giặt sấy khối', 'bếp từ đôi',
+                'máy hút bụi công nghiệp', 'máy lọc nước', 'quạt phun sương', 'đèn sưởi nhà tắm',
+                'máy xay sinh tố', 'nồi áp suất điện'
+            ]
+        },
+        'SỨC KHỎE': {
+            primary: [
+                'thực phẩm chức năng', 'dinh dưỡng', 'chăm sóc cá nhân', 'y tế gia đình',
+                'vitamin', 'sữa bột', 'bàn chải đánh răng', 'nhiệt kế', 'khẩu trang'
+            ],
+            secondary: [
+                'khoáng chất', 'collagen', 'omega 3', 'ngũ cốc', 'thực phẩm ăn kiêng',
+                'kem đánh răng', 'xà phòng', 'máy đo huyết áp', 'khẩu trang y tế', 'nước súc miệng'
+            ],
+            specialized: [
+                'vitamin c', 'canxi', 'sắt', 'kẽm', 'probiotics',
+                'sữa ensure', 'sữa anlene', 'bàn chải điện', 'nhiệt kế điện tử', 'khẩu trang n95'
+            ]
+        },
+        'SÁCH VÀ VĂN PHÒNG PHẨM': {
+            primary: [
+                'sách', 'vở tập', 'bút viết', 'văn phòng phẩm', 'sách giáo khoa',
+                'vở học sinh', 'bút bi', 'kẹp giấy', 'file hồ sơ', 'sổ tay'
+            ],
+            secondary: [
+                'tiểu thuyết', 'sách tham khảo', 'tập học sinh', 'bút chì', 'băng keo',
+                'truyện tranh', 'sách kỹ năng', 'sổ công tác', 'bút máy', 'bao thư'
+            ],
+            specialized: [
+                'sách ielts', 'sách toeic', 'sách tiếng nhật', 'bút kỹ thuật', 'máy tính cầm tay',
+                'sách marketing', 'sách kinh doanh', 'sổ da', 'bút dạ quang', 'giấy in'
+            ]
+        },
+        'Ô TÔ VÀ XE MÁY': {
+            primary: [
+                'ô tô', 'xe máy', 'phụ tùng', 'dầu nhớt', 'lốp xe',
+                'phụ tùng ô tô', 'phụ tùng xe máy', 'dầu động cơ', 'lốp ô tô', 'nón bảo hiểm'
+            ],
+            secondary: [
+                'đồ chơi ô tô', 'phụ kiện xe máy', 'nhớt xe máy', 'lốp xe máy', 'ắc quy',
+                'dầu hộp số', 'lọc dầu', 'bugi', 'dây curoa', 'mâm xe'
+            ],
+            specialized: [
+                'camera hành trình', 'đầu dvd ô tô', 'loa sub', 'dầu tổng hợp', 'lốp michelin',
+                'nón fullface', 'nón 3/4', 'phuộc xe máy', 'heo dầu', 'mâm đúc'
+            ]
+        },
+        'ĐỒ CỔ VÀ ĐỒ SƯU TẦM': {
+            primary: [
+                'đồ cổ', 'tiền cổ', 'tem thư', 'đồ sưu tầm', 'gốm sứ cổ',
+                'tiền cổ Việt Nam', 'tem thư Việt Nam', 'card sưu tầm', 'mô hình cổ', 'tượng cổ'
+            ],
+            secondary: [
+                'đồ cổ Trung Quốc', 'tiền xu cổ', 'tem thư thế giới', 'album tem', 'mô hình xe',
+                'đồ đồng cổ', 'sứ cổ', 'họa tiết cổ', 'đồ gỗ cổ', 'tranh cổ'
+            ],
+            specialized: [
+                'tiền Đông Dương', 'tem quý hiếm', 'card pokemon', 'mô hình máy bay', 'tượng đồng',
+                'bình cổ', 'chén cổ', 'đĩa cổ', 'lọ hoa cổ', 'đèn dầu cổ'
+            ]
+        },
+        'ĐỒ CHƠI VÀ GAME': {
+            primary: [
+                'đồ chơi trẻ em', 'board game', 'video game', 'puzzle', 'xe đồ chơi',
+                'cờ vua', 'game ps4', 'xếp hình', 'búp bê', 'trò chơi điện tử'
+            ],
+            secondary: [
+                'cờ caro', 'uno', 'game nintendo', 'rubik', 'khối xếp hình',
+                'domino', 'game mobile', 'lego', 'bóng rổ mini', 'truyện tranh'
+            ],
+            specialized: [
+                'monopoly', 'chess set', 'game ps5', 'rubik 3x3', 'lego creator',
+                'card game', 'board game gia đình', 'puzzle 1000 mảnh', 'xếp hình 3d', 'đồ chơi gỗ'
+            ]
+        },
+        'ĐỒ DÙNG GIA ĐÌNH': {
+            primary: [
+                'nội thất', 'nhà bếp', 'phòng ngủ', 'phòng khách', 'sofa',
+                'nồi chảo', 'chăn ga gối', 'kệ tivi', 'bàn ghế', 'tủ quần áo'
+            ],
+            secondary: [
+                'đồ gỗ', 'đồ dùng nấu ăn', 'tủ đầu giường', 'tủ rượu', 'giường ngủ',
+                'dao thớt', 'ly tách', 'đèn ngủ', 'thảm trải sàn', 'rèm cửa'
+            ],
+            specialized: [
+                'sofa da', 'nồi chống dính', 'chăn lông vũ', 'kệ tivi treo tường', 'bàn ăn gỗ',
+                'dao nhật', 'ly thủy tinh', 'đèn led', 'thảm persian', 'rèm vải'
+            ]
+        },
+        'ĐỒ DÙNG CÁ NHÂN': {
+            primary: [
+                'túi xách', 'ví tiền', 'đồng hồ', 'mắt kính', 'túi nữ',
+                'ví nam', 'đồng hồ nam', 'kính mát', 'balo', 'cặp sách'
+            ],
+            secondary: [
+                'ví cầm tay', 'đồng hồ nữ', 'gọng kính', 'túi tote', 'ví da',
+                'đồng hồ treo tường', 'tròng kính', 'túi clutch', 'balo laptop', 'cặp da'
+            ],
+            specialized: [
+                'túi gucci', 'ví hermes', 'đồng hồ rolex', 'kính rayban', 'balo jansport',
+                'ví montblanc', 'đồng hồ citizen', 'kính oakley', 'túi backpack', 'cặp công sở'
+            ]
+        },
+        'ĐỒ ĂN VÀ ĐỒ UỐNG': {
+            primary: [
+                'thực phẩm tươi', 'đồ khô', 'bánh kẹo', 'đồ uống', 'thịt',
+                'mì gói', 'kẹo', 'nước ngọt', 'cá', 'ngũ cốc'
+            ],
+            secondary: [
+                'rau củ', 'đồ hộp', 'bánh ngọt', 'bia rượu', 'trái cây',
+                'gia vị', 'snack', 'trà', 'hải sản', 'thức ăn nhanh'
+            ],
+            specialized: [
+                'thịt bò úc', 'mì ý', 'chocolate nhập khẩu', 'rượu vang', 'tôm hùm',
+                'rau hữu cơ', 'đồ hộp organic', 'bánh trung thu', 'whisky', 'cà phê nguyên chất'
+            ]
+        },
+        'ĐỒ DÙNG MẸ VÀ BÉ': {
+            primary: [
+                'sữa bột', 'tã bỉm', 'quần áo trẻ em', 'đồ dùng trẻ em', 'sữa cho bé',
+                'tã dán', 'áo sơ sinh', 'xe đẩy', 'sữa công thức', 'tã quần'
+            ],
+            secondary: [
+                'sữa mẹ', 'bỉm', 'quần áo sơ sinh', 'cũi', 'thức ăn dặm',
+                'sữa bột ngoại', 'khăn sữa', 'ghế ăn', 'đồ chơi sơ sinh', 'bình sữa'
+            ],
+            specialized: [
+                'sữa similac', 'tã pampers', 'áo bodysuit', 'xe đẩy combi', 'sữa nan',
+                'bỉm merries', 'quần yếm', 'cũi đa năng', 'cháo ăn liền', 'bình sữa avent'
+            ]
+        }
+    },
+
+    // Từ khóa theo ngữ cảnh sử dụng
+    CONTEXT_KEYWORDS: {
+        'urgent': ['gấp', 'khẩn cấp', 'cần ngay', 'hỏa tốc', 'emergency'],
+        'bargain': ['giá rẻ', 'khuyến mãi', 'sale', 'giảm giá', 'bargain', 'cheap'],
+        'premium': ['cao cấp', 'sang trọng', 'premium', 'luxury', 'high-end'],
+        'new': ['mới', 'mới tinh', 'chưa sử dụng', 'brand new', 'sealed'],
+        'used': ['đã sử dụng', 'second hand', 'cũ nhưng tốt', 'used', 'pre-owned'],
+        'local': ['gần nhà', 'cùng khu vực', 'local', 'nearby', 'trong vùng']
+    },
+
+    // Từ khóa gợi ý theo mùa/vụ
+    SEASONAL_KEYWORDS: {
+        'tet': ['tết', 'năm mới', 'holiday', 'festival', 'quà tết'],
+        'summer': ['mùa hè', 'summer', 'du lịch', 'vacation', 'nghỉ mát'],
+        'back_to_school': ['tựu trường', 'học sinh', 'sinh viên', 'school', 'university'],
+        'wedding': ['cưới hỏi', 'đám cưới', 'wedding', 'hôn lễ', 'áo cưới']
+    }
+} as const
+
 // Simple Search Helper Functions (No AI - Cost Effective)
 export const SEARCH_HELPERS = {
     // Find category by keyword (simple string matching)
@@ -451,10 +1053,129 @@ export const SEARCH_HELPERS = {
         return [...(DISTRICTS[province as keyof typeof DISTRICTS] || [])]
     },
 
+    // Get wards for a district
+    getWardsForDistrict: (district: string): string[] => {
+        return [...(WARDS[district as keyof typeof WARDS] || [])]
+    },
+
     // Check if location is a major city
     isMajorCity: (location: string): boolean => {
         const majorCities = ['HÀ NỘI', 'TP.HỒ CHÍ MINH', 'ĐÀ NẴNG', 'HẢI PHÒNG', 'CẦN THƠ']
         return majorCities.includes(location)
+    },
+
+    // Check if location is a province
+    isProvince: (location: string): boolean => {
+        return LOCATIONS.includes(location as any)
+    },
+
+    // Check if location is a district
+    isDistrict: (location: string): boolean => {
+        for (const province of Object.keys(DISTRICTS)) {
+            if (DISTRICTS[province as keyof typeof DISTRICTS]?.includes(location)) {
+                return true
+            }
+        }
+        return false
+    },
+
+    // Check if location is a ward
+    isWard: (location: string): boolean => {
+        for (const district of Object.keys(WARDS)) {
+            if (WARDS[district as keyof typeof WARDS]?.includes(location)) {
+                return true
+            }
+        }
+        return false
+    },
+
+    // Get location hierarchy (Province -> District -> Ward)
+    getLocationHierarchy: (location: string): { province?: string; district?: string; ward?: string } => {
+        // Check if it's a ward first
+        for (const [districtKey, wards] of Object.entries(WARDS)) {
+            if (wards.includes(location)) {
+                // Find which province this district belongs to
+                for (const [provinceKey, districts] of Object.entries(DISTRICTS)) {
+                    if (districts.includes(districtKey)) {
+                        return {
+                            province: provinceKey,
+                            district: districtKey,
+                            ward: location
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check if it's a district
+        for (const [provinceKey, districts] of Object.entries(DISTRICTS)) {
+            if (districts.includes(location)) {
+                return {
+                    province: provinceKey,
+                    district: location
+                }
+            }
+        }
+
+        // Check if it's a province
+        if (LOCATIONS.includes(location as any)) {
+            return { province: location }
+        }
+
+        return {}
+    },
+
+    // Get all locations for search suggestions
+    getAllLocations: (): string[] => {
+        const allLocations: string[] = []
+
+        // Add provinces
+        allLocations.push(...LOCATIONS)
+
+        // Add major districts
+        for (const districts of Object.values(DISTRICTS)) {
+            allLocations.push(...districts)
+        }
+
+        // Add major wards
+        for (const wards of Object.values(WARDS)) {
+            allLocations.push(...wards)
+        }
+
+        return allLocations
+    },
+
+    // Enhanced location search
+    searchLocations: (query: string): string[] => {
+        const normalizedQuery = query.toLowerCase().trim()
+        const results: string[] = []
+
+        // Search in provinces
+        for (const location of LOCATIONS) {
+            if (location.toLowerCase().includes(normalizedQuery)) {
+                results.push(location)
+            }
+        }
+
+        // Search in districts
+        for (const [province, districts] of Object.entries(DISTRICTS)) {
+            for (const district of districts) {
+                if (district.toLowerCase().includes(normalizedQuery)) {
+                    results.push(district)
+                }
+            }
+        }
+
+        // Search in wards
+        for (const [district, wards] of Object.entries(WARDS)) {
+            for (const ward of wards) {
+                if (ward.toLowerCase().includes(normalizedQuery)) {
+                    results.push(ward)
+                }
+            }
+        }
+
+        return Array.from(new Set(results)).slice(0, 10)
     },
 
     // Generate simple search suggestions

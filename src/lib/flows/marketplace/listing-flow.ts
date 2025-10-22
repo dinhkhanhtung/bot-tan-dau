@@ -8,7 +8,7 @@ import {
     createGenericElement
 } from '../../facebook-api'
 import { formatCurrency, generateId } from '../../utils'
-import { CATEGORIES, LOCATIONS, PRICE_RANGES } from '../../constants'
+import { CATEGORIES, LOCATIONS, PRICE_RANGES, KEYWORDS_SYSTEM } from '../../constants'
 
 /**
  * Listing Flow - Clean, modular implementation
@@ -51,18 +51,21 @@ export class ListingFlow extends BaseFlow {
             // Route to appropriate step handler
             switch (currentStep) {
                 case 0:
-                    await this.handleTitleStep(user, text)
+                    await this.handleKeywordsStep(user, text)
                     break
                 case 1:
                     await this.handleCategoryStep(user, text)
                     break
                 case 2:
-                    await this.handlePriceStep(user, text)
+                    await this.handleTitleStep(user, text)
                     break
                 case 3:
-                    await this.handleDescriptionStep(user, text)
+                    await this.handlePriceStep(user, text)
                     break
                 case 4:
+                    await this.handleDescriptionStep(user, text)
+                    break
+                case 5:
                     await this.handleLocationStep(user, text)
                     break
                 default:
@@ -84,9 +87,9 @@ export class ListingFlow extends BaseFlow {
 
             if (payload === 'LISTING') {
                 await this.startListing(user)
-            } else if (payload.startsWith('LISTING_CATEGORY_')) {
+            } else if (payload.startsWith('SELECT_CATEGORY_')) {
                 await this.handleCategoryPostback(user, payload, session)
-            } else if (payload.startsWith('LISTING_LOCATION_')) {
+            } else if (payload.startsWith('SELECT_LOCATION_')) {
                 await this.handleLocationPostback(user, payload, session)
             } else if (payload === 'CANCEL_LISTING') {
                 await this.cancelListing(user)
@@ -120,10 +123,42 @@ export class ListingFlow extends BaseFlow {
             // Create new session
             await SessionManager.createSession(user.facebook_id, 'listing', 0, {})
 
-            // No intro message - user already has buttons from welcome
+            // Send keywords prompt
+            await sendMessage(user.facebook_id,
+                `🚀 ĐĂNG TIN BÁN HÀNG\n━━━━━━━━━━━━━━━━━━━━\n📝 Bước 1/6: Từ khóa sản phẩm\n💡 Chọn từ khóa phù hợp để người mua dễ tìm thấy\n━━━━━━━━━━━━━━━━━━━━`)
+
+            // Send popular keywords
+            await this.sendKeywordsButtons(user.facebook_id)
 
         } catch (error) {
             await this.handleError(user, error, 'startListing')
+        }
+    }
+
+    /**
+     * Handle keywords selection step
+     */
+    private async handleKeywordsStep(user: any, text: string): Promise<void> {
+        try {
+            console.log(`🔑 Processing keywords step for user: ${user.facebook_id}`)
+
+            // Update session with keywords
+            await SessionManager.updateSession(user.facebook_id, {
+                step: 1,
+                data: { keywords: text.trim() }
+            })
+
+            // Send category prompt
+            await sendMessage(user.facebook_id,
+                `✅ Từ khóa: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📂 Bước 2/6: Danh mục sản phẩm\n💡 Chọn danh mục phù hợp với sản phẩm của bạn\n━━━━━━━━━━━━━━━━━━━━`)
+
+            // Send category buttons
+            await this.sendCategoryButtons(user.facebook_id)
+
+            console.log('✅ Keywords step completed, moved to category step')
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleKeywordsStep')
         }
     }
 
@@ -142,13 +177,13 @@ export class ListingFlow extends BaseFlow {
 
             // Update session with title
             await SessionManager.updateSession(user.facebook_id, {
-                step: 1,
+                step: 2,
                 data: { title: text.trim() }
             })
 
             // Send category prompt
             await sendMessage(user.facebook_id,
-                `✅ Tiêu đề: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📂 Bước 2/5: Danh mục\n💡 Chọn danh mục phù hợp với sản phẩm\n━━━━━━━━━━━━━━━━━━━━`)
+                `✅ Tiêu đề: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📂 Bước 3/6: Danh mục sản phẩm\n💡 Chọn danh mục phù hợp với sản phẩm của bạn\n━━━━━━━━━━━━━━━━━━━━`)
 
             // Send category buttons
             await this.sendCategoryButtons(user.facebook_id)
@@ -277,7 +312,7 @@ export class ListingFlow extends BaseFlow {
         try {
             console.log(`📂 Processing category postback for user: ${user.facebook_id}`)
 
-            const category = payload.replace('LISTING_CATEGORY_', '')
+            const category = payload.replace('SELECT_CATEGORY_', '')
             console.log(`[DEBUG] Selected category: ${category}`)
 
             // Get current session data
@@ -285,16 +320,16 @@ export class ListingFlow extends BaseFlow {
 
             // Update session with category
             await SessionManager.updateSession(user.facebook_id, {
-                step: 2,
+                step: 3,
                 data: {
                     ...currentData,
                     category: category
                 }
             })
 
-            // Send price prompt
+            // Send title prompt
             await sendMessage(user.facebook_id,
-                `✅ Danh mục: ${category}\n━━━━━━━━━━━━━━━━━━━━\n💰 Bước 3/5: Giá bán\n💡 Nhập giá bán của sản phẩm\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập giá (VNĐ):`)
+                `✅ Danh mục: ${category}\n━━━━━━━━━━━━━━━━━━━━\n� Bước 3/6: Tiêu đề sản phẩm\n💡 Nhập tiêu đề ngắn gọn, hấp dẫn cho sản phẩm\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập tiêu đề:`)
 
             console.log('✅ Category step completed, moved to price step')
 
@@ -310,7 +345,7 @@ export class ListingFlow extends BaseFlow {
         try {
             console.log(`📍 Processing location postback for user: ${user.facebook_id}`)
 
-            const location = payload.replace('LISTING_LOCATION_', '')
+            const location = payload.replace('SELECT_LOCATION_', '')
             console.log(`[DEBUG] Selected location: ${location}`)
 
             // Get current session data
@@ -398,7 +433,7 @@ export class ListingFlow extends BaseFlow {
      */
     private async sendCategoryButtons(facebookId: string): Promise<void> {
         const quickReplies = Object.keys(CATEGORIES).map(category =>
-            createQuickReply(category, `LISTING_CATEGORY_${category}`)
+            createQuickReply(category, `SELECT_CATEGORY_${category}`)
         )
 
         await sendQuickReply(facebookId, 'Chọn danh mục sản phẩm:', quickReplies)
@@ -409,9 +444,45 @@ export class ListingFlow extends BaseFlow {
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
         const quickReplies = Object.keys(LOCATIONS).map(location =>
-            createQuickReply(location, `LISTING_LOCATION_${location}`)
+            createQuickReply(location, `SELECT_LOCATION_${location}`)
         )
 
         await sendQuickReply(facebookId, 'Chọn địa điểm:', quickReplies)
+    }
+
+    /**
+     * Send keywords buttons
+     */
+    private async sendKeywordsButtons(facebookId: string): Promise<void> {
+        const quickReplies = KEYWORDS_SYSTEM.POPULAR_KEYWORDS.slice(0, 10).map(keyword =>
+            createQuickReply(keyword, `LISTING_KEYWORD_${keyword}`)
+        )
+
+        // Add "Khác" option for custom input
+        quickReplies.push(createQuickReply('🔍 Từ khóa khác', 'LISTING_KEYWORD_CUSTOM'))
+
+        await sendQuickReply(facebookId, 'Chọn từ khóa sản phẩm:', quickReplies)
+    }
+
+    /**
+     * Send category-specific keywords
+     */
+    private async sendCategoryKeywordsButtons(facebookId: string, category: string): Promise<void> {
+        const categoryKeywords = KEYWORDS_SYSTEM.CATEGORIES_KEYWORDS[category as keyof typeof KEYWORDS_SYSTEM.CATEGORIES_KEYWORDS]
+
+        if (!categoryKeywords) {
+            await this.sendKeywordsButtons(facebookId)
+            return
+        }
+
+        const quickReplies = [
+            ...categoryKeywords.primary.slice(0, 8).map(keyword =>
+                createQuickReply(keyword, `LISTING_KEYWORD_${keyword}`)
+            ),
+            createQuickReply('🔙 Từ khóa phổ biến', 'LISTING_KEYWORD_POPULAR'),
+            createQuickReply('🔍 Từ khóa khác', 'LISTING_KEYWORD_CUSTOM')
+        ]
+
+        await sendQuickReply(facebookId, `Từ khóa cho ${category}:`, quickReplies)
     }
 }

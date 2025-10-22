@@ -20,10 +20,10 @@ export async function sendChatBotWelcome(userId: string, userStatus: string): Pr
             userId,
             '🤖 BOT MODE ACTIVATED\nChọn chức năng:',
             [
-                createQuickReply('🛒 TÌM KIẾM HÀNG HÓA', 'SEARCH_PRODUCTS'),
+                createQuickReply('🛒 TÌM KIẾM HÀNG HÓA', 'SEARCH'),
                 createQuickReply('📝 ĐĂNG BÁN/CẬP NHẬT', 'CREATE_LISTING'),
-                createQuickReply('💬 HỖ TRỢ ADMIN', 'SUPPORT_ADMIN'),
-                createQuickReply('ℹ️ HƯỚNG DẪN', 'GET_HELP'),
+                createQuickReply('💬 HỖ TRỢ ADMIN', 'CONTACT_ADMIN'),
+                createQuickReply('ℹ️ HƯỚNG DẪN', 'INFO'),
                 createQuickReply('🚪 THOÁT BOT', 'EXIT_BOT')
             ]
         );

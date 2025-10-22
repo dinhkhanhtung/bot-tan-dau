@@ -1,4 +1,4 @@
-import { BaseFlow } from '../../core/flow-base'
+ import { BaseFlow } from '../../core/flow-base'
 import { SessionManager } from '../../core/session-manager'
 import {
     sendMessage,
@@ -8,7 +8,7 @@ import {
     createGenericElement
 } from '../../facebook-api'
 import { formatCurrency } from '../../utils'
-import { CATEGORIES, LOCATIONS } from '../../constants'
+import { CATEGORIES, LOCATIONS, KEYWORDS_SYSTEM, SEARCH_HELPERS } from '../../constants'
 
 /**
  * Search Flow - Clean, modular implementation
@@ -84,12 +84,20 @@ export class SearchFlow extends BaseFlow {
                 await this.startLocationSearch(user)
             } else if (payload === 'SEARCH_ALL') {
                 await this.performSearchAll(user)
-            } else if (payload.startsWith('SEARCH_CATEGORY_')) {
+            } else if (payload === 'QUICK_SEARCH') {
+                await this.startQuickSearch(user)
+            } else if (payload.startsWith('SELECT_CATEGORY_')) {
                 await this.handleCategoryPostback(user, payload, session)
-            } else if (payload.startsWith('SEARCH_LOCATION_')) {
+            } else if (payload.startsWith('SELECT_LOCATION_')) {
                 await this.handleLocationPostback(user, payload, session)
             } else if (payload.startsWith('VIEW_LISTING_')) {
                 await this.handleViewListingPostback(user, payload, session)
+            } else if (payload.startsWith('SEARCH_SUGGESTION_')) {
+                await this.handleSearchSuggestion(user, payload, session)
+            } else if (payload.startsWith('QUICK_KEYWORD_')) {
+                await this.handleQuickKeywordSearch(user, payload, session)
+            } else if (payload.startsWith('CONTINUE_SEARCH_ALL_')) {
+                await this.handleContinueSearchAll(user, payload, session)
             } else if (payload === 'CANCEL_SEARCH') {
                 await this.cancelSearch(user)
             }
@@ -99,31 +107,23 @@ export class SearchFlow extends BaseFlow {
         }
     }
 
-    /**
-     * Start search process
-     */
-    private async startSearch(user: any, keyword: string): Promise<void> {
-        try {
-            console.log(`🔍 Starting search for user: ${user.facebook_id}`)
+/**
+ * Start search process - Button-only interface
+ */
+private async startSearch(user: any, keyword?: string): Promise<void> {
+    try {
+        console.log(`🔍 Starting button-only search for user: ${user.facebook_id}`)
 
-            // Create new session
-            await SessionManager.createSession(user.facebook_id, 'search', 0, {
-                keyword: keyword.trim()
-            })
+        // Create new session without keyword dependency
+        await SessionManager.createSession(user.facebook_id, 'search', 0, {})
 
-            // No intro message - user already has buttons from welcome
+        // Send enhanced search options with quick search buttons
+        await this.sendEnhancedSearchOptions(user.facebook_id)
 
-            // Send search options
-            await sendQuickReply(user.facebook_id, 'Chọn cách tìm kiếm:', [
-                createQuickReply('📂 Theo danh mục', 'CATEGORY_SEARCH'),
-                createQuickReply('📍 Theo địa điểm', 'LOCATION_SEARCH'),
-                createQuickReply('🔍 Tìm tất cả', 'SEARCH_ALL')
-            ])
-
-        } catch (error) {
-            await this.handleError(user, error, 'startSearch')
-        }
+    } catch (error) {
+        await this.handleError(user, error, 'startSearch')
     }
+}
 
     /**
      * Handle keyword step
@@ -191,7 +191,7 @@ export class SearchFlow extends BaseFlow {
         try {
             console.log(`📂 Processing category postback for user: ${user.facebook_id}`)
 
-            const category = payload.replace('SEARCH_CATEGORY_', '')
+            const category = payload.replace('SELECT_CATEGORY_', '')
             console.log(`[DEBUG] Selected category: ${category}`)
 
             // Get current session data
@@ -227,7 +227,7 @@ export class SearchFlow extends BaseFlow {
         try {
             console.log(`📍 Processing location postback for user: ${user.facebook_id}`)
 
-            const location = payload.replace('SEARCH_LOCATION_', '')
+            const location = payload.replace('SELECT_LOCATION_', '')
             console.log(`[DEBUG] Selected location: ${location}`)
 
             // Get current session data
@@ -295,55 +295,76 @@ export class SearchFlow extends BaseFlow {
     }
 
     /**
-     * Perform search
+     * Perform search with enhanced keyword matching
      */
     private async performSearch(user: any): Promise<void> {
         try {
-            console.log(`🔍 Performing search for user: ${user.facebook_id}`)
+            console.log(`🔍 Performing enhanced search for user: ${user.facebook_id}`)
 
             // Get search criteria
             const searchData = await SessionManager.getSessionData(user.facebook_id)
             const { keyword, category, location } = searchData
 
-            // Build search query
+            // Get all active listings
             const { supabaseAdmin } = await import('../../supabase')
             let query = supabaseAdmin
                 .from('listings')
                 .select('*')
                 .eq('status', 'active')
 
-            if (keyword) {
-                query = query.ilike('title', `%${keyword}%`)
-            }
+            const { data: allListings, error: fetchError } = await query
 
-            if (category) {
-                query = query.eq('category', category)
-            }
-
-            if (location) {
-                query = query.eq('location', location)
-            }
-
-            const { data: listings, error } = await query.limit(10)
-
-            if (error) {
-                console.error('❌ Search error:', error)
+            if (fetchError) {
+                console.error('❌ Search error:', fetchError)
                 await this.sendErrorMessage(user.facebook_id)
                 return
             }
 
-            if (!listings || listings.length === 0) {
+            if (!allListings || allListings.length === 0) {
                 await sendMessage(user.facebook_id, '❌ Không tìm thấy sản phẩm nào phù hợp!')
                 await this.cancelSearch(user)
                 return
             }
 
-            // Send search results
-            await sendMessage(user.facebook_id, 
-                `🔍 KẾT QUẢ TÌM KIẾM\n━━━━━━━━━━━━━━━━━━━━\n📊 Tìm thấy ${listings.length} sản phẩm\n━━━━━━━━━━━━━━━━━━━━`)
+            // Apply intelligent filtering using KEYWORDS_SYSTEM
+            let filteredListings = allListings
 
-            // Send listings as generic template
-            const elements = listings.map(listing => 
+            // Filter by category if specified
+            if (category) {
+                filteredListings = filteredListings.filter(listing =>
+                    listing.category === category
+                )
+            }
+
+            // Filter by location if specified
+            if (location) {
+                filteredListings = filteredListings.filter(listing =>
+                    listing.location === location
+                )
+            }
+
+            // Apply keyword matching if specified
+            if (keyword && keyword.trim()) {
+                // Use enhanced search with keyword system
+                filteredListings = this.searchWithKeywords(filteredListings, keyword.trim())
+            }
+
+            // Limit results
+            const finalListings = filteredListings.slice(0, 10)
+
+            if (finalListings.length === 0) {
+                await sendMessage(user.facebook_id,
+                    `❌ Không tìm thấy sản phẩm nào phù hợp!\n━━━━━━━━━━━━━━━━━━━━\n💡 Thử tìm kiếm với từ khóa khác hoặc mở rộng vùng tìm kiếm`)
+                await this.cancelSearch(user)
+                return
+            }
+
+            // Send enhanced search results
+            const searchSummary = this.generateSearchSummary(keyword, category, location, finalListings.length)
+            await sendMessage(user.facebook_id, searchSummary)
+
+            // Send listings as generic template with enhanced info
+            const elements = finalListings.map(listing =>
                 createGenericElement(
                     listing.title,
                     `${formatCurrency(listing.price)} • ${listing.location}`,
@@ -360,14 +381,115 @@ export class SearchFlow extends BaseFlow {
 
             await sendGenericTemplate(user.facebook_id, elements)
 
+            // Add search suggestions if results are few
+            if (finalListings.length < 5 && finalListings.length > 0) {
+                await this.sendSearchSuggestions(user.facebook_id, keyword, category)
+            }
+
             // Clear session
             await SessionManager.deleteSession(user.facebook_id)
 
-            console.log('✅ Search completed successfully')
+            console.log('✅ Enhanced search completed successfully')
 
         } catch (error) {
             await this.handleError(user, error, 'performSearch')
         }
+    }
+
+    /**
+     * Enhanced search with keyword system
+     */
+    private searchWithKeywords(listings: any[], keyword: string): any[] {
+        // Use the enhanced search helpers from constants
+        return SEARCH_HELPERS.searchWithHashtags(listings, keyword)
+    }
+
+    /**
+     * Generate search summary message
+     */
+    private generateSearchSummary(keyword?: string, category?: string, location?: string, resultCount?: number): string {
+        let summary = `🔍 KẾT QUẢ TÌM KIẾM\n━━━━━━━━━━━━━━━━━━━━\n`
+
+        if (keyword) summary += `🔑 Từ khóa: ${keyword}\n`
+        if (category) summary += `📂 Danh mục: ${category}\n`
+        if (location) summary += `📍 Địa điểm: ${location}\n`
+
+        summary += `━━━━━━━━━━━━━━━━━━━━\n`
+        summary += `📊 Tìm thấy ${resultCount} sản phẩm\n`
+        summary += `━━━━━━━━━━━━━━━━━━━━`
+
+        return summary
+    }
+
+    /**
+     * Send search suggestions when results are limited
+     */
+    private async sendSearchSuggestions(facebookId: string, currentKeyword?: string, category?: string): Promise<void> {
+        try {
+            const suggestions = []
+
+            // Suggest popular keywords
+            if (currentKeyword) {
+                const relatedKeywords = this.findRelatedKeywords(currentKeyword)
+                suggestions.push(...relatedKeywords.slice(0, 3))
+            }
+
+            // Suggest related categories
+            if (category) {
+                const relatedCategories = this.findRelatedCategories(category)
+                suggestions.push(...relatedCategories.slice(0, 2))
+            }
+
+            if (suggestions.length > 0) {
+                const suggestionButtons = suggestions.map(suggestion =>
+                    createQuickReply(suggestion, `SEARCH_SUGGESTION_${suggestion}`)
+                )
+
+                await sendQuickReply(facebookId,
+                    '💡 Gợi ý tìm kiếm khác:',
+                    suggestionButtons
+                )
+            }
+        } catch (error) {
+            console.error('Error sending search suggestions:', error)
+        }
+    }
+
+    /**
+     * Find related keywords for suggestions
+     */
+    private findRelatedKeywords(keyword: string): string[] {
+        const related = []
+
+        // Check popular keywords
+        for (const popularKeyword of KEYWORDS_SYSTEM.POPULAR_KEYWORDS) {
+            if (popularKeyword.includes(keyword) || keyword.includes(popularKeyword)) {
+                related.push(popularKeyword)
+            }
+        }
+
+        return related
+    }
+
+    /**
+     * Find related categories for suggestions
+     */
+    private findRelatedCategories(category: string): string[] {
+        const related = []
+
+        // Simple category relationship mapping
+        const categoryRelations: { [key: string]: string[] } = {
+            'Y TẾ': ['ĐỒ GIA DỤNG', 'ẨM THỰC'],
+            'Ô TÔ': ['ĐIỆN TỬ', 'DỊCH VỤ'],
+            'ĐIỆN TỬ': ['Ô TÔ', 'ĐỒ GIA DỤNG'],
+            'THỜI TRANG': ['ĐỒ GIA DỤNG', 'ẨM THỰC'],
+            'ẨM THỰC': ['ĐỒ GIA DỤNG', 'DỊCH VỤ']
+        }
+
+        const relations = categoryRelations[category] || []
+        related.push(...relations)
+
+        return related
     }
 
     /**
@@ -387,7 +509,7 @@ export class SearchFlow extends BaseFlow {
      */
     private async sendCategoryButtons(facebookId: string): Promise<void> {
         const quickReplies = Object.keys(CATEGORIES).map(category =>
-            createQuickReply(category, `SEARCH_CATEGORY_${category}`)
+            createQuickReply(category, `SELECT_CATEGORY_${category}`)
         )
 
         await sendQuickReply(facebookId, 'Chọn danh mục:', quickReplies)
@@ -398,10 +520,30 @@ export class SearchFlow extends BaseFlow {
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
         const quickReplies = Object.keys(LOCATIONS).map(location =>
-            createQuickReply(location, `SEARCH_LOCATION_${location}`)
+            createQuickReply(location, `SELECT_LOCATION_${location}`)
         )
 
         await sendQuickReply(facebookId, 'Chọn địa điểm:', quickReplies)
+    }
+
+    /**
+     * Send enhanced search options with quick search buttons
+     */
+    private async sendEnhancedSearchOptions(facebookId: string): Promise<void> {
+        try {
+            console.log(`🔍 Sending enhanced search options for user: ${facebookId}`)
+
+            // Send main search options
+            await sendQuickReply(facebookId, '🔍 TÌM KIẾM SẢN PHẨM\n━━━━━━━━━━━━━━━━━━━━\nChọn cách tìm kiếm phù hợp:', [
+                createQuickReply('📂 Theo danh mục', 'CATEGORY_SEARCH'),
+                createQuickReply('📍 Theo địa điểm', 'LOCATION_SEARCH'),
+                createQuickReply('🔍 Tìm tất cả', 'SEARCH_ALL'),
+                createQuickReply('⚡ Tìm nhanh', 'QUICK_SEARCH')
+            ])
+
+        } catch (error) {
+            await this.handleError({ facebook_id: facebookId }, error, 'sendEnhancedSearchOptions')
+        }
     }
 
     /**
@@ -471,20 +613,238 @@ export class SearchFlow extends BaseFlow {
     }
 
     /**
-     * Perform search all (no filters)
+     * Handle search suggestion postback
+     */
+    private async handleSearchSuggestion(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`💡 Processing search suggestion for user: ${user.facebook_id}`)
+
+            const suggestion = payload.replace('SEARCH_SUGGESTION_', '')
+            console.log(`[DEBUG] Search suggestion: ${suggestion}`)
+
+            // Create new search session with suggestion
+            await SessionManager.createSession(user.facebook_id, 'search', 3, {
+                keyword: suggestion
+            })
+
+            // Perform search with suggestion
+            await this.performSearch(user)
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleSearchSuggestion')
+        }
+    }
+
+    /**
+     * Start quick search with popular keywords
+     */
+    private async startQuickSearch(user: any): Promise<void> {
+        try {
+            console.log(`⚡ Starting quick search for user: ${user.facebook_id}`)
+
+            // Send popular keywords for quick selection
+            await sendQuickReply(user.facebook_id, '⚡ TÌM NHANH\n━━━━━━━━━━━━━━━━━━━━\nChọn từ khóa phổ biến:', [
+                createQuickReply('🏠 Nhà đất', 'QUICK_KEYWORD_#nhadat'),
+                createQuickReply('🚗 Ô tô xe máy', 'QUICK_KEYWORD_#oto'),
+                createQuickReply('📱 Điện thoại', 'QUICK_KEYWORD_#dienthoai'),
+                createQuickReply('💻 Laptop', 'QUICK_KEYWORD_#laptop'),
+                createQuickReply('👨‍🏫 Gia sư', 'QUICK_KEYWORD_#giasu'),
+                createQuickReply('💆 Massage', 'QUICK_KEYWORD_#massage'),
+                createQuickReply('🍜 Món ăn', 'QUICK_KEYWORD_#monan'),
+                createQuickReply('🏥 Y tế', 'QUICK_KEYWORD_#yte'),
+                createQuickReply('👕 Thời trang', 'QUICK_KEYWORD_#quanao'),
+                createQuickReply('🔧 Sửa chữa', 'QUICK_KEYWORD_#sua'),
+                createQuickReply('📍 Hà Nội', 'QUICK_KEYWORD_#hanoi'),
+                createQuickReply('🏙️ TP.HCM', 'QUICK_KEYWORD_#hcm')
+            ])
+
+        } catch (error) {
+            await this.handleError(user, error, 'startQuickSearch')
+        }
+    }
+
+    /**
+     * Perform search all (no filters) - Enhanced version
      */
     private async performSearchAll(user: any): Promise<void> {
         try {
-            console.log(`🔍 Performing search all for user: ${user.facebook_id}`)
+            console.log(`🔍 Performing enhanced search all for user: ${user.facebook_id}`)
 
-            // Create session with no filters
-            await SessionManager.createSession(user.facebook_id, 'search', 3, {})
+            // Get all active listings with limit for performance
+            const { supabaseAdmin } = await import('../../supabase')
+            const { data: allListings, error: fetchError } = await supabaseAdmin
+                .from('listings')
+                .select('*')
+                .eq('status', 'active')
+                .order('created_at', { ascending: false }) // Latest first
+                .limit(20) // Limit to prevent overload
 
-            // Perform search with no filters
-            await this.performSearch(user)
+            if (fetchError) {
+                console.error('❌ Search all error:', fetchError)
+                await this.sendErrorMessage(user.facebook_id)
+                return
+            }
+
+            if (!allListings || allListings.length === 0) {
+                await sendMessage(user.facebook_id, '❌ Hiện tại chưa có sản phẩm nào trong hệ thống!')
+                await this.cancelSearch(user)
+                return
+            }
+
+            // Send enhanced search results with better formatting
+            await sendMessage(user.facebook_id,
+                `🔍 TẤT CẢ SẢN PHẨM (${allListings.length} sản phẩm mới nhất)\n━━━━━━━━━━━━━━━━━━━━\n💡 Hiển thị các sản phẩm mới nhất trong hệ thống\n━━━━━━━━━━━━━━━━━━━━`)
+
+            // Send listings in batches of 10 for better UX
+            const batches = this.chunkArray(allListings, 10)
+
+            for (let i = 0; i < batches.length; i++) {
+                const batch = batches[i]
+                const isLastBatch = i === batches.length - 1
+
+                const elements = batch.map(listing =>
+                    createGenericElement(
+                        listing.title,
+                        `${formatCurrency(listing.price)} • ${listing.location}${listing.category ? ` • ${listing.category}` : ''}`,
+                        undefined, // No image for now
+                        [
+                            {
+                                type: 'postback',
+                                title: '👁️ Xem chi tiết',
+                                payload: `VIEW_LISTING_${listing.id}`
+                            }
+                        ]
+                    )
+                )
+
+                await sendGenericTemplate(user.facebook_id, elements)
+
+                // Add continue prompt for non-last batches
+                if (!isLastBatch) {
+                    await sendQuickReply(user.facebook_id,
+                        `📊 Đã hiển thị ${Math.min((i + 1) * 10, allListings.length)}/${allListings.length} sản phẩm`,
+                        [
+                            createQuickReply('▶️ Tiếp tục xem', `CONTINUE_SEARCH_ALL_${i + 1}`),
+                            createQuickReply('🔍 Tìm kiếm khác', 'SEARCH')
+                        ]
+                    )
+                    break // Wait for user response before showing next batch
+                }
+            }
+
+            // Clear session
+            await SessionManager.deleteSession(user.facebook_id)
+
+            console.log('✅ Enhanced search all completed successfully')
 
         } catch (error) {
             await this.handleError(user, error, 'performSearchAll')
         }
+    }
+
+    /**
+     * Handle quick keyword search
+     */
+    private async handleQuickKeywordSearch(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`⚡ Processing quick keyword search for user: ${user.facebook_id}`)
+
+            const hashtag = payload.replace('QUICK_KEYWORD_', '')
+            console.log(`[DEBUG] Quick keyword: ${hashtag}`)
+
+            // Create search session with hashtag
+            await SessionManager.createSession(user.facebook_id, 'search', 3, {
+                keyword: hashtag
+            })
+
+            // Perform search with hashtag
+            await this.performSearch(user)
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleQuickKeywordSearch')
+        }
+    }
+
+    /**
+     * Handle continue search all
+     */
+    private async handleContinueSearchAll(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`▶️ Processing continue search all for user: ${user.facebook_id}`)
+
+            const batchIndex = parseInt(payload.replace('CONTINUE_SEARCH_ALL_', ''))
+            console.log(`[DEBUG] Continue from batch: ${batchIndex}`)
+
+            // Get all active listings
+            const { supabaseAdmin } = await import('../../supabase')
+            const { data: allListings, error: fetchError } = await supabaseAdmin
+                .from('listings')
+                .select('*')
+                .eq('status', 'active')
+                .order('created_at', { ascending: false })
+                .limit(20)
+
+            if (fetchError || !allListings) {
+                await this.sendErrorMessage(user.facebook_id)
+                return
+            }
+
+            // Calculate which batch to show
+            const startIndex = batchIndex * 10
+            const endIndex = Math.min(startIndex + 10, allListings.length)
+            const batch = allListings.slice(startIndex, endIndex)
+            const isLastBatch = endIndex >= allListings.length
+
+            if (batch.length === 0) {
+                await sendMessage(user.facebook_id, '❌ Không còn sản phẩm nào để hiển thị!')
+                return
+            }
+
+            // Send next batch
+            const elements = batch.map(listing =>
+                createGenericElement(
+                    listing.title,
+                    `${formatCurrency(listing.price)} • ${listing.location}${listing.category ? ` • ${listing.category}` : ''}`,
+                    undefined,
+                    [
+                        {
+                            type: 'postback',
+                            title: '👁️ Xem chi tiết',
+                            payload: `VIEW_LISTING_${listing.id}`
+                        }
+                    ]
+                )
+            )
+
+            await sendGenericTemplate(user.facebook_id, elements)
+
+            // Add continue prompt if not last batch
+            if (!isLastBatch) {
+                await sendQuickReply(user.facebook_id,
+                    `📊 Đã hiển thị ${endIndex}/${allListings.length} sản phẩm`,
+                    [
+                        createQuickReply('▶️ Tiếp tục xem', `CONTINUE_SEARCH_ALL_${batchIndex + 1}`),
+                        createQuickReply('🔍 Tìm kiếm khác', 'SEARCH')
+                    ]
+                )
+            } else {
+                await sendMessage(user.facebook_id,
+                    `✅ Đã hiển thị tất cả ${allListings.length} sản phẩm mới nhất`)
+            }
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleContinueSearchAll')
+        }
+    }
+
+    /**
+     * Helper function to chunk array into smaller arrays
+     */
+    private chunkArray<T>(array: T[], chunkSize: number): T[][] {
+        const chunks: T[][] = []
+        for (let i = 0; i < array.length; i += chunkSize) {
+            chunks.push(array.slice(i, i + chunkSize))
+        }
+        return chunks
     }
 }

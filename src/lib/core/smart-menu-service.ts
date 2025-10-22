@@ -164,7 +164,7 @@ export class SmartMenuService {
             },
             {
                 title: '❓ TRỢ GIÚP',
-                payload: 'GET_HELP',
+                payload: 'INFO',
                 description: 'Xem hướng dẫn sử dụng'
             }
         ]
