@@ -47,16 +47,16 @@ export class SearchFlow extends BaseFlow {
             const currentStep = session.step || 0
             console.log(`🔍 Current step: ${currentStep}`)
 
-            // Route to appropriate step handler - ignore text, always show buttons
+            // Route to appropriate step handler
             switch (currentStep) {
                 case 0:
-                    await this.sendCategoryButtons(user.facebook_id)
+                    await this.handleKeywordStep(user, text)
                     break
                 case 1:
-                    await this.sendCategoryButtons(user.facebook_id)
+                    await this.handleCategoryStep(user, text)
                     break
                 case 2:
-                    await this.sendLocationButtons(user.facebook_id)
+                    await this.handleLocationStep(user, text)
                     break
                 default:
                     console.log(`❌ Unknown step: ${currentStep}`)
@@ -76,17 +76,14 @@ export class SearchFlow extends BaseFlow {
             this.logActivity(user, 'handlePostback', { payload, session })
 
             if (payload === 'SEARCH') {
-                // Start search flow with buttons only
-                await this.startSearch(user, '')
+                // Start search flow by sending option buttons (no keyword input)
+                await this.sendSearchOptions(user.facebook_id)
             } else if (payload === 'CATEGORY_SEARCH') {
-                await SessionManager.updateSession(user.facebook_id, { step: 1, data: {} })
-                await this.sendCategoryButtons(user.facebook_id)
+                await this.startCategorySearch(user)
             } else if (payload === 'LOCATION_SEARCH') {
-                await SessionManager.updateSession(user.facebook_id, { step: 2, data: {} })
-                await this.sendLocationButtons(user.facebook_id)
+                await this.startLocationSearch(user)
             } else if (payload === 'SEARCH_ALL') {
-                await SessionManager.updateSession(user.facebook_id, { step: 3, data: {} })
-                await this.performSearch(user)
+                await this.performSearchAll(user)
             } else if (payload.startsWith('CATEGORY_')) {
                 await this.handleCategoryPostback(user, payload, session)
             } else if (payload.startsWith('LOCATION_')) {
@@ -400,10 +397,94 @@ export class SearchFlow extends BaseFlow {
      * Send location buttons
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
-        const quickReplies = Object.keys(LOCATIONS).map(location => 
+        const quickReplies = Object.keys(LOCATIONS).map(location =>
             createQuickReply(location, `LOCATION_${location}`)
         )
 
         await sendQuickReply(facebookId, 'Chọn địa điểm:', quickReplies)
+    }
+
+    /**
+     * Send search options (button-only interface)
+     */
+    private async sendSearchOptions(facebookId: string): Promise<void> {
+        try {
+            console.log(`🔍 Sending search options for user: ${facebookId}`)
+
+            // Create new session for search
+            await SessionManager.createSession(facebookId, 'search', 0, {})
+
+            // Send search options
+            await sendQuickReply(facebookId, 'Chọn cách tìm kiếm:', [
+                createQuickReply('📂 Theo danh mục', 'CATEGORY_SEARCH'),
+                createQuickReply('📍 Theo địa điểm', 'LOCATION_SEARCH'),
+                createQuickReply('🔍 Tìm tất cả', 'SEARCH_ALL')
+            ])
+
+        } catch (error) {
+            await this.handleError({ facebook_id: facebookId }, error, 'sendSearchOptions')
+        }
+    }
+
+    /**
+     * Start category-based search
+     */
+    private async startCategorySearch(user: any): Promise<void> {
+        try {
+            console.log(`📂 Starting category search for user: ${user.facebook_id}`)
+
+            // Create session starting from category step
+            await SessionManager.createSession(user.facebook_id, 'search', 1, {})
+
+            // Send category prompt
+            await sendMessage(user.facebook_id,
+                `📂 CHỌN DANH MỤC TÌM KIẾM\n━━━━━━━━━━━━━━━━━━━━\n💡 Chọn danh mục để tìm sản phẩm phù hợp\n━━━━━━━━━━━━━━━━━━━━`)
+
+            // Send category buttons
+            await this.sendCategoryButtons(user.facebook_id)
+
+        } catch (error) {
+            await this.handleError(user, error, 'startCategorySearch')
+        }
+    }
+
+    /**
+     * Start location-based search
+     */
+    private async startLocationSearch(user: any): Promise<void> {
+        try {
+            console.log(`📍 Starting location search for user: ${user.facebook_id}`)
+
+            // Create session starting from location step
+            await SessionManager.createSession(user.facebook_id, 'search', 2, {})
+
+            // Send location prompt
+            await sendMessage(user.facebook_id,
+                `📍 CHỌN ĐỊA ĐIỂM TÌM KIẾM\n━━━━━━━━━━━━━━━━━━━━\n💡 Chọn địa điểm để tìm sản phẩm gần bạn\n━━━━━━━━━━━━━━━━━━━━`)
+
+            // Send location buttons
+            await this.sendLocationButtons(user.facebook_id)
+
+        } catch (error) {
+            await this.handleError(user, error, 'startLocationSearch')
+        }
+    }
+
+    /**
+     * Perform search all (no filters)
+     */
+    private async performSearchAll(user: any): Promise<void> {
+        try {
+            console.log(`🔍 Performing search all for user: ${user.facebook_id}`)
+
+            // Create session with no filters
+            await SessionManager.createSession(user.facebook_id, 'search', 3, {})
+
+            // Perform search with no filters
+            await this.performSearch(user)
+
+        } catch (error) {
+            await this.handleError(user, error, 'performSearchAll')
+        }
     }
 }

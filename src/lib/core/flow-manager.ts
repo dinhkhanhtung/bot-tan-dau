@@ -213,7 +213,7 @@ export class FlowManager {
         const triggers: { [key: string]: string[] } = {
             'registration': ['REGISTER', 'DKT'],
             'listing': ['LISTING', 'LIST'],
-            'search': ['SEARCH', 'FIND'],
+            'search': ['SEARCH', 'FIND', 'CATEGORY_SEARCH', 'LOCATION_SEARCH', 'SEARCH_ALL'],
             'community': ['COMMUNITY'],
             'payment': ['PAYMENT']
         }
