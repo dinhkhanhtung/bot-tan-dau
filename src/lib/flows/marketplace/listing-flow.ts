@@ -22,8 +22,8 @@ export class ListingFlow extends BaseFlow {
      */
     canHandle(user: any, session: any): boolean {
         // Can handle if user is registered and wants to create listing
-        return (user.status === 'registered' || user.status === 'trial') && 
-               (session?.current_flow === 'listing' || !session)
+        return (user.status === 'registered' || user.status === 'trial') &&
+            (session?.current_flow === 'listing' || !session)
     }
 
     /**
@@ -77,7 +77,9 @@ export class ListingFlow extends BaseFlow {
         try {
             this.logActivity(user, 'handlePostback', { payload, session })
 
-            if (payload.startsWith('CATEGORY_')) {
+            if (payload === 'LISTING') {
+                await this.startListing(user)
+            } else if (payload.startsWith('CATEGORY_')) {
                 await this.handleCategoryPostback(user, payload, session)
             } else if (payload.startsWith('LOCATION_')) {
                 await this.handleLocationPostback(user, payload, session)
@@ -99,7 +101,14 @@ export class ListingFlow extends BaseFlow {
 
             // Check user permissions
             if (user.status !== 'registered' && user.status !== 'trial') {
-                await sendMessage(user.facebook_id, '❌ Bạn cần đăng ký để đăng tin!')
+                await sendMessage(user.facebook_id,
+                    `🚫 CHỨC NĂNG CHỈ DÀNH CHO THÀNH VIÊN\n━━━━━━━━━━━━━━━━━━━━\n📝 Đăng tin bán hàng là tính năng đặc biệt\n🎁 Chỉ dành cho thành viên Tân Dậu\n💰 Cơ hội kết nối với hơn 2 triệu Tân Dậu\n━━━━━━━━━━━━━━━━━━━━\n🚀 Đăng ký ngay để sử dụng tính năng này!`)
+
+                await sendQuickReply(user.facebook_id, 'Bạn muốn:', [
+                    createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                    createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                    createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO')
+                ])
                 return
             }
 
@@ -107,7 +116,7 @@ export class ListingFlow extends BaseFlow {
             await SessionManager.createSession(user.facebook_id, 'listing', 0, {})
 
             // Send welcome message
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `📝 ĐĂNG TIN BÁN HÀNG\n━━━━━━━━━━━━━━━━━━━━\n📋 Bước 1/5: Tiêu đề sản phẩm\n💡 Viết tiêu đề hấp dẫn để thu hút người mua\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập tiêu đề sản phẩm:`)
 
         } catch (error) {
@@ -135,7 +144,7 @@ export class ListingFlow extends BaseFlow {
             })
 
             // Send category prompt
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `✅ Tiêu đề: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📂 Bước 2/5: Danh mục\n💡 Chọn danh mục phù hợp với sản phẩm\n━━━━━━━━━━━━━━━━━━━━`)
 
             // Send category buttons
@@ -154,7 +163,7 @@ export class ListingFlow extends BaseFlow {
     private async handleCategoryStep(user: any, text: string): Promise<void> {
         try {
             console.log(`📂 Processing category step for user: ${user.facebook_id}`)
-            
+
             // For now, just show category buttons
             await this.sendCategoryButtons(user.facebook_id)
 
@@ -192,7 +201,7 @@ export class ListingFlow extends BaseFlow {
             })
 
             // Send description prompt
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `✅ Giá: ${formatCurrency(price)}\n━━━━━━━━━━━━━━━━━━━━\n📝 Bước 4/5: Mô tả sản phẩm\n💡 Mô tả chi tiết về sản phẩm của bạn\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập mô tả sản phẩm:`)
 
             console.log('✅ Price step completed, moved to description step')
@@ -228,7 +237,7 @@ export class ListingFlow extends BaseFlow {
             })
 
             // Send location prompt
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `✅ Mô tả: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 5/5: Địa điểm\n💡 Chọn nơi bạn đang ở để người mua dễ tìm\n━━━━━━━━━━━━━━━━━━━━`)
 
             // Send location buttons
@@ -247,7 +256,7 @@ export class ListingFlow extends BaseFlow {
     private async handleLocationStep(user: any, text: string): Promise<void> {
         try {
             console.log(`📍 Processing location step for user: ${user.facebook_id}`)
-            
+
             // For now, just show location buttons
             await this.sendLocationButtons(user.facebook_id)
 
@@ -279,7 +288,7 @@ export class ListingFlow extends BaseFlow {
             })
 
             // Send price prompt
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `✅ Danh mục: ${category}\n━━━━━━━━━━━━━━━━━━━━\n💰 Bước 3/5: Giá bán\n💡 Nhập giá bán của sản phẩm\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập giá (VNĐ):`)
 
             console.log('✅ Category step completed, moved to price step')
@@ -357,7 +366,7 @@ export class ListingFlow extends BaseFlow {
             await SessionManager.deleteSession(user.facebook_id)
 
             // Send success message
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `🎉 ĐĂNG TIN THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Tiêu đề: ${title}\n✅ Danh mục: ${category}\n✅ Giá: ${formatCurrency(price)}\n✅ Địa điểm: ${location}\n━━━━━━━━━━━━━━━━━━━━\n📢 Tin đăng của bạn đã được duyệt và hiển thị!\n💡 Người mua có thể liên hệ với bạn qua tin nhắn.`)
 
             console.log('✅ Listing completed successfully')
@@ -383,7 +392,7 @@ export class ListingFlow extends BaseFlow {
      * Send category buttons
      */
     private async sendCategoryButtons(facebookId: string): Promise<void> {
-        const quickReplies = Object.keys(CATEGORIES).map(category => 
+        const quickReplies = Object.keys(CATEGORIES).map(category =>
             createQuickReply(category, `CATEGORY_${category}`)
         )
 
@@ -394,7 +403,7 @@ export class ListingFlow extends BaseFlow {
      * Send location buttons
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
-        const quickReplies = Object.keys(LOCATIONS).map(location => 
+        const quickReplies = Object.keys(LOCATIONS).map(location =>
             createQuickReply(location, `LOCATION_${location}`)
         )
 

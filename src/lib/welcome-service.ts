@@ -120,8 +120,7 @@ export class WelcomeService {
     private async markWelcomeAsSent(facebookId: string): Promise<void> {
         try {
             await updateUser(facebookId, {
-                welcome_sent: true,
-                last_welcome_sent: new Date().toISOString()
+                welcome_sent: true
             })
         } catch (error) {
             logger.warn(`Failed to mark welcome as sent for user: ${facebookId}`, error as Error)

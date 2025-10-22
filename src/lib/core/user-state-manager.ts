@@ -80,14 +80,11 @@ export class UserStateManager {
      */
     static async handleNewUser(facebookId: string): Promise<void> {
         try {
-            // Gửi welcome message
+            // Gửi welcome message (đã bao gồm buttons)
             await welcomeService.sendWelcome(facebookId, WelcomeType.NEW_USER)
 
-            // Đợi 2 giây để user đọc welcome
-            await this.delay(2000)
-
-            // Chuyển sang trạng thái choosing mode và gửi menu
-            await this.sendChoosingMenu(facebookId)
+            // Cập nhật state thành choosing
+            await this.updateUserState(facebookId, UserState.CHOOSING)
 
             logger.info('New user processed', { facebookId })
         } catch (error) {

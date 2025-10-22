@@ -113,7 +113,19 @@ export class UnifiedBotSystem {
                     return
                 }
 
-                // Nếu đang ở trạng thái choosing hoặc không xác định - gửi menu chọn lại
+                if (currentState.current_mode === UserState.CHOOSING) {
+                    // User đang ở trạng thái choosing - xử lý postback và text message
+                    if (isPostback && postback) {
+                        // Postback - route trực tiếp đến FlowManager
+                        await FlowManager.handlePostback(user, postback)
+                    } else {
+                        // Text message - xử lý bình thường
+                        await this.handleBotUserMessage(user, text, isPostback, postback)
+                    }
+                    return
+                }
+
+                // Trạng thái không xác định - gửi menu chọn lại
                 await UserStateManager.sendChoosingMenu(user.facebook_id)
             } else {
                 // User is in an active flow (e.g., registration) - let the flow handle it
