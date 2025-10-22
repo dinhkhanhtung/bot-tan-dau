@@ -93,23 +93,12 @@ export class UserStateManager {
     }
 
     /**
-     * Gửi menu chọn chế độ sử dụng
+     * Gửi menu chọn chế độ sử dụng - DISABLED to avoid duplicate welcome
      */
     static async sendChoosingMenu(facebookId: string): Promise<void> {
-        try {
-            await sendMessage(facebookId,
-                `🎯 CHỌN CHẾ ĐỘ SỬ DỤNG\n━━━━━━━━━━━━━━━━━━━━\n🚀 Dùng bot: Tự động mua bán với cộng đồng\n💬 Chat với admin: Đinh Khánh Tùng hỗ trợ trực tiếp\n━━━━━━━━━━━━━━━━━━━━`
-            )
-
-            await sendQuickReply(facebookId, 'Bạn muốn làm gì?', [
-                createQuickReply('🚀 DÙNG BOT', 'USE_BOT'),
-                createQuickReply('💬 CHAT VỚI ADMIN', 'CHAT_ADMIN')
-            ])
-
-            await this.updateUserState(facebookId, UserState.CHOOSING)
-        } catch (error) {
-            logger.error('Error sending choosing menu', { facebookId, error })
-        }
+        // DISABLED - Welcome is already sent by WelcomeService
+        // This prevents duplicate welcome messages
+        logger.info('Choosing menu disabled - welcome already sent by WelcomeService', { facebookId })
     }
 
     /**

@@ -137,11 +137,42 @@ export class WelcomeService {
     // Mark welcome as sent in database (simple tracking)
     private async markWelcomeAsSent(facebookId: string): Promise<void> {
         try {
-            await updateUser(facebookId, {
-                welcome_sent: true
-            })
+            // Check if user exists first
+            const user = await getUserByFacebookId(facebookId)
+            if (user) {
+                // User exists, update welcome_sent
+                await updateUser(facebookId, {
+                    welcome_sent: true
+                })
+                logger.info(`✅ Welcome marked as sent for existing user: ${facebookId}`)
+            } else {
+                // User doesn't exist, create basic user record
+                const { supabaseAdmin } = await import('./supabase')
+                const { generateReferralCode } = await import('./utils')
+
+                const referralCode = generateReferralCode(facebookId)
+
+                const { error } = await supabaseAdmin
+                    .from('users')
+                    .insert({
+                        facebook_id: facebookId,
+                        name: 'User', // Temporary name
+                        phone: `temp_${facebookId}`, // Temporary phone
+                        location: 'Chưa cập nhật',
+                        birthday: 1981,
+                        status: 'new_user',
+                        referral_code: referralCode,
+                        welcome_sent: true
+                    })
+
+                if (error) {
+                    logger.error(`Failed to create user record for welcome tracking: ${facebookId}`, { error: error.message })
+                } else {
+                    logger.info(`✅ Created user record and marked welcome as sent: ${facebookId}`)
+                }
+            }
         } catch (error) {
-            logger.warn(`Failed to mark welcome as sent for user: ${facebookId}`, error as Error)
+            logger.warn(`Failed to mark welcome as sent for user: ${facebookId}`, { error: error instanceof Error ? error.message : String(error) })
         }
     }
 

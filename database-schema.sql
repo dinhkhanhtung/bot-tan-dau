@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS users (
     social_links JSONB DEFAULT '{}',
     is_online BOOLEAN DEFAULT FALSE,
     last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    welcome_sent BOOLEAN DEFAULT FALSE,
     welcome_message_sent BOOLEAN DEFAULT FALSE,
     welcome_interaction_count INTEGER DEFAULT 0,
     chat_mode VARCHAR(20) DEFAULT 'bot' CHECK (chat_mode IN ('bot', 'admin')),
@@ -1197,3 +1198,23 @@ LIMIT 5;
 
 -- 5. Thông báo hoàn thành
 SELECT '✅ UserModeService migration completed successfully!' as status;
+
+-- ========================================
+-- 6. MIGRATION: Thêm cột welcome_sent vào users table
+-- ========================================
+-- Chạy script này nếu đã có database cũ và cần cập nhật
+
+-- Thêm cột welcome_sent vào bảng users (nếu chưa có)
+ALTER TABLE users 
+ADD COLUMN IF NOT EXISTS welcome_sent BOOLEAN DEFAULT FALSE;
+
+-- Tạo index cho cột mới
+CREATE INDEX IF NOT EXISTS idx_users_welcome_sent
+ON users(welcome_sent)
+WHERE welcome_sent = true;
+
+-- Thêm comment cho cột
+COMMENT ON COLUMN users.welcome_sent IS 'Đánh dấu đã gửi welcome message cho user';
+
+-- Thông báo migration hoàn thành
+SELECT 'Migration: welcome_sent column added to users table!' as status;
