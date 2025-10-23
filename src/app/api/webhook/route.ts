@@ -193,7 +193,7 @@ async function handleMessageEvent(event: any) {
         // Create user object for UnifiedBotSystem - ENSURE CORRECT FACEBOOK_ID
         const userObj = user || {
             facebook_id: senderId,
-            status: 'new_user',
+            status: 'pending', // Changed from 'new_user' to 'pending' to match database constraint
             name: null,
             phone: null,
             membership_expires_at: null
@@ -289,7 +289,7 @@ async function handlePostbackEvent(event: any) {
         // Create user object for UnifiedBotSystem
         const userObj = user || {
             facebook_id: senderId,
-            status: 'new_user',
+            status: 'pending', // Changed from 'new_user' to 'pending' to match database constraint
             name: null,
             phone: null,
             membership_expires_at: null

@@ -163,7 +163,7 @@ export class WelcomeService {
                         phone: `temp_${facebookId.slice(-15)}`, // Temporary phone - chỉ lấy 15 ký tự cuối
                         location: 'Chưa cập nhật',
                         birthday: 1981,
-                        status: 'new_user',
+                        status: 'pending', // Changed from 'new_user' to 'pending' to match database constraint
                         referral_code: referralCode,
                         welcome_sent: true,
                         last_welcome_sent: currentTime

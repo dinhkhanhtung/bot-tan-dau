@@ -39,7 +39,7 @@ export class AntiSpamService {
 
             // Lấy thông tin user
             const userData = await getUserByFacebookId(user.facebook_id)
-            const userStatus = userData?.status || 'new_user'
+            const userStatus = userData?.status || 'pending' // Changed from 'new_user' to 'pending' for consistency
 
             // QUAN TRỌNG: KIỂM TRA TIN NHẮN LIÊN TIẾP - CHỈ KÍCH HOẠT KHI GỬI 2 LẦN
             // User có thể gửi text bình thường, nhưng nếu gửi 2 lần liên tiếp → chuyển mode đợi admin
@@ -87,7 +87,7 @@ export class AntiSpamService {
 
             // Lấy thông tin user
             const userData = await getUserByFacebookId(user.facebook_id)
-            const userStatus = userData?.status || 'new_user'
+            const userStatus = userData?.status || 'pending' // Changed from 'new_user' to 'pending' for consistency
 
             // 1. KIỂM TRA TIN NHẮN LIÊN TIẾP
             const isConsecutiveSpam = await AdminTakeoverService.handleConsecutiveUserMessages(user.facebook_id, action)
