@@ -93,6 +93,10 @@ export class SearchFlow extends BaseFlow {
                 await this.handleNextCategories(user, payload, session)
             } else if (payload.startsWith('PREV_CATEGORIES_')) {
                 await this.handlePrevCategories(user, payload, session)
+            } else if (payload.startsWith('NEXT_LOCATIONS_')) {
+                await this.handleNextLocations(user, payload, session)
+            } else if (payload.startsWith('PREV_LOCATIONS_')) {
+                await this.handlePrevLocations(user, payload, session)
             } else if (payload.startsWith('SELECT_LOCATION_')) {
                 await this.handleLocationPostback(user, payload, session)
             } else if (payload.startsWith('VIEW_LISTING_')) {
@@ -587,14 +591,58 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
     }
 
     /**
-     * Send location buttons
+     * Send location buttons (limited to 13 per message due to Facebook API limit)
      */
-    private async sendLocationButtons(facebookId: string): Promise<void> {
-        const quickReplies = Object.keys(LOCATIONS).map(location =>
+    private async sendLocationButtons(facebookId: string, pageIndex: number = 0): Promise<void> {
+        const locations = Object.keys(LOCATIONS)
+        const maxButtons = 13 // Facebook API limit for quick replies
+
+        if (locations.length <= maxButtons) {
+            // Send all locations in one message
+            const quickReplies = locations.map(location =>
+                createQuickReply(location, `SELECT_LOCATION_${location}`)
+            )
+            await sendQuickReply(facebookId, 'Chọn địa điểm:', quickReplies)
+        } else {
+            // Send paginated locations
+            await this.sendLocationsPage(facebookId, pageIndex)
+        }
+    }
+
+    /**
+     * Send locations page with pagination
+     */
+    private async sendLocationsPage(facebookId: string, pageIndex: number): Promise<void> {
+        const locations = Object.keys(LOCATIONS)
+        const maxButtons = 13 // Facebook API limit for quick replies
+
+        const startIndex = pageIndex * (maxButtons - 2) // Reserve 2 slots for navigation
+        const endIndex = Math.min(startIndex + (maxButtons - 2), locations.length)
+        const currentPageLocations = locations.slice(startIndex, endIndex)
+
+        const isLastPage = endIndex >= locations.length
+        const isFirstPage = pageIndex === 0
+
+        const quickReplies = currentPageLocations.map(location =>
             createQuickReply(location, `SELECT_LOCATION_${location}`)
         )
 
-        await sendQuickReply(facebookId, 'Chọn địa điểm:', quickReplies)
+        // Add navigation buttons
+        if (!isLastPage) {
+            quickReplies.push(
+                createQuickReply('▶️ Xem thêm', `NEXT_LOCATIONS_${pageIndex + 1}`)
+            )
+        }
+
+        if (!isFirstPage) {
+            quickReplies.push(
+                createQuickReply('◀️ Quay lại', `PREV_LOCATIONS_${pageIndex - 1}`)
+            )
+        }
+
+        const pageMessage = `Chọn địa điểm (${startIndex + 1}-${endIndex}/${locations.length}):`
+
+        await sendQuickReply(facebookId, pageMessage, quickReplies)
     }
 
     /**
@@ -1240,5 +1288,37 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
         const pageMessage = `Danh mục (${startIndex + 1}-${endIndex}/${categories.length}):`
 
         await sendQuickReply(facebookId, pageMessage, quickReplies)
+    /**
+     * Handle next locations page
+     */
+    private async handleNextLocations(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`▶️ Processing next locations for user: ${user.facebook_id}`)
+
+            const pageIndex = parseInt(payload.replace('NEXT_LOCATIONS_', ''))
+            console.log(`[DEBUG] Next locations page: ${pageIndex}`)
+
+            await this.sendLocationsPage(user.facebook_id, pageIndex)
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleNextLocations')
+        }
+    }
+
+    /**
+     * Handle previous locations page
+     */
+    private async handlePrevLocations(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`◀️ Processing previous locations for user: ${user.facebook_id}`)
+
+            const pageIndex = parseInt(payload.replace('PREV_LOCATIONS_', ''))
+            console.log(`[DEBUG] Previous locations page: ${pageIndex}`)
+
+            await this.sendLocationsPage(user.facebook_id, pageIndex)
+
+        } catch (error) {
+            await this.handleError(user, error, 'handlePrevLocations')
+        }
     }
 }

@@ -93,6 +93,10 @@ export class ListingFlow extends BaseFlow {
                 await this.handleNextListingCategories(user, payload, session)
             } else if (payload.startsWith('PREV_LISTING_CATEGORIES_')) {
                 await this.handlePrevListingCategories(user, payload, session)
+            } else if (payload.startsWith('NEXT_LISTING_LOCATIONS_')) {
+                await this.handleNextListingLocations(user, payload, session)
+            } else if (payload.startsWith('PREV_LISTING_LOCATIONS_')) {
+                await this.handlePrevListingLocations(user, payload, session)
             } else if (payload.startsWith('SELECT_LOCATION_')) {
                 await this.handleLocationPostback(user, payload, session)
             } else if (payload === 'CANCEL_LISTING') {
@@ -487,14 +491,57 @@ export class ListingFlow extends BaseFlow {
     }
 
     /**
-     * Send location buttons
+     * Send location buttons (limited to 13 per message due to Facebook API limit)
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
-        const quickReplies = Object.keys(LOCATIONS).map(location =>
-            createQuickReply(location, `SELECT_LOCATION_${location}`)
-        )
+        const locations = Object.keys(LOCATIONS)
+        const maxButtons = 13 // Facebook API limit for quick replies
 
-        await sendQuickReply(facebookId, 'Chọn địa điểm:', quickReplies)
+        if (locations.length <= maxButtons) {
+            // Send all locations in one message
+            const quickReplies = locations.map(location =>
+                createQuickReply(location, `SELECT_LOCATION_${location}`)
+            )
+            await sendQuickReply(facebookId, 'Chọn địa điểm:', quickReplies)
+        } else {
+            // Split locations into batches
+            const batches = this.chunkArray(locations, maxButtons - 2) // Reserve 2 slots for navigation buttons
+
+            for (let i = 0; i < batches.length; i++) {
+                const batch = batches[i]
+                const isLastBatch = i === batches.length - 1
+                const isFirstBatch = i === 0
+
+                const quickReplies = batch.map(location =>
+                    createQuickReply(location, `SELECT_LOCATION_${location}`)
+                )
+
+                // Add navigation buttons if not the last batch
+                if (!isLastBatch) {
+                    quickReplies.push(
+                        createQuickReply('▶️ Xem thêm', `NEXT_LISTING_LOCATIONS_${i + 1}`)
+                    )
+                }
+
+                // Add back button if not the first batch
+                if (!isFirstBatch) {
+                    quickReplies.push(
+                        createQuickReply('◀️ Quay lại', `PREV_LISTING_LOCATIONS_${i - 1}`)
+                    )
+                }
+
+                const batchMessage = isFirstBatch
+                    ? `Chọn địa điểm (${i * (maxButtons - 2) + 1}-${Math.min((i + 1) * (maxButtons - 2), locations.length)}/${locations.length}):`
+                    : `Địa điểm (${i * (maxButtons - 2) + 1}-${Math.min((i + 1) * (maxButtons - 2), locations.length)}/${locations.length}):`
+
+                await sendQuickReply(facebookId, batchMessage, quickReplies)
+
+                // If this is the first batch and there are more, stop here and wait for user input
+                if (isFirstBatch && !isLastBatch) {
+                    break
+                }
+            }
+        }
     }
 
     /**
@@ -610,6 +657,76 @@ export class ListingFlow extends BaseFlow {
         }
 
         const pageMessage = `Danh mục sản phẩm (${startIndex + 1}-${endIndex}/${categories.length}):`
+
+        await sendQuickReply(facebookId, pageMessage, quickReplies)
+    }
+
+    /**
+     * Handle next locations page for listing flow
+     */
+    private async handleNextListingLocations(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`▶️ Processing next listing locations for user: ${user.facebook_id}`)
+
+            const pageIndex = parseInt(payload.replace('NEXT_LISTING_LOCATIONS_', ''))
+            console.log(`[DEBUG] Next listing locations page: ${pageIndex}`)
+
+            await this.sendListingLocationsPage(user.facebook_id, pageIndex)
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleNextListingLocations')
+        }
+    }
+
+    /**
+     * Handle previous locations page for listing flow
+     */
+    private async handlePrevListingLocations(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`◀️ Processing previous listing locations for user: ${user.facebook_id}`)
+
+            const pageIndex = parseInt(payload.replace('PREV_LISTING_LOCATIONS_', ''))
+            console.log(`[DEBUG] Previous listing locations page: ${pageIndex}`)
+
+            await this.sendListingLocationsPage(user.facebook_id, pageIndex)
+
+        } catch (error) {
+            await this.handleError(user, error, 'handlePrevListingLocations')
+        }
+    }
+
+    /**
+     * Send locations page with pagination for listing flow
+     */
+    private async sendListingLocationsPage(facebookId: string, pageIndex: number): Promise<void> {
+        const locations = Object.keys(LOCATIONS)
+        const maxButtons = 13 // Facebook API limit for quick replies
+
+        const startIndex = pageIndex * (maxButtons - 2) // Reserve 2 slots for navigation
+        const endIndex = Math.min(startIndex + (maxButtons - 2), locations.length)
+        const currentPageLocations = locations.slice(startIndex, endIndex)
+
+        const isLastPage = endIndex >= locations.length
+        const isFirstPage = pageIndex === 0
+
+        const quickReplies = currentPageLocations.map(location =>
+            createQuickReply(location, `SELECT_LOCATION_${location}`)
+        )
+
+        // Add navigation buttons
+        if (!isLastPage) {
+            quickReplies.push(
+                createQuickReply('▶️ Xem thêm', `NEXT_LISTING_LOCATIONS_${pageIndex + 1}`)
+            )
+        }
+
+        if (!isFirstPage) {
+            quickReplies.push(
+                createQuickReply('◀️ Quay lại', `PREV_LISTING_LOCATIONS_${pageIndex - 1}`)
+            )
+        }
+
+        const pageMessage = `Địa điểm (${startIndex + 1}-${endIndex}/${locations.length}):`
 
         await sendQuickReply(facebookId, pageMessage, quickReplies)
     }
