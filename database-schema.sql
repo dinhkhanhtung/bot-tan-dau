@@ -376,7 +376,7 @@ CREATE TABLE IF NOT EXISTS admin_chat_sessions (
 CREATE TABLE IF NOT EXISTS admin_takeover_states (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_facebook_id VARCHAR(255) UNIQUE NOT NULL,
-    admin_id VARCHAR(255) NOT NULL,
+    admin_id VARCHAR(255) NULL, -- Changed to NULL since admin_id is only needed when admin takes over
     is_active BOOLEAN DEFAULT FALSE,
     consecutive_message_count INTEGER DEFAULT 0,
     last_user_message_at TIMESTAMP WITH TIME ZONE,
@@ -392,6 +392,23 @@ CREATE TABLE IF NOT EXISTS admin_takeover_states (
 -- ========================================
 -- Thêm các cột cần thiết cho admin takeover service
 
+-- Step 1: Make admin_id nullable (if not already)
+DO $$
+BEGIN
+    -- Check if admin_id column exists and is NOT NULL
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'admin_takeover_states'
+        AND column_name = 'admin_id'
+        AND is_nullable = 'NO'
+    ) THEN
+        -- Make admin_id nullable
+        ALTER TABLE admin_takeover_states
+        ALTER COLUMN admin_id DROP NOT NULL;
+    END IF;
+END $$;
+
+-- Step 2: Add missing columns
 ALTER TABLE admin_takeover_states
 ADD COLUMN IF NOT EXISTS consecutive_message_count INTEGER DEFAULT 0;
 
@@ -1389,9 +1406,25 @@ SELECT '🚀 Database đã sẵn sàng với tất cả tính năng và migratio
 -- ========================================
 -- FIX ADMIN TAKEOVER STATES TABLE
 -- ========================================
--- Migration để khắc phục lỗi "consecutive_message_count column not found"
+-- Migration để khắc phục lỗi "admin_id null constraint" và "consecutive_message_count column not found"
 
--- Kiểm tra và thêm các cột thiếu vào admin_takeover_states
+-- Step 1: Make admin_id nullable (if not already)
+DO $$
+BEGIN
+    -- Check if admin_id column exists and is NOT NULL
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'admin_takeover_states'
+        AND column_name = 'admin_id'
+        AND is_nullable = 'NO'
+    ) THEN
+        -- Make admin_id nullable
+        ALTER TABLE admin_takeover_states
+        ALTER COLUMN admin_id DROP NOT NULL;
+    END IF;
+END $$;
+
+-- Step 2: Add missing columns
 DO $$
 BEGIN
     -- Thêm consecutive_message_count nếu chưa có
@@ -1558,6 +1591,16 @@ SELECT
 FROM information_schema.columns
 WHERE table_name = 'admin_takeover_states'
 ORDER BY ordinal_position;
+
+-- Kiểm tra admin_id column có nullable không
+SELECT 'Admin ID Column Check:' as check_type;
+SELECT
+    column_name,
+    is_nullable,
+    CASE WHEN is_nullable = 'YES' THEN '✅ NULLABLE' ELSE '❌ NOT NULL' END as status
+FROM information_schema.columns
+WHERE table_name = 'admin_takeover_states'
+AND column_name = 'admin_id';
 
 -- Kiểm tra user_interactions
 SELECT 'User Interactions Table Structure:' as check_type;

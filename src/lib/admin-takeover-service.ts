@@ -11,7 +11,7 @@ import { logger } from './logger'
 interface AdminTakeoverState {
   id?: string
   user_facebook_id: string
-  admin_id?: string
+  admin_id?: string | null // Changed to allow null since admin_id is only needed when admin takes over
   is_active: boolean
   consecutive_message_count: number
   last_user_message_at?: string
