@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS users (
     welcome_sent BOOLEAN DEFAULT FALSE,
     welcome_message_sent BOOLEAN DEFAULT FALSE,
     welcome_interaction_count INTEGER DEFAULT 0,
+    last_welcome_sent TIMESTAMP WITH TIME ZONE,
     chat_mode VARCHAR(20) DEFAULT 'bot' CHECK (chat_mode IN ('bot', 'admin')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

@@ -160,7 +160,7 @@ export class WelcomeService {
                     .insert({
                         facebook_id: facebookId,
                         name: 'User', // Temporary name
-                        phone: `temp_${facebookId}`, // Temporary phone
+                        phone: `temp_${facebookId.slice(-15)}`, // Temporary phone - chỉ lấy 15 ký tự cuối
                         location: 'Chưa cập nhật',
                         birthday: 1981,
                         status: 'new_user',
