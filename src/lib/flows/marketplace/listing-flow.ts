@@ -1,3 +1,5 @@
+import { ListingHandlers } from './listing-handlers'
+
 import { BaseFlow } from '../../core/flow-base'
 import { SessionManager } from '../../core/session-manager'
 import {
@@ -15,6 +17,12 @@ import { CATEGORIES, LOCATIONS, PRICE_RANGES, KEYWORDS_SYSTEM } from '../../cons
  * Handles product listing process with consistent session management
  */
 export class ListingFlow extends BaseFlow {
+    private handlers: ListingHandlers
+
+    constructor() {
+        super()
+        this.handlers = new ListingHandlers()
+    }
     readonly flowName = 'listing'
 
     /**
@@ -27,7 +35,7 @@ export class ListingFlow extends BaseFlow {
         }
 
         // Can handle if user is registered and wants to create listing
-        return (user.status === 'registered' || user.status === 'trial') &&
+        return (user.status === 'registered' || user.status === 'trial' || (session?.current_flow === 'listing' && session?.step === undefined)) &&
             (session?.current_flow === 'listing' || !session)
     }
 
@@ -178,7 +186,7 @@ export class ListingFlow extends BaseFlow {
             console.log(`📝 Processing title step for user: ${user.facebook_id}`)
 
             // Validate title
-            if (!this.validateInput(text, 5)) {
+            if (!super.validateInput(text, 5)) {
                 await sendMessage(user.facebook_id, '❌ Tiêu đề quá ngắn. Vui lòng nhập ít nhất 5 ký tự!')
                 return
             }
@@ -266,7 +274,7 @@ export class ListingFlow extends BaseFlow {
             console.log(`📝 Processing description step for user: ${user.facebook_id}`)
 
             // Validate description
-            if (!this.validateInput(text, 10)) {
+            if (!super.validateInput(text, 10)) {
                 await sendMessage(user.facebook_id, '❌ Mô tả quá ngắn. Vui lòng nhập ít nhất 10 ký tự!')
                 return
             }
@@ -494,7 +502,7 @@ export class ListingFlow extends BaseFlow {
      * Send location buttons (limited to 13 per message due to Facebook API limit)
      */
     private async sendLocationButtons(facebookId: string): Promise<void> {
-        const locations = Object.keys(LOCATIONS)
+        const locations = [...LOCATIONS]
         const maxButtons = 13 // Facebook API limit for quick replies
 
         if (locations.length <= maxButtons) {
@@ -699,7 +707,7 @@ export class ListingFlow extends BaseFlow {
      * Send locations page with pagination for listing flow
      */
     private async sendListingLocationsPage(facebookId: string, pageIndex: number): Promise<void> {
-        const locations = Object.keys(LOCATIONS)
+        const locations = [...LOCATIONS]
         const maxButtons = 13 // Facebook API limit for quick replies
 
         const startIndex = pageIndex * (maxButtons - 2) // Reserve 2 slots for navigation

@@ -1,3 +1,4 @@
+import { SearchHandlers } from './search-handlers'
 import { BaseFlow } from '../../core/flow-base'
 import { SessionManager } from '../../core/session-manager'
 import {
@@ -14,6 +15,12 @@ import { logger, logUserAction } from '../../logger'
 /**
  * Search Flow - Clean, modular implementation
  * Handles product search process with consistent session management
+    private handlers: SearchHandlers
+
+    constructor() {
+        super()
+        this.handlers = new SearchHandlers()
+    }
  */
 export class SearchFlow extends BaseFlow {
     readonly flowName = 'search'
@@ -594,7 +601,7 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
      * Send location buttons (limited to 13 per message due to Facebook API limit)
      */
     private async sendLocationButtons(facebookId: string, pageIndex: number = 0): Promise<void> {
-        const locations = Object.keys(LOCATIONS)
+        const locations = [...LOCATIONS]
         const maxButtons = 13 // Facebook API limit for quick replies
 
         if (locations.length <= maxButtons) {
@@ -613,7 +620,7 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
      * Send locations page with pagination
      */
     private async sendLocationsPage(facebookId: string, pageIndex: number): Promise<void> {
-        const locations = Object.keys(LOCATIONS)
+        const locations = [...LOCATIONS]
         const maxButtons = 13 // Facebook API limit for quick replies
 
         const startIndex = pageIndex * (maxButtons - 2) // Reserve 2 slots for navigation
