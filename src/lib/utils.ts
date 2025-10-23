@@ -6,7 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Format currency
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number | null | undefined): string {
+    if (amount == null || isNaN(amount)) {
+        return '0đ'
+    }
     return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND'

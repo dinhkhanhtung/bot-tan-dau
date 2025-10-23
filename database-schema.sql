@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS user_interactions (
 CREATE INDEX IF NOT EXISTS idx_user_interactions_facebook_id ON user_interactions(facebook_id);
 CREATE INDEX IF NOT EXISTS idx_user_interactions_bot_active ON user_interactions(bot_active);
 
--- Users table (Đã thêm welcome_message_sent column)
+-- Users table (Đã thêm welcome_message_sent column và GPS coordinates)
 CREATE TABLE IF NOT EXISTS users (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     facebook_id VARCHAR(255) UNIQUE NOT NULL,
@@ -84,6 +84,13 @@ CREATE TABLE IF NOT EXISTS users (
     welcome_interaction_count INTEGER DEFAULT 0,
     last_welcome_sent TIMESTAMP WITH TIME ZONE,
     chat_mode VARCHAR(20) DEFAULT 'bot' CHECK (chat_mode IN ('bot', 'admin')),
+    -- GPS coordinates for location-based features
+    latitude DECIMAL(10,8),
+    longitude DECIMAL(11,8),
+    location_updated_at TIMESTAMP WITH TIME ZONE,
+    -- Search preferences and history
+    preferred_categories TEXT[] DEFAULT '{}',
+    search_radius_km INTEGER DEFAULT 10,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -387,6 +394,9 @@ CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 CREATE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code);
 CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
 CREATE INDEX IF NOT EXISTS idx_users_welcome_message_sent ON users(welcome_message_sent);
+CREATE INDEX IF NOT EXISTS idx_users_location ON users(location);
+CREATE INDEX IF NOT EXISTS idx_users_gps_coordinates ON users(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_users_preferred_categories ON users USING GIN(preferred_categories);
 
 -- Listings indexes
 CREATE INDEX IF NOT EXISTS idx_listings_user_id ON listings(user_id);
@@ -1219,3 +1229,113 @@ COMMENT ON COLUMN users.welcome_sent IS 'Đánh dấu đã gửi welcome message
 
 -- Thông báo migration hoàn thành
 SELECT 'Migration: welcome_sent column added to users table!' as status;
+
+-- ========================================
+-- MIGRATION SCRIPTS - KHẮC PHỤC LỖI WELCOME SERVICE
+-- ========================================
+-- Các script này khắc phục lỗi "last_welcome_sent column" và "value too long"
+-- Chạy các phần này trong Supabase SQL Editor để khắc phục lỗi hiện tại
+
+-- ========================================
+-- MIGRATION: Thêm cột last_welcome_sent vào bảng users (KHẮC PHỤC LỖI CHÍNH)
+-- ========================================
+
+-- Thêm cột last_welcome_sent vào bảng users (nếu chưa có)
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS last_welcome_sent TIMESTAMP WITH TIME ZONE;
+
+-- Tạo index cho cột mới để tăng tốc query
+CREATE INDEX IF NOT EXISTS idx_users_last_welcome_sent
+ON users(last_welcome_sent)
+WHERE last_welcome_sent IS NOT NULL;
+
+-- Thêm comment cho cột
+COMMENT ON COLUMN users.last_welcome_sent IS 'Thời gian gửi welcome message cuối cùng (để tính 24h cooldown)';
+
+-- Đồng bộ dữ liệu hiện có từ user_interactions
+UPDATE users
+SET last_welcome_sent = ui.last_welcome_sent
+FROM user_interactions ui
+WHERE users.facebook_id = ui.facebook_id
+AND ui.last_welcome_sent IS NOT NULL
+AND users.last_welcome_sent IS NULL;
+
+-- Nếu user đã có welcome_sent = true nhưng không có last_welcome_sent
+-- thì đặt last_welcome_sent = NOW() - 24h (để tránh spam)
+UPDATE users
+SET last_welcome_sent = NOW() - INTERVAL '24 hours'
+WHERE welcome_sent = true
+AND last_welcome_sent IS NULL;
+
+-- Kiểm tra kết quả
+SELECT
+    column_name,
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'users'
+AND column_name = 'last_welcome_sent';
+
+-- Hiển thị một vài user có last_welcome_sent để kiểm tra
+SELECT facebook_id, welcome_sent, last_welcome_sent
+FROM users
+WHERE last_welcome_sent IS NOT NULL
+LIMIT 5;
+
+-- Thông báo hoàn thành
+SELECT '✅ Migration: last_welcome_sent column added to users table successfully!' as status;
+
+-- ========================================
+-- MIGRATION: Khắc phục lỗi độ dài phone quá 20 ký tự
+-- ========================================
+
+-- Kiểm tra các user có phone dài hơn 20 ký tự
+SELECT facebook_id, phone, LENGTH(phone) as phone_length
+FROM users
+WHERE LENGTH(phone) > 20
+ORDER BY phone_length DESC;
+
+-- Cập nhật các phone quá dài bằng cách cắt ngắn chúng
+UPDATE users
+SET phone = LEFT(phone, 20)
+WHERE LENGTH(phone) > 20;
+
+-- Kiểm tra lại sau khi cập nhật
+SELECT facebook_id, phone, LENGTH(phone) as phone_length
+FROM users
+WHERE LENGTH(phone) > 20
+ORDER BY phone_length DESC;
+
+-- Đếm số user bị ảnh hưởng
+SELECT COUNT(*) as users_with_long_phone
+FROM users
+WHERE LENGTH(phone) > 20;
+
+-- Thông báo hoàn thành
+SELECT '✅ Phone length fix completed successfully!' as status;
+
+-- ========================================
+-- FINAL STATUS - TỔNG KẾT
+-- ========================================
+
+SELECT '🎉 Database setup hoàn chỉnh với tất cả migrations!' as final_status;
+
+-- Đếm tổng số bảng
+SELECT COUNT(*) as total_tables FROM information_schema.tables
+WHERE table_schema = 'public'
+AND table_name IN (
+    'users', 'listings', 'conversations', 'messages', 'payments', 'ratings',
+    'events', 'event_participants', 'notifications', 'ads', 'search_requests',
+    'referrals', 'user_points', 'point_transactions', 'bot_sessions',
+    'user_messages', 'spam_logs', 'spam_tracking', 'admin_users', 'admin_chat_sessions',
+    'user_activities', 'user_activity_logs', 'system_metrics', 'chat_bot_offer_counts',
+    'user_bot_modes', 'bot_settings', 'ai_templates', 'ai_analytics', 'user_interactions'
+);
+
+-- Đếm tổng số indexes
+SELECT COUNT(*) as total_indexes FROM pg_indexes
+WHERE schemaname = 'public';
+
+-- Thông báo hoàn thành cuối cùng
+SELECT '🚀 Database đã sẵn sàng với tất cả tính năng và migrations!' as ready_status;

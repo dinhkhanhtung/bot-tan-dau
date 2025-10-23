@@ -146,7 +146,13 @@ export async function GET(request: NextRequest) {
         }
 
         // Format listings for display
-        const formattedListings = listings?.map(listing => ({
+        const formattedListings = listings?.filter(listing =>
+            listing.title &&
+            listing.price != null &&
+            listing.location &&
+            typeof listing.price === 'number' &&
+            !isNaN(listing.price)
+        ).map(listing => ({
             ...listing,
             formatted_price: formatCurrency(listing.price),
             time_ago: getTimeAgo(listing.created_at)

@@ -18,6 +18,7 @@ export async function runAllCronJobs(): Promise<void> {
         await cleanupOldData()
         await updateFeaturedListings()
         await sendWeeklyTopSellersNotification()
+        await sendNewServiceNotifications()
 
         logger.info('All cron jobs completed successfully')
     } catch (error) {
@@ -398,5 +399,181 @@ export async function sendWeeklyTopSellersNotification(): Promise<void> {
 
     } catch (error) {
         logger.error('Error sending weekly top sellers notification:', { error })
+    }
+}
+
+// Send new service notifications based on user location and search history
+export async function sendNewServiceNotifications(): Promise<void> {
+    try {
+        logger.info('Sending new service notifications')
+
+        // Get new listings from last 24 hours
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+        const { data: newListings, error } = await supabaseAdmin
+            .from('listings')
+            .select(`
+                id,
+                title,
+                category,
+                location,
+                price,
+                created_at,
+                users!listings_user_id_fkey (
+                    name,
+                    rating
+                )
+            `)
+            .eq('status', 'active')
+            .gte('created_at', yesterday.toISOString())
+            .order('created_at', { ascending: false })
+            .limit(100)
+
+        if (error) {
+            logger.error('Error fetching new listings:', { error })
+            return
+        }
+
+        if (!newListings || newListings.length === 0) {
+            logger.info('No new listings in the last 24 hours')
+            return
+        }
+
+        // Get all active users with their search history
+        const { data: users, error: usersError } = await supabaseAdmin
+            .from('users')
+            .select(`
+                facebook_id,
+                name,
+                location,
+                user_activities!inner (
+                    searches_count,
+                    listings_count,
+                    last_activity
+                )
+            `)
+            .in('status', ['active', 'trial'])
+            .gte('user_activities.last_activity', yesterday.toISOString())
+
+        if (usersError) {
+            logger.error('Error fetching users with activity:', { error: usersError })
+            return
+        }
+
+        if (!users || users.length === 0) {
+            logger.info('No active users with recent activity')
+            return
+        }
+
+        logger.info(`Found ${newListings.length} new listings and ${users.length} active users`)
+
+        // Group new listings by location
+        const listingsByLocation: { [key: string]: any[] } = {}
+        newListings.forEach(listing => {
+            const location = listing.location
+            if (!listingsByLocation[location]) {
+                listingsByLocation[location] = []
+            }
+            listingsByLocation[location].push(listing)
+        })
+
+        // Send personalized notifications based on user location and activity
+        let totalNotifications = 0
+
+        for (const user of users) {
+            const userLocation = user.location
+            const userActivity = Array.isArray(user.user_activities) ? user.user_activities[0] : user.user_activities
+
+            // Skip if user has no recent activity or location
+            if (!userLocation || !userActivity || userActivity.searches_count < 1) {
+                continue
+            }
+
+            // Get relevant new listings in user's area
+            const relevantListings = listingsByLocation[userLocation] || []
+
+            if (relevantListings.length === 0) {
+                continue
+            }
+
+            // Get user's search history to personalize recommendations
+            const { data: searchHistory, error: historyError } = await supabaseAdmin
+                .from('user_activity_logs')
+                .select('action, details')
+                .eq('facebook_id', user.facebook_id)
+                .ilike('action', '%search%')
+                .order('timestamp', { ascending: false })
+                .limit(5)
+
+            if (historyError) {
+                logger.warn('Error fetching search history:', { facebook_id: user.facebook_id, error: historyError })
+            }
+
+            // Determine user's interests based on search history
+            const userInterests = new Set<string>()
+            if (searchHistory) {
+                searchHistory.forEach((log: any) => {
+                    if (log.details?.category) userInterests.add(log.details.category)
+                    if (log.details?.keyword) userInterests.add(log.details.keyword)
+                })
+            }
+
+            // Filter listings based on user's interests
+            let personalizedListings = relevantListings
+            if (userInterests.size > 0) {
+                personalizedListings = relevantListings.filter(listing =>
+                    userInterests.has(listing.category) ||
+                    Array.from(userInterests).some(interest =>
+                        listing.title.toLowerCase().includes(interest.toLowerCase())
+                    )
+                )
+            }
+
+            // Limit to top 3 most relevant listings
+            const topListings = personalizedListings.slice(0, 3)
+
+            if (topListings.length > 0) {
+                // Create personalized notification message
+                const listingsText = topListings.map((listing, index) => {
+                    const userInfo = Array.isArray(listing.users) ? listing.users[0] : listing.users
+                    const sellerName = userInfo?.name || 'Người bán'
+                    const rating = userInfo?.rating ? `⭐${userInfo.rating}` : ''
+
+                    return `${index + 1}. ${listing.title}\n   💰 ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(listing.price)}\n   👤 ${sellerName} ${rating}`
+                }).join('\n\n')
+
+                const notification = {
+                    user_id: user.facebook_id,
+                    type: 'message',
+                    title: `🆕 ${topListings.length} dịch vụ mới tại ${userLocation}`,
+                    message: `Chào ${user.name}! Có ${topListings.length} dịch vụ mới phù hợp với bạn tại ${userLocation}:\n\n${listingsText}\n\n💡 Nhấn để xem chi tiết và liên hệ ngay!`,
+                    is_read: false,
+                    created_at: new Date().toISOString()
+                }
+
+                const { error: notificationError } = await supabaseAdmin
+                    .from('notifications')
+                    .insert(notification)
+
+                if (notificationError) {
+                    logger.error('Error creating new service notification:', {
+                        facebook_id: user.facebook_id,
+                        error: notificationError
+                    })
+                } else {
+                    totalNotifications++
+                    logger.debug('New service notification sent:', {
+                        facebook_id: user.facebook_id,
+                        listings_count: topListings.length,
+                        location: userLocation
+                    })
+                }
+            }
+        }
+
+        logger.info(`Sent ${totalNotifications} new service notifications to active users`)
+
+    } catch (error) {
+        logger.error('Error sending new service notifications:', { error })
     }
 }

@@ -1,4 +1,4 @@
- import { BaseFlow } from '../../core/flow-base'
+import { BaseFlow } from '../../core/flow-base'
 import { SessionManager } from '../../core/session-manager'
 import {
     sendMessage,
@@ -9,6 +9,7 @@ import {
 } from '../../facebook-api'
 import { formatCurrency } from '../../utils'
 import { CATEGORIES, LOCATIONS, KEYWORDS_SYSTEM, SEARCH_HELPERS } from '../../constants'
+import { logger, logUserAction } from '../../logger'
 
 /**
  * Search Flow - Clean, modular implementation
@@ -100,6 +101,12 @@ export class SearchFlow extends BaseFlow {
                 await this.handleContinueSearchAll(user, payload, session)
             } else if (payload === 'CANCEL_SEARCH') {
                 await this.cancelSearch(user)
+            } else if (payload === 'UPDATE_LOCATION') {
+                await this.handleLocationUpdate(user)
+            } else if (payload === 'NEARBY_SEARCH') {
+                await this.handleNearbySearch(user)
+            } else if (payload === 'SAVED_SEARCHES') {
+                await this.handleSavedSearches(user)
             }
 
         } catch (error) {
@@ -295,7 +302,7 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
     }
 
     /**
-     * Perform search with enhanced keyword matching
+     * Perform search with enhanced keyword matching and GPS-based suggestions
      */
     private async performSearch(user: any): Promise<void> {
         try {
@@ -304,6 +311,9 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
             // Get search criteria
             const searchData = await SessionManager.getSessionData(user.facebook_id)
             const { keyword, category, location } = searchData
+
+            // Log search activity for history tracking
+            await this.logSearchActivity(user, keyword, category, location)
 
             // Get all active listings
             const { supabaseAdmin } = await import('../../supabase')
@@ -328,6 +338,20 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
 
             // Apply intelligent filtering using KEYWORDS_SYSTEM
             let filteredListings = allListings
+
+            // Filter out listings with invalid data
+            filteredListings = filteredListings.filter(listing =>
+                listing.title &&
+                listing.price != null &&
+                listing.location &&
+                typeof listing.price === 'number' &&
+                !isNaN(listing.price)
+            )
+
+            // Apply GPS-based filtering if user has GPS coordinates
+            if (user.latitude && user.longitude && user.search_radius_km) {
+                filteredListings = this.filterByGPSDistance(filteredListings, user, user.search_radius_km)
+            }
 
             // Filter by category if specified
             if (category) {
@@ -533,12 +557,14 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
         try {
             console.log(`🔍 Sending enhanced search options for user: ${facebookId}`)
 
-            // Send main search options
+            // Send main search options with smart shortcuts
             await sendQuickReply(facebookId, '🔍 TÌM KIẾM SẢN PHẨM\n━━━━━━━━━━━━━━━━━━━━\nChọn cách tìm kiếm phù hợp:', [
+                createQuickReply('⚡ Tìm nhanh', 'QUICK_SEARCH'),
                 createQuickReply('📂 Theo danh mục', 'CATEGORY_SEARCH'),
                 createQuickReply('📍 Theo địa điểm', 'LOCATION_SEARCH'),
                 createQuickReply('🔍 Tìm tất cả', 'SEARCH_ALL'),
-                createQuickReply('⚡ Tìm nhanh', 'QUICK_SEARCH')
+                createQuickReply('⭐ Ưu tiên gần tôi', 'NEARBY_SEARCH'),
+                createQuickReply('💖 Tìm kiếm đã lưu', 'SAVED_SEARCHES')
             ])
 
         } catch (error) {
@@ -636,26 +662,29 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
     }
 
     /**
-     * Start quick search with popular keywords
+     * Start quick search with popular keywords - Location-based services
      */
     private async startQuickSearch(user: any): Promise<void> {
         try {
             console.log(`⚡ Starting quick search for user: ${user.facebook_id}`)
 
-            // Send popular keywords for quick selection
-            await sendQuickReply(user.facebook_id, '⚡ TÌM NHANH\n━━━━━━━━━━━━━━━━━━━━\nChọn từ khóa phổ biến:', [
-                createQuickReply('🏠 Nhà đất', 'QUICK_KEYWORD_#nhadat'),
+            // Get user's location for context
+            const userLocation = user.location || 'khu vực của bạn'
+
+            // Send location-based service keywords
+            await sendQuickReply(user.facebook_id, `⚡ TÌM NHANH DỊCH VỤ TẠI ${userLocation.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━\n💡 Tìm các dịch vụ gần bạn:`, [
+                createQuickReply('👨‍🏫 Gia sư', 'QUICK_KEYWORD_#giasu'),
+                createQuickReply('💆 Massage', 'QUICK_KEYWORD_#massage'),
+                createQuickReply('🍜 Đồ ăn', 'QUICK_KEYWORD_#monan'),
+                createQuickReply('🏥 Y tế', 'QUICK_KEYWORD_#yte'),
+                createQuickReply('🔧 Sửa chữa', 'QUICK_KEYWORD_#sua'),
                 createQuickReply('🚗 Ô tô xe máy', 'QUICK_KEYWORD_#oto'),
                 createQuickReply('📱 Điện thoại', 'QUICK_KEYWORD_#dienthoai'),
                 createQuickReply('💻 Laptop', 'QUICK_KEYWORD_#laptop'),
-                createQuickReply('👨‍🏫 Gia sư', 'QUICK_KEYWORD_#giasu'),
-                createQuickReply('💆 Massage', 'QUICK_KEYWORD_#massage'),
-                createQuickReply('🍜 Món ăn', 'QUICK_KEYWORD_#monan'),
-                createQuickReply('🏥 Y tế', 'QUICK_KEYWORD_#yte'),
                 createQuickReply('👕 Thời trang', 'QUICK_KEYWORD_#quanao'),
-                createQuickReply('🔧 Sửa chữa', 'QUICK_KEYWORD_#sua'),
-                createQuickReply('📍 Hà Nội', 'QUICK_KEYWORD_#hanoi'),
-                createQuickReply('🏙️ TP.HCM', 'QUICK_KEYWORD_#hcm')
+                createQuickReply('🏠 Nhà đất', 'QUICK_KEYWORD_#nhadat'),
+                createQuickReply('🔍 Tìm kiếm khác', 'SEARCH'),
+                createQuickReply('📍 Mở rộng vùng', 'SEARCH_ALL')
             ])
 
         } catch (error) {
@@ -691,12 +720,27 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
                 return
             }
 
+            // Filter out listings with invalid data
+            const validListings = allListings.filter(listing =>
+                listing.title &&
+                listing.price != null &&
+                listing.location &&
+                typeof listing.price === 'number' &&
+                !isNaN(listing.price)
+            )
+
+            if (validListings.length === 0) {
+                await sendMessage(user.facebook_id, '❌ Hiện tại chưa có sản phẩm hợp lệ nào trong hệ thống!')
+                await this.cancelSearch(user)
+                return
+            }
+
             // Send enhanced search results with better formatting
             await sendMessage(user.facebook_id,
-                `🔍 TẤT CẢ SẢN PHẨM (${allListings.length} sản phẩm mới nhất)\n━━━━━━━━━━━━━━━━━━━━\n💡 Hiển thị các sản phẩm mới nhất trong hệ thống\n━━━━━━━━━━━━━━━━━━━━`)
+                `🔍 TẤT CẢ SẢN PHẨM (${validListings.length} sản phẩm hợp lệ)\n━━━━━━━━━━━━━━━━━━━━\n💡 Hiển thị các sản phẩm mới nhất trong hệ thống\n━━━━━━━━━━━━━━━━━━━━`)
 
             // Send listings in batches of 10 for better UX
-            const batches = this.chunkArray(allListings, 10)
+            const batches = this.chunkArray(validListings, 10)
 
             for (let i = 0; i < batches.length; i++) {
                 const batch = batches[i]
@@ -789,11 +833,25 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
                 return
             }
 
+            // Filter out listings with invalid data
+            const validListings = allListings.filter(listing =>
+                listing.title &&
+                listing.price != null &&
+                listing.location &&
+                typeof listing.price === 'number' &&
+                !isNaN(listing.price)
+            )
+
+            if (validListings.length === 0) {
+                await sendMessage(user.facebook_id, '❌ Không còn sản phẩm hợp lệ nào để hiển thị!')
+                return
+            }
+
             // Calculate which batch to show
             const startIndex = batchIndex * 10
-            const endIndex = Math.min(startIndex + 10, allListings.length)
-            const batch = allListings.slice(startIndex, endIndex)
-            const isLastBatch = endIndex >= allListings.length
+            const endIndex = Math.min(startIndex + 10, validListings.length)
+            const batch = validListings.slice(startIndex, endIndex)
+            const isLastBatch = endIndex >= validListings.length
 
             if (batch.length === 0) {
                 await sendMessage(user.facebook_id, '❌ Không còn sản phẩm nào để hiển thị!')
@@ -821,7 +879,7 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
             // Add continue prompt if not last batch
             if (!isLastBatch) {
                 await sendQuickReply(user.facebook_id,
-                    `📊 Đã hiển thị ${endIndex}/${allListings.length} sản phẩm`,
+                    `📊 Đã hiển thị ${endIndex}/${validListings.length} sản phẩm`,
                     [
                         createQuickReply('▶️ Tiếp tục xem', `CONTINUE_SEARCH_ALL_${batchIndex + 1}`),
                         createQuickReply('🔍 Tìm kiếm khác', 'SEARCH')
@@ -829,7 +887,7 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
                 )
             } else {
                 await sendMessage(user.facebook_id,
-                    `✅ Đã hiển thị tất cả ${allListings.length} sản phẩm mới nhất`)
+                    `✅ Đã hiển thị tất cả ${validListings.length} sản phẩm hợp lệ`)
             }
 
         } catch (error) {
@@ -846,5 +904,224 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
             chunks.push(array.slice(i, i + chunkSize))
         }
         return chunks
+    }
+
+    /**
+     * Log search activity for history tracking
+     */
+    private async logSearchActivity(user: any, keyword?: string, category?: string, location?: string): Promise<void> {
+        try {
+            const { supabaseAdmin } = await import('../../supabase')
+
+            // Log to user_activity_logs
+            await supabaseAdmin
+                .from('user_activity_logs')
+                .insert({
+                    facebook_id: user.facebook_id,
+                    user_type: 'user',
+                    action: 'search',
+                    details: {
+                        keyword: keyword || null,
+                        category: category || null,
+                        location: location || user.location || null,
+                        timestamp: new Date().toISOString()
+                    },
+                    success: true,
+                    response_time_ms: Date.now() - (user.last_activity || Date.now()),
+                    created_at: new Date().toISOString()
+                })
+
+            // Update user activities summary
+            const today = new Date().toISOString().split('T')[0]
+            await supabaseAdmin
+                .from('user_activities')
+                .upsert({
+                    facebook_id: user.facebook_id,
+                    date: today,
+                    searches_count: 1, // This will be incremented by the database
+                    last_activity: new Date().toISOString()
+                }, {
+                    onConflict: 'facebook_id,date'
+                })
+
+            // Update user's preferred categories based on search history
+            if (category) {
+                await this.updateUserPreferredCategories(user.facebook_id, category)
+            }
+
+            logger.debug('Search activity logged:', {
+                facebook_id: user.facebook_id,
+                keyword,
+                category,
+                location
+            })
+
+        } catch (error) {
+            logger.error('Error logging search activity:', { facebook_id: user.facebook_id, error })
+        }
+    }
+
+    /**
+     * Update user's preferred categories based on search history
+     */
+    private async updateUserPreferredCategories(facebookId: string, category: string): Promise<void> {
+        try {
+            const { supabaseAdmin } = await import('../../supabase')
+
+            // Get current preferred categories
+            const { data: user, error: userError } = await supabaseAdmin
+                .from('users')
+                .select('preferred_categories')
+                .eq('facebook_id', facebookId)
+                .single()
+
+            if (userError || !user) {
+                logger.warn('User not found for category update:', { facebook_id: facebookId })
+                return
+            }
+
+            let preferredCategories = user.preferred_categories || []
+
+            // Add category if not already in list (max 5 categories)
+            if (!preferredCategories.includes(category)) {
+                preferredCategories.push(category)
+                if (preferredCategories.length > 5) {
+                    preferredCategories = preferredCategories.slice(-5)
+                }
+
+                // Update user's preferred categories
+                await supabaseAdmin
+                    .from('users')
+                    .update({
+                        preferred_categories: preferredCategories,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('facebook_id', facebookId)
+            }
+
+        } catch (error) {
+            logger.error('Error updating preferred categories:', { facebook_id: facebookId, error })
+        }
+    }
+
+    /**
+     * Filter listings by GPS distance from user location
+     */
+    private filterByGPSDistance(listings: any[], user: any, radiusKm: number): any[] {
+        if (!user.latitude || !user.longitude) {
+            return listings
+        }
+
+        return listings.filter(listing => {
+            // For now, use simple location name matching since listings don't have GPS coordinates
+            // In a real implementation, you'd calculate actual distance using GPS coordinates
+            const userLocation = user.location.toLowerCase()
+            const listingLocation = listing.location.toLowerCase()
+
+            // Check if locations match (exact or partial)
+            return listingLocation.includes(userLocation) ||
+                   userLocation.includes(listingLocation) ||
+                   this.calculateLocationSimilarity(userLocation, listingLocation) > 0.7
+        })
+    }
+
+    /**
+     * Calculate similarity between two location strings
+     */
+    private calculateLocationSimilarity(location1: string, location2: string): number {
+        // Simple similarity calculation based on common words
+        const words1 = location1.split(' ')
+        const words2 = location2.split(' ')
+
+        const commonWords = words1.filter(word =>
+            words2.some(w2 => w2.includes(word) || word.includes(w2))
+        )
+
+        return commonWords.length / Math.max(words1.length, words2.length)
+    }
+
+    /**
+     * Handle location update request
+     */
+    private async handleLocationUpdate(user: any): Promise<void> {
+        try {
+            console.log(`📍 Handling location update for user: ${user.facebook_id}`)
+
+            // Send location selection prompt
+            await sendMessage(user.facebook_id,
+                `📍 CẬP NHẬT ĐỊA ĐIỂM\n━━━━━━━━━━━━━━━━━━━━\n💡 Chọn tỉnh/thành phố nơi bạn đang sinh sống\n━━━━━━━━━━━━━━━━━━━━\nĐiều này giúp bạn tìm thấy các dịch vụ gần nhất!`)
+
+            // Send location buttons for update
+            await this.sendLocationButtons(user.facebook_id)
+
+            // Create session for location update
+            await SessionManager.createSession(user.facebook_id, 'location_update', 0, {})
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleLocationUpdate')
+        }
+    }
+
+    /**
+     * Handle nearby search - GPS-based with radius
+     */
+    private async handleNearbySearch(user: any): Promise<void> {
+        try {
+            console.log(`⭐ Handling nearby search for user: ${user.facebook_id}`)
+
+            if (!user.location) {
+                await sendMessage(user.facebook_id,
+                    `❌ Vui lòng cập nhật địa điểm của bạn trước!\n💡 Sử dụng "📍 Cập nhật địa điểm" để thiết lập vị trí.`
+                )
+                return
+            }
+
+            // Create session for nearby search
+            await SessionManager.createSession(user.facebook_id, 'search', 3, {
+                location: user.location,
+                use_gps: true,
+                radius_km: user.search_radius_km || 10
+            })
+
+            // Perform nearby search
+            await this.performSearch(user)
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleNearbySearch')
+        }
+    }
+
+    /**
+     * Handle saved searches based on user's preferred categories
+     */
+    private async handleSavedSearches(user: any): Promise<void> {
+        try {
+            console.log(`💖 Handling saved searches for user: ${user.facebook_id}`)
+
+            const preferredCategories = user.preferred_categories || []
+
+            if (preferredCategories.length === 0) {
+                await sendMessage(user.facebook_id,
+                    `💡 Bạn chưa có tìm kiếm nào được lưu!\n━━━━━━━━━━━━━━━━━━━━\n🔍 Hãy tìm kiếm một vài dịch vụ để hệ thống học hỏi sở thích của bạn.\n━━━━━━━━━━━━━━━━━━━━\n💡 Các tìm kiếm của bạn sẽ được lưu tự động!`
+                )
+                return
+            }
+
+            // Show user's preferred categories as quick search buttons
+            const categoryButtons = preferredCategories.map((category: string) =>
+                createQuickReply(`🔍 ${category}`, `SAVED_SEARCH_${category}`)
+            )
+
+            // Add option to clear saved searches
+            categoryButtons.push(createQuickReply('🗑️ Xóa lịch sử', 'CLEAR_SAVED_SEARCHES'))
+
+            await sendQuickReply(user.facebook_id,
+                `💖 TÌM KIẾM ĐÃ LƯU\n━━━━━━━━━━━━━━━━━━━━\n💡 Dựa trên sở thích của bạn:`,
+                categoryButtons
+            )
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleSavedSearches')
+        }
     }
 }

@@ -151,7 +151,7 @@ export class RegistrationFlow extends BaseFlow {
             // Complete list of Vietnamese provinces + overseas option
             const locations = [
                 // Central Vietnam (Miền Trung) - continued
-                '🏭 QUẢNG BÌNH', '🏔️ QUẢNG TRỊ', '🏘️ THỪA THIÊN HUẾ', '🏭 THỪA THIÊN HUẾ',
+                '🏭 QUẢNG BÌNH', '🏔️ QUẢNG TRỊ', '🏘️ THỪA THIÊN HUẾ',
 
                 // Southern Vietnam (Miền Nam) - continued
                 '🏢 TP.HCM', '🏘️ ĐỒNG NAI', '🏭 BÌNH DƯƠNG', '🏔️ BÌNH PHƯỚC', '🏘️ TÂY NINH',
@@ -518,7 +518,7 @@ export class RegistrationFlow extends BaseFlow {
             '🏛️ THỪA THIÊN HUẾ', '🏖️ ĐÀ NẴNG', '🏔️ QUẢNG NAM', '🏘️ QUẢNG NGÃI', '🏭 BÌNH ĐỊNH',
             '🏔️ PHÚ YÊN', '🏘️ KHÁNH HÒA', '🏖️ NINH THUẬN', '🏜️ BÌNH THUẬN', '🏔️ KON TUM',
             '🏘️ GIA LAI', '🏭 ĐẮK LẮK', '🏔️ ĐẮK NÔNG', '🏘️ LÂM ĐỒNG', '🏭 QUẢNG BÌNH',
-            '🏔️ QUẢNG TRỊ', '🏘️ THỪA THIÊN HUẾ', '🏭 THỪA THIÊN HUẾ', '🏔️ QUẢNG NAM',
+            '🏔️ QUẢNG TRỊ', '🏘️ THỪA THIÊN HUẾ', '🏔️ QUẢNG NAM',
 
             // Southern Vietnam (Miền Nam)
             '🏢 TP.HCM', '🏘️ ĐỒNG NAI', '🏭 BÌNH DƯƠNG', '🏔️ BÌNH PHƯỚC', '🏘️ TÂY NINH',

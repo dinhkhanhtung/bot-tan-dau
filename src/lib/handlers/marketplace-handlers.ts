@@ -43,22 +43,41 @@ export class MarketplaceHandlers {
     }
 
     /**
-     * Handle quick product search
+     * Handle quick product search - Location-based for user's registered area
      */
     static async handleQuickSearch(user: any, keyword: string): Promise<void> {
         try {
             logger.info('Quick search initiated', {
                 facebook_id: user.facebook_id,
-                keyword: keyword
+                keyword: keyword,
+                user_location: user.location
             })
 
-            // Simple search in listings
-            const { data: listings, error } = await supabaseAdmin
+            // Log search activity
+            await this.logSearchActivity(user, keyword, undefined, user.location)
+
+            // Get user's registered location
+            const userLocation = user.location
+
+            if (!userLocation) {
+                await sendMessage(user.facebook_id,
+                    `❌ Vui lòng cập nhật địa điểm của bạn để sử dụng tìm kiếm nhanh!\n💡 Hãy đăng ký hoặc cập nhật thông tin cá nhân.`
+                )
+                return
+            }
+
+            // Search in listings with location filter
+            let query = supabaseAdmin
                 .from('listings')
                 .select('*')
                 .ilike('title', `%${keyword}%`)
                 .eq('status', 'active')
-                .limit(5)
+                .limit(10) // Increased limit for better results
+
+            // Filter by user's location (province/city level)
+            query = query.ilike('location', `%${userLocation}%`)
+
+            const { data: listings, error } = await query
 
             if (error) {
                 logger.error('Quick search error', { error })
@@ -68,21 +87,37 @@ export class MarketplaceHandlers {
 
             if (!listings || listings.length === 0) {
                 await sendMessage(user.facebook_id,
-                    `❌ Không tìm thấy sản phẩm nào với từ khóa: "${keyword}"\n💡 Hãy thử từ khóa khác hoặc sử dụng chức năng tìm kiếm chi tiết.`
+                    `❌ Không tìm thấy dịch vụ nào với từ khóa: "${keyword}" tại ${userLocation}\n━━━━━━━━━━━━━━━━━━━━\n💡 Hãy thử từ khóa khác hoặc sử dụng chức năng tìm kiếm chi tiết để mở rộng vùng tìm kiếm.`
                 )
                 return
             }
 
-            // Send search results
+            // Filter out listings with invalid data
+            const validListings = listings.filter(listing =>
+                listing.title &&
+                listing.price != null &&
+                listing.location &&
+                typeof listing.price === 'number' &&
+                !isNaN(listing.price)
+            )
+
+            if (validListings.length === 0) {
+                await sendMessage(user.facebook_id,
+                    `❌ Không tìm thấy dịch vụ hợp lệ nào với từ khóa: "${keyword}" tại ${userLocation}\n━━━━━━━━━━━━━━━━━━━━\n💡 Hãy thử từ khóa khác hoặc sử dụng chức năng tìm kiếm chi tiết.`
+                )
+                return
+            }
+
+            // Send search results with location context
             await sendMessage(user.facebook_id,
-                `🔍 TÌM THẤY ${listings.length} KẾT QUẢ\n━━━━━━━━━━━━━━━━━━━━`
+                `🔍 TÌM THẤY ${validListings.length} DỊCH VỤ TẠI ${userLocation.toUpperCase()}\n━━━━━━━━━━━━━━━━━━━━\n💡 Kết quả tìm kiếm được lọc theo khu vực của bạn\n━━━━━━━━━━━━━━━━━━━━`
             )
 
             // Create generic template for results
-            const elements = listings.map(listing =>
+            const elements = validListings.map(listing =>
                 createGenericElement(
                     listing.title,
-                    `${formatCurrency(listing.price)} • ${listing.location}`,
+                    `${formatCurrency(listing.price)} • ${listing.location}${listing.category ? ` • ${listing.category}` : ''}`,
                     undefined,
                     [
                         {
@@ -92,7 +127,7 @@ export class MarketplaceHandlers {
                         },
                         {
                             type: 'postback',
-                            title: '💬 Liên hệ',
+                            title: '💬 Liên hệ ngay',
                             payload: `CONTACT_SELLER_${listing.user_id}`
                         }
                     ]
@@ -100,6 +135,17 @@ export class MarketplaceHandlers {
             )
 
             await sendGenericTemplate(user.facebook_id, elements)
+
+            // Add suggestion to search in other areas if few results
+            if (validListings.length < 3) {
+                await sendQuickReply(user.facebook_id,
+                    '💡 Muốn tìm ở khu vực khác?',
+                    [
+                        createQuickReply('🔍 Tìm kiếm chi tiết', 'SEARCH'),
+                        createQuickReply('📍 Thay đổi địa điểm', 'UPDATE_LOCATION')
+                    ]
+                )
+            }
 
         } catch (error) {
             logger.error('Quick search error', { error })
@@ -157,5 +203,53 @@ export class MarketplaceHandlers {
             'sản phẩm gì', 'bán cái gì'
         ]
         return categoryKeywords.some(keyword => text.includes(keyword))
+    }
+
+    /**
+     * Log search activity for history tracking
+     */
+    private static async logSearchActivity(user: any, keyword?: string, category?: string, location?: string): Promise<void> {
+        try {
+            // Log to user_activity_logs
+            await supabaseAdmin
+                .from('user_activity_logs')
+                .insert({
+                    facebook_id: user.facebook_id,
+                    user_type: 'user',
+                    action: 'quick_search',
+                    details: {
+                        keyword: keyword || null,
+                        category: category || null,
+                        location: location || user.location || null,
+                        timestamp: new Date().toISOString()
+                    },
+                    success: true,
+                    response_time_ms: Date.now() - (user.last_activity || Date.now()),
+                    created_at: new Date().toISOString()
+                })
+
+            // Update user activities summary
+            const today = new Date().toISOString().split('T')[0]
+            await supabaseAdmin
+                .from('user_activities')
+                .upsert({
+                    facebook_id: user.facebook_id,
+                    date: today,
+                    searches_count: 1,
+                    last_activity: new Date().toISOString()
+                }, {
+                    onConflict: 'facebook_id,date'
+                })
+
+            logger.debug('Quick search activity logged:', {
+                facebook_id: user.facebook_id,
+                keyword,
+                category,
+                location
+            })
+
+        } catch (error) {
+            logger.error('Error logging quick search activity:', { facebook_id: user.facebook_id, error })
+        }
     }
 }

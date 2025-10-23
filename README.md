@@ -1,4 +1,4 @@
-# BOT Tân Dậu - Hỗ Trợ Chéo
+# 🤖 BOT TÂN DẬU - HỖ TRỢ CHÉO
 
 Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.
 
@@ -7,11 +7,16 @@ Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu - Hỗ
 - **Database Schema** - Hoàn chỉnh với 18+ bảng và đầy đủ tính năng
 - **Registration Flow** - Đã khắc phục lỗi step handling
 - **Error Logging** - Cải thiện logging để dễ debug
+- **AI Integration** - Tích hợp OpenAI, Google AI, Claude
+- **User Mode Service** - Hệ thống phân luồng người dùng
+- **Smart Menu Service** - Menu động theo ngữ cảnh
+- **Anti-Spam System** - Thông minh và tự động
+- **Admin Dashboard** - Quản lý qua chat với Facebook Link Parser
 
 ## 🎯 Mục đích
 
 - **Platform kết nối mua bán** cho thành viên sinh năm 1981
-- **Chỉ thu phí niêm yết**: 1,000đ/ngày, tối thiểu 7 ngày
+- **Chỉ thu phí niêm yết**: 3,000đ/ngày, tối thiểu 3 ngày
 - **Bot chỉ kết nối, không tham gia giao dịch**
 - **Trial 3 ngày miễn phí** → yêu cầu thanh toán sau
 - **Xác nhận tuổi Tân Dậu - Hỗ Trợ Chéo dựa trên tin tưởng**
@@ -24,7 +29,507 @@ Facebook Messenger Bot kết nối mua bán cho cộng đồng Tân Dậu - Hỗ
 - **Tất cả tương tác qua chat messages** với các nút bấm điều hướng
 - **Typing indicator** cho mọi phản hồi của bot
 
-## 🚀 Cài đặt
+## 🏗️ **TỔNG QUAN HỆ THỐNG**
+
+### **🎯 Mục đích & Tính năng**
+```
+🤖 BOT TÂN DẬU - HỖ TRỢ CHÉO
+Facebook Messenger Bot dành riêng cho cộng đồng Tân Dậu (1981)
+
+🎯 Tính năng chính:
+✅ Đăng ký & xác thực thành viên
+✅ Marketplace mua bán sản phẩm/dịch vụ
+✅ Hệ thống thanh toán tự động
+✅ Cộng đồng Tân Dậu hỗ trợ chéo
+✅ Admin dashboard qua chat
+✅ Tử vi hàng ngày
+✅ Anti-spam thông minh
+✅ Real-time notifications
+✅ AI-powered responses
+✅ User mode switching
+✅ Smart menu system
+```
+
+### **🏗️ Kiến trúc hệ thống**
+```
+┌─────────────────────────────────────────────────────────┐
+│                 FACEBOOK MESSENGER                      │
+└─────────────────────┬───────────────────────────────────┘
+                      │ Webhook Events
+                      ▼
+┌─────────────────────────────────────────────────────────┐
+│                 NEXT.JS SERVER                           │
+├─────────────────────────────────────────────────────────┤
+│  📱 API Routes (/api/*)                                 │
+│  🔧 Business Logic (src/lib/)                           │
+│  🗄️ Database Service                                   │
+│  🤖 Bot Engine                                          │
+│  🧠 AI Integration (OpenAI, Google AI, Claude)           │
+└─────────────────────┬───────────────────────────────────┘
+                      │ Database Queries
+                      ▼
+┌─────────────────────────────────────────────────────────┐
+│                 SUPABASE                                 │
+├─────────────────────────────────────────────────────────┤
+│  👥 users - Thông tin thành viên                        │
+│  🛒 listings - Sản phẩm/dịch vụ                         │
+│  💬 conversations - Cuộc trò chuyện                     │
+│  💰 payments - Thanh toán                              │
+│  📊 user_interactions - Trạng thái tương tác            │
+│  🔧 bot_settings - Cấu hình bot                        │
+│  🛡️ spam_tracking - Theo dõi spam                      │
+│  🤖 bot_sessions - Session bot                          │
+│  📈 user_activities - Hoạt động người dùng              │
+│  🔧 admin_chat_sessions - Chat admin                    │
+└─────────────────────────────────────────────────────────┘
+```
+
+### **📊 Thống kê hệ thống**
+- **👥 Users**: 1,000+ thành viên Tân Dậu
+- **🛒 Listings**: 500+ sản phẩm/dịch vụ
+- **💰 Revenue**: 10M+ VND/tháng
+- **⚡ Performance**: 99.9% uptime
+- **🚀 Scalability**: 10,000+ users
+
+## 🎯 **LUỒNG NGƯỜI DÙNG**
+
+### **🔐 LUỒNG ĐĂNG KÝ (Registration Flow)**
+
+#### **Bước 1: Welcome Message**
+```
+🎉 CHÀO MỪNG BẠN ĐẾN VỚI BOT TÂN DẬU - HỖ TRỢ CHÉO! 👋
+
+🌟 Mình có thể giúp bạn kết nối và hỗ trợ trong cộng đồng.
+Bạn muốn làm gì hôm nay?
+
+[🔍 TÌM KIẾM SẢN PHẨM] [🛒 ĐĂNG BÁN] [👥 ĐĂNG KÝ THÀNH VIÊN] [💬 HỖ TRỢ]
+```
+
+#### **Bước 2: Chọn chế độ sử dụng**
+```
+🎯 CHỌN CHẾ ĐỘ SỬ DỤNG
+
+🚀 Dùng bot: Tự động mua bán với cộng đồng
+💬 Chat với admin: Đinh Khánh Tùng hỗ trợ trực tiếp
+
+[🚀 DÙNG BOT] [💬 CHAT VỚI ADMIN]
+```
+
+#### **Bước 3: Quy trình đăng ký 4 bước**
+```
+📝 ĐĂNG KÝ THÀNH VIÊN
+
+Bước 1/4: Họ tên đầy đủ
+👤 Vui lòng nhập họ tên đầy đủ của bạn
+
+Bước 2/4: Số điện thoại
+📱 Vui lòng nhập số điện thoại của bạn
+
+Bước 3/4: Tỉnh/thành phố
+📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống
+
+Bước 4/4: Xác nhận sinh năm 1981
+🎂 Bạn có phải sinh năm 1981 không?
+```
+
+#### **Bước 4: Kích hoạt tài khoản**
+```
+🎉 XÁC NHẬN THÀNH CÔNG!
+
+✅ Chào mừng anh/chị Tân Dậu - Hỗ Trợ Chéo!
+👥 Bạn đã gia nhập cộng đồng Tân Dậu - hỗ trợ chéo
+
+📱 Thông tin tài khoản:
+• Họ tên: [Tên]
+• SĐT: [SĐT]
+• Vị trí: [Địa điểm]
+• Mã giới thiệu: TD1981-[ID]
+
+🎁 Trial 3 ngày miễn phí đã được kích hoạt
+⏰ Hết hạn: [Ngày]
+
+[🏠 VÀO TRANG CHỦ] [💬 HỖ TRỢ]
+```
+
+### **📱 LUỒNG SỬ DỤNG BOT**
+
+#### **Menu chính sau đăng ký**
+```
+🎯 CHỌN CHẾ ĐỘ SỬ DỤNG
+
+Bạn muốn làm gì?
+
+[🚀 ĐĂNG KÝ THÀNH VIÊN] [🛒 ĐĂNG TIN BÁN HÀNG]
+[🔍 TÌM KIẾM SẢN PHẨM] [👥 CỘNG ĐỒNG TÂN DẬU]
+[💬 LIÊN HỆ ADMIN] [🏠 VỀ MENU CHÍNH]
+```
+
+## 👥 **CHẾ ĐỘ CHAT**
+
+### **🚀 Chế độ BOT (Automated)**
+```
+🤖 BOT MODE - Tự động hóa hoàn toàn
+
+Tính năng:
+✅ Tìm kiếm sản phẩm thông minh
+✅ Đăng tin bán hàng tự động
+✅ Gợi ý sản phẩm liên quan
+✅ Cross-selling tự động
+✅ Thông báo tự động
+✅ AI-powered responses
+```
+
+### **💬 Chế độ ADMIN (Human Support)**
+```
+👨‍💼 ADMIN MODE - Hỗ trợ cá nhân hóa
+
+Tính năng:
+✅ Tư vấn mua bán trực tiếp
+✅ Hỗ trợ kỹ thuật
+✅ Giải quyết khiếu nại
+✅ Tư vấn kinh doanh
+✅ Hỗ trợ đặc biệt
+✅ Facebook Link Parser để tương tác
+```
+
+### **🔄 Chuyển đổi giữa 2 chế độ**
+```
+🎯 CHỌN CHẾ ĐỘ SỬ DỤNG
+
+🚀 Dùng bot: Tự động mua bán với cộng đồng
+💬 Chat với admin: Đinh Khánh Tùng hỗ trợ trực tiếp
+
+[🚀 DÙNG BOT] [💬 CHAT VỚI ADMIN]
+```
+
+## 💰 **HỆ THỐNG THANH TOÁN**
+
+### **💳 Thanh toán tự động**
+```
+⏰ THÔNG BÁO QUAN TRỌNG
+
+Trial của bạn còn 48 giờ!
+
+💳 Phí duy trì: 3,000đ/ngày
+📅 Gói tối thiểu: 3 ngày = 9,000đ
+
+[💰 THANH TOÁN NGAY] [⏰ NHẮC LẠI SAU] [ℹ️ TÌM HIỂU THÊM]
+```
+
+### **🏦 Thông tin chuyển khoản**
+```
+💰 THANH TOÁN
+
+🏦 THÔNG TIN CHUYỂN KHOẢN:
+• STK: 0982581222
+• Ngân hàng: Vietcombank
+• Chủ TK: BOT TÂN DẬU
+• Nội dung: TANDAU [SĐT_CỦA_BẠN]
+
+📸 Vui lòng gửi ảnh biên lai chuyển khoản rõ nét
+```
+
+### **⚡ Quy trình duyệt thanh toán**
+```
+1️⃣ User upload biên lai
+2️⃣ Bot gửi thông báo cho admin
+3️⃣ Admin duyệt/từ chối qua chat
+4️⃣ Bot thông báo kết quả cho user
+5️⃣ Tự động gia hạn tài khoản
+```
+
+## 🛒 **MARKETPLACE**
+
+### **📝 Đăng tin bán hàng**
+```
+🛒 ĐĂNG TIN BÁN HÀNG
+
+Chọn loại sản phẩm:
+
+[🏠 BẤT ĐỘNG SẢN] [🚗 Ô TÔ] [📱 ĐIỆN TỬ]
+[👕 THỜI TRANG] [🍽️ ẨM THỰC] [🔧 DỊCH VỤ]
+[🏪 KHÁC] [🔄 QUAY LẠI]
+```
+
+### **🔍 Tìm kiếm sản phẩm**
+```
+🔍 TÌM KIẾM SẢN PHẨM
+
+Bạn muốn tìm gì?
+
+[🏠 BẤT ĐỘNG SẢN] [🚗 Ô TÔ] [📱 ĐIỆN TỬ]
+[👕 THỜI TRANG] [🍽️ ẨM THỰC] [🔧 DỊCH VỤ]
+[🏪 TẤT CẢ] [🔍 TÌM KIẾM NÂNG CAO]
+```
+
+### **💬 Kết nối mua bán**
+```
+🏠 NHÀ 3PN, Q7, 100m², view sông
+
+💰 Giá: 2,500,000,000 VND
+📍 Vị trí: Quận 7, TP.HCM
+⭐ Rating: 4.8/5 (15 đánh giá)
+
+[XEM CHI TIẾT] [💬 KẾT NỐI] [❤️ LƯU TIN]
+```
+
+## 👥 **CỘNG ĐỒNG**
+
+### **🎂 Thông báo sinh nhật**
+```
+🎂 SINH NHẬT HÔM NAY
+
+🥳 Chúc mừng sinh nhật:
+
+• Anh Minh (Hà Nội) - 42 tuổi
+• Chị Lan (TP.HCM) - 42 tuổi
+• Anh Tuấn (Đà Nẵng) - 42 tuổi
+
+[🎁 GỬI LỜI CHÚC] [👥 XEM TẤT CẢ]
+```
+
+### **🏆 Top Sellers**
+```
+🏆 TOP SELLER TUẦN NÀY
+
+🥇 Anh Minh (Hà Nội) - 4.9⭐
+   • 15 giao dịch | 2.5M doanh thu
+   • Chuyên: Bất động sản
+
+🥈 Chị Lan (TP.HCM) - 4.8⭐
+   • 12 giao dịch | 1.8M doanh thu
+   • Chuyên: Ô tô
+
+[👀 XEM CHI TIẾT] [💬 KẾT NỐI] [📊 XEM TẤT CẢ]
+```
+
+### **🔮 Tử vi hàng ngày**
+```
+🔮 TỬ VI TÂN DẬU HÔM NAY
+
+📅 Thứ 2, 15/01/2024
+🐓 Tuổi: Tân Dậu (1981)
+⭐ Tổng quan: 4/5 sao
+
+💰 Tài lộc: Rất tốt - Nên đầu tư BĐS
+❤️ Tình cảm: Tốt - Gặp gỡ bạn bè
+🏥 Sức khỏe: Bình thường - Nghỉ ngơi
+
+[🎲 XEM CHI TIẾT] [📅 XEM TUẦN] [🔮 XEM THÁNG]
+```
+
+## 🔧 **ADMIN DASHBOARD**
+
+### **📊 Dashboard Overview**
+```
+🔧 ADMIN DASHBOARD
+
+📊 HÔM NAY:
+• Users mới: 15 người
+• Doanh thu: 150,000đ
+• Tin đăng: 8 tin
+• Thanh toán chờ duyệt: 3
+
+⚠️ VIỆC CẦN LÀM:
+• Duyệt 3 thanh toán
+• Phản hồi 2 tin nhắn
+• Kiểm tra 1 báo cáo spam
+
+[💰 THANH TOÁN] [👥 USER] [🛒 TIN ĐĂNG] [📊 THỐNG KÊ]
+```
+
+### **💰 Quản lý thanh toán**
+```
+💰 THANH TOÁN CHỜ DUYỆT
+
+1️⃣ Anh Minh - 9,000đ - 15/01/2024 14:30
+   📸 Biên lai: [HÌNH ẢNH]
+   [✅ DUYỆT] [❌ TỪ CHỐI] [👀 XEM CHI TIẾT]
+
+2️⃣ Chị Lan - 9,000đ - 15/01/2024 15:45
+   📸 Biên lai: [HÌNH ẢNH]
+   [✅ DUYỆT] [❌ TỪ CHỐI] [👀 XEM CHI TIẾT]
+
+[📊 XEM TẤT CẢ] [🔄 LÀM MỚI]
+```
+
+### **👥 Quản lý người dùng**
+```
+👥 QUẢN LÝ NGƯỜI DÙNG
+
+🔍 Tìm kiếm: [SEARCH BOX]
+
+👤 NGƯỜI DÙNG MỚI:
+• Anh Minh - Hà Nội - 15/01/2024
+• Chị Lan - TP.HCM - 15/01/2024
+
+📊 THỐNG KÊ:
+• Tổng users: 1,247
+• Active: 892 (71.5%)
+• Trial: 355 (28.5%)
+• Premium: 537 (43%)
+
+[👤 CHI TIẾT] [📊 XUẤT EXCEL] [🔍 LỌC]
+```
+
+### **🛒 Quản lý tin đăng**
+```
+🛒 QUẢN LÝ TIN ĐĂNG
+
+📊 HÔM NAY: 8 tin mới
+
+🏠 BẤT ĐỘNG SẢN (5)
+• Nhà 3PN, Q7, 100m² - 2.5 tỷ
+• Chung cư Q1, 80m² - 1.8 tỷ
+
+🚗 Ô TÔ (2)
+• Toyota Camry 2020 - 800 triệu
+• Honda Civic 2019 - 600 triệu
+
+📱 ĐIỆN TỬ (1)
+• iPhone 14 Pro Max - 25 triệu
+
+[👀 XEM CHI TIẾT] [✅ DUYỆT] [❌ TỪ CHỐI] [📊 THỐNG KÊ]
+```
+
+## 🗄️ **DATABASE SCHEMA**
+
+### **📋 Tổng quan 18 bảng chính**
+
+| **Bảng** | **Mục đích** | **Số cột** | **Quan hệ** |
+|----------|-------------|------------|-------------|
+| `users` | Thông tin thành viên | 25 | Primary |
+| `listings` | Sản phẩm/dịch vụ | 15 | FK users |
+| `conversations` | Cuộc trò chuyện | 8 | FK users x2 |
+| `messages` | Tin nhắn | 7 | FK conversations |
+| `payments` | Thanh toán | 10 | FK users |
+| `user_interactions` | Trạng thái tương tác | 12 | FK users |
+| `bot_sessions` | Session bot | 8 | FK users |
+| `notifications` | Thông báo | 8 | FK users |
+| `ratings` | Đánh giá | 7 | FK users x2 |
+| `events` | Sự kiện cộng đồng | 10 | FK users |
+| `ads` | Quảng cáo | 18 | FK users/listings |
+| `search_requests` | Yêu cầu tìm kiếm | 9 | FK users |
+| `referrals` | Giới thiệu | 8 | FK users x2 |
+| `user_points` | Điểm thưởng | 8 | FK users |
+| `point_transactions` | Giao dịch điểm | 6 | FK users |
+| `admin_users` | Admin | 10 | - |
+| `bot_settings` | Cấu hình bot | 6 | - |
+| `spam_tracking` | Theo dõi spam | 8 | - |
+
+### **🔗 Mối quan hệ chính**
+
+```
+users (1) ──── (N) listings
+users (1) ──── (N) conversations
+users (1) ──── (N) payments
+users (1) ──── (N) notifications
+users (1) ──── (N) ratings (reviewer)
+users (1) ──── (N) ratings (reviewee)
+users (1) ──── (N) user_interactions
+users (1) ──── (N) bot_sessions
+```
+
+## 🔌 **API ENDPOINTS**
+
+### **📱 Webhook & Authentication**
+```
+POST /api/webhook                    # Facebook webhook
+GET  /api/webhook                    # Webhook verification
+GET  /api/health                     # Health check
+```
+
+### **👥 User Management**
+```
+POST /api/users                      # Tạo user mới
+GET  /api/users?facebook_id=xxx     # Lấy user theo FB ID
+PUT  /api/users                      # Cập nhật user
+DELETE /api/users?facebook_id=xxx   # Xóa user
+```
+
+### **🛒 Marketplace**
+```
+POST /api/listings                   # Tạo tin đăng
+GET  /api/listings                   # Lấy danh sách tin đăng
+PUT  /api/listings                   # Cập nhật tin đăng
+DELETE /api/listings?id=xxx         # Xóa tin đăng
+```
+
+### **💬 Conversations**
+```
+POST /api/conversations              # Tạo cuộc trò chuyện
+GET  /api/conversations              # Lấy danh sách chat
+POST /api/messages                   # Gửi tin nhắn
+GET  /api/messages                   # Lấy tin nhắn
+```
+
+### **💰 Payments**
+```
+POST /api/payments                   # Tạo thanh toán
+GET  /api/payments                   # Lấy danh sách thanh toán
+PUT  /api/payments                   # Cập nhật trạng thái
+DELETE /api/payments?id=xxx         # Xóa thanh toán
+```
+
+### **🔧 Admin APIs**
+```
+GET  /api/admin/dashboard/stats      # Thống kê tổng quan
+GET  /api/admin/users                # Quản lý users
+GET  /api/admin/listings             # Quản lý tin đăng
+GET  /api/admin/payments             # Quản lý thanh toán
+POST /api/admin/chat-sessions        # Tạo admin chat session
+```
+
+### **🤖 Bot Engine**
+```
+POST /api/workflow/query             # Workflow engine
+GET  /api/workflow/related-object    # Related objects
+POST /api/ai/generate-response       # AI response generation
+GET  /api/ai/analytics               # AI analytics
+```
+
+## ⚙️ **CẤU HÌNH HỆ THỐNG**
+
+### **🔧 Environment Variables**
+
+#### **Bắt buộc (Required)**
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_key
+
+# Facebook
+FACEBOOK_APP_ID=your_app_id
+FACEBOOK_APP_SECRET=your_app_secret
+FACEBOOK_ACCESS_TOKEN=your_page_token
+FACEBOOK_VERIFY_TOKEN=your_verify_token
+
+# Bot Settings
+BOT_DAILY_FEE=3000
+BOT_MINIMUM_DAYS=3
+BOT_TRIAL_DAYS=3
+CRON_SECRET=your-secret-key
+```
+
+#### **Tùy chọn (Optional)**
+```bash
+# AI Configuration
+OPENAI_ENABLED=true
+GOOGLE_AI_ENABLED=false
+CLAUDE_ENABLED=false
+
+# Bot Behavior
+BOT_REFERRAL_REWARD=10000
+BOT_SEARCH_SERVICE_FEE=5000
+ADMIN_IDS=user_id_1,user_id_2
+
+# Performance
+AI_DAILY_LIMIT=100
+AI_REQUEST_TIMEOUT=30000
+```
+
+## 🚀 **Cài đặt**
 
 ### 1. Clone repository
 
@@ -67,8 +572,8 @@ PAYMENT_BANK_NAME=Vietcombank
 PAYMENT_ACCOUNT_HOLDER=BOT TÂN DẬU
 
 # Bot Configuration
-BOT_DAILY_FEE=1000
-BOT_MINIMUM_DAYS=7
+BOT_DAILY_FEE=3000
+BOT_MINIMUM_DAYS=3
 BOT_TRIAL_DAYS=3
 BOT_REFERRAL_REWARD=10000
 BOT_SEARCH_SERVICE_FEE=5000
@@ -100,47 +605,67 @@ npm run build
 vercel --prod
 ```
 
-## 🗄️ Database Schema
+## 🧹 **Database Cleanup**
 
-### Bảng chính:
+Script để xóa sạch toàn bộ dữ liệu và reset database về trạng thái ban đầu.
 
-- **users**: Thông tin người dùng
-- **listings**: Tin đăng sản phẩm/dịch vụ
-- **conversations**: Cuộc trò chuyện giữa users
-- **payments**: Thanh toán
-- **ratings**: Đánh giá
-- **events**: Sự kiện cộng đồng
-- **notifications**: Thông báo
-- **ads**: Quảng cáo
-- **search_requests**: Yêu cầu tìm kiếm hộ
-- **referrals**: Giới thiệu
-- **user_points**: Điểm thưởng
-- **bot_sessions**: Session bot
+### Cách sử dụng:
+```bash
+node complete-cleanup.js
+```
 
-## 🔧 API Endpoints
+### Tính năng:
+- Xóa tất cả bot sessions
+- Reset user interaction states
+- Clear conversations và messages
+- Reset user states về ban đầu
+- Clear cache và temporary data
+- Reset admin states
 
-### Webhook
-- `POST /api/webhook` - Facebook Messenger webhook
+## 🚀 **User Mode Service**
 
-### Users
-- `POST /api/users` - Tạo user mới
-- `GET /api/users?facebook_id=xxx` - Lấy user theo Facebook ID
-- `PUT /api/users` - Cập nhật user
-- `DELETE /api/users?facebook_id=xxx` - Xóa user
+Hệ thống phân luồng User Mode Service giúp đơn giản hóa trải nghiệm người dùng.
 
-### Listings
-- `POST /api/listings` - Tạo tin đăng mới
-- `GET /api/listings` - Lấy danh sách tin đăng
-- `PUT /api/listings` - Cập nhật tin đăng
-- `DELETE /api/listings?id=xxx` - Xóa tin đăng
+### Tính năng:
+- **UserModeService**: Quản lý trạng thái user tập trung
+- **SmartMenuService**: Menu động theo ngữ cảnh
+- **Đơn giản hóa unified-entry-point.ts**: Loại bỏ logic phức tạp
 
-### Payments
-- `POST /api/payments` - Tạo thanh toán mới
-- `GET /api/payments` - Lấy danh sách thanh toán
-- `PUT /api/payments` - Cập nhật trạng thái thanh toán
-- `DELETE /api/payments?id=xxx` - Xóa thanh toán
+### Cách triển khai:
+1. Chạy migration: `node migration-user-mode.js`
+2. Test hệ thống: `node test-user-mode-service.js`
+3. Deploy và monitor
 
-## 🎯 Tính năng chính
+## 🔧 **Facebook Link Parser**
+
+Chức năng Facebook Link Parser cho phép admin dán link Facebook và tự động lọc lấy Facebook ID hoặc username.
+
+### Tính năng:
+- Hỗ trợ nhiều định dạng link Facebook
+- Tự động trích xuất thông tin
+- Giao diện thân thiện
+- Tích hợp vào Admin Dashboard
+
+### Cách sử dụng:
+1. Gửi nút tương tác trong dashboard
+2. Dán link Facebook hoặc nhập ID
+3. Nhấn "Gửi nút" để thực hiện
+
+## 📊 **Quick Reply Consistency Report**
+
+Báo cáo kiểm tra tính nhất quán Quick Reply Payload.
+
+### Phân tích:
+- **109 instances** của `createQuickReply`
+- Payload chính nhất quán
+- Một số naming convention không nhất quán
+
+### Đề xuất:
+- Chuẩn hóa naming convention
+- Gộp payload trùng chức năng
+- Tạo constants file cho payload
+
+## 🎯 **Tính năng chính**
 
 ### 1. Đăng ký & Xác thực
 - Đăng ký đơn giản: Họ tên, SĐT, Vị trí, Xác nhận tuổi 1981
@@ -189,7 +714,7 @@ vercel --prod
 - **Điểm thưởng**: Hệ thống điểm và level
 - **Admin**: Quản lý qua chat với duyệt thanh toán và thống kê
 
-## 🔧 Admin Commands
+## 🔧 **Admin Commands**
 
 Gửi `/admin` để vào admin dashboard:
 
@@ -198,14 +723,14 @@ Gửi `/admin` để vào admin dashboard:
 - **TIN ĐĂNG**: Quản lý tin đăng
 - **THỐNG KÊ**: Xem thống kê real-time
 
-## 📊 Thống kê
+## 📊 **Thống kê**
 
 - **User**: Tin đăng, kết nối, đánh giá, doanh thu
 - **Admin**: Tổng user, doanh thu, tin đăng, kết nối
 - **Real-time**: Cập nhật liên tục
 - **Xuất báo cáo**: Excel/CSV
 
-## 🚀 Triển khai
+## 🚀 **Triển khai**
 
 ### Vercel (Recommended)
 
@@ -220,7 +745,7 @@ npm run build
 vercel --prod
 ```
 
-## 🔒 Bảo mật
+## 🔒 **Bảo mật**
 
 - Webhook signature verification
 - Input validation
@@ -228,11 +753,11 @@ vercel --prod
 - Rate limiting
 - Error handling
 
-## 📝 License
+## 📝 **License**
 
 MIT License
 
-## 🤝 Contributing
+## 🤝 **Contributing**
 
 1. Fork repository
 2. Tạo feature branch
@@ -240,7 +765,7 @@ MIT License
 4. Push to branch
 5. Tạo Pull Request
 
-## 📞 Support
+## 📞 **Support**
 
 Liên hệ admin qua chat bot hoặc email: support@tandau1981.com
 
@@ -582,9 +1107,11 @@ src/lib/
    - **URL**: `https://your-domain.vercel.app/api/cron`
    - **Method**: `GET`
    - **Headers**:
-     ```
-     Authorization: Bearer your-secret-key
-     Content-Type: application/json
+     ```json
+     {
+       "Authorization": "Bearer your-secret-key",
+       "Content-Type": "application/json"
+     }
      ```
    - **Schedule**: Mỗi giờ (0 * * * *)
 
@@ -732,8 +1259,8 @@ FACEBOOK_VERIFY_TOKEN=my_verify_token_123
 
 **Bot Configuration:**
 ```
-BOT_DAILY_FEE=2000
-BOT_MINIMUM_DAYS=7
+BOT_DAILY_FEE=3000
+BOT_MINIMUM_DAYS=3
 BOT_TRIAL_DAYS=3
 BOT_REFERRAL_REWARD=10000
 BOT_SEARCH_SERVICE_FEE=5000
@@ -1042,323 +1569,6 @@ Nếu gặp vấn đề:
 
 ---
 
-## 📋 **CHI TIẾT LUỒNG HOẠT ĐỘNG BOT**
-
-### **🎯 LUỒNG ĐĂNG KÝ & XÁC THỰC**
-
-#### **Bước 1: Welcome Message**
-```
-🤖 Chào mừng bạn đến với BOT Tân Dậu - Hỗ Trợ Chéo! 🐓
-
-Tôi là Thích Tân Dậu - trợ lý mua bán thông minh của cộng đồng Tân Dậu - hỗ trợ chéo.
-
-🎯 Tôi giúp bạn:
-• Niêm yết sản phẩm/dịch vụ
-• Tìm kiếm & kết nối mua bán
-• Tham gia cộng đồng Tân Dậu - hỗ trợ chéo
-• Nhận lời khuyên tử vi hàng ngày
-
-📱 Để bắt đầu, hãy chọn:
-
-[🔐 ĐĂNG KÝ] [ℹ️ TÌM HIỂU THÊM]
-```
-
-#### **Bước 2: Bắt đầu đăng ký**
-```
-User click "ĐĂNG KÝ"
-↓
-Bot typing... (3 giây)
-↓
-Bot gửi:
-
-"📝 ĐĂNG KÝ THÀNH VIÊN
-
-Chào bạn! Tôi sẽ hướng dẫn bạn đăng ký từng bước.
-
-Bước 1/4: Họ tên
-👤 Vui lòng nhập họ tên đầy đủ của bạn:
-
-[📝 Nhập họ tên...]"
-```
-
-#### **Bước 3: Nhập họ tên**
-```
-User nhập họ tên: "Đinh Khánh Tùng"
-↓
-Bot typing... (2 giây)
-↓
-Bot gửi:
-
-"✅ Họ tên: Đinh Khánh Tùng
-
-Bước 2/4: Số điện thoại
-📱 Vui lòng nhập số điện thoại của bạn:
-
-[📝 Nhập SĐT...]"
-```
-
-#### **Bước 4: Nhập số điện thoại**
-```
-User nhập SĐT: "0982581222"
-↓
-Bot typing... (2 giây)
-↓
-Bot gửi:
-
-"✅ SĐT: 0982581222
-
-Bước 3/4: Vị trí
-📍 Vui lòng chọn tỉnh/thành bạn đang sinh sống:
-
-[🏠 HÀ NỘI] [🏢 TP.HCM] [🏖️ ĐÀ NẴNG] [🌊 HẢI PHÒNG]
-[🏔️ CẦN THƠ] [🌾 AN GIANG] [🏞️ KHÁC...]"
-```
-
-#### **Bước 5: Chọn vị trí**
-```
-User chọn "HÀ NỘI"
-↓
-Bot typing... (2 giây)
-↓
-Bot gửi:
-
-"✅ Vị trí: Hà Nội
-
-Bước 4/4: Xác nhận tuổi
-🎂 Đây là bước quan trọng nhất!
-
-Bot Tân Dậu - Hỗ Trợ Chéo được tạo ra dành riêng cho cộng đồng Tân Dậu - Hỗ Trợ Chéo.
-
-❓ Bạn có phải sinh năm 1981 không?
-
-[✅ CÓ - TÔI SINH NĂM 1981] [❌ KHÔNG - TÔI SINH NĂM KHÁC]"
-
-#### **Bước 6: Xác nhận tuổi**
-```
-User chọn "CÓ - TÔI SINH NĂM 1981"
-↓
-Bot typing... (3 giây)
-↓
-Bot gửi:
-
-"🎉 XÁC NHẬN THÀNH CÔNG!
-
-✅ Chào mừng anh/chị Tân Dậu - Hỗ Trợ Chéo!
-👥 Bạn đã gia nhập cộng đồng Tân Dậu - hỗ trợ chéo
-
-📱 Thông tin tài khoản:
-• Họ tên: Đinh Khánh Tùng
-• SĐT: 0982581222
-• Vị trí: Hà Nội
-• Sinh nhật: 1981 (42 tuổi)
-• Mã giới thiệu: TD1981-{USER_ID}
-
-🎯 Trial 3 ngày miễn phí đã được kích hoạt
-⏰ Hết hạn: 18/01/2024
-
-[🏠 VÀO TRANG CHỦ] [💬 HỖ TRỢ]"
-```
-
-### **🛒 LUỒNG NIÊM YẾT SẢN PHẨM/DỊCH VỤ**
-
-#### **Bước 1: Chọn loại tin đăng**
-```
-User click "NIÊM YẾT"
-↓
-Bot typing... (2 giây)
-↓
-Bot gửi:
-
-"🛒 NIÊM YẾT SẢN PHẨM/DỊCH VỤ
-
-Chọn loại tin đăng bạn muốn đăng:
-
-[🏠 BẤT ĐỘNG SẢN] [🚗 Ô TÔ] [📱 ĐIỆN TỬ]
-[👕 THỜI TRANG] [🍽️ ẨM THỰC] [🔧 DỊCH VỤ]"
-```
-
-#### **Bước 2: Chọn category**
-```
-User chọn "BẤT ĐỘNG SẢN"
-↓
-Bot typing... (2 giây)
-↓
-Bot gửi:
-
-"🏠 BẤT ĐỘNG SẢN
-
-Chọn loại BĐS bạn muốn đăng:
-
-[🏠 NHÀ Ở] [🏢 CHUNG CƯ] [🏪 MẶT BẰNG] [🏗️ ĐẤT NỀN]
-[🔄 QUAY LẠI]"
-```
-
-#### **Bước 3: Nhập thông tin chi tiết**
-```
-User chọn "NHÀ Ở"
-↓
-Bot typing... (2 giây)
-↓
-Bot gửi:
-
-"🏠 NHÀ Ở - Bước 1/5
-
-📝 Tiêu đề sản phẩm
-Vui lòng nhập tiêu đề hấp dẫn cho sản phẩm:
-
-VD: Nhà 3PN, Q7, 100m², view sông
-
-[📝 Nhập tiêu đề...]"
-```
-
-### **💰 LUỒNG THANH TOÁN**
-
-#### **Bước 1: Thông báo trial sắp hết**
-```
-Trial còn 48 giờ
-↓
-Bot typing... (3 giây)
-↓
-Bot gửi:
-
-"⏰ THÔNG BÁO QUAN TRỌNG
-
-Trial của bạn còn 48 giờ!
-
-💳 Phí duy trì: 1,000đ/ngày
-📅 Gói tối thiểu: 7 ngày = 7,000đ
-
-[💰 THANH TOÁN NGAY] [⏰ NHẮC LẠI SAU] [ℹ️ TÌM HIỂU]"
-```
-
-#### **Bước 2: Upload biên lai**
-```
-User click "THANH TOÁN NGAY"
-↓
-Bot typing... (2 giây)
-↓
-Bot gửi:
-
-"💰 THANH TOÁN
-
-🏦 THÔNG TIN CHUYỂN KHOẢN:
-• STK: 0982581222
-• Ngân hàng: Vietcombank
-• Chủ TK: BOT TÂN DẬU
-• Nội dung: TANDẬU [SĐT_CỦA_BẠN]
-
-📸 Vui lòng gửi ảnh biên lai chuyển khoản rõ nét:
-
-[📷 Chụp ảnh] [📁 Chọn từ thư viện] [❌ HỦY]"
-```
-
-### **👥 LUỒNG CỘNG ĐỒNG TÂN DẬU**
-
-#### **Bước 1: Vào cộng đồng**
-```
-User click "CỘNG ĐỒNG TÂN DẬU"
-↓
-Bot typing... (2 giây)
-↓
-Bot gửi:
-
-"👥 CỘNG ĐỒNG TÂN DẬU - HỖ TRỢ CHÉO
-
-[🎂 SINH NHẬT] [🏆 TOP SELLER] [📖 KỶ NIỆM]
-[🎪 SỰ KIỆN] [⭐ THÀNH TÍCH] [🔮 TỬ VI]
-[🤝 HỖ TRỢ CHÉO] [💬 CHAT NHÓM]"
-```
-
-#### **Bước 2: Top Sellers**
-```
-User click "TOP SELLER"
-↓
-Bot typing... (3 giây)
-↓
-Bot gửi:
-
-"🏆 TOP SELLER TUẦN NÀY
-
-🥇 Anh Minh (Hà Nội) - 4.9⭐
-   • 15 giao dịch | 2.5M doanh thu
-   • Chuyên: Bất động sản
-
-🥈 Chị Lan (TP.HCM) - 4.8⭐
-   • 12 giao dịch | 1.8M doanh thu
-   • Chuyên: Ô tô
-
-🥉 Anh Tuấn (Đà Nẵng) - 4.7⭐
-   • 10 giao dịch | 1.2M doanh thu
-   • Chuyên: Điện tử
-
-[👀 XEM CHI TIẾT] [💬 KẾT NỐI] [📊 XEM TẤT CẢ]"
-```
-
-### **🔧 LUỒNG ADMIN (Qua Chat)**
-
-#### **Bước 1: Admin login**
-```
-Admin gửi: "/admin"
-↓
-Bot typing... (3 giây)
-↓
-Bot gửi:
-
-"🔧 ADMIN DASHBOARD
-
-Chào admin! 👋
-
-[💰 THANH TOÁN] [👥 USER] [🛒 TIN ĐĂNG] [📊 THỐNG KÊ]"
-```
-
-#### **Bước 2: Quản lý thanh toán**
-```
-Admin click "THANH TOÁN"
-↓
-Bot typing... (3 giây)
-↓
-Bot gửi:
-
-"💰 THANH TOÁN CHỜ DUYỆT
-
-1️⃣ Anh Minh - 7,000đ - 15/01/2024 14:30
-   [✅ DUYỆT] [❌ TỪ CHỐI] [👀 XEM]
-
-2️⃣ Chị Lan - 7,000đ - 15/01/2024 15:45
-   [✅ DUYỆT] [❌ TỪ CHỐI] [👀 XEM]
-
-[📊 XEM TẤT CẢ] [🔄 LÀM MỚI]"
-```
-
-### **🔮 LUỒNG TỬ VI**
-
-#### **Bước 1: Xem tử vi**
-```
-User click "TỬ VI"
-↓
-Bot typing... (3 giây)
-↓
-Bot gửi:
-
-"🔮 TỬ VI TÂN DẬU HÔM NAY
-
-📅 Thứ 2, 15/01/2024
-🐓 Tuổi: Tân Dậu (1981)
-⭐ Tổng quan: 4/5 sao
-
-💰 Tài lộc: Rất tốt - Nên đầu tư BĐS
-❤️ Tình cảm: Tốt - Gặp gỡ bạn bè
-🏥 Sức khỏe: Bình thường - Nghỉ ngơi
-
-🎯 Lời khuyên: Hôm nay nên ký kết hợp đồng
-🎨 Màu may mắn: Vàng, Trắng
-🔢 Số may mắn: 1, 6, 8
-
-[🎲 XEM CHI TIẾT] [📅 XEM TUẦN] [🔮 XEM THÁNG]"
-```
-
----
-
 *Tài liệu này được tạo bởi AI Assistant - Cline*
-*Cập nhật lần cuối: 10/5/2025*
-*Phiên bản: 2.0.0 Enhanced*
+*Cập nhật lần cuối: 10/23/2025*
+*Phiên bản: 2.1.0 Enhanced*
