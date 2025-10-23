@@ -74,6 +74,25 @@ export function calculateUserLevel(points: number): string {
     return 'Đồng'
 }
 
+// Get suggestions for achieving next level
+export function getLevelSuggestions(currentLevel: string, currentPoints: number): string {
+    switch (currentLevel) {
+        case 'Đồng':
+            const pointsToSilver = 200 - currentPoints
+            return `💡 GỢI Ý: Đăng ${Math.ceil(pointsToSilver / 10)} tin bán để lên Bạc!`
+        case 'Bạc':
+            const pointsToGold = 500 - currentPoints
+            return `💡 GỢI Ý: Đăng ${Math.ceil(pointsToGold / 10)} tin và đánh giá 5 sản phẩm để lên Vàng!`
+        case 'Vàng':
+            const pointsToPlatinum = 1000 - currentPoints
+            return `💡 GỢI Ý: Giới thiệu ${Math.ceil(pointsToPlatinum / 50)} bạn bè để đạt Bạch kim!`
+        case 'Bạch kim':
+            return `💡 CHÚC MỪNG! Bạn đã đạt cấp độ cao nhất!`
+        default:
+            return `💡 GỢI Ý: Tiếp tục tích điểm để thăng hạng!`
+    }
+}
+
 // Validate phone number
 export function validatePhoneNumber(phone: string): boolean {
     const phoneRegex = /^[0-9]{10,11}$/

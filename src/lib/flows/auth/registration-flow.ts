@@ -1,6 +1,7 @@
 import { BaseFlow } from '../../core/flow-base'
 import { SessionManager } from '../../core/session-manager'
-import { UserStateManager, UserState } from '../../core/user-state-manager'
+import { UnifiedUserStateManager } from '../../core/unified-user-state-manager'
+import { UserState } from '../../../types'
 import { supabaseAdmin } from '../../supabase'
 import {
     sendMessage,
@@ -116,7 +117,7 @@ export class RegistrationFlow extends BaseFlow {
             })
 
             // Update user state to prevent welcome service interference
-            await UserStateManager.updateUserState(user.facebook_id, UserState.USING_BOT)
+            await UnifiedUserStateManager.updateUserState(user.facebook_id, UserState.USING_BOT)
 
             // Send pricing and benefits info first
             await this.sendRegistrationPricingInfo(user)
@@ -467,7 +468,7 @@ export class RegistrationFlow extends BaseFlow {
             ])
 
             // Update user state to USING_BOT since they're now registered
-            await UserStateManager.updateUserState(user.facebook_id, UserState.USING_BOT)
+            await UnifiedUserStateManager.updateUserState(user.facebook_id, UserState.USING_BOT)
 
             console.log('✅ Registration completed successfully!')
 

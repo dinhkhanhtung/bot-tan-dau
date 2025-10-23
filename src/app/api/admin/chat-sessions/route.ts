@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { AdminTakeoverService } from '@/lib/admin-takeover-service'
-import { UserInteractionService } from '@/lib/user-interaction-service'
+import { UnifiedUserStateManager } from '@/lib/core/unified-user-state-manager'
 import { logger } from '@/lib/logger'
 import { getUsersWaitingForAdmin, getActiveTakeovers, getTakeoverStats } from '@/lib/database-service'
 
@@ -207,7 +207,7 @@ export async function PUT(request: NextRequest) {
             })
         } else if (action === 'reactivate_bot') {
             // Chỉ kích hoạt lại bot mà không thay đổi trạng thái takeover
-            await UserInteractionService.reactivateBot(user_facebook_id)
+            await UnifiedUserStateManager.reactivateBot(user_facebook_id)
 
             // Reset message counter
             await AdminTakeoverService.resetMessageCounter(user_facebook_id)
@@ -223,7 +223,7 @@ export async function PUT(request: NextRequest) {
             await AdminTakeoverService.stopAdminChat(user_facebook_id, admin_id)
 
             // Kích hoạt lại bot cho user
-            await UserInteractionService.reactivateBot(user_facebook_id)
+            await UnifiedUserStateManager.reactivateBot(user_facebook_id)
 
             logger.info('Admin stopped chat', { admin_id, user_facebook_id })
 
@@ -236,7 +236,7 @@ export async function PUT(request: NextRequest) {
             await AdminTakeoverService.stopAdminChat(user_facebook_id, admin_id)
 
             // Kích hoạt lại bot cho user
-            await UserInteractionService.reactivateBot(user_facebook_id)
+            await UnifiedUserStateManager.reactivateBot(user_facebook_id)
 
             logger.info('Admin stopped chat (default)', { admin_id, user_facebook_id })
 

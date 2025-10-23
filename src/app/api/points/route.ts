@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { calculateUserLevel } from '@/lib/utils'
+import { sendMessage } from '@/lib/facebook-api'
+
+// Helper function to get next level
+function getNextLevel(currentLevel: string): string {
+    switch (currentLevel) {
+        case 'Đồng': return 'Bạc (200 điểm)'
+        case 'Bạc': return 'Vàng (500 điểm)'
+        case 'Vàng': return 'Bạch kim (1000 điểm)'
+        case 'Bạch kim': return 'Tối đa'
+        default: return 'Bạc (200 điểm)'
+    }
+}
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
@@ -99,17 +111,19 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Update user points
+        // Get current user points and level
         const { data: userPoints } = await supabaseAdmin
             .from('user_points')
-            .select('points')
+            .select('points, level')
             .eq('user_id', user_id)
             .single()
 
         const currentPoints = userPoints?.points || 0
+        const oldLevel = userPoints?.level || 'Đồng'
         const newPoints = currentPoints + points
         const newLevel = calculateUserLevel(newPoints)
 
+        // Update user points
         await supabaseAdmin
             .from('user_points')
             .upsert({
@@ -119,10 +133,33 @@ export async function POST(request: NextRequest) {
                 updated_at: new Date().toISOString()
             })
 
+        // Send level up notification if level changed
+        if (newLevel !== oldLevel) {
+            try {
+                // Get user's Facebook ID
+                const { data: userData } = await supabaseAdmin
+                    .from('users')
+                    .select('facebook_id')
+                    .eq('id', user_id)
+                    .single()
+
+                if (userData?.facebook_id) {
+                    const levelUpMessage = `🎉 CHÚC MỪNG THĂNG HẠNG!\n━━━━━━━━━━━━━━━━━━━━\n🏆 Cấp độ mới: ${newLevel}\n💎 Điểm hiện tại: ${newPoints}\n\n💡 Tiếp tục tích điểm để đạt ${getNextLevel(newLevel)}!\n━━━━━━━━━━━━━━━━━━━━`
+
+                    await sendMessage(userData.facebook_id, levelUpMessage)
+                    console.log('Level up notification sent to user:', userData.facebook_id)
+                }
+            } catch (error) {
+                console.error('Error sending level up notification:', error)
+                // Don't fail the API if notification fails
+            }
+        }
+
         return NextResponse.json({
             transaction,
             newPoints,
-            newLevel
+            newLevel,
+            levelChanged: newLevel !== oldLevel
         })
     } catch (error) {
         console.error('Error in POST /api/points:', error)

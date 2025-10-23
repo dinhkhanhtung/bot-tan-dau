@@ -6,7 +6,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { AdminTakeoverService } from './src/lib/admin-takeover-service.js';
+import { AdminTakeoverService } from './src/lib/admin-takeover-service';
 
 // Mock data for testing
 const TEST_USER_ID = 'test_user_123'

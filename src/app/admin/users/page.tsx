@@ -2,6 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import AdvancedFilters, { FilterOptions } from '../components/AdvancedFilters'
+import EnhancedDataTable, { Column } from '../components/EnhancedDataTable'
+import PermissionWrapper, { usePermissions } from '../components/PermissionWrapper'
+import { AdminRole, AdminPermission, getRoleDisplayName } from '@/types'
 
 // Toast notification component
 const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
@@ -39,9 +43,16 @@ interface User {
 export default function AdminUsers() {
     const [users, setUsers] = useState<User[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [filter, setFilter] = useState('all')
-    const [searchTerm, setSearchTerm] = useState('')
+    const [filters, setFilters] = useState<FilterOptions>({
+        search: '',
+        status: undefined,
+        dateRange: undefined,
+        activityLevel: undefined,
+        sortBy: 'created_at',
+        sortOrder: 'desc'
+    })
     const [adminInfo, setAdminInfo] = useState<any>(null)
+    const [adminRole, setAdminRole] = useState<AdminRole>(AdminRole.VIEWER)
     const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info', show: boolean }>({
         message: '',
         type: 'info',
@@ -59,13 +70,24 @@ export default function AdminUsers() {
             return
         }
 
-        setAdminInfo(JSON.parse(adminInfoStr))
+        const parsedAdminInfo = JSON.parse(adminInfoStr)
+        setAdminInfo(parsedAdminInfo)
+        setAdminRole(parsedAdminInfo.role as AdminRole || AdminRole.VIEWER)
     }, [router])
 
     const fetchUsers = useCallback(async () => {
         try {
             const token = localStorage.getItem('admin_token')
-            const response = await fetch(`/api/admin/users?status=${filter}`, {
+            const queryParams = new URLSearchParams()
+
+            if (filters.status) queryParams.append('status', filters.status)
+            if (filters.search) queryParams.append('search', filters.search)
+            if (filters.dateRange?.start) queryParams.append('startDate', filters.dateRange.start.toISOString())
+            if (filters.dateRange?.end) queryParams.append('endDate', filters.dateRange.end.toISOString())
+            if (filters.sortBy) queryParams.append('sortBy', filters.sortBy)
+            if (filters.sortOrder) queryParams.append('sortOrder', filters.sortOrder)
+
+            const response = await fetch(`/api/admin/users?${queryParams}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -83,21 +105,17 @@ export default function AdminUsers() {
         } finally {
             setIsLoading(false)
         }
-    }, [filter])
+    }, [filters])
 
     useEffect(() => {
         checkAuth()
-        fetchUsers()
-    }, [checkAuth, fetchUsers])
+        if (adminRole) {
+            fetchUsers()
+        }
+    }, [checkAuth, fetchUsers, adminRole])
 
-    const filteredUsers = users.filter(user => {
-        if (!searchTerm) return true
-        return (
-            user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.phone.includes(searchTerm) ||
-            user.facebook_id.includes(searchTerm)
-        )
-    })
+    // Filter users based on current filters
+    const filteredUsers = users // Data is already filtered from API
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('vi-VN')
@@ -360,31 +378,16 @@ export default function AdminUsers() {
                     </div>
                 </div>
 
-                {/* Search and Filter */}
-                <div className="mb-6 flex flex-col sm:flex-row gap-4">
-                    <div className="flex-1">
-                        <input
-                            type="text"
-                            placeholder="Tìm kiếm theo tên, SĐT, hoặc Facebook ID..."
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <div className="sm:w-48">
-                        <select
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                            value={filter}
-                            onChange={(e) => setFilter(e.target.value)}
-                        >
-                            <option value="all">Tất cả</option>
-                            <option value="trial">Trial</option>
-                            <option value="registered">Đã đăng ký</option>
-                            <option value="expired">Hết hạn</option>
-                            <option value="suspended">Đình chỉ</option>
-                        </select>
-                    </div>
-                </div>
+                {/* Advanced Filters */}
+                <AdvancedFilters
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    availableStatuses={['trial', 'registered', 'expired', 'suspended']}
+                    showDateRange={true}
+                    showActivityLevel={true}
+                    showSorting={true}
+                    className="mb-6"
+                />
 
                 {/* Users Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -482,7 +485,7 @@ export default function AdminUsers() {
                     {filteredUsers.length === 0 ? (
                         <div className="text-center py-12">
                             <div className="text-gray-500 text-lg">
-                                {searchTerm ? 'Không tìm thấy người dùng nào' : 'Không có người dùng nào'}
+                                {filters.search ? `Không tìm thấy kết quả cho "${filters.search}"` : 'Không có người dùng nào'}
                             </div>
                         </div>
                     ) : (

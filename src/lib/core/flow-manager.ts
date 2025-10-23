@@ -37,17 +37,8 @@ export class FlowManager {
         try {
             console.log(`🔍 FlowManager handling message for user: ${user.facebook_id}`)
 
-            // QUAN TRỌNG: Kiểm tra anti-spam TRƯỚC khi xử lý flow
-            // Sử dụng centralized AntiSpamService thay vì method riêng
-            const { AntiSpamService } = await import('../anti-spam-service')
-            const spamResult = await AntiSpamService.checkMessage(user, text)
-
-            if (spamResult.blocked) {
-                console.log(`🚫 Message blocked by anti-spam: ${spamResult.reason}`)
-                if (spamResult.message) {
-                    const { sendMessage } = await import('../facebook-api')
-                    await sendMessage(user.facebook_id, spamResult.message)
-                }
+            // Check anti-spam first
+            if (!(await this.checkAntiSpam(user, text))) {
                 return
             }
 
@@ -55,24 +46,41 @@ export class FlowManager {
             const session = await SessionManager.getSession(user.facebook_id)
 
             if (session) {
-                // User has active session, route to appropriate flow
-                const flow = this.flows.get(session.current_flow)
-                if (flow && flow.canHandle(user, session)) {
-                    console.log(`📤 Routing to flow: ${session.current_flow}`)
-                    if (flow.handleMessage) {
-                        await flow.handleMessage(user, text, session)
-                    }
+                // Route to flow if possible
+                if (await this.routeToFlow(user, text, session)) {
                     return
                 }
             }
 
             // No active session or flow can't handle, check for flow triggers
-            await this.handleFlowTriggers(user, text)
+            await this.handleNoSession(user, text)
 
         } catch (error) {
             console.error('❌ FlowManager.handleMessage error:', error)
             await this.sendErrorMessage(user.facebook_id)
         }
+    }
+
+    /**
+     * Route postback to the appropriate flow if session exists
+     */
+    private static async routeToFlowPostback(user: any, payload: string, session: any): Promise<boolean> {
+        const flow = this.flows.get(session.current_flow)
+        if (flow && flow.canHandle(user, session)) {
+            console.log(`📤 Routing postback to flow: ${session.current_flow}`)
+            if (flow.handlePostback) {
+                await flow.handlePostback(user, payload, session)
+            }
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Handle case when no session exists for postback
+     */
+    private static async handleNoSessionPostback(user: any, payload: string): Promise<void> {
+        await this.handlePostbackTriggers(user, payload)
     }
 
     /**
@@ -86,19 +94,14 @@ export class FlowManager {
             const session = await SessionManager.getSession(user.facebook_id)
 
             if (session) {
-                // User has active session, route to appropriate flow
-                const flow = this.flows.get(session.current_flow)
-                if (flow && flow.canHandle(user, session)) {
-                    console.log(`📤 Routing postback to flow: ${session.current_flow}`)
-                    if (flow.handlePostback) {
-                        await flow.handlePostback(user, payload, session)
-                    }
+                // Route to flow if possible
+                if (await this.routeToFlowPostback(user, payload, session)) {
                     return
                 }
             }
 
             // No active session, check for flow triggers
-            await this.handlePostbackTriggers(user, payload)
+            await this.handleNoSessionPostback(user, payload)
 
         } catch (error) {
             console.error('❌ FlowManager.handlePostback error:', error)
@@ -237,6 +240,45 @@ export class FlowManager {
     }
 
     /**
+     * Check anti-spam for the message
+     */
+    private static async checkAntiSpam(user: any, text: string): Promise<boolean> {
+        const { AntiSpamService } = await import('../anti-spam-service')
+        const spamResult = await AntiSpamService.checkMessage(user, text)
+        if (spamResult.blocked) {
+            console.log(`🚫 Message blocked by anti-spam: ${spamResult.reason}`)
+            if (spamResult.message) {
+                const { sendMessage } = await import('../facebook-api')
+                await sendMessage(user.facebook_id, spamResult.message)
+            }
+            return false
+        }
+        return true
+    }
+
+    /**
+     * Route message to the appropriate flow if session exists
+     */
+    private static async routeToFlow(user: any, text: string, session: any): Promise<boolean> {
+        const flow = this.flows.get(session.current_flow)
+        if (flow && flow.canHandle(user, session)) {
+            console.log(`📤 Routing to flow: ${session.current_flow}`)
+            if (flow.handleMessage) {
+                await flow.handleMessage(user, text, session)
+            }
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Handle case when no session exists
+     */
+    private static async handleNoSession(user: any, text: string): Promise<void> {
+        await this.handleFlowTriggers(user, text)
+    }
+
+    /**
      * Send default message when no flow is triggered
      */
     private static async sendDefaultMessage(user: any): Promise<void> {
@@ -263,14 +305,10 @@ export class FlowManager {
     }
 
     /**
-     * Send detailed information about the bot
+     * Build the info message
      */
-    private static async sendDetailedInfo(user: any): Promise<void> {
-        try {
-            const { sendMessage } = await import('../facebook-api')
-
-            // Send detailed information in 2 compact messages
-            const infoMessage = `📋 THÔNG TIN CHI TIẾT BOT TÂN DẬU
+    private static buildInfoMessage(): string {
+        return `📋 THÔNG TIN CHI TIẾT BOT TÂN DẬU
 
 Kết nối với hơn 2 triệu Tân Dậu để cùng nhau phát triển và thịnh vượng.
 
@@ -279,8 +317,13 @@ Kết nối với hơn 2 triệu Tân Dậu để cùng nhau phát triển và t
 💬 Kết nối với cộng đồng
 📊 Thống kê & báo cáo
 🎁 Điểm thưởng & quà tặng`
+    }
 
-            const processMessage = `📋 QUY TRÌNH ĐĂNG KÝ:
+    /**
+     * Build the process message
+     */
+    private static buildProcessMessage(): string {
+        return `📋 QUY TRÌNH ĐĂNG KÝ:
 1️⃣ Họ tên đầy đủ
 2️⃣ Số điện thoại
 3️⃣ Tỉnh/thành phố
@@ -292,20 +335,36 @@ Kết nối với hơn 2 triệu Tân Dậu để cùng nhau phát triển và t
 • Hỗ trợ 24/7 từ admin
 
 Bạn có muốn đăng ký ngay không?`
+    }
 
-            await sendMessage(user.facebook_id, infoMessage)
-            await this.delay(1000)
-            await sendMessage(user.facebook_id, processMessage)
-            await this.delay(1000)
+    /**
+     * Send info messages and buttons
+     */
+    private static async sendInfoMessages(user: any): Promise<void> {
+        const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
 
-            // Send action buttons
-            const { sendQuickReply, createQuickReply } = await import('../facebook-api')
-            await sendQuickReply(user.facebook_id, 'Bạn muốn làm gì tiếp theo?', [
-                createQuickReply('🚀 ĐĂNG KÝ NGAY', 'REGISTER'),
-                createQuickReply('🛒 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
-                createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
-            ])
+        const infoMessage = this.buildInfoMessage()
+        const processMessage = this.buildProcessMessage()
 
+        await sendMessage(user.facebook_id, infoMessage)
+        await this.delay(1000)
+        await sendMessage(user.facebook_id, processMessage)
+        await this.delay(1000)
+
+        // Send action buttons
+        await sendQuickReply(user.facebook_id, 'Bạn muốn làm gì tiếp theo?', [
+            createQuickReply('🚀 ĐĂNG KÝ NGAY', 'REGISTER'),
+            createQuickReply('🛒 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+            createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
+        ])
+    }
+
+    /**
+     * Send detailed information about the bot
+     */
+    private static async sendDetailedInfo(user: any): Promise<void> {
+        try {
+            await this.sendInfoMessages(user)
         } catch (error) {
             console.error('Error sending detailed info:', error)
             await this.sendErrorMessage(user.facebook_id)
@@ -313,41 +372,55 @@ Bạn có muốn đăng ký ngay không?`
     }
 
     /**
+     * Check anti-spam for contact admin
+     */
+    private static async checkAntiSpamForContact(user: any): Promise<boolean> {
+        const { AntiSpamService } = await import('../anti-spam-service')
+        const spamResult = await AntiSpamService.checkPostbackAction(user, 'CONTACT_ADMIN')
+        if (spamResult.blocked) {
+            console.log(`🚫 Admin contact request blocked by anti-spam: ${spamResult.reason}`)
+            if (spamResult.message) {
+                const { sendMessage } = await import('../facebook-api')
+                await sendMessage(user.facebook_id, spamResult.message)
+            }
+            return false
+        }
+        return true
+    }
+
+    /**
+     * Perform actions after contact admin check
+     */
+    private static async performContactActions(user: any): Promise<void> {
+        const { sendMessage, hideButtons } = await import('../facebook-api')
+
+        // Send contact message
+        await sendMessage(user.facebook_id, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!')
+
+        // Hide buttons
+        const hideResult = await hideButtons(user.facebook_id)
+        console.log('🔧 Hidden buttons after contact request:', hideResult)
+
+        // Stop bot for this user
+        const { UnifiedUserStateManager } = await import('./unified-user-state-manager')
+        await UnifiedUserStateManager.updateUserInteractionState(user.facebook_id, {
+            bot_active: false
+        })
+
+        // Notify admin (you can add admin notification logic here)
+        console.log('User requested support:', user.facebook_id)
+    }
+
+    /**
      * Contact admin - Bot stops and hides buttons
      */
     private static async contactAdmin(user: any): Promise<void> {
         try {
-            // QUAN TRỌNG: Kiểm tra anti-spam ngay cả khi contact admin từ flow
-            // Sử dụng centralized AntiSpamService
-            const { AntiSpamService } = await import('../anti-spam-service')
-            const spamResult = await AntiSpamService.checkPostbackAction(user, 'CONTACT_ADMIN')
-
-            if (spamResult.blocked) {
-                console.log(`🚫 Admin contact request blocked by anti-spam: ${spamResult.reason}`)
-                if (spamResult.message) {
-                    const { sendMessage } = await import('../facebook-api')
-                    await sendMessage(user.facebook_id, spamResult.message)
-                }
+            if (!(await this.checkAntiSpamForContact(user))) {
                 return
             }
 
-            const { sendMessage, hideButtons } = await import('../facebook-api')
-
-            // Send contact message
-            await sendMessage(user.facebook_id, '💬 Đinh Khánh Tùng đã nhận được tin nhắn của bạn và sẽ sớm phản hồi!')
-
-            // Hide buttons
-            const hideResult = await hideButtons(user.facebook_id)
-            console.log('🔧 Hidden buttons after contact request:', hideResult)
-
-            // Stop bot for this user
-            const { UserInteractionService } = await import('../user-interaction-service')
-            await UserInteractionService.updateUserState(user.facebook_id, {
-                bot_active: false
-            })
-
-            // Notify admin (you can add admin notification logic here)
-            console.log('User requested support:', user.facebook_id)
+            await this.performContactActions(user)
 
         } catch (error) {
             console.error('Error contacting admin:', error)

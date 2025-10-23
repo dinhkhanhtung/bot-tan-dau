@@ -4,9 +4,9 @@
  * Bao gồm message counting, state management và notification system
  */
 
-import { supabaseAdmin } from './supabase.js'
-import { sendMessage } from './facebook-api.js'
-import { logger } from './logger.js'
+import { supabaseAdmin } from './supabase'
+import { sendMessage } from './facebook-api'
+import { logger } from './logger'
 
 interface AdminTakeoverState {
   id?: string
@@ -204,8 +204,8 @@ export class AdminTakeoverService {
                 })
 
             // Dừng bot cho user này
-            const { UserInteractionService } = await import('./user-interaction-service')
-            await UserInteractionService.updateUserState(userId, {
+            const { UnifiedUserStateManager } = await import('./core/unified-user-state-manager')
+            await UnifiedUserStateManager.updateUserInteractionState(userId, {
                 bot_active: false
             })
 
@@ -246,8 +246,8 @@ export class AdminTakeoverService {
                 .eq('admin_id', adminId)
 
             // Kích hoạt lại bot cho user này
-            const { UserInteractionService } = await import('./user-interaction-service')
-            await UserInteractionService.reactivateBot(userId)
+            const { UnifiedUserStateManager } = await import('./core/unified-user-state-manager')
+            await UnifiedUserStateManager.reactivateBot(userId)
 
             // Reset spam data để user có thể sử dụng bot lại
             await supabaseAdmin
@@ -277,8 +277,8 @@ export class AdminTakeoverService {
 
             // Nếu user không còn chờ admin và không có admin active, kích hoạt lại bot
             if (!state?.user_waiting_for_admin && !state?.is_active) {
-                const { UserInteractionService } = await import('./user-interaction-service.js')
-                await UserInteractionService.reactivateBot(userId)
+                const { UnifiedUserStateManager } = await import('./core/unified-user-state-manager')
+                await UnifiedUserStateManager.reactivateBot(userId)
 
                 logger.info('Bot reactivated for user', { userId })
             }
@@ -397,8 +397,8 @@ export class AdminTakeoverService {
                 })
 
             // Dừng bot cho user này
-            const { UserInteractionService } = await import('./user-interaction-service')
-            await UserInteractionService.updateUserState(facebookId, {
+            const { UnifiedUserStateManager } = await import('./core/unified-user-state-manager')
+            await UnifiedUserStateManager.updateUserInteractionState(facebookId, {
                 bot_active: false
             })
 
@@ -433,8 +433,8 @@ export class AdminTakeoverService {
                 .eq('admin_id', adminId)
 
             // Kích hoạt lại bot cho user này
-            const { UserInteractionService } = await import('./user-interaction-service')
-            await UserInteractionService.reactivateBot(facebookId)
+            const { UnifiedUserStateManager } = await import('./core/unified-user-state-manager')
+            await UnifiedUserStateManager.reactivateBot(facebookId)
 
             // Reset spam data để user có thể sử dụng bot lại
             await supabaseAdmin

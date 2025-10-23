@@ -1569,6 +1569,6 @@ Nếu gặp vấn đề:
 
 ---
 
-*Tài liệu này được tạo bởi AI Assistant - Cline*
+*Tài liệu này được tạo bởi Đinh Khánh Tùng *
 *Cập nhật lần cuối: 10/23/2025*
 *Phiên bản: 2.1.0 Enhanced*

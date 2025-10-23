@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AIPromptGenerator from './components/AIPromptGenerator'
 import FacebookLinkParser from './components/FacebookLinkParser'
-import { AIDashboardStats } from '@/types'
+import PermissionWrapper, { usePermissions } from '../components/PermissionWrapper'
+import AdvancedFilters, { FilterOptions } from '../components/AdvancedFilters'
+import { AIDashboardStats, AdminRole, AdminPermission, getRoleDisplayName } from '@/types'
 
 // Toast notification component
 const Toast = ({ message, type, show, onClose }: { message: string, type: 'success' | 'error' | 'info', show: boolean, onClose: () => void }) => {
@@ -45,6 +47,7 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [adminInfo, setAdminInfo] = useState<any>(null)
+    const [adminRole, setAdminRole] = useState<AdminRole>(AdminRole.VIEWER)
     const [activeTab, setActiveTab] = useState<'overview' | 'ai'>('overview')
     const [aiStats, setAiStats] = useState<AIDashboardStats | null>(null)
     const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info', show: boolean }>({
@@ -69,7 +72,9 @@ export default function AdminDashboard() {
             return
         }
 
-        setAdminInfo(JSON.parse(adminInfoStr))
+        const parsedAdminInfo = JSON.parse(adminInfoStr)
+        setAdminInfo(parsedAdminInfo)
+        setAdminRole(parsedAdminInfo.role as AdminRole || AdminRole.VIEWER)
 
         // Fetch dashboard stats
         fetchStats()
@@ -358,9 +363,14 @@ export default function AdminDashboard() {
                             </h1>
                         </div>
                         <div className="flex items-center space-x-2 sm:space-x-4">
-                            <span className="text-sm sm:text-base text-gray-700">
-                                Xin chào, {adminInfo?.name || adminInfo?.username}
-                            </span>
+                            <div className="text-right">
+                                <div className="text-sm sm:text-base text-gray-700">
+                                    Xin chào, {adminInfo?.name || adminInfo?.username}
+                                </div>
+                                <div className="text-xs sm:text-sm text-gray-500">
+                                    {getRoleDisplayName(adminRole)}
+                                </div>
+                            </div>
                             <button
                                 onClick={handleLogout}
                                 className="bg-red-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-red-700 text-sm sm:text-base"
@@ -587,20 +597,30 @@ export default function AdminDashboard() {
                                     🚀 Công cụ tương tác
                                 </h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    <button
-                                        onClick={handleBulkMessage}
-                                        disabled={loadingActions.bulkMessage}
-                                        className="inline-flex items-center justify-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 transition-colors duration-200"
+                                    <PermissionWrapper
+                                        permission={AdminPermission.SEND_NOTIFICATIONS}
+                                        adminRole={adminRole}
+                                        fallback={
+                                            <div className="inline-flex items-center justify-center px-3 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed">
+                                                📨 Gửi tin nhắn hàng loạt
+                                            </div>
+                                        }
                                     >
-                                        {loadingActions.bulkMessage ? (
-                                            <>
-                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
-                                                Đang gửi...
-                                            </>
-                                        ) : (
-                                            '📨 Gửi tin nhắn hàng loạt'
-                                        )}
-                                    </button>
+                                        <button
+                                            onClick={handleBulkMessage}
+                                            disabled={loadingActions.bulkMessage}
+                                            className="inline-flex items-center justify-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 transition-colors duration-200"
+                                        >
+                                            {loadingActions.bulkMessage ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
+                                                    Đang gửi...
+                                                </>
+                                            ) : (
+                                                '📨 Gửi tin nhắn hàng loạt'
+                                            )}
+                                        </button>
+                                    </PermissionWrapper>
                                     <button
                                         onClick={handleSendButton}
                                         disabled={loadingActions.sendButton}
@@ -643,34 +663,54 @@ export default function AdminDashboard() {
                                             '📢 Gửi thông báo'
                                         )}
                                     </button>
-                                    <button
-                                        onClick={handleGivePoints}
-                                        disabled={loadingActions.givePoints}
-                                        className="inline-flex items-center justify-center px-3 py-2 border border-teal-300 text-sm font-medium rounded-md text-teal-700 bg-teal-50 hover:bg-teal-100 disabled:opacity-50 transition-colors duration-200"
+                                    <PermissionWrapper
+                                        permission={AdminPermission.EDIT_USERS}
+                                        adminRole={adminRole}
+                                        fallback={
+                                            <div className="inline-flex items-center justify-center px-3 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed">
+                                                🎁 Tặng điểm thưởng
+                                            </div>
+                                        }
                                     >
-                                        {loadingActions.givePoints ? (
-                                            <>
-                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-600 mr-2"></div>
-                                                Đang tặng...
-                                            </>
-                                        ) : (
-                                            '🎁 Tặng điểm thưởng'
-                                        )}
-                                    </button>
-                                    <button
-                                        onClick={handleSyncFromDashboard}
-                                        disabled={loadingActions.syncFromDashboard}
-                                        className="inline-flex items-center justify-center px-3 py-2 border border-pink-300 text-sm font-medium rounded-md text-pink-700 bg-pink-50 hover:bg-pink-100 disabled:opacity-50 transition-colors duration-200"
+                                        <button
+                                            onClick={handleGivePoints}
+                                            disabled={loadingActions.givePoints}
+                                            className="inline-flex items-center justify-center px-3 py-2 border border-teal-300 text-sm font-medium rounded-md text-teal-700 bg-teal-50 hover:bg-teal-100 disabled:opacity-50 transition-colors duration-200"
+                                        >
+                                            {loadingActions.givePoints ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-600 mr-2"></div>
+                                                    Đang tặng...
+                                                </>
+                                            ) : (
+                                                '🎁 Tặng điểm thưởng'
+                                            )}
+                                        </button>
+                                    </PermissionWrapper>
+                                    <PermissionWrapper
+                                        permission={AdminPermission.SYSTEM_SETTINGS}
+                                        adminRole={adminRole}
+                                        fallback={
+                                            <div className="inline-flex items-center justify-center px-3 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed">
+                                                🔄 Đồng bộ dữ liệu
+                                            </div>
+                                        }
                                     >
-                                        {loadingActions.syncFromDashboard ? (
-                                            <>
-                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pink-600 mr-2"></div>
-                                                Đang đồng bộ...
-                                            </>
-                                        ) : (
-                                            '🔄 Đồng bộ dữ liệu'
-                                        )}
-                                    </button>
+                                        <button
+                                            onClick={handleSyncFromDashboard}
+                                            disabled={loadingActions.syncFromDashboard}
+                                            className="inline-flex items-center justify-center px-3 py-2 border border-pink-300 text-sm font-medium rounded-md text-pink-700 bg-pink-50 hover:bg-pink-100 disabled:opacity-50 transition-colors duration-200"
+                                        >
+                                            {loadingActions.syncFromDashboard ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pink-600 mr-2"></div>
+                                                    Đang đồng bộ...
+                                                </>
+                                            ) : (
+                                                '🔄 Đồng bộ dữ liệu'
+                                            )}
+                                        </button>
+                                    </PermissionWrapper>
                                 </div>
                             </div>
                         </div>

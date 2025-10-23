@@ -1,5 +1,6 @@
 import { sendMessage, sendTypingIndicator, sendQuickReply, createQuickReply } from '../facebook-api'
-import { SmartContextManager, UserContext, UserType, UserState as SmartContextUserState } from './smart-context-manager'
+import { UnifiedUserStateManager } from './unified-user-state-manager'
+import { UserState, UserType, UserContext } from '../../types'
 import { CONFIG } from '../config'
 import { logger, logUserAction, logBotEvent, logError } from '../logger'
 import { errorHandler, createUserError, ErrorType } from '../error-handler'
@@ -10,11 +11,11 @@ import { WelcomeType, sendReturningUserMessage } from '../welcome-service'
 import { messageProcessor } from './message-processor'
 import { FlowManager } from './flow-manager'
 import { FlowInitializer } from './flow-initializer'
-import { UserInteractionService } from '../user-interaction-service'
+import { SessionManager } from './session-manager'
 import { AdminTakeoverService } from '../admin-takeover-service'
 import { UtilityHandlers } from '../handlers/utility-handlers'
 import { MarketplaceHandlers } from '../handlers/marketplace-handlers'
-import { UserStateManager, UserState } from './user-state-manager'
+import { calculateUserLevel, getLevelSuggestions } from '../utils'
 
 /**
  * Unified Bot System - Main entry point for bot message processing
@@ -22,6 +23,126 @@ import { UserStateManager, UserState } from './user-state-manager'
  */
 export class UnifiedBotSystem {
     private static initialized = false
+
+    /**
+     * Check if bot is stopped globally
+     */
+    private static async checkBotStatus(): Promise<boolean> {
+        const botStatus = await getBotStatus()
+        return botStatus !== 'stopped'
+    }
+
+    /**
+     * Check if admin is active for the user
+     */
+    private static async checkAdminActive(user: any): Promise<boolean> {
+        const isAdminActive = await AdminTakeoverService.isAdminActive(user.facebook_id)
+        return !isAdminActive
+    }
+
+    /**
+     * Handle special postbacks
+     */
+    private static async handleSpecialPostbacks(user: any, postback: string): Promise<boolean> {
+        switch (postback) {
+            case 'USE_BOT':
+                await UnifiedUserStateManager.handleUseBot(user.facebook_id)
+                return true
+            case 'CHAT_ADMIN':
+                await UnifiedUserStateManager.handleChatWithAdmin(user.facebook_id)
+                return true
+            case 'STOP_BOT':
+                await UnifiedUserStateManager.handleStopBot(user.facebook_id)
+                return true
+            case 'BACK_TO_MAIN':
+                await UnifiedUserStateManager.handleBackToMain(user.facebook_id)
+                return true
+        }
+        return false
+    }
+
+    /**
+     * Route based on active session
+     */
+    private static async routeBasedOnSession(user: any, text: string, isPostback?: boolean, postback?: string): Promise<boolean> {
+        const activeSession = await SessionManager.getSession(user.facebook_id)
+        if (activeSession) {
+            logger.info('User has active session, routing to FlowManager', {
+                facebook_id: user.facebook_id,
+                flow: activeSession.current_flow
+            })
+            await this.handleBotUserMessage(user, text, isPostback, postback)
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Handle based on user state
+     */
+    private static async handleBasedOnState(user: any, text: string, isPostback?: boolean, postback?: string): Promise<void> {
+        const currentState = await UnifiedUserStateManager.getUserState(user.facebook_id)
+        if (!currentState) {
+            await UnifiedUserStateManager.handleNewUser(user.facebook_id)
+            return
+        }
+
+        // Check if user is returning within 24 hours
+        const userData = await getUserByFacebookId(user.facebook_id)
+        if (userData?.welcome_sent && userData?.last_welcome_sent) {
+            const lastWelcomeTime = new Date(userData.last_welcome_sent)
+            const now = new Date()
+            const hoursDiff = (now.getTime() - lastWelcomeTime.getTime()) / (1000 * 60 * 60)
+            if (hoursDiff < 24) {
+                await sendReturningUserMessage(user.facebook_id)
+                return
+            }
+        }
+
+        // Handle based on current mode
+        if (currentState.current_mode === UserState.CHATTING_ADMIN) {
+            logger.info('User is chatting with admin, ignoring bot message', { facebook_id: user.facebook_id })
+            return
+        }
+
+        if (currentState.current_mode === UserState.USING_BOT) {
+            await this.handleBotUserMessage(user, text, isPostback, postback)
+            return
+        }
+
+        if (currentState.current_mode === UserState.CHOOSING) {
+            if (isPostback && postback) {
+                await FlowManager.handlePostback(user, postback)
+            } else {
+                await this.handleDefaultMessage(user)
+            }
+            return
+        }
+
+        // Fallback
+        await UnifiedUserStateManager.sendChoosingMenu(user.facebook_id)
+    }
+
+    /**
+     * Log and handle errors
+     */
+    private static async logAndError(user: any, text: string, isPostback?: boolean, postback?: string, error?: any): Promise<void> {
+        const duration = Date.now() - (this as any).startTime || 0
+        const messageError = createUserError(
+            `Message processing failed: ${error instanceof Error ? error.message : String(error)}`,
+            ErrorType.USER_ERROR,
+            {
+                facebook_id: user.facebook_id,
+                text,
+                isPostback,
+                postback,
+                duration
+            },
+            user.facebook_id
+        )
+        logError(messageError, { operation: 'message_processing', user, text, isPostback, postback })
+        await this.sendErrorMessage(user.facebook_id)
+    }
 
     /**
      * Initialize the bot system (call once at startup)
@@ -71,16 +192,16 @@ export class UnifiedBotSystem {
             if (isPostback && postback) {
                 switch (postback) {
                     case 'USE_BOT':
-                        await UserStateManager.handleUseBot(user.facebook_id)
+                        await UnifiedUserStateManager.handleUseBot(user.facebook_id)
                         return
                     case 'CHAT_ADMIN':
-                        await UserStateManager.handleChatWithAdmin(user.facebook_id)
+                        await UnifiedUserStateManager.handleChatWithAdmin(user.facebook_id)
                         return
                     case 'STOP_BOT':
-                        await UserStateManager.handleStopBot(user.facebook_id)
+                        await UnifiedUserStateManager.handleStopBot(user.facebook_id)
                         return
                     case 'BACK_TO_MAIN':
-                        await UserStateManager.handleBackToMain(user.facebook_id)
+                        await UnifiedUserStateManager.handleBackToMain(user.facebook_id)
                         return
                 }
 
@@ -91,7 +212,6 @@ export class UnifiedBotSystem {
             }
 
             // Step 4: SIMPLIFIED ROUTING - Check session first, then state
-            const { SessionManager } = await import('./session-manager')
             const activeSession = await SessionManager.getSession(user.facebook_id)
 
             if (activeSession) {
@@ -105,11 +225,11 @@ export class UnifiedBotSystem {
             }
 
             // No active session - check user state
-            const currentState = await UserStateManager.getUserState(user.facebook_id)
+            const currentState = await UnifiedUserStateManager.getUserState(user.facebook_id)
 
             if (!currentState) {
                 // User mới - xử lý welcome và chuyển sang choosing mode
-                await UserStateManager.handleNewUser(user.facebook_id)
+                await UnifiedUserStateManager.handleNewUser(user.facebook_id)
                 return
             }
 
@@ -150,7 +270,7 @@ export class UnifiedBotSystem {
             }
 
             // Fallback - send choosing menu
-            await UserStateManager.sendChoosingMenu(user.facebook_id)
+            await UnifiedUserStateManager.sendChoosingMenu(user.facebook_id)
 
             const duration = Date.now() - startTime
             logBotEvent('message_processed', {
@@ -280,12 +400,12 @@ export class UnifiedBotSystem {
      */
     private static async analyzeUserContext(user: any): Promise<UserContext> {
         try {
-            return await SmartContextManager.analyzeUserContext(user)
+            return await UnifiedUserStateManager.analyzeUserContext(user.facebook_id)
         } catch (error) {
             logError(error as Error, { operation: 'analyze_user_context', user })
             return {
                 userType: UserType.NEW_USER,
-                userState: SmartContextUserState.IDLE,
+                userState: UserState.IDLE,
                 user: user,
                 session: null,
                 isInFlow: false
@@ -298,8 +418,8 @@ export class UnifiedBotSystem {
      */
     private static async handleNewUser(user: any): Promise<void> {
         try {
-            // Send welcome via WelcomeService (through UserStateManager)
-            await UserStateManager.handleNewUser(user.facebook_id)
+            // Send welcome via WelcomeService (through UnifiedUserStateManager)
+            await UnifiedUserStateManager.handleNewUser(user.facebook_id)
         } catch (error) {
             logger.error('Error handling new user in UnifiedBotSystem', { facebookId: user.facebook_id, error })
         }
@@ -330,8 +450,19 @@ export class UnifiedBotSystem {
      */
     private static async handleRegisteredUser(user: any): Promise<void> {
         try {
+            // Get user's points and level
+            const { data: userPointsData } = await supabaseAdmin
+                .from('user_points')
+                .select('points')
+                .eq('user_id', user.id)
+                .single()
+
+            const userPoints = userPointsData?.points || 0
+            const userLevel = calculateUserLevel(userPoints)
+            const suggestion = getLevelSuggestions(userLevel, userPoints)
+
             await sendMessage(user.facebook_id,
-                `👋 CHÀO MỪNG TRỞ LẠI!\n━━━━━━━━━━━━━━━━━━━━\n🎯 Bạn có thể sử dụng tất cả tính năng\n🛒 Đăng tin bán hàng\n🔍 Tìm kiếm sản phẩm\n👥 Tham gia cộng đồng\n━━━━━━━━━━━━━━━━━━━━`)
+                `👋 CHÀO MỪNG TRỞ LẠI!\n━━━━━━━━━━━━━━━━━━━━\n🎯 Bạn có thể sử dụng tất cả tính năng\n🛒 Đăng tin bán hàng\n🔍 Tìm kiếm sản phẩm\n👥 Tham gia cộng đồng\n\n🏆 Cấp độ: ${userLevel} (${userPoints} điểm)\n${suggestion}\n━━━━━━━━━━━━━━━━━━━━`)
 
             await sendQuickReply(user.facebook_id, 'Chọn tính năng:', [
                 createQuickReply('📝 ĐĂNG TIN', 'LISTING'),
@@ -445,7 +576,6 @@ export class UnifiedBotSystem {
     private static async showCurrentStepButtons(user: any): Promise<void> {
         try {
             // Lấy session hiện tại để biết user đang ở bước nào
-            const { SessionManager } = await import('./session-manager')
             const activeSession = await SessionManager.getSession(user.facebook_id)
 
             if (activeSession) {
@@ -463,8 +593,7 @@ export class UnifiedBotSystem {
                 }
             } else {
                 // User không trong flow - hiển thị menu chính
-                const { UserStateManager } = await import('./user-state-manager')
-                await UserStateManager.sendBotMenu(user.facebook_id)
+                await UnifiedUserStateManager.sendBotMenu(user.facebook_id)
                 logger.info('Showed main menu buttons for user', { facebookId: user.facebook_id })
             }
         } catch (error) {
