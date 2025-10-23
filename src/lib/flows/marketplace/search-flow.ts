@@ -1288,6 +1288,8 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
         const pageMessage = `Danh mục (${startIndex + 1}-${endIndex}/${categories.length}):`
 
         await sendQuickReply(facebookId, pageMessage, quickReplies)
+    }
+
     /**
      * Handle next locations page
      */
