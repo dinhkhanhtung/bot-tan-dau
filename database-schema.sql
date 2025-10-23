@@ -378,11 +378,52 @@ CREATE TABLE IF NOT EXISTS admin_takeover_states (
     user_facebook_id VARCHAR(255) UNIQUE NOT NULL,
     admin_id VARCHAR(255) NOT NULL,
     is_active BOOLEAN DEFAULT FALSE,
+    consecutive_message_count INTEGER DEFAULT 0,
+    last_user_message_at TIMESTAMP WITH TIME ZONE,
+    user_waiting_for_admin BOOLEAN DEFAULT FALSE,
     started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     ended_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- ========================================
+-- MIGRATION: Thêm các cột thiếu vào admin_takeover_states
+-- ========================================
+-- Thêm các cột cần thiết cho admin takeover service
+
+ALTER TABLE admin_takeover_states
+ADD COLUMN IF NOT EXISTS consecutive_message_count INTEGER DEFAULT 0;
+
+ALTER TABLE admin_takeover_states
+ADD COLUMN IF NOT EXISTS last_user_message_at TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE admin_takeover_states
+ADD COLUMN IF NOT EXISTS user_waiting_for_admin BOOLEAN DEFAULT FALSE;
+
+-- Tạo indexes cho các cột mới
+CREATE INDEX IF NOT EXISTS idx_admin_takeover_states_consecutive_count
+ON admin_takeover_states(consecutive_message_count);
+
+CREATE INDEX IF NOT EXISTS idx_admin_takeover_states_waiting_for_admin
+ON admin_takeover_states(user_waiting_for_admin)
+WHERE user_waiting_for_admin = TRUE;
+
+CREATE INDEX IF NOT EXISTS idx_admin_takeover_states_last_message
+ON admin_takeover_states(last_user_message_at);
+
+-- Kiểm tra kết quả
+SELECT
+    column_name,
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'admin_takeover_states'
+ORDER BY ordinal_position;
+
+-- Thông báo hoàn thành
+SELECT '✅ Admin takeover states migration completed successfully!' as status;
 
 -- ========================================
 -- 5. INDEXES
@@ -1339,3 +1380,66 @@ WHERE schemaname = 'public';
 
 -- Thông báo hoàn thành cuối cùng
 SELECT '🚀 Database đã sẵn sàng với tất cả tính năng và migrations!' as ready_status;
+
+-- ========================================
+-- MIGRATION SCRIPT: FIX ADMIN TAKEOVER STATES TABLE
+-- ========================================
+-- Script riêng để chạy trong Supabase SQL Editor nếu database đã tồn tại
+
+-- Kiểm tra và thêm các cột thiếu vào admin_takeover_states
+DO $$
+BEGIN
+    -- Thêm consecutive_message_count nếu chưa có
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'admin_takeover_states'
+        AND column_name = 'consecutive_message_count'
+    ) THEN
+        ALTER TABLE admin_takeover_states
+        ADD COLUMN consecutive_message_count INTEGER DEFAULT 0;
+    END IF;
+
+    -- Thêm last_user_message_at nếu chưa có
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'admin_takeover_states'
+        AND column_name = 'last_user_message_at'
+    ) THEN
+        ALTER TABLE admin_takeover_states
+        ADD COLUMN last_user_message_at TIMESTAMP WITH TIME ZONE;
+    END IF;
+
+    -- Thêm user_waiting_for_admin nếu chưa có
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'admin_takeover_states'
+        AND column_name = 'user_waiting_for_admin'
+    ) THEN
+        ALTER TABLE admin_takeover_states
+        ADD COLUMN user_waiting_for_admin BOOLEAN DEFAULT FALSE;
+    END IF;
+END $$;
+
+-- Tạo indexes cho các cột mới
+CREATE INDEX IF NOT EXISTS idx_admin_takeover_states_consecutive_count
+ON admin_takeover_states(consecutive_message_count);
+
+CREATE INDEX IF NOT EXISTS idx_admin_takeover_states_waiting_for_admin
+ON admin_takeover_states(user_waiting_for_admin)
+WHERE user_waiting_for_admin = TRUE;
+
+CREATE INDEX IF NOT EXISTS idx_admin_takeover_states_last_message
+ON admin_takeover_states(last_user_message_at);
+
+-- Hiển thị cấu trúc bảng sau khi cập nhật
+SELECT
+    column_name,
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'admin_takeover_states'
+ORDER BY ordinal_position;
+
+-- Thông báo hoàn thành
+SELECT '✅ Admin takeover states table fixed successfully!' as status;
