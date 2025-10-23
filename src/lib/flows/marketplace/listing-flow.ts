@@ -89,6 +89,10 @@ export class ListingFlow extends BaseFlow {
                 await this.startListing(user)
             } else if (payload.startsWith('SELECT_CATEGORY_')) {
                 await this.handleCategoryPostback(user, payload, session)
+            } else if (payload.startsWith('NEXT_LISTING_CATEGORIES_')) {
+                await this.handleNextListingCategories(user, payload, session)
+            } else if (payload.startsWith('PREV_LISTING_CATEGORIES_')) {
+                await this.handlePrevListingCategories(user, payload, session)
             } else if (payload.startsWith('SELECT_LOCATION_')) {
                 await this.handleLocationPostback(user, payload, session)
             } else if (payload === 'CANCEL_LISTING') {
@@ -429,14 +433,57 @@ export class ListingFlow extends BaseFlow {
     }
 
     /**
-     * Send category buttons
+     * Send category buttons (limited to 13 per message due to Facebook API limit)
      */
     private async sendCategoryButtons(facebookId: string): Promise<void> {
-        const quickReplies = Object.keys(CATEGORIES).map(category =>
-            createQuickReply(category, `SELECT_CATEGORY_${category}`)
-        )
+        const categories = Object.keys(CATEGORIES)
+        const maxButtons = 13 // Facebook API limit for quick replies
 
-        await sendQuickReply(facebookId, 'Chọn danh mục sản phẩm:', quickReplies)
+        if (categories.length <= maxButtons) {
+            // Send all categories in one message
+            const quickReplies = categories.map(category =>
+                createQuickReply(category, `SELECT_CATEGORY_${category}`)
+            )
+            await sendQuickReply(facebookId, 'Chọn danh mục sản phẩm:', quickReplies)
+        } else {
+            // Split categories into batches
+            const batches = this.chunkArray(categories, maxButtons - 2) // Reserve 2 slots for navigation buttons
+
+            for (let i = 0; i < batches.length; i++) {
+                const batch = batches[i]
+                const isLastBatch = i === batches.length - 1
+                const isFirstBatch = i === 0
+
+                const quickReplies = batch.map(category =>
+                    createQuickReply(category, `SELECT_CATEGORY_${category}`)
+                )
+
+                // Add navigation buttons if not the last batch
+                if (!isLastBatch) {
+                    quickReplies.push(
+                        createQuickReply('▶️ Xem thêm', `NEXT_LISTING_CATEGORIES_${i + 1}`)
+                    )
+                }
+
+                // Add back button if not the first batch
+                if (!isFirstBatch) {
+                    quickReplies.push(
+                        createQuickReply('◀️ Quay lại', `PREV_LISTING_CATEGORIES_${i - 1}`)
+                    )
+                }
+
+                const batchMessage = isFirstBatch
+                    ? `Chọn danh mục sản phẩm (${i * (maxButtons - 2) + 1}-${Math.min((i + 1) * (maxButtons - 2), categories.length)}/${categories.length}):`
+                    : `Danh mục sản phẩm (${i * (maxButtons - 2) + 1}-${Math.min((i + 1) * (maxButtons - 2), categories.length)}/${categories.length}):`
+
+                await sendQuickReply(facebookId, batchMessage, quickReplies)
+
+                // If this is the first batch and there are more, stop here and wait for user input
+                if (isFirstBatch && !isLastBatch) {
+                    break
+                }
+            }
+        }
     }
 
     /**
@@ -484,5 +531,86 @@ export class ListingFlow extends BaseFlow {
         ]
 
         await sendQuickReply(facebookId, `Từ khóa cho ${category}:`, quickReplies)
+    }
+
+    /**
+     * Helper function to chunk array into smaller arrays
+     */
+    private chunkArray<T>(array: T[], chunkSize: number): T[][] {
+        const chunks: T[][] = []
+        for (let i = 0; i < array.length; i += chunkSize) {
+            chunks.push(array.slice(i, i + chunkSize))
+        }
+        return chunks
+    }
+
+    /**
+     * Handle next categories page
+     */
+    private async handleNextListingCategories(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`▶️ Processing next listing categories for user: ${user.facebook_id}`)
+
+            const pageIndex = parseInt(payload.replace('NEXT_LISTING_CATEGORIES_', ''))
+            console.log(`[DEBUG] Next listing categories page: ${pageIndex}`)
+
+            await this.sendListingCategoriesPage(user.facebook_id, pageIndex)
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleNextListingCategories')
+        }
+    }
+
+    /**
+     * Handle previous categories page
+     */
+    private async handlePrevListingCategories(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`◀️ Processing previous listing categories for user: ${user.facebook_id}`)
+
+            const pageIndex = parseInt(payload.replace('PREV_LISTING_CATEGORIES_', ''))
+            console.log(`[DEBUG] Previous listing categories page: ${pageIndex}`)
+
+            await this.sendListingCategoriesPage(user.facebook_id, pageIndex)
+
+        } catch (error) {
+            await this.handleError(user, error, 'handlePrevListingCategories')
+        }
+    }
+
+    /**
+     * Send categories page with pagination
+     */
+    private async sendListingCategoriesPage(facebookId: string, pageIndex: number): Promise<void> {
+        const categories = Object.keys(CATEGORIES)
+        const maxButtons = 13 // Facebook API limit for quick replies
+
+        const startIndex = pageIndex * (maxButtons - 2) // Reserve 2 slots for navigation
+        const endIndex = Math.min(startIndex + (maxButtons - 2), categories.length)
+        const currentPageCategories = categories.slice(startIndex, endIndex)
+
+        const isLastPage = endIndex >= categories.length
+        const isFirstPage = pageIndex === 0
+
+        const quickReplies = currentPageCategories.map(category =>
+            createQuickReply(category, `SELECT_CATEGORY_${category}`)
+        )
+
+        // Add navigation buttons
+        if (!isLastPage) {
+            quickReplies.push(
+                createQuickReply('▶️ Xem thêm', `NEXT_LISTING_CATEGORIES_${pageIndex + 1}`)
+            )
+        }
+
+        if (!isFirstPage) {
+            quickReplies.push(
+                createQuickReply('◀️ Quay lại', `PREV_LISTING_CATEGORIES_${pageIndex - 1}`)
+            )
+        }
+
+        const pageMessage = `Danh mục sản phẩm (${startIndex + 1}-${endIndex}/${categories.length}):`
+
+        await sendQuickReply(facebookId, pageMessage, quickReplies)
     }
 }

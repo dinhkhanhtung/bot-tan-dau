@@ -89,6 +89,10 @@ export class SearchFlow extends BaseFlow {
                 await this.startQuickSearch(user)
             } else if (payload.startsWith('SELECT_CATEGORY_')) {
                 await this.handleCategoryPostback(user, payload, session)
+            } else if (payload.startsWith('NEXT_CATEGORIES_')) {
+                await this.handleNextCategories(user, payload, session)
+            } else if (payload.startsWith('PREV_CATEGORIES_')) {
+                await this.handlePrevCategories(user, payload, session)
             } else if (payload.startsWith('SELECT_LOCATION_')) {
                 await this.handleLocationPostback(user, payload, session)
             } else if (payload.startsWith('VIEW_LISTING_')) {
@@ -529,14 +533,57 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
     }
 
     /**
-     * Send category buttons
+     * Send category buttons (limited to 13 per message due to Facebook API limit)
      */
     private async sendCategoryButtons(facebookId: string): Promise<void> {
-        const quickReplies = Object.keys(CATEGORIES).map(category =>
-            createQuickReply(category, `SELECT_CATEGORY_${category}`)
-        )
+        const categories = Object.keys(CATEGORIES)
+        const maxButtons = 13 // Facebook API limit for quick replies
 
-        await sendQuickReply(facebookId, 'Chọn danh mục:', quickReplies)
+        if (categories.length <= maxButtons) {
+            // Send all categories in one message
+            const quickReplies = categories.map(category =>
+                createQuickReply(category, `SELECT_CATEGORY_${category}`)
+            )
+            await sendQuickReply(facebookId, 'Chọn danh mục:', quickReplies)
+        } else {
+            // Split categories into batches
+            const batches = this.chunkArray(categories, maxButtons - 2) // Reserve 2 slots for navigation buttons
+
+            for (let i = 0; i < batches.length; i++) {
+                const batch = batches[i]
+                const isLastBatch = i === batches.length - 1
+                const isFirstBatch = i === 0
+
+                const quickReplies = batch.map(category =>
+                    createQuickReply(category, `SELECT_CATEGORY_${category}`)
+                )
+
+                // Add navigation buttons if not the last batch
+                if (!isLastBatch) {
+                    quickReplies.push(
+                        createQuickReply('▶️ Xem thêm', `NEXT_CATEGORIES_${i + 1}`)
+                    )
+                }
+
+                // Add back button if not the first batch
+                if (!isFirstBatch) {
+                    quickReplies.push(
+                        createQuickReply('◀️ Quay lại', `PREV_CATEGORIES_${i - 1}`)
+                    )
+                }
+
+                const batchMessage = isFirstBatch
+                    ? `Chọn danh mục (${i * (maxButtons - 2) + 1}-${Math.min((i + 1) * (maxButtons - 2), categories.length)}/${categories.length}):`
+                    : `Danh mục (${i * (maxButtons - 2) + 1}-${Math.min((i + 1) * (maxButtons - 2), categories.length)}/${categories.length}):`
+
+                await sendQuickReply(facebookId, batchMessage, quickReplies)
+
+                // If this is the first batch and there are more, stop here and wait for user input
+                if (isFirstBatch && !isLastBatch) {
+                    break
+                }
+            }
+        }
     }
 
     /**
@@ -1123,5 +1170,75 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
         } catch (error) {
             await this.handleError(user, error, 'handleSavedSearches')
         }
+    }
+
+    /**
+     * Handle next categories page
+     */
+    private async handleNextCategories(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`▶️ Processing next categories for user: ${user.facebook_id}`)
+
+            const pageIndex = parseInt(payload.replace('NEXT_CATEGORIES_', ''))
+            console.log(`[DEBUG] Next categories page: ${pageIndex}`)
+
+            await this.sendCategoriesPage(user.facebook_id, pageIndex)
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleNextCategories')
+        }
+    }
+
+    /**
+     * Handle previous categories page
+     */
+    private async handlePrevCategories(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`◀️ Processing previous categories for user: ${user.facebook_id}`)
+
+            const pageIndex = parseInt(payload.replace('PREV_CATEGORIES_', ''))
+            console.log(`[DEBUG] Previous categories page: ${pageIndex}`)
+
+            await this.sendCategoriesPage(user.facebook_id, pageIndex)
+
+        } catch (error) {
+            await this.handleError(user, error, 'handlePrevCategories')
+        }
+    }
+
+    /**
+     * Send categories page with pagination
+     */
+    private async sendCategoriesPage(facebookId: string, pageIndex: number): Promise<void> {
+        const categories = Object.keys(CATEGORIES)
+        const maxButtons = 13 // Facebook API limit for quick replies
+
+        const startIndex = pageIndex * (maxButtons - 2) // Reserve 2 slots for navigation
+        const endIndex = Math.min(startIndex + (maxButtons - 2), categories.length)
+        const currentPageCategories = categories.slice(startIndex, endIndex)
+
+        const isLastPage = endIndex >= categories.length
+        const isFirstPage = pageIndex === 0
+
+        const quickReplies = currentPageCategories.map(category =>
+            createQuickReply(category, `SELECT_CATEGORY_${category}`)
+        )
+
+        // Add navigation buttons
+        if (!isLastPage) {
+            quickReplies.push(
+                createQuickReply('▶️ Xem thêm', `NEXT_CATEGORIES_${pageIndex + 1}`)
+            )
+        }
+
+        if (!isFirstPage) {
+            quickReplies.push(
+                createQuickReply('◀️ Quay lại', `PREV_CATEGORIES_${pageIndex - 1}`)
+            )
+        }
+
+        const pageMessage = `Danh mục (${startIndex + 1}-${endIndex}/${categories.length}):`
+
+        await sendQuickReply(facebookId, pageMessage, quickReplies)
     }
 }
