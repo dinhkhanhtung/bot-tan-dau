@@ -186,6 +186,7 @@ export class UserInteractionService {
 
     /**
      * Xử lý tin nhắn tiếp theo (sau khi đã gửi welcome)
+     * CHỈ xử lý khi không có active session - để UnifiedBotSystem xử lý anti-spam
      */
     static async handleSubsequentMessage(facebookId: string, message: string): Promise<void> {
         try {
@@ -204,31 +205,31 @@ export class UserInteractionService {
             const sessionData = await getBotSession(facebookId)
             const currentFlow = sessionData?.current_flow || null
 
-            // Nếu đang trong luồng, KHÔNG gọi anti-spam - để FlowManager xử lý
+            // QUAN TRỌNG: Nếu có active session, KHÔNG xử lý ở đây
+            // Để UnifiedBotSystem sử dụng AntiSpamService xử lý thống nhất
             if (currentFlow && ['registration', 'listing', 'search', 'community'].includes(currentFlow)) {
-                console.log('🔄 User đang trong flow:', currentFlow, '- để FlowManager xử lý, không gọi anti-spam')
+                console.log('🔄 User đang trong flow:', currentFlow, '- để UnifiedBotSystem xử lý anti-spam')
                 return
             }
+
+            // CHỈ xử lý khi không có active session (fallback case)
+            console.log('🔍 No active session - handling subsequent message:', { facebookId, message })
 
             // Ẩn nút ngay khi user gửi tin nhắn thay vì ấn nút
             const { hideButtons } = await import('./facebook-api')
             const hideResult = await hideButtons(facebookId)
             console.log('🔧 Hidden buttons because user sent text instead of clicking button:', hideResult)
 
-            // Chỉ gọi anti-spam khi KHÔNG trong luồng
-            const { handleAntiSpam } = await import('./anti-spam')
+            // Sử dụng centralized AntiSpamService thay vì gọi trực tiếp
+            const { AntiSpamService } = await import('./anti-spam-service')
+            const spamResult = await AntiSpamService.checkMessage({ facebook_id: facebookId }, message)
 
-            // Lấy user status từ bảng users
-            const { getUserByFacebookId } = await import('./database-service')
-            const userData = await getUserByFacebookId(facebookId)
-            const userStatus = userData?.status || 'new_user'
-
-            console.log('🔍 Anti-spam check (no active flow):', { facebookId, userStatus, message })
-
-            const result = await handleAntiSpam(facebookId, message, userStatus, currentFlow)
-
-            if (result.block) {
-                logger.info('Message blocked due to spam detection', { facebookId, result })
+            if (spamResult.blocked) {
+                logger.info('Message blocked due to spam detection', { facebookId, reason: spamResult.reason })
+                if (spamResult.message) {
+                    const { sendMessage } = await import('./facebook-api')
+                    await sendMessage(facebookId, spamResult.message)
+                }
                 return
             }
 
@@ -238,7 +239,7 @@ export class UserInteractionService {
                 last_interaction: new Date().toISOString()
             })
 
-            logger.info('Subsequent message handled via anti-spam logic', { facebookId, result })
+            logger.info('Subsequent message handled successfully', { facebookId })
         } catch (error) {
             logger.error('Error handling subsequent message', { facebookId, error })
         }

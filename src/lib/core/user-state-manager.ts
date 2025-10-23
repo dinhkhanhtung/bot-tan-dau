@@ -129,6 +129,19 @@ export class UserStateManager {
      */
     static async handleChatWithAdmin(facebookId: string): Promise<void> {
         try {
+            // QUAN TRỌNG: Kiểm tra anti-spam ngay cả khi chat với admin
+            // Sử dụng centralized AntiSpamService
+            const { AntiSpamService } = await import('../anti-spam-service')
+            const spamResult = await AntiSpamService.checkPostbackAction({ facebook_id: facebookId }, 'CONTACT_ADMIN')
+
+            if (spamResult.blocked) {
+                logger.info('Admin chat request blocked by anti-spam', { facebookId, reason: spamResult.reason })
+                if (spamResult.message) {
+                    await sendMessage(facebookId, spamResult.message)
+                }
+                return
+            }
+
             await this.updateUserState(facebookId, UserState.CHATTING_ADMIN)
 
             await sendMessage(facebookId,
@@ -313,4 +326,6 @@ export class UserStateManager {
     private static async delay(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms))
     }
+
+
 }

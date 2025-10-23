@@ -255,6 +255,10 @@ export class AdminTakeoverService {
                 .delete()
                 .eq('user_id', userId)
 
+            // Reset anti-spam cache để user có thể sử dụng bot lại
+            const { AntiSpamService } = await import('./anti-spam-service')
+            AntiSpamService.resetUserCache(userId)
+
             // Thông báo cho user
             await this.notifyUserAdminLeft(userId)
 

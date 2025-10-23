@@ -192,6 +192,22 @@ export class UnifiedBotSystem {
 
             // Xử lý text message
             if (text) {
+                // QUAN TRỌNG: Kiểm tra anti-spam TRƯỚC khi xử lý flow
+                // Sử dụng centralized anti-spam service thay vì method riêng
+                const { AntiSpamService } = await import('../anti-spam-service')
+                const spamResult = await AntiSpamService.checkMessage(user, text)
+
+                if (spamResult.blocked) {
+                    logger.info('Message blocked by anti-spam', { facebookId: user.facebook_id, reason: spamResult.reason })
+
+                    // Nếu action là admin_notified_and_show_buttons - hiển thị lại nút của bước hiện tại
+                    if (spamResult.action === 'admin_notified_and_show_buttons') {
+                        await this.showCurrentStepButtons(user)
+                    }
+
+                    return
+                }
+
                 // Thử xử lý bằng handlers trước
                 const handledByUtility = await UtilityHandlers.handleSpecialKeywords(user, text)
                 if (!handledByUtility) {
@@ -422,4 +438,94 @@ export class UnifiedBotSystem {
     private static async delay(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms))
     }
+
+    /**
+     * Hiển thị lại các nút của bước hiện tại khi user bị spam
+     */
+    private static async showCurrentStepButtons(user: any): Promise<void> {
+        try {
+            // Lấy session hiện tại để biết user đang ở bước nào
+            const { SessionManager } = await import('./session-manager')
+            const activeSession = await SessionManager.getSession(user.facebook_id)
+
+            if (activeSession) {
+                // User đang trong flow - hiển thị lại menu của flow đó
+                const { FlowManager } = await import('./flow-manager')
+                const flow = FlowManager.getFlow(activeSession.current_flow)
+
+                if (flow) {
+                    // Gửi thông báo user đang ở bước nào và hiển thị menu phù hợp
+                    await this.sendCurrentStepMessage(user, activeSession.current_flow)
+                    logger.info('Showed current step buttons for user in flow', {
+                        facebookId: user.facebook_id,
+                        flow: activeSession.current_flow
+                    })
+                }
+            } else {
+                // User không trong flow - hiển thị menu chính
+                const { UserStateManager } = await import('./user-state-manager')
+                await UserStateManager.sendBotMenu(user.facebook_id)
+                logger.info('Showed main menu buttons for user', { facebookId: user.facebook_id })
+            }
+        } catch (error) {
+            logger.error('Error showing current step buttons', { facebookId: user.facebook_id, error })
+        }
+    }
+
+    /**
+     * Gửi thông báo về bước hiện tại và menu phù hợp
+     */
+    private static async sendCurrentStepMessage(user: any, flowName: string): Promise<void> {
+        try {
+            const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
+
+            let stepMessage = ''
+            let buttons: any[] = []
+
+            switch (flowName) {
+                case 'registration':
+                    stepMessage = '📝 BƯỚC ĐĂNG KÝ\n━━━━━━━━━━━━━━━━━━━━\nVui lòng hoàn thành việc đăng ký để sử dụng bot:'
+                    buttons = [
+                        createQuickReply('📝 TIẾP TỤC ĐĂNG KÝ', 'RESUME_REGISTRATION'),
+                        createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
+                        createQuickReply('🏠 VỀ MENU CHÍNH', 'BACK_TO_MAIN')
+                    ]
+                    break
+
+                case 'listing':
+                    stepMessage = '🛒 BƯỚC ĐĂNG BÁN\n━━━━━━━━━━━━━━━━━━━━\nVui lòng hoàn thành việc đăng bán:'
+                    buttons = [
+                        createQuickReply('📝 TIẾP TỤC ĐĂNG BÁN', 'RESUME_LISTING'),
+                        createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
+                        createQuickReply('🏠 VỀ MENU CHÍNH', 'BACK_TO_MAIN')
+                    ]
+                    break
+
+                case 'search':
+                    stepMessage = '🔍 BƯỚC TÌM KIẾM\n━━━━━━━━━━━━━━━━━━━━\nVui lòng hoàn thành việc tìm kiếm:'
+                    buttons = [
+                        createQuickReply('🔍 TIẾP TỤC TÌM KIẾM', 'RESUME_SEARCH'),
+                        createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
+                        createQuickReply('🏠 VỀ MENU CHÍNH', 'BACK_TO_MAIN')
+                    ]
+                    break
+
+                default:
+                    stepMessage = '🔄 BƯỚC HIỆN TẠI\n━━━━━━━━━━━━━━━━━━━━\nVui lòng hoàn thành thao tác hiện tại:'
+                    buttons = [
+                        createQuickReply('▶️ TIẾP TỤC', 'RESUME_CURRENT'),
+                        createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
+                        createQuickReply('🏠 VỀ MENU CHÍNH', 'BACK_TO_MAIN')
+                    ]
+            }
+
+            await sendMessage(user.facebook_id, stepMessage)
+            await sendQuickReply(user.facebook_id, 'Chọn hành động:', buttons)
+
+        } catch (error) {
+            logger.error('Error sending current step message', { facebookId: user.facebook_id, flowName, error })
+        }
+    }
+
+
 }

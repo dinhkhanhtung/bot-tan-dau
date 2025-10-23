@@ -37,6 +37,20 @@ export class FlowManager {
         try {
             console.log(`🔍 FlowManager handling message for user: ${user.facebook_id}`)
 
+            // QUAN TRỌNG: Kiểm tra anti-spam TRƯỚC khi xử lý flow
+            // Sử dụng centralized AntiSpamService thay vì method riêng
+            const { AntiSpamService } = await import('../anti-spam-service')
+            const spamResult = await AntiSpamService.checkMessage(user, text)
+
+            if (spamResult.blocked) {
+                console.log(`🚫 Message blocked by anti-spam: ${spamResult.reason}`)
+                if (spamResult.message) {
+                    const { sendMessage } = await import('../facebook-api')
+                    await sendMessage(user.facebook_id, spamResult.message)
+                }
+                return
+            }
+
             // Get current session
             const session = await SessionManager.getSession(user.facebook_id)
 
@@ -303,6 +317,20 @@ Bạn có muốn đăng ký ngay không?`
      */
     private static async contactAdmin(user: any): Promise<void> {
         try {
+            // QUAN TRỌNG: Kiểm tra anti-spam ngay cả khi contact admin từ flow
+            // Sử dụng centralized AntiSpamService
+            const { AntiSpamService } = await import('../anti-spam-service')
+            const spamResult = await AntiSpamService.checkPostbackAction(user, 'CONTACT_ADMIN')
+
+            if (spamResult.blocked) {
+                console.log(`🚫 Admin contact request blocked by anti-spam: ${spamResult.reason}`)
+                if (spamResult.message) {
+                    const { sendMessage } = await import('../facebook-api')
+                    await sendMessage(user.facebook_id, spamResult.message)
+                }
+                return
+            }
+
             const { sendMessage, hideButtons } = await import('../facebook-api')
 
             // Send contact message
@@ -349,4 +377,6 @@ Bạn có muốn đăng ký ngay không?`
         this.flows.clear()
         console.log('🧹 All flows cleared')
     }
+
+
 }
