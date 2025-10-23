@@ -1382,9 +1382,14 @@ WHERE schemaname = 'public';
 SELECT '🚀 Database đã sẵn sàng với tất cả tính năng và migrations!' as ready_status;
 
 -- ========================================
--- MIGRATION SCRIPT: FIX ADMIN TAKEOVER STATES TABLE
+-- MIGRATION SCRIPTS - TẤT CẢ TRONG 1 FILE
 -- ========================================
--- Script riêng để chạy trong Supabase SQL Editor nếu database đã tồn tại
+-- Các script để cập nhật database hiện có (chạy trong Supabase SQL Editor)
+
+-- ========================================
+-- FIX ADMIN TAKEOVER STATES TABLE
+-- ========================================
+-- Migration để khắc phục lỗi "consecutive_message_count column not found"
 
 -- Kiểm tra và thêm các cột thiếu vào admin_takeover_states
 DO $$
@@ -1431,6 +1436,14 @@ WHERE user_waiting_for_admin = TRUE;
 CREATE INDEX IF NOT EXISTS idx_admin_takeover_states_last_message
 ON admin_takeover_states(last_user_message_at);
 
+-- Reset message counters để tránh lỗi
+UPDATE admin_takeover_states
+SET
+    consecutive_message_count = 0,
+    last_user_message_at = NULL,
+    user_waiting_for_admin = FALSE
+WHERE consecutive_message_count IS NULL;
+
 -- Hiển thị cấu trúc bảng sau khi cập nhật
 SELECT
     column_name,
@@ -1441,5 +1454,151 @@ FROM information_schema.columns
 WHERE table_name = 'admin_takeover_states'
 ORDER BY ordinal_position;
 
+-- ========================================
+-- ADDITIONAL MIGRATIONS (nếu cần)
+-- ========================================
+
+-- Migration: Cập nhật user_interactions cho UserModeService (nếu chưa có)
+DO $$
+BEGIN
+    -- Thêm current_mode nếu chưa có
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'user_interactions'
+        AND column_name = 'current_mode'
+    ) THEN
+        ALTER TABLE user_interactions
+        ADD COLUMN current_mode VARCHAR(20) DEFAULT 'choosing'
+            CHECK (current_mode IN ('choosing', 'using_bot', 'chatting_admin'));
+    END IF;
+
+    -- Thêm last_mode_change nếu chưa có
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'user_interactions'
+        AND column_name = 'last_mode_change'
+    ) THEN
+        ALTER TABLE user_interactions
+        ADD COLUMN last_mode_change TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+    END IF;
+
+    -- Thêm mode_change_count nếu chưa có
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'user_interactions'
+        AND column_name = 'mode_change_count'
+    ) THEN
+        ALTER TABLE user_interactions
+        ADD COLUMN mode_change_count INTEGER DEFAULT 0;
+    END IF;
+END $$;
+
+-- Migration: Thêm last_welcome_sent vào users table (nếu chưa có)
+DO $$
+BEGIN
+    -- Thêm welcome_sent nếu chưa có
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users'
+        AND column_name = 'welcome_sent'
+    ) THEN
+        ALTER TABLE users
+        ADD COLUMN welcome_sent BOOLEAN DEFAULT FALSE;
+    END IF;
+
+    -- Thêm last_welcome_sent nếu chưa có
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users'
+        AND column_name = 'last_welcome_sent'
+    ) THEN
+        ALTER TABLE users
+        ADD COLUMN last_welcome_sent TIMESTAMP WITH TIME ZONE;
+    END IF;
+END $$;
+
+-- Migration: Fix phone length validation (nếu cần)
+UPDATE users
+SET phone = LEFT(phone, 20)
+WHERE LENGTH(phone) > 20;
+
+-- Migration: Cập nhật last_welcome_sent từ user_interactions
+UPDATE users
+SET last_welcome_sent = ui.last_welcome_sent
+FROM user_interactions ui
+WHERE users.facebook_id = ui.facebook_id
+AND ui.last_welcome_sent IS NOT NULL
+AND users.last_welcome_sent IS NULL;
+
+-- Migration: Set default last_welcome_sent cho users đã gửi welcome
+UPDATE users
+SET last_welcome_sent = NOW() - INTERVAL '24 hours'
+WHERE welcome_sent = true
+AND last_welcome_sent IS NULL;
+
+-- Migration: Cập nhật user_interactions mode data
+UPDATE user_interactions
+SET
+    current_mode = 'choosing',
+    last_mode_change = NOW(),
+    mode_change_count = 0
+WHERE current_mode IS NULL;
+
+-- ========================================
+-- VERIFICATION QUERIES
+-- ========================================
+
+-- Kiểm tra cấu trúc admin_takeover_states sau migration
+SELECT 'Admin Takeover States Table Structure:' as check_type;
+SELECT
+    column_name,
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'admin_takeover_states'
+ORDER BY ordinal_position;
+
+-- Kiểm tra user_interactions
+SELECT 'User Interactions Table Structure:' as check_type;
+SELECT
+    column_name,
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'user_interactions'
+ORDER BY ordinal_position;
+
+-- Kiểm tra users table
+SELECT 'Users Table Structure (welcome columns):' as check_type;
+SELECT
+    column_name,
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'users'
+AND column_name IN ('welcome_sent', 'last_welcome_sent')
+ORDER BY column_name;
+
+-- Đếm tổng số bảng và indexes
+SELECT 'Total Tables:' as info_type, COUNT(*) as count
+FROM information_schema.tables
+WHERE table_schema = 'public'
+AND table_name IN (
+    'users', 'listings', 'conversations', 'messages', 'payments', 'ratings',
+    'events', 'event_participants', 'notifications', 'ads', 'search_requests',
+    'referrals', 'user_points', 'point_transactions', 'bot_sessions',
+    'user_messages', 'spam_logs', 'spam_tracking', 'admin_users', 'admin_chat_sessions',
+    'user_activities', 'user_activity_logs', 'system_metrics', 'chat_bot_offer_counts',
+    'user_bot_modes', 'bot_settings', 'ai_templates', 'ai_analytics', 'user_interactions'
+);
+
+SELECT 'Total Indexes:' as info_type, COUNT(*) as count
+FROM pg_indexes
+WHERE schemaname = 'public';
+
 -- Thông báo hoàn thành
-SELECT '✅ Admin takeover states table fixed successfully!' as status;
+SELECT '✅ All migrations completed successfully!' as final_status;
+SELECT '🎉 Database is fully updated and ready!' as completion_message;
