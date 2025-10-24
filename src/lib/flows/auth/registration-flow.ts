@@ -152,22 +152,23 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Send pricing and benefits information with smooth flow
+     * Send pricing and benefits information with smooth flow - FIXED FACEBOOK API
      */
     private async sendRegistrationPricingInfo(user: any): Promise<void> {
         try {
-            // Get Facebook name first
+            // Get Facebook name with proper error handling
             let displayName = 'bạn'
             try {
                 const { getFacebookDisplayName } = await import('../../utils')
                 const facebookName = await getFacebookDisplayName(user.facebook_id)
-                if (facebookName) {
+                if (facebookName && facebookName.trim() !== '') {
                     displayName = facebookName
                 } else {
                     console.log('⚠️ Could not get Facebook name, using default "bạn"')
                 }
             } catch (error) {
-                console.warn('Could not get Facebook name for pricing info, using default "bạn"')
+                console.warn('Facebook API failed for pricing info, using default "bạn":', error instanceof Error ? error.message : String(error))
+                // Continue with default name - don't fail the flow
             }
 
             // Unified message with referral info
@@ -246,7 +247,7 @@ export class RegistrationFlow extends BaseFlow {
                 console.log('⚠️ Could not get Facebook name, using default "bạn"')
             }
         } catch (error) {
-            console.warn('⚠️ Could not get Facebook name, using default "bạn"')
+            console.warn('⚠️ Could not get Facebook name, using default "bạn"', error instanceof Error ? error.message : String(error))
         }
 
         // Update session with Facebook name (or fallback)
@@ -782,7 +783,7 @@ export class RegistrationFlow extends BaseFlow {
                     console.log('⚠️ Could not get Facebook name, using provided name:', displayName)
                 }
             } catch (error) {
-                console.warn('❌ Error getting Facebook display name:', error)
+                console.warn('❌ Error getting Facebook display name:', error instanceof Error ? error.message : String(error))
                 // Continue with provided name
             }
 
