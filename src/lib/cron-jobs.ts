@@ -47,11 +47,14 @@ export async function sendBirthdayNotifications(): Promise<void> {
         const currentMonth = today.getMonth() + 1 // JavaScript months are 0-indexed
         const currentDay = today.getDate()
 
-        // Find users with birthday today (birth year 1981)
+        // Format current date as DD/MM for comparison
+        const currentDateFormatted = `${currentDay.toString().padStart(2, '0')}/${currentMonth.toString().padStart(2, '0')}`
+
+        // Find users with birthday today (format: DD/MM)
         const { data: birthdayUsers, error } = await supabaseAdmin
             .from('users')
-            .select('facebook_id, name, location')
-            .eq('birthday', 1981)
+            .select('facebook_id, name, location, birthday')
+            .eq('birthday', currentDateFormatted)
 
         if (error) {
             logger.error('Error fetching birthday users:', { error })
@@ -63,7 +66,7 @@ export async function sendBirthdayNotifications(): Promise<void> {
             return
         }
 
-        // Send birthday notifications to all users
+        // Send birthday notifications to users with actual birthday today
         const notifications = birthdayUsers.map(user => ({
             user_id: user.facebook_id,
             type: 'birthday',
@@ -82,7 +85,7 @@ export async function sendBirthdayNotifications(): Promise<void> {
             return
         }
 
-        logger.info(`Sent birthday notifications to ${birthdayUsers.length} users`)
+        logger.info(`Sent birthday notifications to ${birthdayUsers.length} users with actual birthday today`)
 
     } catch (error) {
         logger.error('Error sending birthday notifications', { error })

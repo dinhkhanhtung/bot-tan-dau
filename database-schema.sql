@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(20) UNIQUE NOT NULL,
     location VARCHAR(100) NOT NULL,
-    birthday INTEGER NOT NULL CHECK (birthday = 1981),
+    birthday VARCHAR(10) NOT NULL CHECK (birthday ~ '^\d{1,2}/\d{1,2}$'), -- Format: DD/MM
     product_service TEXT,
     status VARCHAR(20) DEFAULT 'trial' CHECK (status IN ('trial', 'active', 'expired', 'suspended', 'pending')),
     membership_expires_at TIMESTAMP WITH TIME ZONE,

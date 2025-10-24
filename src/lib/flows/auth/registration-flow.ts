@@ -136,12 +136,12 @@ export class RegistrationFlow extends BaseFlow {
     private async sendRegistrationPricingInfo(user: any): Promise<void> {
         try {
             // Unified message with referral info
-            await sendMessage(user.facebook_id, 'Chào mừng bạn tham gia Bot Tân Dậu - Hỗ Trợ Chéo\n\n🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu\n💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫\n\n🌟 CÓ MÃ GIỚI THIỆU? Nhận thêm 7 ngày miễn phí!\n\nTân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng\n\n📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
+            await sendMessage(user.facebook_id, 'Chào mừng bạn tham gia Bot Tân Dậu - Hỗ Trợ Chéo\n\n🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu\n💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫\n\n🌟 CÓ MÃ GIỚI THIỆU? Nhận thêm 7 ngày miễn phí!\n\nTân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng\n\n🚀 Bước 1: Xác nhận thông tin Facebook của bạn:')
 
         } catch (error) {
             console.error('Error sending registration pricing info:', error)
             // Fallback to simple message
-            await sendMessage(user.facebook_id, '📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
+            await sendMessage(user.facebook_id, '🚀 Bước 1: Xác nhận thông tin Facebook của bạn:')
         }
     }
 
@@ -448,7 +448,7 @@ export class RegistrationFlow extends BaseFlow {
                 name: data.name,
                 phone: data.phone,
                 location: data.location,
-                birthday: 1981,
+                birthday: data.birthday || '01/01', // Default to Jan 1st if not provided
                 status: 'trial',
                 membership_expires_at: new Date(Date.now() + trialHours).toISOString(),
                 referral_code: `TD1981-${user.facebook_id.slice(-6)}`,

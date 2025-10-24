@@ -12,9 +12,18 @@ export async function POST(request: NextRequest) {
         const { facebook_id, name, phone, location, birthday } = body
 
         // Validate required fields
-        if (!facebook_id || !name || !phone || !location || birthday !== 1981) {
+        if (!facebook_id || !name || !phone || !location || !birthday) {
             return NextResponse.json(
-                { error: 'Missing required fields or invalid birthday' },
+                { error: 'Missing required fields' },
+                { status: 400 }
+            )
+        }
+
+        // Validate birthday format (DD/MM)
+        const birthdayRegex = /^\d{1,2}\/\d{1,2}$/
+        if (!birthdayRegex.test(birthday)) {
+            return NextResponse.json(
+                { error: 'Invalid birthday format. Use DD/MM format' },
                 { status: 400 }
             )
         }
