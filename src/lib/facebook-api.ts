@@ -285,7 +285,8 @@ export async function hideButtons(recipientId: string) {
         console.log('🔧 Attempting to hide buttons for user:', recipientId)
 
         // Method 1: Send a regular message without quick_replies to "push down" the buttons
-        const response1 = await axios.post(
+        // Facebook API doesn't allow empty quick_replies array, so we only send regular message
+        const response = await axios.post(
             `${FACEBOOK_API_URL}/me/messages`,
             {
                 recipient: { id: recipientId },
@@ -299,23 +300,7 @@ export async function hideButtons(recipientId: string) {
             }
         )
 
-        // Method 2: Send empty quick_replies to clear buttons
-        const response2 = await axios.post(
-            `${FACEBOOK_API_URL}/me/messages`,
-            {
-                recipient: { id: recipientId },
-                message: {
-                    text: '​',
-                    quick_replies: []
-                }
-            },
-            {
-                params: { access_token: FACEBOOK_ACCESS_TOKEN },
-                headers: { 'Content-Type': 'application/json' }
-            }
-        )
-
-        console.log('✅ Buttons hidden successfully for user:', recipientId, { response1: response1.data, response2: response2.data })
+        console.log('✅ Buttons hidden successfully for user:', recipientId, { response: response.data })
         return true
     } catch (error) {
         console.error('❌ Error hiding buttons for user:', recipientId, error)

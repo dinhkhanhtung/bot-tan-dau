@@ -58,6 +58,9 @@ export class RegistrationFlow extends BaseFlow {
                 case 3:
                     await this.handleBirthdayStep(user, text)
                     break
+                case 4:
+                    await this.handleReferralStep(user, text)
+                    break
                 default:
                     console.log('❌ Unknown step:', currentStep)
                     await this.sendErrorMessage(user.facebook_id)
@@ -132,8 +135,8 @@ export class RegistrationFlow extends BaseFlow {
      */
     private async sendRegistrationPricingInfo(user: any): Promise<void> {
         try {
-            // Unified message
-            await sendMessage(user.facebook_id, 'Chào mừng bạn tham gia Bot Tân Dậu - Hỗ Trợ Chéo\n\n🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu\n💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫\n\nTân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng\n\n📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
+            // Unified message with referral info
+            await sendMessage(user.facebook_id, 'Chào mừng bạn tham gia Bot Tân Dậu - Hỗ Trợ Chéo\n\n🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu\n💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫\n\n🌟 CÓ MÃ GIỚI THIỆU? Nhận thêm 7 ngày miễn phí!\n\nTân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng\n\n📝 Bước 1: Nhập họ tên đầy đủ của bạn:')
 
         } catch (error) {
             console.error('Error sending registration pricing info:', error)
@@ -175,7 +178,7 @@ export class RegistrationFlow extends BaseFlow {
                 return createQuickReply(location, payload)
             })
 
-            await sendQuickReply(user.facebook_id, '📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống (Trang 2/2 - Các tỉnh còn lại):', buttons)
+            await sendQuickReply(user.facebook_id, '📍 Bước 3/5: Chọn tỉnh/thành phố nơi bạn sinh sống (Trang 2/2 - Các tỉnh còn lại):', buttons)
             console.log('[DEBUG] More location buttons sent successfully')
 
         } catch (error) {
@@ -220,7 +223,7 @@ export class RegistrationFlow extends BaseFlow {
         }
 
         // Send phone prompt
-        await sendMessage(user.facebook_id, `✅ Họ tên: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📱 Bước 2/4: Số điện thoại\n💡 Nhập số điện thoại để nhận thông báo quan trọng\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập số điện thoại:`)
+        await sendMessage(user.facebook_id, `✅ Họ tên: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📱 Bước 2/5: Số điện thoại\n💡 Nhập số điện thoại để nhận thông báo quan trọng\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập số điện thoại:`)
 
         console.log('✅ Name step completed, moved to phone step')
     }
@@ -397,7 +400,7 @@ export class RegistrationFlow extends BaseFlow {
             }
 
             // Send birthday verification prompt
-            await sendMessage(user.facebook_id, `✅ Địa điểm: ${location}\n━━━━━━━━━━━━━━━━━━━━\n🎂 Bước 4/4: Xác nhận sinh năm\n💡 Chỉ dành cho Tân Dậu (sinh năm 1981)\n━━━━━━━━━━━━━━━━━━━━`)
+            await sendMessage(user.facebook_id, `✅ Địa điểm: ${location}\n━━━━━━━━━━━━━━━━━━━━\n🎂 Bước 4/5: Xác nhận sinh năm\n💡 Chỉ dành cho Tân Dậu (sinh năm 1981)\n━━━━━━━━━━━━━━━━━━━━`)
             await this.sendBirthdayVerificationButtons(user.facebook_id)
 
         } catch (error) {
@@ -420,6 +423,13 @@ export class RegistrationFlow extends BaseFlow {
                 return
             }
 
+            // Calculate trial days based on referral
+            const hasReferral = data.referral_code && data.referral_code !== null
+            const trialDays = hasReferral ? 10 : 3 // 3 days base + 7 days bonus if referred
+            const trialHours = trialDays * 24 * 60 * 60 * 1000
+
+            console.log(`📅 Trial calculation: ${trialDays} days (${hasReferral ? 'with referral bonus' : 'standard'})`)
+
             // Check if user already exists
             const { data: existingUser, error: checkError } = await supabaseAdmin
                 .from('users')
@@ -433,22 +443,25 @@ export class RegistrationFlow extends BaseFlow {
                 return
             }
 
+            // Prepare user data
+            const userData = {
+                name: data.name,
+                phone: data.phone,
+                location: data.location,
+                birthday: 1981,
+                status: 'trial',
+                membership_expires_at: new Date(Date.now() + trialHours).toISOString(),
+                referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
+                updated_at: new Date().toISOString()
+            }
+
             if (existingUser) {
                 // User already exists, update their information
                 console.log('📝 User already exists, updating information:', existingUser.id)
 
                 const { error: updateError } = await supabaseAdmin
                     .from('users')
-                    .update({
-                        name: data.name,
-                        phone: data.phone,
-                        location: data.location,
-                        birthday: 1981,
-                        status: 'trial',
-                        membership_expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                        referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
-                        updated_at: new Date().toISOString()
-                    })
+                    .update(userData)
                     .eq('facebook_id', user.facebook_id)
 
                 if (updateError) {
@@ -463,17 +476,10 @@ export class RegistrationFlow extends BaseFlow {
                 const { error: insertError } = await supabaseAdmin
                     .from('users')
                     .insert({
+                        ...userData,
                         id: generateId(),
                         facebook_id: user.facebook_id,
-                        name: data.name,
-                        phone: data.phone,
-                        location: data.location,
-                        birthday: 1981,
-                        status: 'trial',
-                        membership_expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                        referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
+                        created_at: new Date().toISOString()
                     })
 
                 if (insertError) {
@@ -483,14 +489,48 @@ export class RegistrationFlow extends BaseFlow {
                 }
             }
 
+            // Save referral information if exists
+            if (hasReferral) {
+                try {
+                    // Get referrer info
+                    const { data: referrer } = await supabaseAdmin
+                        .from('users')
+                        .select('id')
+                        .eq('referral_code', data.referral_code)
+                        .single()
+
+                    if (referrer) {
+                        // Create referral record
+                        await supabaseAdmin
+                            .from('referrals')
+                            .insert({
+                                id: generateId(),
+                                referrer_id: referrer.id,
+                                referred_id: existingUser?.id || generateId(), // Will be updated after user creation
+                                status: 'completed',
+                                reward_amount: 0, // No monetary reward, just trial extension
+                                created_at: new Date().toISOString(),
+                                completed_at: new Date().toISOString()
+                            })
+                    }
+                } catch (referralError) {
+                    console.error('❌ Error saving referral:', referralError)
+                    // Don't fail registration if referral save fails
+                }
+            }
+
             // Clear session
             await supabaseAdmin
                 .from('bot_sessions')
                 .delete()
                 .eq('facebook_id', user.facebook_id)
 
-            // Send success message
-            await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n━━━━━━━━━━━━━━━━━━━━\n🎁 Bạn được dùng thử miễn phí 3 ngày!\n🚀 Chúc bạn sử dụng bot vui vẻ!`)
+            // Send success message with correct trial days
+            const trialMessage = hasReferral
+                ? `🌟 Bạn được dùng thử miễn phí ${trialDays} ngày (có mã giới thiệu)!`
+                : `🎁 Bạn được dùng thử miễn phí ${trialDays} ngày!`
+
+            await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n━━━━━━━━━━━━━━━━━━━━\n${trialMessage}\n🚀 Chúc bạn sử dụng bot vui vẻ!`)
 
             // Add delay for better UX
             await this.delay(1500)
@@ -600,7 +640,7 @@ export class RegistrationFlow extends BaseFlow {
                 return createQuickReply(location, payload)
             })
 
-            await sendQuickReply(facebookId, `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống (Tất cả tỉnh thành Việt Nam + Nước ngoài):`, buttons)
+            await sendQuickReply(facebookId, `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/5: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/5: Chọn tỉnh/thành phố nơi bạn sinh sống (Tất cả tỉnh thành Việt Nam + Nước ngoài):`, buttons)
         } else {
             // Multiple pages - send first page with "Xem thêm" option
             const firstPageLocations = locations.slice(0, buttonsPerPage - 1) // Reserve 1 slot for "Xem thêm"
@@ -615,7 +655,7 @@ export class RegistrationFlow extends BaseFlow {
             // Add "Xem thêm" button
             buttons.push(createQuickReply('📋 XEM THÊM TỈNH THÀNH', 'LOC_SHOW_MORE'))
 
-            await sendQuickReply(facebookId, `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống (Trang 1/${totalPages}):`, buttons)
+            await sendQuickReply(facebookId, `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/5: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/5: Chọn tỉnh/thành phố nơi bạn sinh sống (Trang 1/${totalPages}):`, buttons)
         }
 
         console.log('[DEBUG] Location buttons sent successfully')
@@ -641,7 +681,7 @@ export class RegistrationFlow extends BaseFlow {
             console.log('🎂 Processing birthday verification:', answer, 'for user:', user.facebook_id)
 
             if (answer === 'YES') {
-                // User confirmed they were born in 1981 - complete registration
+                // User confirmed they were born in 1981 - go to referral step
                 const { data: sessionData } = await supabaseAdmin
                     .from('bot_sessions')
                     .select('data')
@@ -649,7 +689,17 @@ export class RegistrationFlow extends BaseFlow {
                     .single()
 
                 if (sessionData && sessionData.data) {
-                    await this.completeRegistration(user, sessionData.data)
+                    // Update session with birthday and move to referral step
+                    await SessionManager.updateSession(user.facebook_id, {
+                        step: 4,
+                        data: {
+                            ...sessionData.data,
+                            birthday: '1981' // Set default birthday since they confirmed
+                        }
+                    })
+
+                    // Send referral prompt
+                    await sendMessage(user.facebook_id, `✅ Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n🌟 Bước 5/5: Mã giới thiệu (Tùy chọn)\n💡 Có mã giới thiệu? Nhận thêm 7 ngày miễn phí!\n━━━━━━━━━━━━━━━━━━━━\n📝 Nhập mã giới thiệu hoặc gõ "Bỏ qua":`)
                 } else {
                     await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
                 }
@@ -677,6 +727,71 @@ export class RegistrationFlow extends BaseFlow {
         } catch (error) {
             console.error('❌ Birthday verification error:', error)
             await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+        }
+    }
+
+    /**
+     * Handle referral code step
+     */
+    private async handleReferralStep(user: any, text: string): Promise<void> {
+        try {
+            console.log(`🌟 Processing referral step for user: ${user.facebook_id}`)
+
+            // Get current session data
+            const currentData = await SessionManager.getSessionData(user.facebook_id)
+
+            // Check if user wants to skip
+            if (text.toLowerCase().trim() === 'bỏ qua' || text.toLowerCase().trim() === 'bo qua') {
+                // Complete registration without referral
+                await this.completeRegistration(user, {
+                    ...currentData,
+                    referral_code: null
+                })
+                return
+            }
+
+            // Validate referral code format (TD1981-XXXXXX)
+            const referralRegex = /^TD1981-\d{6}$/
+            if (!referralRegex.test(text.trim())) {
+                await sendMessage(user.facebook_id, '❌ Mã giới thiệu không hợp lệ! Mã phải có định dạng TD1981-XXXXXX\n📝 Hoặc gõ "Bỏ qua" để tiếp tục:')
+                return
+            }
+
+            // Check if referral code exists
+            const { data: referrer } = await supabaseAdmin
+                .from('users')
+                .select('facebook_id')
+                .eq('referral_code', text.trim())
+                .single()
+
+            if (!referrer) {
+                await sendMessage(user.facebook_id, '❌ Mã giới thiệu không tồn tại!\n📝 Vui lòng kiểm tra lại hoặc gõ "Bỏ qua" để tiếp tục:')
+                return
+            }
+
+            // Check if user is trying to use their own code
+            if (referrer.facebook_id === user.facebook_id) {
+                await sendMessage(user.facebook_id, '❌ Không thể sử dụng mã giới thiệu của chính mình!\n📝 Vui lòng nhập mã khác hoặc gõ "Bỏ qua" để tiếp tục:')
+                return
+            }
+
+            // Update session with referral code
+            await SessionManager.updateSession(user.facebook_id, {
+                step: 5,
+                data: {
+                    ...currentData,
+                    referral_code: text.trim()
+                }
+            })
+
+            // Complete registration with referral bonus
+            await this.completeRegistration(user, {
+                ...currentData,
+                referral_code: text.trim()
+            })
+
+        } catch (error) {
+            await this.handleError(user, error, 'handleReferralStep')
         }
     }
 }

@@ -117,8 +117,8 @@ export class ListingFlow extends BaseFlow {
         try {
             console.log(`🔄 Starting listing for user: ${user.facebook_id}`)
 
-            // Check user permissions
-            if (user.status !== 'registered' && user.status !== 'trial') {
+            // Check user permissions - Allow trial users to post listings
+            if (user.status !== 'registered' && user.status !== 'trial' && user.status !== 'active') {
                 await sendMessage(user.facebook_id,
                     `🚫 CHỨC NĂNG CHỈ DÀNH CHO THÀNH VIÊN\n━━━━━━━━━━━━━━━━━━━━\n📝 Đăng tin bán hàng là tính năng đặc biệt\n🎁 Chỉ dành cho thành viên Tân Dậu\n💰 Cơ hội kết nối với hơn 2 triệu Tân Dậu\n━━━━━━━━━━━━━━━━━━━━\n🚀 Đăng ký ngay để sử dụng tính năng này!`)
 
@@ -128,6 +128,24 @@ export class ListingFlow extends BaseFlow {
                     createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO')
                 ])
                 return
+            }
+
+            // Check if trial user has expired
+            if (user.status === 'trial' && user.membership_expires_at) {
+                const expiryDate = new Date(user.membership_expires_at)
+                const now = new Date()
+
+                if (expiryDate < now) {
+                    await sendMessage(user.facebook_id,
+                        `⏰ THỬ DÙNG ĐÃ HẾT HẠN\n━━━━━━━━━━━━━━━━━━━━\n🎁 Thời gian dùng thử 3 ngày của bạn đã kết thúc\n💰 Để tiếp tục đăng tin, vui lòng nâng cấp tài khoản\n━━━━━━━━━━━━━━━━━━━━`)
+
+                    await sendQuickReply(user.facebook_id, 'Bạn muốn:', [
+                        createQuickReply('💳 NÂNG CẤP TÀI KHOẢN', 'UPGRADE'),
+                        createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                        createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO')
+                    ])
+                    return
+                }
             }
 
             // Create new session
