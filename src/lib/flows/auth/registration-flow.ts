@@ -142,9 +142,11 @@ export class RegistrationFlow extends BaseFlow {
                 const facebookName = await getFacebookDisplayName(user.facebook_id)
                 if (facebookName) {
                     displayName = facebookName
+                } else {
+                    console.log('⚠️ Could not get Facebook name, using default "bạn"')
                 }
             } catch (error) {
-                console.warn('Could not get Facebook name for pricing info')
+                console.warn('Could not get Facebook name for pricing info, using default "bạn"')
             }
 
             // Unified message with referral info
@@ -212,16 +214,18 @@ export class RegistrationFlow extends BaseFlow {
         console.log('📝 Processing name step for user:', user.facebook_id)
 
         // Get Facebook name first
-        let displayName = 'User'
+        let displayName = 'bạn'
         try {
             const { getFacebookDisplayName } = await import('../../utils')
             const facebookName = await getFacebookDisplayName(user.facebook_id)
             if (facebookName) {
                 displayName = facebookName
                 console.log('✅ Got Facebook name for registration:', displayName)
+            } else {
+                console.log('⚠️ Could not get Facebook name, using default "bạn"')
             }
         } catch (error) {
-            console.warn('⚠️ Could not get Facebook name, using default')
+            console.warn('⚠️ Could not get Facebook name, using default "bạn"')
         }
 
         // Update session with Facebook name (or fallback)
@@ -436,7 +440,7 @@ export class RegistrationFlow extends BaseFlow {
             console.log('🎉 Completing registration for user:', user.facebook_id)
 
             // Get Facebook display name first
-            let displayName = data.name || 'User'
+            let displayName = data.name || 'bạn'
             try {
                 const { getFacebookDisplayName } = await import('../../utils')
                 const facebookName = await getFacebookDisplayName(user.facebook_id)

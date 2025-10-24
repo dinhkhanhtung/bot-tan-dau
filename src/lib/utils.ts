@@ -547,13 +547,15 @@ export async function getFacebookDisplayName(facebookId: string): Promise<string
             }
         }
 
-        // Handle specific error codes with better logging
+        // Handle specific error codes - Page Access Tokens typically don't have user profile permissions
         if (response.status === 400) {
             console.warn('Facebook API 400 - Invalid Facebook ID or permissions:', facebookId)
+            console.warn('Note: Page Access Tokens typically cannot access user profiles. Consider using User Access Token or skip this step.')
         } else if (response.status === 401) {
             console.warn('Facebook API 401 - Access token invalid or expired')
         } else if (response.status === 403) {
             console.warn('Facebook API 403 - Insufficient permissions for user profile')
+            console.warn('Note: Page Access Tokens typically cannot access user profiles. Consider using User Access Token or skip this step.')
         } else if (response.status === 404) {
             console.warn('Facebook API 404 - User not found:', facebookId)
         } else {
