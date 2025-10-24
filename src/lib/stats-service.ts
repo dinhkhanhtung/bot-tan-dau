@@ -51,7 +51,7 @@ export interface DatabaseUser {
     name: string
     phone: string
     location: string
-    birthday: number
+    birthday: string
     product_service?: string
     status: string
     membership_expires_at?: string

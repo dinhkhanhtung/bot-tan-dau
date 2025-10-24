@@ -25,7 +25,7 @@ export interface User {
     name: string
     phone: string
     location: string
-    birthday: number
+    birthday: string
     status: 'trial' | 'active' | 'expired' | 'suspended'
     membership_expires_at: string | null
     rating: number

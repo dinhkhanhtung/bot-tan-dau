@@ -180,7 +180,7 @@ export class WelcomeService {
                         name: 'User', // Temporary name
                         phone: `temp_${facebookId.slice(-15)}`, // Temporary phone - chỉ lấy 15 ký tự cuối
                         location: 'Chưa cập nhật',
-                        birthday: 1981,
+                        birthday: '01/01', // Fixed: Use DD/MM format to match database constraint
                         status: 'pending', // Changed from 'new_user' to 'pending' to match database constraint
                         referral_code: referralCode,
                         welcome_sent: true,

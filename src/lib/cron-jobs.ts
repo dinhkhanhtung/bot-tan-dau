@@ -50,11 +50,11 @@ export async function sendBirthdayNotifications(): Promise<void> {
         // Format current date as DD/MM for comparison
         const currentDateFormatted = `${currentDay.toString().padStart(2, '0')}/${currentMonth.toString().padStart(2, '0')}`
 
-        // Find users with birthday today (format: DD/MM)
+        // Find users with birthday today (format: DD/MM or DD/MM/YYYY)
         const { data: birthdayUsers, error } = await supabaseAdmin
             .from('users')
             .select('facebook_id, name, location, birthday')
-            .eq('birthday', currentDateFormatted)
+            .ilike('birthday', `${currentDateFormatted}%`)
 
         if (error) {
             logger.error('Error fetching birthday users:', { error })

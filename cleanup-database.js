@@ -174,7 +174,7 @@ async function cleanupDatabase() {
                     name: 'Admin Tân Dậu',
                     phone: '0000000000',
                     location: 'Hà Nội',
-                    birthday: 1981,
+                    birthday: '01/01',
                     status: 'active',
                     membership_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 năm
                     referral_code: 'ADMIN-1981',

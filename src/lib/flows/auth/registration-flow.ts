@@ -135,8 +135,20 @@ export class RegistrationFlow extends BaseFlow {
      */
     private async sendRegistrationPricingInfo(user: any): Promise<void> {
         try {
+            // Get Facebook name first
+            let displayName = 'bạn'
+            try {
+                const { getFacebookDisplayName } = await import('../../utils')
+                const facebookName = await getFacebookDisplayName(user.facebook_id)
+                if (facebookName) {
+                    displayName = facebookName
+                }
+            } catch (error) {
+                console.warn('Could not get Facebook name for pricing info')
+            }
+
             // Unified message with referral info
-            await sendMessage(user.facebook_id, 'Chào mừng bạn tham gia Bot Tân Dậu - Hỗ Trợ Chéo\n\n🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu\n💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫\n\n🌟 CÓ MÃ GIỚI THIỆU? Nhận thêm 7 ngày miễn phí!\n\nTân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng\n\n🚀 Bước 1: Xác nhận thông tin Facebook của bạn:')
+            await sendMessage(user.facebook_id, `Chào mừng ${displayName} tham gia Bot Tân Dậu - Hỗ Trợ Chéo\n\n🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu\n💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫\n\n🌟 CÓ MÃ GIỚI THIỆU? Nhận thêm 7 ngày miễn phí!\n\nTân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng\n\n🚀 Bước 1: Xác nhận thông tin Facebook của bạn:`)
 
         } catch (error) {
             console.error('Error sending registration pricing info:', error)
@@ -194,24 +206,31 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Handle name input step
+     * Handle name input step - Skip since we get name from Facebook
      */
     private async handleNameStep(user: any, text: string): Promise<void> {
         console.log('📝 Processing name step for user:', user.facebook_id)
 
-        // Validate name
-        if (!text || text.trim().length < 2) {
-            await sendMessage(user.facebook_id, '❌ Tên quá ngắn. Vui lòng nhập họ tên đầy đủ!')
-            return
+        // Get Facebook name first
+        let displayName = 'User'
+        try {
+            const { getFacebookDisplayName } = await import('../../utils')
+            const facebookName = await getFacebookDisplayName(user.facebook_id)
+            if (facebookName) {
+                displayName = facebookName
+                console.log('✅ Got Facebook name for registration:', displayName)
+            }
+        } catch (error) {
+            console.warn('⚠️ Could not get Facebook name, using default')
         }
 
-        // Update existing session with name
+        // Update session with Facebook name (or fallback)
         const { error } = await supabaseAdmin
             .from('bot_sessions')
             .update({
                 step: 1,
                 current_step: 1,
-                data: { name: text.trim() },
+                data: { name: displayName },
                 updated_at: new Date().toISOString()
             })
             .eq('facebook_id', user.facebook_id)
@@ -222,10 +241,10 @@ export class RegistrationFlow extends BaseFlow {
             return
         }
 
-        // Send phone prompt
-        await sendMessage(user.facebook_id, `✅ Họ tên: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📱 Bước 2/5: Số điện thoại\n💡 Nhập số điện thoại để nhận thông báo quan trọng\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập số điện thoại:`)
+        // Send phone prompt with Facebook name
+        await sendMessage(user.facebook_id, `✅ Họ tên: ${displayName}\n━━━━━━━━━━━━━━━━━━━━\n📱 Bước 2/5: Số điện thoại\n💡 Nhập số điện thoại để nhận thông báo quan trọng\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập số điện thoại:`)
 
-        console.log('✅ Name step completed, moved to phone step')
+        console.log('✅ Name step completed with Facebook name, moved to phone step')
     }
 
     /**
@@ -416,9 +435,25 @@ export class RegistrationFlow extends BaseFlow {
         try {
             console.log('🎉 Completing registration for user:', user.facebook_id)
 
+            // Get Facebook display name first
+            let displayName = data.name || 'User'
+            try {
+                const { getFacebookDisplayName } = await import('../../utils')
+                const facebookName = await getFacebookDisplayName(user.facebook_id)
+                if (facebookName) {
+                    displayName = facebookName
+                    console.log('✅ Got Facebook name:', displayName)
+                } else {
+                    console.log('⚠️ Could not get Facebook name, using provided name:', displayName)
+                }
+            } catch (error) {
+                console.warn('❌ Error getting Facebook display name:', error)
+                // Continue with provided name
+            }
+
             // Validate required data
-            if (!data.name || !data.phone || !data.location) {
-                console.error('❌ Missing registration data:', data)
+            if (!displayName || !data.phone || !data.location) {
+                console.error('❌ Missing registration data:', { displayName, phone: data.phone, location: data.location })
                 await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
                 return
             }
@@ -445,7 +480,7 @@ export class RegistrationFlow extends BaseFlow {
 
             // Prepare user data
             const userData = {
-                name: data.name,
+                name: displayName,
                 phone: data.phone,
                 location: data.location,
                 birthday: data.birthday || '01/01', // Default to Jan 1st if not provided
@@ -530,7 +565,7 @@ export class RegistrationFlow extends BaseFlow {
                 ? `🌟 Bạn được dùng thử miễn phí ${trialDays} ngày (có mã giới thiệu)!`
                 : `🎁 Bạn được dùng thử miễn phí ${trialDays} ngày!`
 
-            await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${data.name}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n━━━━━━━━━━━━━━━━━━━━\n${trialMessage}\n🚀 Chúc bạn sử dụng bot vui vẻ!`)
+            await sendMessage(user.facebook_id, `🎉 ĐĂNG KÝ THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Họ tên: ${displayName}\n✅ SĐT: ${data.phone}\n✅ Địa điểm: ${data.location}\n━━━━━━━━━━━━━━━━━━━━\n${trialMessage}\n🚀 Chúc bạn sử dụng bot vui vẻ!`)
 
             // Add delay for better UX
             await this.delay(1500)
@@ -694,7 +729,7 @@ export class RegistrationFlow extends BaseFlow {
                         step: 4,
                         data: {
                             ...sessionData.data,
-                            birthday: '1981' // Set default birthday since they confirmed
+                            birthday: '01/01' // Set default birthday since they confirmed (DD/MM format)
                         }
                     })
 
