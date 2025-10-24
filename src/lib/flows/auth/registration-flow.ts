@@ -98,6 +98,10 @@ export class RegistrationFlow extends BaseFlow {
                 await this.handleMonthPostback(user, payload, session)
             } else if (payload.startsWith('DAY_')) {
                 await this.handleDayPostback(user, payload, session)
+            } else if (payload === 'DAY_PAGE_PREV') {
+                await this.handleDayPageNavigation(user, 'prev', session)
+            } else if (payload === 'DAY_PAGE_NEXT') {
+                await this.handleDayPageNavigation(user, 'next', session)
             } else if (payload === 'BIRTH_YEAR_YES') {
                 await this.handleYearConfirmation(user, 'YES')
             } else if (payload === 'BIRTH_YEAR_NO') {
@@ -490,7 +494,8 @@ export class RegistrationFlow extends BaseFlow {
                 current_step: 4,
                 data: {
                     ...currentData,
-                    birth_month: month
+                    birth_month: month,
+                    day_page: 1 // Initialize pagination state
                 },
                 updated_at: new Date().toISOString()
             })
@@ -522,8 +527,37 @@ export class RegistrationFlow extends BaseFlow {
             }
         }
 
+        // Get current session data to check if we have a month selected
+        const { data: sessionData } = await supabaseAdmin
+            .from('bot_sessions')
+            .select('data')
+            .eq('facebook_id', user.facebook_id)
+            .single()
+
+        const currentData = sessionData?.data || {}
+        const birthMonth = currentData.birth_month
+
+        if (!birthMonth) {
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại từ đầu!')
+            return
+        }
+
+        // Initialize pagination state if not exists
+        if (!currentData.day_page) {
+            await supabaseAdmin
+                .from('bot_sessions')
+                .update({
+                    data: {
+                        ...currentData,
+                        day_page: 1
+                    },
+                    updated_at: new Date().toISOString()
+                })
+                .eq('facebook_id', user.facebook_id)
+        }
+
         // Show day selection buttons
-        await this.sendDayButtons(user.facebook_id)
+        await this.sendDayButtons(user.facebook_id, birthMonth)
     }
 
     /**
@@ -1299,20 +1333,40 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Send day selection buttons - NEW BUTTON-BASED
+     * Send day selection buttons - NEW BUTTON-BASED (FIXED: Split into batches to avoid Facebook API limits)
      */
     private async sendDayButtons(facebookId: string, month?: number): Promise<void> {
         // Get max days for the selected month (default to 31 if no month selected)
         const maxDays = month ? new Date(1981, month, 0).getDate() : 31
         const days = Array.from({ length: maxDays }, (_, i) => (i + 1).toString())
 
-        const buttons = days.map(day => createQuickReply(day, `DAY_${day}`))
-
         const monthText = month ? `Tháng ${month}` : 'tháng'
-        await sendQuickReply(facebookId,
-            `📅 Bước 5/7: Chọn ngày sinh\n💡 Chọn ngày bạn được sinh ra trong ${monthText}\n━━━━━━━━━━━━━━━━━━━━`,
-            buttons
-        )
+
+        // Facebook allows max 13 quick replies per message, so split into batches of 10
+        const buttonsPerPage = 10
+        const totalPages = Math.ceil(days.length / buttonsPerPage)
+
+        if (totalPages === 1) {
+            // Single page - send all buttons
+            const buttons = days.map(day => createQuickReply(day, `DAY_${day}`))
+            await sendQuickReply(facebookId,
+                `📅 Bước 5/7: Chọn ngày sinh\n💡 Chọn ngày bạn được sinh ra trong ${monthText}\n━━━━━━━━━━━━━━━━━━━━`,
+                buttons
+            )
+        } else {
+            // Multiple pages - send first page with navigation
+            const firstPageDays = days.slice(0, buttonsPerPage - 2) // Reserve 2 slots for navigation
+            const buttons = firstPageDays.map(day => createQuickReply(day, `DAY_${day}`))
+
+            // Add navigation buttons
+            buttons.push(createQuickReply('⬅️ TRƯỚC', 'DAY_PAGE_PREV'))
+            buttons.push(createQuickReply('TIẾP ➡️', 'DAY_PAGE_NEXT'))
+
+            await sendQuickReply(facebookId,
+                `📅 Bước 5/7: Chọn ngày sinh\n💡 Chọn ngày bạn được sinh ra trong ${monthText}\n━━━━━━━━━━━━━━━━━━━━\n📄 Trang 1/${totalPages}`,
+                buttons
+            )
+        }
     }
 
     /**
@@ -1334,5 +1388,96 @@ export class RegistrationFlow extends BaseFlow {
         await sendMessage(facebookId,
             `🌟 Bước 7/7: Mã giới thiệu (Tùy chọn)\n💡 Có mã giới thiệu? Nhận thêm 7 ngày miễn phí!\n━━━━━━━━━━━━━━━━━━━━\n📝 Nhập mã giới thiệu hoặc gõ "Bỏ qua":`
         )
+    }
+
+    /**
+     * Handle day page navigation - NEW PAGINATION FOR DAY SELECTION
+     */
+    private async handleDayPageNavigation(user: any, direction: 'prev' | 'next', session: any): Promise<void> {
+        try {
+            console.log('📄 Processing day page navigation:', direction, 'for user:', user.facebook_id)
+
+            // Get current session data
+            const { data: sessionData } = await supabaseAdmin
+                .from('bot_sessions')
+                .select('data')
+                .eq('facebook_id', user.facebook_id)
+                .single()
+
+            if (!sessionData || !sessionData.data) {
+                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+                return
+            }
+
+            const currentData = sessionData.data
+            const currentPage = currentData.day_page || 1
+            const birthMonth = currentData.birth_month
+
+            if (!birthMonth) {
+                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại từ đầu!')
+                return
+            }
+
+            // Get max days for the selected month
+            const maxDays = new Date(1981, birthMonth, 0).getDate()
+            const days = Array.from({ length: maxDays }, (_, i) => (i + 1).toString())
+
+            // Calculate pagination
+            const buttonsPerPage = 10
+            const totalPages = Math.ceil(days.length / buttonsPerPage)
+            let newPage = currentPage
+
+            if (direction === 'next') {
+                newPage = Math.min(currentPage + 1, totalPages)
+            } else if (direction === 'prev') {
+                newPage = Math.max(currentPage - 1, 1)
+            }
+
+            // Update session with new page
+            const { error } = await supabaseAdmin
+                .from('bot_sessions')
+                .update({
+                    data: {
+                        ...currentData,
+                        day_page: newPage
+                    },
+                    updated_at: new Date().toISOString()
+                })
+                .eq('facebook_id', user.facebook_id)
+
+            if (error) {
+                console.error('❌ Database error:', error)
+                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+                return
+            }
+
+            // Calculate which days to show for this page
+            const startIndex = (newPage - 1) * buttonsPerPage
+            const endIndex = Math.min(startIndex + buttonsPerPage, days.length)
+            const pageDays = days.slice(startIndex, endIndex)
+
+            // Create buttons for this page
+            const buttons = pageDays.map(day => createQuickReply(day, `DAY_${day}`))
+
+            // Add navigation buttons if needed
+            if (totalPages > 1) {
+                if (newPage > 1) {
+                    buttons.push(createQuickReply('⬅️ TRƯỚC', 'DAY_PAGE_PREV'))
+                }
+                if (newPage < totalPages) {
+                    buttons.push(createQuickReply('TIẾP ➡️', 'DAY_PAGE_NEXT'))
+                }
+            }
+
+            const monthText = `Tháng ${birthMonth}`
+            await sendQuickReply(user.facebook_id,
+                `📅 Bước 5/7: Chọn ngày sinh\n💡 Chọn ngày bạn được sinh ra trong ${monthText}\n━━━━━━━━━━━━━━━━━━━━\n📄 Trang ${newPage}/${totalPages}`,
+                buttons
+            )
+
+        } catch (error) {
+            console.error('❌ Day page navigation error:', error)
+            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+        }
     }
 }
