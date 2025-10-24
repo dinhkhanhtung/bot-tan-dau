@@ -1,5 +1,3 @@
-import { ListingHandlers } from './listing-handlers'
-
 import { BaseFlow } from '../../core/flow-base'
 import { SessionManager } from '../../core/session-manager'
 import {
@@ -17,12 +15,6 @@ import { CATEGORIES, LOCATIONS, PRICE_RANGES, KEYWORDS_SYSTEM } from '../../cons
  * Handles product listing process with consistent session management
  */
 export class ListingFlow extends BaseFlow {
-    private handlers: ListingHandlers
-
-    constructor() {
-        super()
-        this.handlers = new ListingHandlers()
-    }
     readonly flowName = 'listing'
 
     /**
