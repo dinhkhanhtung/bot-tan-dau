@@ -312,22 +312,24 @@ export class UnifiedBotSystem {
 
             // Xử lý text message
             if (text) {
-                // QUAN TRỌNG: Kiểm tra anti-spam TRƯỚC khi xử lý flow
-                // Sử dụng centralized anti-spam service thay vì method riêng
+                // QUAN TRỌNG: Kiểm tra admin takeover TRƯỚC khi xử lý flow
+                // Sử dụng simplified anti-spam service
                 const { AntiSpamService } = await import('../anti-spam-service')
                 const spamResult = await AntiSpamService.checkMessage(user, text)
 
                 if (spamResult.blocked) {
                     logger.info('Message blocked by anti-spam', { facebookId: user.facebook_id, reason: spamResult.reason })
 
-                    // Nếu action là admin_notified_and_show_buttons - hiển thị lại nút của bước hiện tại
-                    if (spamResult.action === 'admin_notified_and_show_buttons') {
-                        await this.showCurrentStepButtons(user)
+                    // Nếu admin đang active - thông báo user
+                    if (spamResult.reason === 'admin_active' && spamResult.message) {
+                        const { sendMessage } = await import('../facebook-api')
+                        await sendMessage(user.facebook_id, spamResult.message)
                     }
 
                     return
                 }
 
+                // Không có spam - xử lý bình thường
                 // Thử xử lý bằng handlers trước
                 const handledByUtility = await UtilityHandlers.handleSpecialKeywords(user, text)
                 if (!handledByUtility) {
@@ -656,5 +658,47 @@ export class UnifiedBotSystem {
         }
     }
 
+    /**
+     * Hiển thị chỉ nút chat admin khi user bị spam quá nhiều
+     */
+    private static async showAdminChatButtonOnly(user: any): Promise<void> {
+        try {
+            const { sendMessage, sendQuickReply, createQuickReply } = await import('../facebook-api')
 
+            await sendMessage(user.facebook_id, '🚫 Bạn đã gửi quá nhiều tin nhắn!\n💬 Vui lòng chat trực tiếp với admin để được hỗ trợ.')
+
+            await sendQuickReply(user.facebook_id, 'Liên hệ admin:', [
+                createQuickReply('💬 CHAT VỚI ADMIN', 'CONTACT_ADMIN'),
+                createQuickReply('🏠 VỀ MENU CHÍNH', 'BACK_TO_MAIN')
+            ])
+
+            logger.info('Showed admin chat button only for user', { facebookId: user.facebook_id })
+        } catch (error) {
+            logger.error('Error showing admin chat button only', { facebookId: user.facebook_id, error })
+        }
+    }
+
+    /**
+     * Gửi bot menu với nhiều quick reply
+     */
+    private static async sendBotMenu(user: any): Promise<void> {
+        try {
+            const { sendQuickReply, createQuickReply } = await import('../facebook-api')
+
+            await sendQuickReply(user.facebook_id, '🤖 MENU BOT TÂN DẬU\n━━━━━━━━━━━━━━━━━━━━\nChọn chức năng bạn muốn sử dụng:', [
+                createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                createQuickReply('🛒 ĐĂNG TIN BÁN HÀNG', 'LISTING'),
+                createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                createQuickReply('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
+                createQuickReply('💰 THANH TOÁN', 'PAYMENT'),
+                createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
+                createQuickReply('ℹ️ THÔNG TIN', 'INFO'),
+                createQuickReply('🏠 VỀ MENU CHÍNH', 'BACK_TO_MAIN')
+            ])
+
+            logger.info('Sent enhanced bot menu', { facebookId: user.facebook_id })
+        } catch (error) {
+            logger.error('Error sending bot menu', { facebookId: user.facebook_id, error })
+        }
+    }
 }

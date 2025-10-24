@@ -109,25 +109,43 @@ export class WelcomeService {
         }
     }
 
-    // Simple welcome buttons for common actions - điều chỉnh theo trạng thái đăng ký
+    // Enhanced welcome buttons with more options - điều chỉnh theo trạng thái đăng ký
     private async sendWelcomeButtons(facebookId: string): Promise<void> {
         try {
             // Lấy thông tin user để kiểm tra trạng thái đăng ký
             const userData = await getUserByFacebookId(facebookId)
 
-            const buttons = [
-                createQuickReply('🤖 DÙNG BOT', 'USE_BOT'),
-                createQuickReply('💬 CHAT VỚI ADMIN', 'CHAT_ADMIN'),
-                createQuickReply('🛑 DỪNG BOT', 'STOP_BOT')
-            ]
+            let buttons = []
+
+            if (!userData || userData.status === 'new_user' || userData.status === 'pending') {
+                // User chưa đăng ký - hiện nhiều nút hơn
+                buttons = [
+                    createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'),
+                    createQuickReply('🛒 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                    createQuickReply('ℹ️ TÌM HIỂU THÊM', 'INFO'),
+                    createQuickReply('💬 HỖ TRỢ', 'CONTACT_ADMIN')
+                ]
+            } else {
+                // User đã đăng ký - hiện menu đầy đủ
+                buttons = [
+                    createQuickReply('🤖 DÙNG BOT', 'USE_BOT'),
+                    createQuickReply('💬 CHAT VỚI ADMIN', 'CHAT_ADMIN'),
+                    createQuickReply('🛑 DỪNG BOT', 'STOP_BOT'),
+                    createQuickReply('🔍 TÌM KIẾM NHANH', 'QUICK_SEARCH'),
+                    createQuickReply('📝 ĐĂNG TIN', 'LISTING'),
+                    createQuickReply('👥 CỘNG ĐỒNG', 'COMMUNITY'),
+                    createQuickReply('💰 THANH TOÁN', 'PAYMENT'),
+                    createQuickReply('ℹ️ THÔNG TIN', 'INFO')
+                ]
+            }
 
             await sendQuickReply(
                 facebookId,
-                'Chọn một tùy chọn:',
+                '🎯 CHỌN CHẾ ĐỘ SỬ DỤNG\n━━━━━━━━━━━━━━━━━━━━\nChọn một tùy chọn để bắt đầu:',
                 buttons
             )
 
-            logger.info(`✅ Welcome buttons sent successfully to user: ${facebookId}`)
+            logger.info(`✅ Enhanced welcome buttons sent successfully to user: ${facebookId}`)
         } catch (error) {
             logger.error(`❌ Failed to send welcome buttons to user: ${facebookId}`, { error: error instanceof Error ? error.message : String(error) })
             throw error

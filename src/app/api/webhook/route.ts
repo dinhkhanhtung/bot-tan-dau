@@ -347,6 +347,12 @@ async function handleAdminMessage(event: any) {
 
         logger.info('Processing admin message', { senderId, text })
 
+        // Check if this is an admin command
+        if (text.startsWith('/')) {
+            await handleAdminCommand(senderId, text)
+            return
+        }
+
         // Check if admin is chatting with any user
         const { data: activeChats } = await supabaseAdmin
             .from('admin_chat_sessions')
@@ -366,5 +372,185 @@ async function handleAdminMessage(event: any) {
 
     } catch (error) {
         logger.error('Error handling admin message', { event, error })
+    }
+}
+
+// Handle admin commands
+async function handleAdminCommand(adminId: string, command: string) {
+    try {
+        logger.info('Processing admin command', { adminId, command })
+
+        const { sendMessage } = await import('@/lib/facebook-api')
+
+        // Parse command and arguments
+        const parts = command.split(' ')
+        const commandName = parts[0].toLowerCase()
+        const args = parts.slice(1)
+
+        switch (commandName) {
+            case '/stop':
+                if (args.length === 0) {
+                    await sendMessage(adminId, '❌ Lệnh /stop cần ID user hoặc "all"\nVí dụ: /stop 123456789 hoặc /stop all')
+                    return
+                }
+
+                if (args[0] === 'all') {
+                    // Stop bot for all users
+                    const { updateBotStatus } = await import('@/lib/bot-service')
+                    await updateBotStatus('stopped')
+                    await sendMessage(adminId, '✅ Đã dừng bot cho tất cả users')
+                } else {
+                    // Stop bot for specific user
+                    const targetUserId = args[0]
+                    const { UnifiedUserStateManager } = await import('@/lib/core/unified-user-state-manager')
+                    await UnifiedUserStateManager.updateUserInteractionState(targetUserId, { bot_active: false })
+                    await sendMessage(adminId, `✅ Đã dừng bot cho user: ${targetUserId}`)
+                }
+                break
+
+            case '/start':
+                if (args.length === 0) {
+                    await sendMessage(adminId, '❌ Lệnh /start cần ID user hoặc "all"\nVí dụ: /start 123456789 hoặc /start all')
+                    return
+                }
+
+                if (args[0] === 'all') {
+                    // Start bot for all users
+                    const { updateBotStatus } = await import('@/lib/bot-service')
+                    await updateBotStatus('active')
+                    await sendMessage(adminId, '✅ Đã kích hoạt bot cho tất cả users')
+                } else {
+                    // Start bot for specific user
+                    const targetUserId = args[0]
+                    const { UnifiedUserStateManager } = await import('@/lib/core/unified-user-state-manager')
+                    await UnifiedUserStateManager.updateUserInteractionState(targetUserId, { bot_active: true })
+                    await sendMessage(adminId, `✅ Đã kích hoạt bot cho user: ${targetUserId}`)
+                }
+                break
+
+            case '/status':
+                // Show bot status
+                const { getBotStatus } = await import('@/lib/bot-service')
+                const botStatus = await getBotStatus()
+                await sendMessage(adminId, `🤖 Trạng thái bot: ${botStatus}`)
+                break
+
+            case '/help':
+                await sendMessage(adminId,
+                    '💡 ADMIN COMMANDS\n━━━━━━━━━━━━━━━━━━━━\n' +
+                    '/stop <user_id|all> - Dừng bot\n' +
+                    '/start <user_id|all> - Kích hoạt bot\n' +
+                    '/status - Xem trạng thái bot\n' +
+                    '/send <user_id> <message> - Gửi tin nhắn\n' +
+                    '/buttons <user_id> <message> - Gửi nút\n' +
+                    '/help - Hiển thị trợ giúp\n━━━━━━━━━━━━━━━━━━━━'
+                )
+                break
+
+            case '/send':
+                if (args.length < 2) {
+                    await sendMessage(adminId, '❌ Lệnh /send cần user_id và message\nVí dụ: /send 123456789 Hello user')
+                    return
+                }
+
+                const targetUserId = args[0]
+                const messageToSend = args.slice(1).join(' ')
+
+                const { sendMessage: sendToUser } = await import('@/lib/facebook-api')
+                await sendToUser(targetUserId, `💬 Từ admin: ${messageToSend}`)
+                await sendMessage(adminId, `✅ Đã gửi tin nhắn đến user: ${targetUserId}`)
+                break
+
+            case '/buttons':
+                if (args.length < 2) {
+                    await sendMessage(adminId, '❌ Lệnh /buttons cần user_id và message\nVí dụ: /buttons 123456789 Chọn chức năng')
+                    return
+                }
+
+                const buttonUserId = args[0]
+                const buttonMessage = args.slice(1).join(' ')
+
+                // Gửi nút cơ bản
+                const { sendQuickReply, createQuickReply } = await import('@/lib/facebook-api')
+                await sendQuickReply(buttonUserId, `💬 ${buttonMessage}`, [
+                    createQuickReply('🚀 ĐĂNG KÝ', 'REGISTER'),
+                    createQuickReply('🛒 ĐĂNG BÁN HÀNG', 'LISTING'),
+                    createQuickReply('🔍 TÌM KIẾM', 'SEARCH'),
+                    createQuickReply('💳 NÂNG CẤP', 'UPGRADE'),
+                    createQuickReply(' LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
+                    createQuickReply('ℹ️ THÔNG TIN', 'INFO')
+                ])
+                await sendMessage(adminId, `✅ Đã gửi nút đến user: ${buttonUserId}`)
+                break
+
+            case '/search':
+                if (args.length < 2) {
+                    await sendMessage(adminId, '❌ Lệnh /search cần user_id và từ khóa\nVí dụ: /search 123456789 điện thoại')
+                    return
+                }
+
+                const searchUserId = args[0]
+                const searchKeyword = args.slice(1).join(' ')
+
+                // Tìm kiếm giúp user (thu phí 5,000)
+                const { supabaseAdmin: adminDb } = await import('@/lib/supabase')
+                const { sendMessage: sendMessageToUser, createGenericElement, sendGenericTemplate } = await import('@/lib/facebook-api')
+                const { formatCurrency } = await import('@/lib/utils')
+
+                // Tìm kiếm listings
+                const { data: listings, error } = await adminDb
+                    .from('listings')
+                    .select('*')
+                    .ilike('title', `%${searchKeyword}%`)
+                    .eq('status', 'active')
+                    .limit(5)
+
+                if (error) {
+                    await sendMessage(adminId, `❌ Lỗi tìm kiếm: ${error.message}`)
+                    return
+                }
+
+                if (!listings || listings.length === 0) {
+                    await sendMessageToUser(searchUserId, `🔍 Admin tìm giúp: Không tìm thấy "${searchKeyword}"`)
+                    await sendMessage(adminId, `ℹ️ Không tìm thấy kết quả cho: ${searchKeyword}`)
+                    return
+                }
+
+                // Gửi kết quả cho user
+                await sendMessageToUser(searchUserId, `🔍 Admin tìm giúp: "${searchKeyword}" - Tìm thấy ${listings.length} kết quả`)
+
+                const elements = listings.map(listing =>
+                    createGenericElement(
+                        listing.title,
+                        `${formatCurrency(listing.price)} • ${listing.location}`,
+                        undefined,
+                        [
+                            {
+                                type: 'postback',
+                                title: '👁️ Xem chi tiết',
+                                payload: `VIEW_LISTING_${listing.id}`
+                            }
+                        ]
+                    )
+                )
+
+                await sendGenericTemplate(searchUserId, elements)
+
+                // Thu phí 5,000 cho dịch vụ tìm kiếm
+                await sendMessageToUser(searchUserId, `💰 Phí dịch vụ tìm kiếm: 5,000 VNĐ\n💳 Vui lòng thanh toán để tiếp tục sử dụng`)
+
+                await sendMessage(adminId, `✅ Đã tìm kiếm "${searchKeyword}" cho user ${searchUserId} (${listings.length} kết quả)`)
+                break
+
+            default:
+                await sendMessage(adminId, '❌ Lệnh không hợp lệ. Gõ /help để xem danh sách lệnh.')
+        }
+
+        logger.info('Admin command executed', { adminId, command })
+
+    } catch (error) {
+        logger.error('Error handling admin command', { adminId, command, error })
+        const { sendMessage } = await import('@/lib/facebook-api')
+        await sendMessage(adminId, '❌ Có lỗi xảy ra khi thực hiện lệnh')
     }
 }
