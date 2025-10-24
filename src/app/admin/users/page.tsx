@@ -243,13 +243,39 @@ export default function AdminUsers() {
             })
 
             const data = await response.json()
-            
+
             if (data.success) {
                 showToast('Đã kích hoạt người dùng thành công!', 'success')
                 // Refresh users
                 await fetchUsers()
             } else {
                 showToast(`Lỗi kích hoạt người dùng: ${data.message}`, 'error')
+            }
+        })
+    }
+
+    const handleDeleteUser = async (userId: string) => {
+        const confirmDelete = confirm('⚠️ Bạn có chắc chắn muốn xóa người dùng này?\n\nHành động này sẽ xóa:\n• Thông tin cá nhân\n• Tất cả tin đăng\n• Lịch sử chat\n• Dữ liệu thanh toán\n• Điểm thưởng\n\n⚠️ Hành động này KHÔNG THỂ HOÀN TÁC!')
+
+        if (!confirmDelete) return
+
+        await handleActionWithLoading(`deleteUser_${userId}`, async () => {
+            const token = localStorage.getItem('admin_token')
+            const response = await fetch(`/api/admin/users?id=${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+
+            if (data.success) {
+                showToast('Đã xóa người dùng và tất cả dữ liệu liên quan thành công!', 'success')
+                // Refresh users
+                await fetchUsers()
+            } else {
+                showToast(`Lỗi xóa người dùng: ${data.message}`, 'error')
             }
         })
     }
@@ -582,6 +608,21 @@ export default function AdminUsers() {
                                                         )}
                                                     </button>
                                                 )}
+                                                <button
+                                                    onClick={() => handleDeleteUser(user.id)}
+                                                    disabled={loadingActions[`deleteUser_${user.id}`]}
+                                                    className="bg-red-800 text-white px-3 py-1 rounded-md hover:bg-red-900 text-sm disabled:opacity-50 flex items-center"
+                                                    title="Xóa người dùng và tất cả dữ liệu liên quan"
+                                                >
+                                                    {loadingActions[`deleteUser_${user.id}`] ? (
+                                                        <>
+                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                            ...
+                                                        </>
+                                                    ) : (
+                                                        '🗑️ Xóa'
+                                                    )}
+                                                </button>
                                             </div>
                                         </div>
                                     </div>

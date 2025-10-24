@@ -95,6 +95,23 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Add constraints for phone length and referral code validation
+ALTER TABLE users
+ADD CONSTRAINT check_phone_length CHECK (LENGTH(phone) <= 20);
+
+ALTER TABLE users
+ADD CONSTRAINT check_referral_code_not_empty CHECK (LENGTH(referral_code) > 0);
+
+-- Add constraints for required fields validation
+ALTER TABLE users
+ADD CONSTRAINT check_facebook_id_not_empty CHECK (LENGTH(facebook_id) > 0);
+
+ALTER TABLE users
+ADD CONSTRAINT check_name_not_empty CHECK (LENGTH(name) > 0);
+
+ALTER TABLE users
+ADD CONSTRAINT check_location_not_empty CHECK (LENGTH(location) > 0);
+
 -- Listings table
 CREATE TABLE IF NOT EXISTS listings (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -938,6 +955,61 @@ BEGIN
         WHERE table_name = 'point_transactions' AND constraint_name = 'check_valid_points'
     ) THEN
         ALTER TABLE point_transactions ADD CONSTRAINT check_valid_points CHECK (points != 0);
+    END IF;
+END $$;
+
+-- Ensure phone numbers are not too long (fix for registration issues)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'users' AND constraint_name = 'check_phone_length'
+    ) THEN
+        ALTER TABLE users ADD CONSTRAINT check_phone_length CHECK (LENGTH(phone) <= 20);
+    END IF;
+END $$;
+
+-- Ensure referral codes are unique and not empty
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'users' AND constraint_name = 'check_referral_code_not_empty'
+    ) THEN
+        ALTER TABLE users ADD CONSTRAINT check_referral_code_not_empty CHECK (LENGTH(referral_code) > 0);
+    END IF;
+END $$;
+
+-- Ensure facebook_id is not empty
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'users' AND constraint_name = 'check_facebook_id_not_empty'
+    ) THEN
+        ALTER TABLE users ADD CONSTRAINT check_facebook_id_not_empty CHECK (LENGTH(facebook_id) > 0);
+    END IF;
+END $$;
+
+-- Ensure name is not empty
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'users' AND constraint_name = 'check_name_not_empty'
+    ) THEN
+        ALTER TABLE users ADD CONSTRAINT check_name_not_empty CHECK (LENGTH(name) > 0);
+    END IF;
+END $$;
+
+-- Ensure location is not empty
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name = 'users' AND constraint_name = 'check_location_not_empty'
+    ) THEN
+        ALTER TABLE users ADD CONSTRAINT check_location_not_empty CHECK (LENGTH(location) > 0);
     END IF;
 END $$;
 

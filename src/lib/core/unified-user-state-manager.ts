@@ -110,6 +110,36 @@ export class UnifiedUserStateManager {
             const session = await getBotSession(facebookId)
             const userType = await this.getUserType(facebookId)
 
+            // Map database user status to UserType if not already set in user_interactions
+            let mappedUserType = userType
+            if (userType === UserType.NEW_USER && userData) {
+                switch (userData.status) {
+                    case 'registered':
+                    case 'active':
+                        mappedUserType = UserType.REGISTERED_USER
+                        break
+                    case 'trial':
+                        mappedUserType = UserType.TRIAL_USER
+                        break
+                    case 'pending':
+                        mappedUserType = UserType.PENDING_USER
+                        break
+                    case 'expired':
+                        mappedUserType = UserType.EXPIRED_USER
+                        break
+                    case 'suspended':
+                        mappedUserType = UserType.EXPIRED_USER
+                        break
+                    default:
+                        mappedUserType = UserType.NEW_USER
+                }
+
+                // Update the user type in the database if it was mapped
+                if (mappedUserType !== userType) {
+                    await this.setUserType(facebookId, mappedUserType)
+                }
+            }
+
             let userState = UserState.IDLE
 
             if (session?.current_flow) {
@@ -132,7 +162,7 @@ export class UnifiedUserStateManager {
             }
 
             return {
-                userType,
+                userType: mappedUserType,
                 userState,
                 user: userData,
                 session,
@@ -205,20 +235,34 @@ export class UnifiedUserStateManager {
      */
     static async sendBotMenu(facebookId: string): Promise<void> {
         try {
-            const userData = await getUserByFacebookId(facebookId)
+            const context = await this.analyzeUserContext(facebookId)
+            const { userType, user } = context
             const buttons = []
 
-            if (!userData || userData.status === 'new_user' || userData.status === 'pending') {
+            // Only show registration button if user is not registered
+            if (userType === UserType.NEW_USER || userType === UserType.PENDING_USER) {
                 buttons.push(createQuickReply('🚀 ĐĂNG KÝ THÀNH VIÊN', 'REGISTER'))
             }
 
-            buttons.push(
-                createQuickReply('🛒 ĐĂNG TIN BÁN HÀNG', 'LISTING'),
-                createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
-                createQuickReply('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
-                createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
-                createQuickReply('🏠 VỀ MENU CHÍNH', 'BACK_TO_MAIN')
-            )
+            // Always show main features for registered users (including trial users)
+            if (userType === UserType.REGISTERED_USER || userType === UserType.TRIAL_USER) {
+                buttons.push(
+                    createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                    createQuickReply('📝 ĐĂNG BÁN HÀNG', 'LISTING'),
+                    createQuickReply('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
+                    createQuickReply('💰 THANH TOÁN', 'PAYMENT'),
+                    createQuickReply('ℹ️ THÔNG TIN', 'INFO')
+                )
+            } else {
+                // Show basic features for non-registered users
+                buttons.push(
+                    createQuickReply('🛒 ĐĂNG TIN BÁN HÀNG', 'LISTING'),
+                    createQuickReply('🔍 TÌM KIẾM SẢN PHẨM', 'SEARCH'),
+                    createQuickReply('👥 CỘNG ĐỒNG TÂN DẬU', 'COMMUNITY'),
+                    createQuickReply('💬 LIÊN HỆ ADMIN', 'CONTACT_ADMIN'),
+                    createQuickReply('🏠 VỀ MENU CHÍNH', 'BACK_TO_MAIN')
+                )
+            }
 
             await sendQuickReply(facebookId, 'Chọn chức năng:', buttons)
         } catch (error) {

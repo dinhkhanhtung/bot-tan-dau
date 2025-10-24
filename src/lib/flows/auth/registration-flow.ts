@@ -1,7 +1,7 @@
 import { BaseFlow } from '../../core/flow-base'
 import { SessionManager } from '../../core/session-manager'
 import { UnifiedUserStateManager } from '../../core/unified-user-state-manager'
-import { UserState } from '../../../types'
+import { UserState, UserType } from '../../../types'
 import { supabaseAdmin } from '../../supabase'
 import {
     sendMessage,
@@ -102,8 +102,8 @@ export class RegistrationFlow extends BaseFlow {
         try {
             console.log(`🔄 Starting registration for user: ${user.facebook_id}`)
 
-            // Check if user already registered
-            if (user.status === 'registered' || user.status === 'trial') {
+            // Check if user already registered (including trial users)
+            if (user.status === 'registered' || user.status === 'trial' || user.status === 'active') {
                 await this.sendAlreadyRegisteredMessage(user)
                 return
             }
@@ -423,27 +423,67 @@ export class RegistrationFlow extends BaseFlow {
                 return
             }
 
-            // Create user record
-            const { error } = await supabaseAdmin
+            // Check if user already exists
+            const { data: existingUser, error: checkError } = await supabaseAdmin
                 .from('users')
-                .insert({
-                    id: generateId(),
-                    facebook_id: user.facebook_id,
-                    name: data.name,
-                    phone: data.phone,
-                    location: data.location,
-                    birthday: 1981,
-                    status: 'trial',
-                    membership_expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                    referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                })
+                .select('*')
+                .eq('facebook_id', user.facebook_id)
+                .single()
 
-            if (error) {
-                console.error('❌ Database error:', error)
+            if (checkError && checkError.code !== 'PGRST116') {
+                console.error('❌ Error checking existing user:', checkError)
                 await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
                 return
+            }
+
+            if (existingUser) {
+                // User already exists, update their information
+                console.log('📝 User already exists, updating information:', existingUser.id)
+
+                const { error: updateError } = await supabaseAdmin
+                    .from('users')
+                    .update({
+                        name: data.name,
+                        phone: data.phone,
+                        location: data.location,
+                        birthday: 1981,
+                        status: 'trial',
+                        membership_expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+                        referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('facebook_id', user.facebook_id)
+
+                if (updateError) {
+                    console.error('❌ Database update error:', updateError)
+                    await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+                    return
+                }
+            } else {
+                // User doesn't exist, create new record
+                console.log('🆕 Creating new user record')
+
+                const { error: insertError } = await supabaseAdmin
+                    .from('users')
+                    .insert({
+                        id: generateId(),
+                        facebook_id: user.facebook_id,
+                        name: data.name,
+                        phone: data.phone,
+                        location: data.location,
+                        birthday: 1981,
+                        status: 'trial',
+                        membership_expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+                        referral_code: `TD1981-${user.facebook_id.slice(-6)}`,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    })
+
+                if (insertError) {
+                    console.error('❌ Database insert error:', insertError)
+                    await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
+                    return
+                }
             }
 
             // Clear session
@@ -469,6 +509,9 @@ export class RegistrationFlow extends BaseFlow {
 
             // Update user state to USING_BOT since they're now registered
             await UnifiedUserStateManager.updateUserState(user.facebook_id, UserState.USING_BOT)
+
+            // Also update user type to reflect registered status
+            await UnifiedUserStateManager.setUserType(user.facebook_id, UserType.REGISTERED_USER)
 
             console.log('✅ Registration completed successfully!')
 

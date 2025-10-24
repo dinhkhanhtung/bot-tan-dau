@@ -135,15 +135,86 @@ export class DatabaseService {
         return this.executeQuery(
             'deleteUser',
             async () => {
+                // First get the user ID to delete by facebook_id
+                const { data: user, error: userError } = await supabaseAdmin
+                    .from(CONFIG.DATABASE.TABLES.USERS)
+                    .select('id, name')
+                    .eq('facebook_id', facebookId)
+                    .single()
+
+                if (userError || !user) {
+                    throw new Error(`User not found: ${facebookId}`)
+                }
+
+                // Delete user by ID (CASCADE will handle related records)
                 const { error } = await supabaseAdmin
                     .from(CONFIG.DATABASE.TABLES.USERS)
                     .delete()
-                    .eq('facebook_id', facebookId)
+                    .eq('id', user.id)
 
                 if (error) throw error
 
+                // Additional cleanup for tables that don't have CASCADE
+                // (These should be handled by CASCADE, but let's be safe)
+
+                // Clean up user_interactions
+                await supabaseAdmin
+                    .from('user_interactions')
+                    .delete()
+                    .eq('facebook_id', facebookId)
+
+                // Clean up bot_sessions
+                await supabaseAdmin
+                    .from('bot_sessions')
+                    .delete()
+                    .eq('facebook_id', facebookId)
+
+                // Clean up admin_takeover_states
+                await supabaseAdmin
+                    .from('admin_takeover_states')
+                    .delete()
+                    .eq('user_id', facebookId)
+
+                // Clean up admin_chat_sessions
+                await supabaseAdmin
+                    .from('admin_chat_sessions')
+                    .delete()
+                    .eq('user_facebook_id', facebookId)
+
+                // Clean up spam_tracking
+                await supabaseAdmin
+                    .from('spam_tracking')
+                    .delete()
+                    .eq('user_id', facebookId)
+
+                // Clean up user_activities
+                await supabaseAdmin
+                    .from('user_activities')
+                    .delete()
+                    .eq('facebook_id', facebookId)
+
+                // Clean up user_activity_logs
+                await supabaseAdmin
+                    .from('user_activity_logs')
+                    .delete()
+                    .eq('facebook_id', facebookId)
+
+                // Clean up chat_bot_offer_counts
+                await supabaseAdmin
+                    .from('chat_bot_offer_counts')
+                    .delete()
+                    .eq('facebook_id', facebookId)
+
+                // Clean up user_bot_modes
+                await supabaseAdmin
+                    .from('user_bot_modes')
+                    .delete()
+                    .eq('facebook_id', facebookId)
+
                 // Invalidate user cache
                 invalidateUserCache(facebookId)
+
+                console.log(`✅ User ${user.name} (${facebookId}) deleted successfully with all related data`)
 
                 return true
             }
