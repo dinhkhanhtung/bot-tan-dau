@@ -290,9 +290,9 @@ export class RegistrationFlow extends BaseFlow {
         console.log('[DEBUG] Cleaned phone number:', phone)
 
         // Validate phone - UPDATED for 9 digits minimum
-        if (phone.length < 9 || phone.length > 11) {
+        if (phone.length !== 9) {
             console.log('[DEBUG] Phone validation failed:', phone.length)
-            await sendMessage(user.facebook_id, '❌ Số điện thoại không hợp lệ! Vui lòng nhập 9-11 chữ số.')
+            await sendMessage(user.facebook_id, '❌ Số điện thoại không hợp lệ! Vui lòng nhập CHÍNH XÁC 9 chữ số.')
             return
         }
 
@@ -432,8 +432,9 @@ export class RegistrationFlow extends BaseFlow {
         const buttons = digits.map(digit => createQuickReply(digit, digit))
 
         const remainingDigits = 9 - currentDigits.length
+        const targetDigits = 9
         await sendQuickReply(facebookId,
-            `📱 Bước 2/7: Số điện thoại\n💡 Chọn ${remainingDigits} chữ số tiếp theo\n━━━━━━━━━━━━━━━━━━━━\nSố hiện tại: ${currentDigits}\n━━━━━━━━━━━━━━━━━━━━`,
+            `📱 Bước 2/7: Số điện thoại\n💡 Chọn ${remainingDigits} chữ số tiếp theo (cần ${targetDigits} chữ số)\n━━━━━━━━━━━━━━━━━━━━\nSố hiện tại: ${currentDigits}\n━━━━━━━━━━━━━━━━━━━━`,
             buttons
         )
     }
