@@ -285,10 +285,7 @@ export class RegistrationFlow extends BaseFlow {
             return
         }
 
-        // Send location prompt
-        await sendMessage(user.facebook_id, `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━`)
-
-        // Send location buttons
+        // Send location buttons (includes the prompt message)
         console.log('[DEBUG] Sending location buttons...')
         await this.sendLocationButtons(user.facebook_id)
 
@@ -549,6 +546,16 @@ export class RegistrationFlow extends BaseFlow {
     private async sendLocationButtons(facebookId: string): Promise<void> {
         console.log('[DEBUG] sendLocationButtons: Creating location buttons for user:', facebookId)
 
+        // Get current session data to include phone number in the message
+        const { data: sessionData } = await supabaseAdmin
+            .from('bot_sessions')
+            .select('data')
+            .eq('facebook_id', facebookId)
+            .single()
+
+        const currentData = sessionData?.data || {}
+        const phone = currentData.phone || 'Chưa cập nhật'
+
         // Complete list of Vietnamese provinces + overseas option
         const locations = [
             // Northern Vietnam (Miền Bắc)
@@ -593,7 +600,7 @@ export class RegistrationFlow extends BaseFlow {
                 return createQuickReply(location, payload)
             })
 
-            await sendQuickReply(facebookId, '📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống (Tất cả tỉnh thành Việt Nam + Nước ngoài):', buttons)
+            await sendQuickReply(facebookId, `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống (Tất cả tỉnh thành Việt Nam + Nước ngoài):`, buttons)
         } else {
             // Multiple pages - send first page with "Xem thêm" option
             const firstPageLocations = locations.slice(0, buttonsPerPage - 1) // Reserve 1 slot for "Xem thêm"
@@ -608,7 +615,7 @@ export class RegistrationFlow extends BaseFlow {
             // Add "Xem thêm" button
             buttons.push(createQuickReply('📋 XEM THÊM TỈNH THÀNH', 'LOC_SHOW_MORE'))
 
-            await sendQuickReply(facebookId, '📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống (Trang 1/' + totalPages + '):', buttons)
+            await sendQuickReply(facebookId, `✅ SĐT: ${phone}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố\n💡 Chọn nơi bạn sinh sống để kết nối với cộng đồng địa phương\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/4: Chọn tỉnh/thành phố nơi bạn sinh sống (Trang 1/${totalPages}):`, buttons)
         }
 
         console.log('[DEBUG] Location buttons sent successfully')
