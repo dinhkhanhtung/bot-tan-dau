@@ -99,6 +99,8 @@ export class ListingFlow extends BaseFlow {
                 await this.handlePrevListingLocations(user, payload, session)
             } else if (payload.startsWith('SELECT_LOCATION_')) {
                 await this.handleLocationPostback(user, payload, session)
+            } else if (payload.startsWith('SELECT_PRICE_')) {
+                await this.handlePricePostback(user, payload, session)
             } else if (payload === 'CANCEL_LISTING') {
                 await this.cancelListing(user)
             }
@@ -220,38 +222,15 @@ export class ListingFlow extends BaseFlow {
     }
 
     /**
-     * Handle price step
+     * Handle price step - Show price range buttons instead of text input
      */
     private async handlePriceStep(user: any, text: string): Promise<void> {
         try {
             console.log(`💰 Processing price step for user: ${user.facebook_id}`)
 
-            // Clean price input
-            const priceText = text.replace(/[^\d]/g, '')
-            const price = parseInt(priceText)
-
-            if (!price || price < 1000) {
-                await sendMessage(user.facebook_id, '❌ Giá không hợp lệ! Vui lòng nhập giá từ 1,000 VNĐ trở lên.')
-                return
-            }
-
-            // Get current session data
-            const currentData = await SessionManager.getSessionData(user.facebook_id)
-
-            // Update session with price
-            await SessionManager.updateSession(user.facebook_id, {
-                step: 3,
-                data: {
-                    ...currentData,
-                    price: price
-                }
-            })
-
-            // Send description prompt
-            await sendMessage(user.facebook_id,
-                `✅ Giá: ${formatCurrency(price)}\n━━━━━━━━━━━━━━━━━━━━\n📝 Bước 4/5: Mô tả sản phẩm\n💡 Mô tả chi tiết về sản phẩm của bạn\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập mô tả sản phẩm:`)
-
-            console.log('✅ Price step completed, moved to description step')
+            // Always show price range buttons for user selection
+            // Ignore any text input - only buttons are valid
+            await this.sendPriceRangeButtons(user.facebook_id)
 
         } catch (error) {
             await this.handleError(user, error, 'handlePriceStep')
@@ -285,7 +264,7 @@ export class ListingFlow extends BaseFlow {
 
             // Send location prompt
             await sendMessage(user.facebook_id,
-                `✅ Mô tả: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 5/5: Địa điểm\n💡 Chọn nơi bạn đang ở để người mua dễ tìm\n━━━━━━━━━━━━━━━━━━━━`)
+                `✅ Mô tả: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 6/6: Địa điểm\n💡 Chọn nơi bạn đang ở để người mua dễ tìm\n━━━━━━━━━━━━━━━━━━━━`)
 
             // Send location buttons
             await this.sendLocationButtons(user.facebook_id)
@@ -335,9 +314,8 @@ export class ListingFlow extends BaseFlow {
                 }
             })
 
-            // Send title prompt
-            await sendMessage(user.facebook_id,
-                `✅ Danh mục: ${category}\n━━━━━━━━━━━━━━━━━━━━\n� Bước 3/6: Tiêu đề sản phẩm\n💡 Nhập tiêu đề ngắn gọn, hấp dẫn cho sản phẩm\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập tiêu đề:`)
+            // Send price prompt
+            await this.sendPriceRangeButtons(user.facebook_id)
 
             console.log('✅ Category step completed, moved to price step')
 
@@ -361,7 +339,7 @@ export class ListingFlow extends BaseFlow {
 
             // Update session with location
             await SessionManager.updateSession(user.facebook_id, {
-                step: 5,
+                step: 6,
                 data: {
                     ...currentData,
                     location: location
@@ -377,6 +355,48 @@ export class ListingFlow extends BaseFlow {
     }
 
     /**
+     * Handle price postback
+     */
+    private async handlePricePostback(user: any, payload: string, session: any): Promise<void> {
+        try {
+            console.log(`💰 Processing price postback for user: ${user.facebook_id}`)
+
+            const priceLabel = payload.replace('SELECT_PRICE_', '')
+            console.log(`[DEBUG] Selected price range: ${priceLabel}`)
+
+            // Find the price range object
+            const selectedPriceRange = PRICE_RANGES.find(range => range.label === priceLabel)
+
+            if (!selectedPriceRange) {
+                await sendMessage(user.facebook_id, '❌ Khoảng giá không hợp lệ. Vui lòng chọn lại!')
+                return
+            }
+
+            // Get current session data
+            const currentData = await SessionManager.getSessionData(user.facebook_id)
+
+            // Update session with price range
+            await SessionManager.updateSession(user.facebook_id, {
+                step: 4,
+                data: {
+                    ...currentData,
+                    price: selectedPriceRange,
+                    priceLabel: priceLabel
+                }
+            })
+
+            // Send description prompt
+            await sendMessage(user.facebook_id,
+                `✅ Giá: ${priceLabel}\n━━━━━━━━━━━━━━━━━━━━\n📝 Bước 5/6: Mô tả sản phẩm\n💡 Mô tả chi tiết về sản phẩm của bạn\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập mô tả sản phẩm:`)
+
+            console.log('✅ Price step completed, moved to description step')
+
+        } catch (error) {
+            await this.handleError(user, error, 'handlePricePostback')
+        }
+    }
+
+    /**
      * Complete listing process
      */
     private async completeListing(user: any): Promise<void> {
@@ -385,7 +405,7 @@ export class ListingFlow extends BaseFlow {
 
             // Get session data
             const sessionData = await SessionManager.getSessionData(user.facebook_id)
-            const { title, category, price, description, location } = sessionData
+            const { title, category, priceLabel, description, location } = sessionData
 
             // Create listing in database
             const { supabaseAdmin } = await import('../../supabase')
@@ -396,7 +416,7 @@ export class ListingFlow extends BaseFlow {
                     user_id: user.facebook_id,
                     title: title,
                     category: category,
-                    price: price,
+                    price: priceLabel, // Store price range label instead of numeric value
                     description: description,
                     location: location,
                     status: 'active',
@@ -415,7 +435,7 @@ export class ListingFlow extends BaseFlow {
 
             // Send success message
             await sendMessage(user.facebook_id,
-                `🎉 ĐĂNG TIN THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Tiêu đề: ${title}\n✅ Danh mục: ${category}\n✅ Giá: ${formatCurrency(price)}\n✅ Địa điểm: ${location}\n━━━━━━━━━━━━━━━━━━━━\n📢 Tin đăng của bạn đã được duyệt và hiển thị!\n💡 Người mua có thể liên hệ với bạn qua tin nhắn.`)
+                `🎉 ĐĂNG TIN THÀNH CÔNG!\n━━━━━━━━━━━━━━━━━━━━\n✅ Tiêu đề: ${title}\n✅ Danh mục: ${category}\n✅ Giá: ${priceLabel}\n✅ Địa điểm: ${location}\n━━━━━━━━━━━━━━━━━━━━\n📢 Tin đăng của bạn đã được duyệt và hiển thị!\n💡 Người mua có thể liên hệ với bạn qua tin nhắn.`)
 
             console.log('✅ Listing completed successfully')
 
@@ -542,6 +562,17 @@ export class ListingFlow extends BaseFlow {
                 }
             }
         }
+    }
+
+    /**
+     * Send price range buttons
+     */
+    private async sendPriceRangeButtons(facebookId: string): Promise<void> {
+        const quickReplies = PRICE_RANGES.map(priceRange =>
+            createQuickReply(priceRange.label, `SELECT_PRICE_${priceRange.label}`)
+        )
+
+        await sendQuickReply(facebookId, '💰 Chọn khoảng giá phù hợp:', quickReplies)
     }
 
     /**
