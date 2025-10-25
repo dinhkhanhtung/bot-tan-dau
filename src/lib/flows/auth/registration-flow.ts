@@ -545,7 +545,26 @@ export class RegistrationFlow extends BaseFlow {
         // Check if user is selecting day via buttons
         if (text.length <= 2 && /^[0-9]+$/.test(text)) {
             const day = parseInt(text)
-            if (day >= 1 && day <= 31) {
+
+            // Get current session data to check birth month
+            const { data: sessionData } = await supabaseAdmin
+                .from('bot_sessions')
+                .select('data')
+                .eq('facebook_id', user.facebook_id)
+                .single()
+
+            const currentData = sessionData?.data || {}
+            const birthMonth = currentData.birth_month
+
+            if (!birthMonth) {
+                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại từ đầu!')
+                return
+            }
+
+            // Calculate max days for the selected month
+            const maxDays = new Date(1981, birthMonth, 0).getDate()
+
+            if (day >= 1 && day <= maxDays) {
                 await this.handleDaySelection(user, day)
                 return
             }
@@ -1097,8 +1116,26 @@ export class RegistrationFlow extends BaseFlow {
         try {
             console.log('📅 Processing day postback:', payload, 'for user:', user.facebook_id)
 
+            // Get current session data to check birth month
+            const { data: sessionData } = await supabaseAdmin
+                .from('bot_sessions')
+                .select('data')
+                .eq('facebook_id', user.facebook_id)
+                .single()
+
+            const currentData = sessionData?.data || {}
+            const birthMonth = currentData.birth_month
+
+            if (!birthMonth) {
+                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại từ đầu!')
+                return
+            }
+
+            // Calculate max days for the selected month
+            const maxDays = new Date(1981, birthMonth, 0).getDate()
+
             const day = parseInt(payload.replace('DAY_', ''))
-            if (day >= 1 && day <= 31) {
+            if (day >= 1 && day <= maxDays) {
                 await this.handleDaySelection(user, day)
             } else {
                 await sendMessage(user.facebook_id, '❌ Ngày không hợp lệ!')
