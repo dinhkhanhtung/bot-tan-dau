@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { generateReferralCode, validatePhoneNumber } from '@/lib/utils'
+import { generateReferralCode } from '@/lib/generators'
+import { validatePhoneNumber } from '@/lib/validators'
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'

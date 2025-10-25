@@ -1,6 +1,7 @@
 /**
- * Optimized Database Service
- * Service database tối ưu hóa với caching và connection pooling
+ * Unified Database Service
+ * Centralized database operations for users, bot sessions, settings, and more
+ * Consolidates functionality from BotService, UserService, and core database operations
  */
 
 import { supabaseAdmin } from './supabase'
@@ -8,6 +9,60 @@ import { CONFIG, DatabaseConfig } from './config'
 import { logger, logDatabaseQuery, logPerformance } from './logger'
 import { errorHandler, createDatabaseError, ErrorType } from './error-handler'
 import { cacheQuery, invalidateUserCache, invalidateBotCache, invalidatePattern } from './cache'
+
+// Re-export types from original services for backward compatibility
+export interface BotSession {
+  id?: string
+  facebook_id: string
+  session_data?: any
+  current_flow?: string | null
+  step?: number
+  current_step?: number
+  data?: any
+  created_at?: string
+  updated_at?: string
+}
+
+export interface SessionData {
+  current_flow?: string | null
+  step?: number
+  current_step?: number
+  data?: any
+}
+
+export interface User {
+  id?: string
+  facebook_id: string
+  name?: string | null
+  phone?: string | null
+  status?: string | null
+  membership_expires_at?: string | null
+  trial_end?: string | null
+  welcome_sent?: boolean
+  welcome_message_sent?: boolean
+  last_welcome_sent?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface UserUpdates {
+  name?: string | null
+  phone?: string | null
+  status?: string | null
+  membership_expires_at?: string | null
+  trial_end?: string | null
+  welcome_sent?: boolean
+  welcome_message_sent?: boolean
+  last_welcome_sent?: string
+  updated_at?: string
+}
+
+export interface BotSettings {
+  key: string
+  value: string
+  created_at?: string
+  updated_at?: string
+}
 
 // Database service class
 export class DatabaseService {
@@ -660,6 +715,125 @@ export class DatabaseService {
         )
     }
 
+    // User service methods (from UserService)
+    public async userExists(facebookId: string): Promise<boolean> {
+        try {
+            const user = await this.getUserByFacebookId(facebookId)
+            return user !== null
+        } catch (error) {
+            logger.error('Error checking if user exists', {
+                facebookId,
+                error: error instanceof Error ? error.message : String(error)
+            })
+            return false
+        }
+    }
+
+    // Get basic user info (from UserService)
+    public async getUserBasicInfo(facebookId: string): Promise<Pick<User, 'facebook_id' | 'name' | 'status'> | null> {
+        try {
+            const user = await this.getUserByFacebookId(facebookId)
+            if (!user) return null
+
+            return {
+                facebook_id: user.facebook_id,
+                name: user.name,
+                status: user.status
+            }
+        } catch (error) {
+            logger.error('Error getting user basic info', {
+                facebookId,
+                error: error instanceof Error ? error.message : String(error)
+            })
+            return null
+        }
+    }
+
+    // Bot service methods (from BotService)
+    public async getBotSettingByKey(key: string): Promise<string | null> {
+        try {
+            if (!key || typeof key !== 'string') {
+                throw new Error(`Invalid key: ${key}`)
+            }
+
+            const settings = await this.getBotSettings()
+            const setting = settings.find(s => s.key === key)
+
+            return setting ? setting.value : null
+        } catch (error) {
+            logger.error('Error getting bot setting by key', {
+                key,
+                error: error instanceof Error ? error.message : String(error)
+            })
+            return null
+        }
+    }
+
+    public async sessionExists(facebookId: string): Promise<boolean> {
+        try {
+            const session = await this.getBotSession(facebookId)
+            return session !== null
+        } catch (error) {
+            logger.error('Error checking if session exists', {
+                facebookId,
+                error: error instanceof Error ? error.message : String(error)
+            })
+            return false
+        }
+    }
+
+    public async createSessionIfNotExists(facebookId: string, initialData?: SessionData): Promise<BotSession> {
+        try {
+            const existingSession = await this.getBotSession(facebookId)
+
+            if (existingSession) {
+                return existingSession
+            }
+
+            const defaultData: SessionData = {
+                current_flow: null,
+                step: 0,
+                current_step: 0,
+                data: {},
+                ...initialData
+            }
+
+            return await this.updateBotSession(facebookId, defaultData)
+        } catch (error) {
+            logger.error('Error creating session if not exists', {
+                facebookId,
+                initialData,
+                error: error instanceof Error ? error.message : String(error)
+            })
+            throw errorHandler.handleError(createDatabaseError('Failed to create session if not exists', {
+                facebookId,
+                error: error instanceof Error ? error.message : String(error)
+            }))
+        }
+    }
+
+    public async clearSessionData(facebookId: string): Promise<BotSession> {
+        try {
+            const sessionData: SessionData = {
+                current_flow: null,
+                step: 0,
+                current_step: 0,
+                data: {}
+            }
+
+            return await this.updateBotSession(facebookId, sessionData)
+        } catch (error) {
+            logger.error('Error clearing session data', {
+                facebookId,
+                error: error instanceof Error ? error.message : String(error)
+            })
+            throw errorHandler.handleError(createDatabaseError('Failed to clear session data', {
+                facebookId,
+                error: error instanceof Error ? error.message : String(error)
+            }))
+        }
+    }
+
     // Get database statistics
     public getStats() {
         return {
@@ -838,6 +1012,12 @@ export const updateUser = (facebookId: string, updates: any) =>
 export const deleteUser = (facebookId: string) =>
     dbService.deleteUser(facebookId)
 
+export const userExists = (facebookId: string) =>
+    dbService.userExists(facebookId)
+
+export const getUserBasicInfo = (facebookId: string) =>
+    dbService.getUserBasicInfo(facebookId)
+
 export const getBotSettings = () =>
     dbService.getBotSettings()
 
@@ -847,6 +1027,9 @@ export const getBotStatus = () =>
 export const updateBotStatus = (status: string) =>
     dbService.updateBotStatus(status)
 
+export const getBotSettingByKey = (key: string) =>
+    dbService.getBotSettingByKey(key)
+
 export const getBotSession = (facebookId: string) =>
     dbService.getBotSession(facebookId)
 
@@ -855,6 +1038,15 @@ export const updateBotSession = (facebookId: string, sessionData: any) =>
 
 export const deleteBotSession = (facebookId: string) =>
     dbService.deleteBotSession(facebookId)
+
+export const sessionExists = (facebookId: string) =>
+    dbService.sessionExists(facebookId)
+
+export const createSessionIfNotExists = (facebookId: string, initialData?: SessionData) =>
+    dbService.createSessionIfNotExists(facebookId, initialData)
+
+export const clearSessionData = (facebookId: string) =>
+    dbService.clearSessionData(facebookId)
 
 export const getSpamData = (userId: string) =>
     dbService.getSpamData(userId)

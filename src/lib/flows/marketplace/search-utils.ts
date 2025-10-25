@@ -18,7 +18,7 @@
  */
 
 import { sendMessage } from '../../facebook-api'
-import { formatCurrency } from '../../utils'
+import { formatCurrency } from '../../formatters'
 import { SEARCH_HELPERS, CATEGORIES, KEYWORDS_SYSTEM } from '../../constants'
 import { logger } from '../../logger'
 

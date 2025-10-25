@@ -8,7 +8,7 @@ import {
     sendQuickReply,
     createQuickReply
 } from '../../facebook-api'
-import { generateId } from '../../utils'
+import { generateId } from '../../generators'
 
 /**
  * Registration Flow - Clean, modular implementation
@@ -159,7 +159,7 @@ export class RegistrationFlow extends BaseFlow {
             // Get Facebook name with proper error handling
             let displayName = 'bạn'
             try {
-                const { getFacebookDisplayName } = await import('../../utils')
+            const { getFacebookDisplayName } = await import('../../facebook-utils')
                 const facebookName = await getFacebookDisplayName(user.facebook_id)
                 if (facebookName && facebookName.trim() !== '') {
                     displayName = facebookName
@@ -238,7 +238,7 @@ export class RegistrationFlow extends BaseFlow {
         // Get Facebook name first
         let displayName = 'bạn'
         try {
-            const { getFacebookDisplayName } = await import('../../utils')
+            const { getFacebookDisplayName } = await import('../../facebook-utils')
             const facebookName = await getFacebookDisplayName(user.facebook_id)
             if (facebookName) {
                 displayName = facebookName
@@ -775,7 +775,7 @@ export class RegistrationFlow extends BaseFlow {
             // Get Facebook display name first
             let displayName = data.name || 'bạn'
             try {
-                const { getFacebookDisplayName } = await import('../../utils')
+                const { getFacebookDisplayName } = await import('../../facebook-utils')
                 const facebookName = await getFacebookDisplayName(user.facebook_id)
                 if (facebookName) {
                     displayName = facebookName

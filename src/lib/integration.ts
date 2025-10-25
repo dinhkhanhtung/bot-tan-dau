@@ -4,7 +4,7 @@
  */
 
 import { logger } from './logger'
-import { getBotStatus } from './bot-service'
+import { getBotStatus } from './database-service'
 import { CONFIG } from './config'
 
 // Health check interface

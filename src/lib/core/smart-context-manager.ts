@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../supabase'
-import { getBotSession } from '../utils'
+import { getBotSession } from '../database-service'
 
 // User type definitions - Simplified and clear
 export enum UserType {

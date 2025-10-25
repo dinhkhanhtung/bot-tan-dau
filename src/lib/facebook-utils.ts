@@ -1,137 +1,160 @@
 /**
- * Utility functions for Facebook operations
+ * Facebook API Utilities
+ * Centralized Facebook API operations and utilities
  */
 
-/**
- * Extract Facebook ID from various Facebook link formats
- * @param input - Facebook link or ID
- * @returns Facebook ID or username, null if not found
- */
-export function extractFacebookId(input: string): string | null {
-    if (!input.trim()) return null
-
-    // If input is just numbers (pure Facebook ID)
-    if (/^\d+$/.test(input.trim())) {
-        return input.trim()
+// Validate Facebook ID format
+function isValidFacebookId(facebookId: string): boolean {
+    if (!facebookId || typeof facebookId !== 'string') {
+        return false
     }
 
-    // Common Facebook link patterns
+    // Facebook ID should be numeric and between 10-20 digits
+    return /^\d{10,20}$/.test(facebookId)
+}
+
+// Extract Facebook ID from various Facebook link formats
+export function extractFacebookId(link: string): string | null {
+    if (!link || typeof link !== 'string') {
+        return null
+    }
+
+    // Handle different Facebook link formats
     const patterns = [
-        // https://www.facebook.com/profile.php?id=123456789
-        /facebook\.com\/profile\.php\?id=(\d+)/,
-        // https://www.facebook.com/username
-        /facebook\.com\/([a-zA-Z0-9._-]+)/,
-        // https://m.facebook.com/profile.php?id=123456789
-        /m\.facebook\.com\/profile\.php\?id=(\d+)/,
-        // https://m.facebook.com/username
-        /m\.facebook\.com\/([a-zA-Z0-9._-]+)/,
-        // https://fb.com/username
-        /fb\.com\/([a-zA-Z0-9._-]+)/,
-        // https://fb.me/username
-        /fb\.me\/([a-zA-Z0-9._-]+)/,
-        // messenger.com/t/username
-        /messenger\.com\/t\/([a-zA-Z0-9._-]+)/,
-        // m.me/username
-        /m\.me\/([a-zA-Z0-9._-]+)/
+        /facebook\.com\/profile\.php\?id=(\d+)/i,
+        /facebook\.com\/([a-zA-Z0-9.]+)\/?/,
+        /fb\.me\/([a-zA-Z0-9.]+)\/?/,
+        /^(\d+)$/ // Just numeric ID
     ]
 
     for (const pattern of patterns) {
-        const match = input.match(pattern)
+        const match = link.match(pattern)
         if (match) {
-            const extracted = match[1]
-            // If it's a number, it's an ID
-            if (/^\d+$/.test(extracted)) {
-                return extracted
+            if (match[1] && /^\d+$/.test(match[1])) {
+                return match[1]
             }
-            // If it's a username, return username (may need to convert to ID later)
-            return extracted
         }
     }
 
     return null
 }
 
-/**
- * Check if a string is a valid Facebook ID (numeric)
- * @param id - String to check
- * @returns true if valid Facebook ID
- */
-export function isValidFacebookId(id: string): boolean {
-    return /^\d+$/.test(id.trim())
-}
-
-/**
- * Check if a string is a Facebook username (non-numeric)
- * @param username - String to check
- * @returns true if looks like a Facebook username
- */
-export function isFacebookUsername(username: string): boolean {
-    return /^[a-zA-Z0-9._-]+$/.test(username.trim()) && !/^\d+$/.test(username.trim())
-}
-
-/**
- * Convert Facebook link to messenger link
- * @param facebookLink - Facebook profile link
- * @returns Messenger link or null if conversion not possible
- */
-export function convertToMessengerLink(facebookLink: string): string | null {
-    const id = extractFacebookId(facebookLink)
-    if (!id) return null
-
-    // If it's a numeric ID, use m.me
-    if (isValidFacebookId(id)) {
-        return `https://m.me/${id}`
-    }
-
-    // If it's a username, use m.me
-    if (isFacebookUsername(id)) {
-        return `https://m.me/${id}`
-    }
-
-    return null
-}
-
-/**
- * Get Facebook profile link from ID or username
- * @param id - Facebook ID or username
- * @returns Facebook profile link
- */
-export function getFacebookProfileLink(id: string): string {
-    if (isValidFacebookId(id)) {
-        return `https://www.facebook.com/profile.php?id=${id}`
-    }
-    return `https://www.facebook.com/${id}`
-}
-
-/**
- * Parse Facebook link and return structured data
- * @param input - Facebook link or ID
- * @returns Object with type, id, and links
- */
-export function parseFacebookLink(input: string): {
+// Parse Facebook link and extract user information
+export function parseFacebookLink(link: string): {
     type: 'id' | 'username' | 'invalid'
     id: string | null
     profileLink: string | null
     messengerLink: string | null
 } {
-    const extracted = extractFacebookId(input)
+    if (!link || typeof link !== 'string') {
+        return { type: 'invalid', id: null, profileLink: null, messengerLink: null }
+    }
 
-    if (!extracted) {
+    const facebookId = extractFacebookId(link)
+
+    if (facebookId) {
         return {
-            type: 'invalid',
-            id: null,
-            profileLink: null,
-            messengerLink: null
+            type: 'id',
+            id: facebookId,
+            profileLink: `https://facebook.com/${facebookId}`,
+            messengerLink: `https://m.me/${facebookId}`
         }
     }
 
-    const isId = isValidFacebookId(extracted)
-    const isUsername = isFacebookUsername(extracted)
+    // Try to extract username
+    const usernameMatch = link.match(/facebook\.com\/([a-zA-Z0-9.]+)\/?/)
+    if (usernameMatch && usernameMatch[1]) {
+        const username = usernameMatch[1]
+        return {
+            type: 'username',
+            id: null, // We don't have the ID for username-only links
+            profileLink: `https://facebook.com/${username}`,
+            messengerLink: `https://m.me/${username}`
+        }
+    }
 
-    return {
-        type: isId ? 'id' : isUsername ? 'username' : 'invalid',
-        id: extracted,
-        profileLink: getFacebookProfileLink(extracted),
-        messengerLink: convertToMessengerLink(input)
+    return { type: 'invalid', id: null, profileLink: null, messengerLink: null }
+}
+
+// Get Facebook display name from Facebook API
+export async function getFacebookDisplayName(facebookId: string): Promise<string | null> {
+    try {
+        const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN
+
+        // Check if access token exists
+        if (!FACEBOOK_ACCESS_TOKEN) {
+            console.log('Facebook access token not configured')
+            return null
+        }
+
+        // Validate Facebook ID format
+        if (!isValidFacebookId(facebookId)) {
+            console.log('Invalid Facebook ID format:', facebookId)
+            return null
+        }
+
+        console.log('Fetching Facebook profile for user:', facebookId)
+
+        // Create AbortController for timeout functionality
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+
+        const response = await fetch(
+            `https://graph.facebook.com/v19.0/${facebookId}?fields=first_name,last_name,name&access_token=${FACEBOOK_ACCESS_TOKEN}`,
+            {
+                signal: controller.signal
+            }
+        )
+
+        clearTimeout(timeoutId)
+
+        console.log('Facebook API response status:', response.status)
+
+        if (response.ok) {
+            const data = await response.json()
+            console.log('Facebook profile data:', JSON.stringify(data, null, 2))
+
+            const displayName = data.name || `${data.first_name || ''} ${data.last_name || ''}`.trim()
+            if (displayName) {
+                console.log('Successfully got Facebook name:', displayName)
+                return displayName
+            } else {
+                console.log('No name found in Facebook profile data')
+                return null
+            }
+        }
+
+        // Handle specific error codes - Page Access Tokens typically don't have user profile permissions
+        if (response.status === 400) {
+            console.warn('Facebook API 400 - Invalid Facebook ID or permissions:', facebookId)
+            console.warn('Note: Page Access Tokens typically cannot access user profiles. Consider using User Access Token or skip this step.')
+        } else if (response.status === 401) {
+            console.warn('Facebook API 401 - Access token invalid or expired')
+        } else if (response.status === 403) {
+            console.warn('Facebook API 403 - Insufficient permissions for user profile')
+            console.warn('Note: Page Access Tokens typically cannot access user profiles. Consider using User Access Token or skip this step.')
+        } else if (response.status === 404) {
+            console.warn('Facebook API 404 - User not found:', facebookId)
+        } else {
+            console.warn('Facebook API error:', response.status, response.statusText)
+        }
+
+        // Try to get error details for debugging
+        try {
+            const errorData = await response.json()
+            console.warn('Facebook API error details:', JSON.stringify(errorData, null, 2))
+        } catch (parseError) {
+            console.warn('Could not parse Facebook API error response')
+        }
+
+        return null
+    } catch (error) {
+        // Handle network errors gracefully
+        if (error instanceof Error && error.name === 'AbortError') {
+            console.warn('Facebook API request timeout for user:', facebookId)
+        } else {
+            console.warn('Error getting Facebook display name:', error instanceof Error ? error.message : String(error))
+        }
+        return null
     }
 }

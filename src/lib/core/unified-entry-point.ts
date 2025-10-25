@@ -4,8 +4,7 @@ import { UserState, UserType, UserContext } from '../../types'
 import { CONFIG } from '../config'
 import { logger, logUserAction, logBotEvent, logError } from '../logger'
 import { errorHandler, createUserError, ErrorType } from '../error-handler'
-import { getUserByFacebookId } from '../user-service'
-import { getBotSession, getBotStatus } from '../bot-service'
+import { getUserByFacebookId, getBotSession, getBotStatus } from '../database-service'
 import { supabaseAdmin } from '../supabase'
 import { WelcomeType, sendReturningUserMessage } from '../welcome-service'
 import { messageProcessor } from './message-processor'
@@ -15,7 +14,7 @@ import { SessionManager } from './session-manager'
 import { AdminTakeoverService } from '../admin-takeover-service'
 import { UtilityHandlers } from '../handlers/utility-handlers'
 import { MarketplaceHandlers } from '../handlers/marketplace-handlers'
-import { calculateUserLevel, getLevelSuggestions } from '../utils'
+import { calculateUserLevel, getLevelSuggestions } from '../user-service'
 
 /**
  * Unified Bot System - Main entry point for bot message processing

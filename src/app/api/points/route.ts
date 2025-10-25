@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { calculateUserLevel } from '@/lib/utils'
+import { calculateUserLevel } from '@/lib/user-service'
 import { sendMessage } from '@/lib/facebook-api'
 
 // Helper function to get next level

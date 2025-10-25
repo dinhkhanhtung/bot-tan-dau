@@ -7,7 +7,7 @@ import {
     sendGenericTemplate,
     createGenericElement
 } from '../../facebook-api'
-import { formatCurrency } from '../../utils'
+import { formatCurrency } from '../../formatters'
 import { CATEGORIES, LOCATIONS } from '../../constants'
 import { logger } from '../../logger'
 import { performSearch, cancelSearch } from './search-utils'

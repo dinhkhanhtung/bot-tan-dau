@@ -10,7 +10,7 @@ import {
     sendGenericTemplate,
     createGenericElement
 } from '../facebook-api'
-import { formatCurrency } from '../utils'
+import { formatCurrency } from '../formatters'
 import { supabaseAdmin } from '../supabase'
 import { logger } from '../logger'
 

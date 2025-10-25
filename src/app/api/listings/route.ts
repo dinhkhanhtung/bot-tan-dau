@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { formatCurrency, formatNumber } from '@/lib/utils'
+import { formatCurrency, formatNumber } from '@/lib/formatters'
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'

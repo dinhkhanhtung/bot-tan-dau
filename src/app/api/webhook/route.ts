@@ -495,7 +495,7 @@ async function handleAdminCommand(adminId: string, command: string) {
                 // Tìm kiếm giúp user (thu phí 5,000)
                 const { supabaseAdmin: adminDb } = await import('@/lib/supabase')
                 const { sendMessage: sendMessageToUser, createGenericElement, sendGenericTemplate } = await import('@/lib/facebook-api')
-                const { formatCurrency } = await import('@/lib/utils')
+                const { formatCurrency } = await import('@/lib/formatters')
 
                 // Tìm kiếm listings
                 const { data: listings, error } = await adminDb

@@ -6,7 +6,7 @@
 import { logger, logUserAction, logBotEvent } from './logger'
 import { errorHandler, createUserError, ErrorType } from './error-handler'
 import { sendMessage, sendQuickReply, createQuickReply, sendTypingIndicator } from './facebook-api'
-import { getUserByFacebookId, updateUser } from './user-service'
+import { getUserByFacebookId, updateUser } from './database-service'
 
 // Simple welcome types
 export enum WelcomeType {
@@ -169,7 +169,7 @@ export class WelcomeService {
             } else {
                 // User doesn't exist, create basic user record
                 const { supabaseAdmin } = await import('./supabase')
-                const { generateReferralCode } = await import('./utils')
+                const { generateReferralCode } = await import('./generators')
 
                 const referralCode = generateReferralCode(facebookId)
 
@@ -226,7 +226,7 @@ export class WelcomeService {
             // Get Facebook display name
             let displayName = 'bạn'
             try {
-                const { getFacebookDisplayName } = await import('./utils')
+                const { getFacebookDisplayName } = await import('./facebook-utils')
                 const facebookName = await getFacebookDisplayName(facebookId)
                 if (facebookName) {
                     displayName = facebookName

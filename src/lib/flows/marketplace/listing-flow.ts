@@ -7,7 +7,8 @@ import {
     sendGenericTemplate,
     createGenericElement
 } from '../../facebook-api'
-import { formatCurrency, generateId } from '../../utils'
+import { formatCurrency } from '../../formatters'
+import { generateId } from '../../generators'
 import { CATEGORIES, LOCATIONS, PRICE_RANGES, KEYWORDS_SYSTEM } from '../../constants'
 
 /**

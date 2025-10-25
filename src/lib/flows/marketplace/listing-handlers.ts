@@ -7,7 +7,7 @@ import {
     sendGenericTemplate,
     createGenericElement
 } from '../../facebook-api'
-import { formatCurrency } from '../../formatters'
+import { formatCurrency } from '@/lib/formatters'
 import { generateId } from '../../generators'
 import { CATEGORIES, LOCATIONS, KEYWORDS_SYSTEM } from '../../constants'
 import { logger } from '../../logger'

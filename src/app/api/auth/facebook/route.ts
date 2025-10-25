@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { generateReferralCode } from '@/lib/utils'
+import { generateReferralCode } from '@/lib/generators'
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'

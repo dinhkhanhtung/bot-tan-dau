@@ -770,7 +770,7 @@ export async function isUserBlocked(facebookId: string): Promise<boolean> {
 
     // Check if user is in any active flow - don't block during legitimate flows
     try {
-        const { getBotSession } = await import('./utils')
+                const { getBotSession } = await import('./database-service')
         const sessionData = await getBotSession(facebookId)
         const currentFlow = sessionData?.current_flow || null
 
@@ -843,7 +843,7 @@ export async function trackNonButtonMessage(facebookId: string, message: string)
     // Admin check moved to dashboard - no longer needed here
 
     // Check if user is in any active flow - skip tracking for legitimate input
-    const { getBotSession } = await import('./utils')
+        const { getBotSession } = await import('./database-service')
     const sessionData = await getBotSession(facebookId)
 
     // Handle both possible session data structures
@@ -968,7 +968,7 @@ export async function isBotStoppedForUser(facebookId: string): Promise<boolean> 
 
     // Check if user is in any active flow - don't stop bot during legitimate flows
     try {
-        const { getBotSession } = await import('./utils')
+        const { getBotSession } = await import('./database-service')
         const sessionData = await getBotSession(facebookId)
         const currentFlow = sessionData?.current_flow || null
 

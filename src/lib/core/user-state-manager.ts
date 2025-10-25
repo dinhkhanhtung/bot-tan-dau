@@ -7,7 +7,7 @@ import { supabaseAdmin } from '../supabase'
 import { sendMessage, sendQuickReply, createQuickReply } from '../facebook-api'
 import { logger } from '../logger'
 import { welcomeService, WelcomeType } from '../welcome-service'
-import { getUserByFacebookId } from '../user-service'
+import { getUserByFacebookId } from '../database-service'
 
 export enum UserState {
     NEW_USER = 'new_user',              // User mới, chưa gửi welcome
