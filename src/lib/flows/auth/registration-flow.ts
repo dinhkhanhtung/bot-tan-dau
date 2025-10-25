@@ -272,7 +272,7 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Handle phone input step - UPDATED FOR 9-DIGIT BUTTON SELECTION WITH CANCEL BUTTON
+     * Handle phone input step - UPDATED FOR 10-DIGIT BUTTON SELECTION WITH CANCEL BUTTON
      */
     private async handlePhoneStep(user: any, text: string): Promise<void> {
         console.log('📱 Processing phone step for user:', user.facebook_id)
@@ -287,11 +287,11 @@ export class RegistrationFlow extends BaseFlow {
         const phone = text.replace(/\D/g, '').trim()
         console.log('[DEBUG] Cleaned phone number:', phone)
 
-        // Validate phone - UPDATED for 9 digits minimum
-        if (phone.length !== 9) {
+        // Validate phone - UPDATED for 10 digits minimum
+        if (phone.length !== 10) {
             console.log('[DEBUG] Phone validation failed:', phone.length)
             await sendQuickReply(user.facebook_id,
-                '❌ Số điện thoại không hợp lệ! Vui lòng nhập CHÍNH XÁC 9 chữ số:',
+                '❌ Số điện thoại không hợp lệ! Vui lòng nhập CHÍNH XÁC 10 chữ số:',
                 [createQuickReply('❌ HỦY ĐĂNG KÝ', 'CANCEL_REGISTRATION')]
             )
             return
@@ -384,9 +384,9 @@ export class RegistrationFlow extends BaseFlow {
             return
         }
 
-        // If we have 9 digits, complete phone step
-        if (newPhone.length >= 9) {
-            const fullPhone = newPhone.length >= 10 ? newPhone : newPhone // Allow 9-11 digits
+        // If we have 10 digits, complete phone step
+        if (newPhone.length >= 10) {
+            const fullPhone = newPhone.length >= 10 ? newPhone : newPhone // Allow 10-11 digits
 
             // Check if phone exists
             const { data: existingUser } = await supabaseAdmin
@@ -432,8 +432,8 @@ export class RegistrationFlow extends BaseFlow {
         const digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
         const buttons = digits.map(digit => createQuickReply(digit, digit))
 
-        const remainingDigits = 9 - currentDigits.length
-        const targetDigits = 9
+        const remainingDigits = 10 - currentDigits.length
+        const targetDigits = 10
         await sendQuickReply(facebookId,
             `📱 Bước 2/7: Số điện thoại\n💡 Chọn ${remainingDigits} chữ số tiếp theo (cần ${targetDigits} chữ số)\n━━━━━━━━━━━━━━━━━━━━\nSố hiện tại: ${currentDigits}\n━━━━━━━━━━━━━━━━━━━━`,
             buttons
