@@ -150,11 +150,18 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
 }
 
     /**
-     * Handle keyword step
+     * Handle keyword step - WITH CANCEL OPTION
      */
     private async handleKeywordStep(user: any, text: string): Promise<void> {
         try {
             console.log(`🔑 Processing keyword step for user: ${user.facebook_id}`)
+
+            // Check if user wants to cancel
+            if (text.toLowerCase().trim() === 'hủy' || text.toLowerCase().trim() === 'huy' ||
+                text.toLowerCase().trim() === 'cancel' || text.toLowerCase().trim() === 'thoát') {
+                await this.cancelSearch(user)
+                return
+            }
 
             // Update session with keyword
             await SessionManager.updateSession(user.facebook_id, {
@@ -163,7 +170,7 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
             })
 
             // Send category prompt
-            await sendMessage(user.facebook_id, 
+            await sendMessage(user.facebook_id,
                 `✅ Từ khóa: ${text.trim()}\n━━━━━━━━━━━━━━━━━━━━\n📂 Bước 2/3: Chọn danh mục (tùy chọn)\n💡 Chọn danh mục để thu hẹp kết quả tìm kiếm\n━━━━━━━━━━━━━━━━━━━━`)
 
             // Send category buttons

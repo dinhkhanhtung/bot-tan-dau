@@ -165,11 +165,18 @@ export class ListingFlow extends BaseFlow {
     }
 
     /**
-     * Handle keywords selection step
+     * Handle keywords selection step - WITH CANCEL OPTION
      */
     private async handleKeywordsStep(user: any, text: string): Promise<void> {
         try {
             console.log(`🔑 Processing keywords step for user: ${user.facebook_id}`)
+
+            // Check if user wants to cancel
+            if (text.toLowerCase().trim() === 'hủy' || text.toLowerCase().trim() === 'huy' ||
+                text.toLowerCase().trim() === 'cancel' || text.toLowerCase().trim() === 'thoát') {
+                await this.cancelListing(user)
+                return
+            }
 
             // Update session with keywords
             await SessionManager.updateSession(user.facebook_id, {

@@ -122,11 +122,18 @@ export class CommunityFlow extends BaseFlow {
     }
 
     /**
-     * Handle community action
+     * Handle community action - WITH CANCEL OPTION
      */
     private async handleCommunityAction(user: any, text: string): Promise<void> {
         try {
             console.log(`👥 Processing community action for user: ${user.facebook_id}`)
+
+            // Check if user wants to cancel
+            if (text.toLowerCase().trim() === 'hủy' || text.toLowerCase().trim() === 'huy' ||
+                text.toLowerCase().trim() === 'cancel' || text.toLowerCase().trim() === 'thoát') {
+                await this.cancelCommunity(user)
+                return
+            }
 
             // For now, just show community options
             await this.startCommunity(user)

@@ -18,7 +18,7 @@ export class RegistrationFlow extends BaseFlow {
     readonly flowName = 'registration'
 
     /**
-     * Check if this flow can handle the user/session
+     * Handle birthday verification
      */
     canHandle(user: any, session: any): boolean {
         // Handle null user case
@@ -152,32 +152,17 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Send pricing and benefits information with smooth flow - FIXED FACEBOOK API
+     * Send pricing and benefits information with smooth flow - UPDATED FOR TEXT INPUT
      */
     private async sendRegistrationPricingInfo(user: any): Promise<void> {
         try {
-            // Get Facebook name with proper error handling
-            let displayName = 'bạn'
-            try {
-            const { getFacebookDisplayName } = await import('../../facebook-utils')
-                const facebookName = await getFacebookDisplayName(user.facebook_id)
-                if (facebookName && facebookName.trim() !== '') {
-                    displayName = facebookName
-                } else {
-                    console.log('⚠️ Could not get Facebook name, using default "bạn"')
-                }
-            } catch (error) {
-                console.warn('Facebook API failed for pricing info, using default "bạn":', error instanceof Error ? error.message : String(error))
-                // Continue with default name - don't fail the flow
-            }
-
-            // Unified message with referral info
-            await sendMessage(user.facebook_id, `Chào mừng ${displayName} tham gia Bot Tân Dậu - Hỗ Trợ Chéo\n\n🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu\n💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫\n\n🌟 CÓ MÃ GIỚI THIỆU? Nhận thêm 7 ngày miễn phí!\n\nTân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng\n\n🚀 Bước 1: Xác nhận thông tin Facebook của bạn:`)
+            // Unified message with referral info - no longer trying to get Facebook name
+            await sendMessage(user.facebook_id, `Chào mừng bạn tham gia Bot Tân Dậu - Hỗ Trợ Chéo\n\n🎁 QUYỀN LỢI: Trial 3 ngày miễn phí\n💰 Chỉ với 3,000đ mỗi ngày bạn có cơ hội được tìm kiếm bởi hơn 2 triệu Tân Dậu\n💳 Phí duy trì: 3,000đ/ngày\n📅 Gói tối thiểu: 3 ngày = 9.000 ₫\n\n🌟 CÓ MÃ GIỚI THIỆU? Nhận thêm 7 ngày miễn phí!\n\nTân Dậu Việt - Cùng nhau kết nối - cùng nhau thịnh vượng\n\n🚀 Bước 1: Nhập họ tên đầy đủ của bạn:`)
 
         } catch (error) {
             console.error('Error sending registration pricing info:', error)
             // Fallback to simple message
-            await sendMessage(user.facebook_id, '🚀 Bước 1: Xác nhận thông tin Facebook của bạn:')
+            await sendMessage(user.facebook_id, '🚀 Bước 1: Nhập họ tên đầy đủ của bạn:')
         }
     }
 
@@ -230,33 +215,46 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Handle name input step - Skip since we get name from Facebook
+     * Handle name input step - UPDATED FOR TEXT INPUT WITH CANCEL BUTTON
      */
     private async handleNameStep(user: any, text: string): Promise<void> {
         console.log('📝 Processing name step for user:', user.facebook_id)
 
-        // Get Facebook name first
-        let displayName = 'bạn'
-        try {
-            const { getFacebookDisplayName } = await import('../../facebook-utils')
-            const facebookName = await getFacebookDisplayName(user.facebook_id)
-            if (facebookName) {
-                displayName = facebookName
-                console.log('✅ Got Facebook name for registration:', displayName)
-            } else {
-                console.log('⚠️ Could not get Facebook name, using default "bạn"')
-            }
-        } catch (error) {
-            console.warn('⚠️ Could not get Facebook name, using default "bạn"', error instanceof Error ? error.message : String(error))
+        // Validate name input
+        const name = text.trim()
+        if (name.length < 2) {
+            await sendQuickReply(user.facebook_id,
+                '❌ Tên không hợp lệ! Vui lòng nhập tên đầy đủ (tối thiểu 2 ký tự):',
+                [createQuickReply('❌ HỦY ĐĂNG KÝ', 'CANCEL_REGISTRATION')]
+            )
+            return
         }
 
-        // Update session with Facebook name (or fallback)
+        if (name.length > 50) {
+            await sendQuickReply(user.facebook_id,
+                '❌ Tên quá dài! Vui lòng nhập tên ngắn hơn (tối đa 50 ký tự):',
+                [createQuickReply('❌ HỦY ĐĂNG KÝ', 'CANCEL_REGISTRATION')]
+            )
+            return
+        }
+
+        // Check for invalid characters (only allow letters, spaces, and Vietnamese characters)
+        const nameRegex = /^[a-zA-ZÀ-ỹ\s]+$/
+        if (!nameRegex.test(name)) {
+            await sendQuickReply(user.facebook_id,
+                '❌ Tên chỉ được chứa chữ cái và khoảng trắng! Vui lòng nhập lại:',
+                [createQuickReply('❌ HỦY ĐĂNG KÝ', 'CANCEL_REGISTRATION')]
+            )
+            return
+        }
+
+        // Update session with user-provided name
         const { error } = await supabaseAdmin
             .from('bot_sessions')
             .update({
                 step: 1,
                 current_step: 1,
-                data: { name: displayName },
+                data: { name: name },
                 updated_at: new Date().toISOString()
             })
             .eq('facebook_id', user.facebook_id)
@@ -267,14 +265,14 @@ export class RegistrationFlow extends BaseFlow {
             return
         }
 
-        // Send phone prompt with Facebook name
-        await sendMessage(user.facebook_id, `✅ Họ tên: ${displayName}\n━━━━━━━━━━━━━━━━━━━━\n📱 Bước 2/7: Số điện thoại\n💡 Nhập số điện thoại để nhận thông báo quan trọng\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập số điện thoại:`)
+        // Send phone prompt with user-provided name
+        await sendMessage(user.facebook_id, `✅ Họ tên: ${name}\n━━━━━━━━━━━━━━━━━━━━\n📱 Bước 2/7: Số điện thoại\n💡 Nhập số điện thoại để nhận thông báo quan trọng\n━━━━━━━━━━━━━━━━━━━━\nVui lòng nhập số điện thoại:`)
 
-        console.log('✅ Name step completed with Facebook name, moved to phone step')
+        console.log('✅ Name step completed with user input, moved to phone step')
     }
 
     /**
-     * Handle phone input step - UPDATED FOR 9-DIGIT BUTTON SELECTION
+     * Handle phone input step - UPDATED FOR 9-DIGIT BUTTON SELECTION WITH CANCEL BUTTON
      */
     private async handlePhoneStep(user: any, text: string): Promise<void> {
         console.log('📱 Processing phone step for user:', user.facebook_id)
@@ -292,7 +290,10 @@ export class RegistrationFlow extends BaseFlow {
         // Validate phone - UPDATED for 9 digits minimum
         if (phone.length !== 9) {
             console.log('[DEBUG] Phone validation failed:', phone.length)
-            await sendMessage(user.facebook_id, '❌ Số điện thoại không hợp lệ! Vui lòng nhập CHÍNH XÁC 9 chữ số.')
+            await sendQuickReply(user.facebook_id,
+                '❌ Số điện thoại không hợp lệ! Vui lòng nhập CHÍNH XÁC 9 chữ số:',
+                [createQuickReply('❌ HỦY ĐĂNG KÝ', 'CANCEL_REGISTRATION')]
+            )
             return
         }
 
@@ -440,11 +441,18 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Handle location step (text input)
+     * Handle location step (text input) - WITH CANCEL OPTION
      */
     private async handleLocationStep(user: any, text: string): Promise<void> {
         try {
             console.log(`📍 Processing location step for user: ${user.facebook_id}`)
+
+            // Check if user wants to cancel
+            if (text.toLowerCase().trim() === 'hủy' || text.toLowerCase().trim() === 'huy' ||
+                text.toLowerCase().trim() === 'cancel' || text.toLowerCase().trim() === 'thoát') {
+                await this.cancelRegistration(user)
+                return
+            }
 
             // For now, just show location buttons
             await this.sendLocationButtons(user.facebook_id)
@@ -455,10 +463,17 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Handle month selection step - NEW BUTTON-BASED
+     * Handle month selection step - NEW BUTTON-BASED WITH CANCEL
      */
     private async handleMonthStep(user: any, text: string): Promise<void> {
         console.log('📅 Processing month step for user:', user.facebook_id)
+
+        // Check if user wants to cancel
+        if (text.toLowerCase().trim() === 'hủy' || text.toLowerCase().trim() === 'huy' ||
+            text.toLowerCase().trim() === 'cancel' || text.toLowerCase().trim() === 'thoát') {
+            await this.cancelRegistration(user)
+            return
+        }
 
         // Check if user is selecting month via buttons
         if (text.length === 1 && /^[0-9]$/.test(text)) {
@@ -515,10 +530,17 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Handle day selection step - NEW BUTTON-BASED
+     * Handle day selection step - NEW BUTTON-BASED WITH CANCEL
      */
     private async handleDayStep(user: any, text: string): Promise<void> {
         console.log('📅 Processing day step for user:', user.facebook_id)
+
+        // Check if user wants to cancel
+        if (text.toLowerCase().trim() === 'hủy' || text.toLowerCase().trim() === 'huy' ||
+            text.toLowerCase().trim() === 'cancel' || text.toLowerCase().trim() === 'thoát') {
+            await this.cancelRegistration(user)
+            return
+        }
 
         // Check if user is selecting day via buttons
         if (text.length <= 2 && /^[0-9]+$/.test(text)) {
@@ -604,17 +626,24 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Handle year confirmation step - NEW BUTTON-BASED
+     * Handle year confirmation step - NEW BUTTON-BASED WITH CANCEL
      */
     private async handleYearConfirmationStep(user: any, text: string): Promise<void> {
         console.log('🎂 Processing year confirmation step for user:', user.facebook_id)
+
+        // Check if user wants to cancel
+        if (text.toLowerCase().trim() === 'hủy' || text.toLowerCase().trim() === 'huy' ||
+            text.toLowerCase().trim() === 'cancel' || text.toLowerCase().trim() === 'thoát') {
+            await this.cancelRegistration(user)
+            return
+        }
 
         // Show year confirmation buttons
         await this.sendYearConfirmationButtons(user.facebook_id)
     }
 
     /**
-     * Handle email step - NEW OPTIONAL WITH SKIP
+     * Handle email step
      */
     private async handleEmailStep(user: any, text: string): Promise<void> {
         console.log('📧 Processing email step for user:', user.facebook_id)
@@ -666,53 +695,7 @@ export class RegistrationFlow extends BaseFlow {
         console.log('✅ Email step completed, moved to referral step')
     }
 
-    /**
-     * Handle birthday step
-     */
-    private async handleBirthdayStep(user: any, text: string): Promise<void> {
-        try {
-            console.log(`🎂 Processing birthday step for user: ${user.facebook_id}`)
 
-            // Validate birthday format (DD/MM/YYYY)
-            const birthdayRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
-            const match = text.match(birthdayRegex)
-
-            if (!match) {
-                await sendMessage(user.facebook_id, '❌ Định dạng ngày sinh không đúng! Vui lòng nhập theo định dạng DD/MM/YYYY')
-                return
-            }
-
-            const [, day, month, year] = match
-            const birthYear = parseInt(year)
-
-            // Check if born in 1981 (Tân Dậu)
-            if (birthYear !== 1981) {
-                await sendMessage(user.facebook_id, '❌ Chỉ dành cho người sinh năm 1981 (Tân Dậu)!')
-                return
-            }
-
-            // Get current session data
-            const currentData = await SessionManager.getSessionData(user.facebook_id)
-
-            // Update session with birthday
-            await SessionManager.updateSession(user.facebook_id, {
-                step: 4,
-                data: {
-                    ...currentData,
-                    birthday: text.trim()
-                }
-            })
-
-            // Complete registration
-            await this.completeRegistration(user, {
-                ...currentData,
-                birthday: text.trim()
-            })
-
-        } catch (error) {
-            await this.handleError(user, error, 'handleBirthdayStep')
-        }
-    }
 
     /**
      * Handle location postback
@@ -772,21 +755,9 @@ export class RegistrationFlow extends BaseFlow {
         try {
             console.log('🎉 Completing registration for user:', user.facebook_id)
 
-            // Get Facebook display name first
-            let displayName = data.name || 'bạn'
-            try {
-                const { getFacebookDisplayName } = await import('../../facebook-utils')
-                const facebookName = await getFacebookDisplayName(user.facebook_id)
-                if (facebookName) {
-                    displayName = facebookName
-                    console.log('✅ Got Facebook name:', displayName)
-                } else {
-                    console.log('⚠️ Could not get Facebook name, using provided name:', displayName)
-                }
-            } catch (error) {
-                console.warn('❌ Error getting Facebook display name:', error instanceof Error ? error.message : String(error))
-                // Continue with provided name
-            }
+            // Use name from session data (entered by user in step 1)
+            const displayName = data.name || 'bạn'
+            console.log('✅ Using user-provided name:', displayName)
 
             // Validate required data
             if (!displayName || !data.phone || !data.location) {
@@ -1033,74 +1004,7 @@ export class RegistrationFlow extends BaseFlow {
         console.log('[DEBUG] Location buttons sent successfully')
     }
 
-    /**
-     * Send birthday verification buttons
-     */
-    private async sendBirthdayVerificationButtons(facebookId: string): Promise<void> {
-        const buttons = [
-            createQuickReply('✅ Đúng vậy, tôi sinh năm 1981', 'REG_BIRTHDAY_YES'),
-            createQuickReply('❌ Không phải, tôi sinh năm khác', 'REG_BIRTHDAY_NO')
-        ]
 
-        await sendQuickReply(facebookId, '🎂 Bạn có sinh năm 1981 (Tân Dậu) không?', buttons)
-    }
-
-    /**
-     * Handle birthday verification - EXACT COPY FROM OLD LOGIC
-     */
-    private async handleBirthdayVerification(user: any, answer: string): Promise<void> {
-        try {
-            console.log('🎂 Processing birthday verification:', answer, 'for user:', user.facebook_id)
-
-            if (answer === 'YES') {
-                // User confirmed they were born in 1981 - go to referral step
-                const { data: sessionData } = await supabaseAdmin
-                    .from('bot_sessions')
-                    .select('data')
-                    .eq('facebook_id', user.facebook_id)
-                    .single()
-
-                if (sessionData && sessionData.data) {
-                    // Update session with birthday and move to referral step
-                    await SessionManager.updateSession(user.facebook_id, {
-                        step: 4,
-                        data: {
-                            ...sessionData.data,
-                            birthday: '01/01' // Set default birthday since they confirmed (DD/MM format)
-                        }
-                    })
-
-                    // Send referral prompt
-                    await sendMessage(user.facebook_id, `✅ Xác nhận sinh năm 1981\n━━━━━━━━━━━━━━━━━━━━\n🌟 Bước 7/7: Mã giới thiệu (Tùy chọn)\n💡 Có mã giới thiệu? Nhận thêm 7 ngày miễn phí!\n━━━━━━━━━━━━━━━━━━━━\n📝 Nhập mã giới thiệu hoặc gõ "Bỏ qua":`)
-                } else {
-                    await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
-                }
-            } else if (answer === 'NO') {
-                // User is not born in 1981 - cannot register
-                await supabaseAdmin
-                    .from('bot_sessions')
-                    .delete()
-                    .eq('facebook_id', user.facebook_id)
-
-                await sendMessage(user.facebook_id, '❌ XIN LỖI')
-                await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
-                await sendMessage(user.facebook_id, '😔 Bot Tân Dậu - Hỗ Trợ Chéo chỉ dành riêng cho những người con Tân Dậu sinh năm 1981.')
-                await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
-                await sendMessage(user.facebook_id, '💡 Nếu bạn sinh năm khác, bạn có thể:')
-                await sendMessage(user.facebook_id, '• Liên hệ Đinh Khánh Tùng để được tư vấn')
-                await sendMessage(user.facebook_id, '• Tham gia các cộng đồng khác phù hợp hơn')
-                await sendMessage(user.facebook_id, '━━━━━━━━━━━━━━━━━━━━')
-                await sendMessage(user.facebook_id, '📞 Liên hệ: 0982581222')
-                await sendMessage(user.facebook_id, '📧 Email: dinhkhanhtung@outlook.com')
-            } else {
-                await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
-            }
-
-        } catch (error) {
-            console.error('❌ Birthday verification error:', error)
-            await sendMessage(user.facebook_id, '❌ Có lỗi xảy ra. Vui lòng thử lại sau!')
-        }
-    }
 
     /**
      * Handle referral code step
@@ -1263,7 +1167,7 @@ export class RegistrationFlow extends BaseFlow {
     }
 
     /**
-     * Handle email skip - NEW OPTIONAL STEP
+     * Handle email skip
      */
     private async handleEmailSkip(user: any): Promise<void> {
         console.log('📧 Email skipped for user:', user.facebook_id)
