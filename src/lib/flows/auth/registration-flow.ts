@@ -1285,8 +1285,8 @@ export class RegistrationFlow extends BaseFlow {
 
         const monthText = month ? `Tháng ${month}` : 'tháng'
 
-        // Facebook allows max 13 quick replies per message, so split into batches of 10
-        const buttonsPerPage = 10
+        // Facebook allows max 13 quick replies per message, reserve 2 for navigation, so 8 days per page
+        const buttonsPerPage = 8
         const totalPages = Math.ceil(days.length / buttonsPerPage)
 
         if (totalPages === 1) {
@@ -1298,7 +1298,7 @@ export class RegistrationFlow extends BaseFlow {
             )
         } else {
             // Multiple pages - send first page with navigation
-            const firstPageDays = days.slice(0, buttonsPerPage - 2) // Reserve 2 slots for navigation
+            const firstPageDays = days.slice(0, buttonsPerPage)
             const buttons = firstPageDays.map(day => createQuickReply(day, `DAY_${day}`))
 
             // Add navigation buttons
@@ -1366,7 +1366,7 @@ export class RegistrationFlow extends BaseFlow {
             const days = Array.from({ length: maxDays }, (_, i) => (i + 1).toString())
 
             // Calculate pagination
-            const buttonsPerPage = 10
+            const buttonsPerPage = 8
             const totalPages = Math.ceil(days.length / buttonsPerPage)
             let newPage = currentPage
 
