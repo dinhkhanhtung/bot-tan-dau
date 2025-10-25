@@ -3,15 +3,7 @@
  * Centralized Facebook API operations and utilities
  */
 
-// Validate Facebook ID format
-function isValidFacebookId(facebookId: string): boolean {
-    if (!facebookId || typeof facebookId !== 'string') {
-        return false
-    }
-
-    // Facebook ID should be numeric and between 10-20 digits
-    return /^\d{10,20}$/.test(facebookId)
-}
+import { isValidFacebookId } from './validators'
 
 // Extract Facebook ID from various Facebook link formats
 export function extractFacebookId(link: string): string | null {

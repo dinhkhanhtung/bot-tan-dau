@@ -14,7 +14,7 @@ import { SessionManager } from './session-manager'
 import { AdminTakeoverService } from '../admin-takeover-service'
 import { UtilityHandlers } from '../handlers/utility-handlers'
 import { MarketplaceHandlers } from '../handlers/marketplace-handlers'
-import { calculateUserLevel, getLevelSuggestions } from '../user-service'
+import { calculateUserLevel, getLevelSuggestions } from '../database-service'
 
 /**
  * Unified Bot System - Main entry point for bot message processing

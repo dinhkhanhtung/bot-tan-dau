@@ -353,14 +353,6 @@ export class ErrorUtils {
 // Common validation utilities
 export class ValidationUtils {
     /**
-     * Validate phone number format
-     */
-    static validatePhoneNumber(phone: string): boolean {
-        const phoneRegex = /^[0-9]{10,11}$/
-        return phoneRegex.test(phone.replace(/\s/g, ''))
-    }
-
-    /**
      * Validate email format
      */
     static validateEmail(email: string): boolean {
@@ -389,6 +381,14 @@ export class ValidationUtils {
             default:
                 return false
         }
+    }
+
+    /**
+     * Validate phone number format - use centralized validator
+     */
+    static async validatePhoneNumber(phone: string): Promise<boolean> {
+        const { validatePhoneNumber: validatePhone } = await import('../../validators')
+        return validatePhone(phone)
     }
 }
 

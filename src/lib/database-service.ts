@@ -857,7 +857,7 @@ export class DatabaseService {
                 const { data, error } = await supabaseAdmin
                     .from('admin_takeover_states')
                     .select('*')
-                    .eq('user_id', userId)
+                    .eq('user_facebook_id', userId)
                     .single()
 
                 if (error && error.code !== 'PGRST116') {
@@ -878,7 +878,7 @@ export class DatabaseService {
                 const { data, error } = await supabaseAdmin
                     .from('admin_takeover_states')
                     .upsert({
-                        user_id: userId,
+                        user_facebook_id: userId,
                         ...stateData,
                         updated_at: new Date().toISOString()
                     })
@@ -902,7 +902,7 @@ export class DatabaseService {
                 const { error } = await supabaseAdmin
                     .from('admin_takeover_states')
                     .delete()
-                    .eq('user_id', userId)
+                    .eq('user_facebook_id', userId)
 
                 if (error) throw error
 
@@ -920,13 +920,13 @@ export class DatabaseService {
             async () => {
                 const { data, error } = await supabaseAdmin
                     .from('admin_takeover_states')
-                    .select('user_id')
+                    .select('user_facebook_id')
                     .eq('user_waiting_for_admin', true)
                     .eq('is_active', false)
 
                 if (error) throw error
 
-                return data?.map(item => item.user_id) || []
+                return data?.map(item => item.user_facebook_id) || []
             },
             'waiting_users',
             CONFIG.DATABASE.CACHE_TTL
@@ -941,7 +941,7 @@ export class DatabaseService {
                     .from('admin_takeover_states')
                     .select(`
                         *,
-                        users:user_id (
+                        users:user_facebook_id (
                             facebook_id,
                             name,
                             phone,
@@ -993,6 +993,32 @@ export class DatabaseService {
             'takeover_stats',
             CONFIG.DATABASE.CACHE_TTL
         )
+    }
+
+    // User level calculation methods
+    public calculateUserLevel(points: number): string {
+        if (points >= 1000) return 'Bạch kim'
+        if (points >= 500) return 'Vàng'
+        if (points >= 200) return 'Bạc'
+        return 'Đồng'
+    }
+
+    public getLevelSuggestions(currentLevel: string, currentPoints: number): string {
+        switch (currentLevel) {
+            case 'Đồng':
+                const pointsToSilver = 200 - currentPoints
+                return `💡 GỢI Ý: Đăng ${Math.ceil(pointsToSilver / 10)} tin bán để lên Bạc!`
+            case 'Bạc':
+                const pointsToGold = 500 - currentPoints
+                return `💡 GỢI Ý: Đăng ${Math.ceil(pointsToGold / 10)} tin và đánh giá 5 sản phẩm để lên Vàng!`
+            case 'Vàng':
+                const pointsToPlatinum = 1000 - currentPoints
+                return `💡 GỢI Ý: Giới thiệu ${Math.ceil(pointsToPlatinum / 50)} bạn bè để đạt Bạch kim!`
+            case 'Bạch kim':
+                return `💡 CHÚC MỪNG! Bạn đã đạt cấp độ cao nhất!`
+            default:
+                return `💡 GỢI Ý: Tiếp tục tích điểm để thăng hạng!`
+        }
     }
 }
 
@@ -1090,6 +1116,12 @@ export const getActiveTakeovers = () =>
 
 export const getTakeoverStats = () =>
     dbService.getTakeoverStats()
+
+export const calculateUserLevel = (points: number) =>
+    dbService.calculateUserLevel(points)
+
+export const getLevelSuggestions = (currentLevel: string, currentPoints: number) =>
+    dbService.getLevelSuggestions(currentLevel, currentPoints)
 
 // Export the service instance
 export { dbService as databaseService }

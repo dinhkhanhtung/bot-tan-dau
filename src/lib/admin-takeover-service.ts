@@ -7,10 +7,11 @@
 import { supabaseAdmin } from './supabase'
 import { sendMessage } from './facebook-api'
 import { logger } from './logger'
+import { databaseService } from './database-service'
 
 interface AdminTakeoverState {
   id?: string
-  user_facebook_id: string
+  user_id: string
   admin_id?: string | null // Changed to allow null since admin_id is only needed when admin takes over
   is_active: boolean
   consecutive_message_count: number
@@ -101,44 +102,14 @@ export class AdminTakeoverService {
      * Lấy trạng thái takeover của user
      */
     static async getTakeoverState(userId: string): Promise<AdminTakeoverState | null> {
-        try {
-            const { data, error } = await supabaseAdmin
-                .from('admin_takeover_states')
-                .select('*')
-                .eq('user_facebook_id', userId)
-                .single()
-
-            if (error && error.code !== 'PGRST116') {
-                logger.error('Error getting takeover state', { userId, error: error.message })
-                return null
-            }
-
-            return data
-        } catch (error) {
-            logger.error('Exception getting takeover state', { userId, error })
-            return null
-        }
+        return databaseService.getAdminTakeoverState(userId)
     }
 
     /**
      * Cập nhật trạng thái takeover của user
      */
     static async updateTakeoverState(userId: string, updates: Partial<AdminTakeoverState>): Promise<void> {
-        try {
-            const { error } = await supabaseAdmin
-                .from('admin_takeover_states')
-                .upsert({
-                    user_facebook_id: userId,
-                    ...updates,
-                    updated_at: new Date().toISOString()
-                })
-
-            if (error) {
-                logger.error('Error updating takeover state', { userId, updates, error: error.message })
-            }
-        } catch (error) {
-            logger.error('Exception updating takeover state', { userId, error })
-        }
+        return databaseService.upsertAdminTakeoverState(userId, updates)
     }
 
     /**
@@ -494,23 +465,7 @@ export class AdminTakeoverService {
      * Lấy danh sách user đang chờ admin hỗ trợ
      */
     static async getUsersWaitingForAdmin(): Promise<string[]> {
-        try {
-            const { data, error } = await supabaseAdmin
-                .from('admin_takeover_states')
-                .select('user_facebook_id')
-                .eq('user_waiting_for_admin', true)
-                .eq('is_active', false)
-
-            if (error) {
-                logger.error('Error getting users waiting for admin', { error: error.message })
-                return []
-            }
-
-            return data?.map(item => item.user_facebook_id) || []
-        } catch (error) {
-            logger.error('Exception getting users waiting for admin', { error })
-            return []
-        }
+        return databaseService.getUsersWaitingForAdmin()
     }
 
     /**
@@ -544,41 +499,7 @@ export class AdminTakeoverService {
         totalActiveTakeovers: number
         totalTodayTakeovers: number
     }> {
-        try {
-            // Đếm user đang chờ admin
-            const { count: waitingCount } = await supabaseAdmin
-                .from('admin_takeover_states')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_waiting_for_admin', true)
-                .eq('is_active', false)
-
-            // Đếm takeover đang active
-            const { count: activeCount } = await supabaseAdmin
-                .from('admin_takeover_states')
-                .select('*', { count: 'exact', head: true })
-                .eq('is_active', true)
-
-            // Đếm takeover trong ngày hôm nay
-            const today = new Date().toISOString().split('T')[0]
-            const { count: todayCount } = await supabaseAdmin
-                .from('admin_takeover_states')
-                .select('*', { count: 'exact', head: true })
-                .gte('takeover_started_at', today)
-                .eq('is_active', true)
-
-            return {
-                totalWaitingUsers: waitingCount || 0,
-                totalActiveTakeovers: activeCount || 0,
-                totalTodayTakeovers: todayCount || 0
-            }
-        } catch (error) {
-            logger.error('Exception getting takeover stats', { error })
-            return {
-                totalWaitingUsers: 0,
-                totalActiveTakeovers: 0,
-                totalTodayTakeovers: 0
-            }
-        }
+        return databaseService.getTakeoverStats()
     }
 
     /**
@@ -602,29 +523,6 @@ export class AdminTakeoverService {
       * Lấy danh sách takeover đang active
       */
     static async getActiveTakeovers(): Promise<any[]> {
-        try {
-            const { data, error } = await supabaseAdmin
-                .from('admin_takeover_states')
-                .select(`
-                    *,
-                    users:facebook_id (
-                        facebook_id,
-                        name,
-                        phone,
-                        status
-                    )
-                `)
-                .eq('is_active', true)
-
-            if (error) {
-                logger.error('Error getting active takeovers', { error: error.message })
-                return []
-            }
-
-            return data || []
-        } catch (error) {
-            logger.error('Exception getting active takeovers', { error })
-            return []
-        }
+        return databaseService.getActiveTakeovers()
     }
 }

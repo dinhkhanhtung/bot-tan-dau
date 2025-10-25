@@ -1,4 +1,3 @@
-import { SearchHandlers } from './search-handlers'
 import { BaseFlow } from '../../core/flow-base'
 import { SessionManager } from '../../core/session-manager'
 import {
@@ -11,16 +10,19 @@ import {
 import { formatCurrency } from '../../formatters'
 import { CATEGORIES, LOCATIONS, KEYWORDS_SYSTEM, SEARCH_HELPERS } from '../../constants'
 import { logger, logUserAction } from '../../logger'
+import {
+    ButtonUtils,
+    MessageUtils,
+    ListingUtils,
+    ArrayUtils,
+    SessionUtils,
+    ErrorUtils,
+    SearchUtils
+} from '../shared/flow-utils'
 
 /**
  * Search Flow - Clean, modular implementation
  * Handles product search process with consistent session management
-    private handlers: SearchHandlers
-
-    constructor() {
-        super()
-        this.handlers = new SearchHandlers()
-    }
  */
 export class SearchFlow extends BaseFlow {
     readonly flowName = 'search'
@@ -179,14 +181,14 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
      */
     private async handleCategoryStep(user: any, text: string): Promise<void> {
         try {
-            console.log(`📂 Processing category step for user: ${user.facebook_id}`)
+            logger.info(`📂 Processing category step for user: ${user.facebook_id}`)
 
             // Always show category buttons for user selection
             // Ignore any text input - only buttons are valid
-            await this.sendCategoryButtons(user.facebook_id)
+            await ButtonUtils.sendCategoryButtons(user.facebook_id)
 
         } catch (error) {
-            await this.handleError(user, error, 'handleCategoryStep')
+            await ErrorUtils.handleFlowError(user, error, 'handleCategoryStep')
         }
     }
 
@@ -195,14 +197,14 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
      */
     private async handleLocationStep(user: any, text: string): Promise<void> {
         try {
-            console.log(`📍 Processing location step for user: ${user.facebook_id}`)
+            logger.info(`📍 Processing location step for user: ${user.facebook_id}`)
 
             // Always show location buttons for user selection
             // Ignore any text input - only buttons are valid
-            await this.sendLocationButtons(user.facebook_id)
+            await ButtonUtils.sendLocationButtons(user.facebook_id)
 
         } catch (error) {
-            await this.handleError(user, error, 'handleLocationStep')
+            await ErrorUtils.handleFlowError(user, error, 'handleLocationStep')
         }
     }
 
@@ -211,34 +213,31 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
      */
     private async handleCategoryPostback(user: any, payload: string, session: any): Promise<void> {
         try {
-            console.log(`📂 Processing category postback for user: ${user.facebook_id}`)
+            logger.info(`📂 Processing category postback for user: ${user.facebook_id}`)
 
             const category = payload.replace('SELECT_CATEGORY_', '')
-            console.log(`[DEBUG] Selected category: ${category}`)
+            logger.debug(`Selected category: ${category}`)
 
             // Get current session data
-            const currentData = await SessionManager.getSessionData(user.facebook_id)
+            const currentData = await SessionUtils.getSessionData(user.facebook_id)
 
             // Update session with category
-            await SessionManager.updateSession(user.facebook_id, {
-                step: 2,
-                data: {
-                    ...currentData,
-                    category: category
-                }
+            await SessionUtils.updateSessionStep(user.facebook_id, 2, {
+                ...currentData,
+                category: category
             })
 
             // Send location prompt
-            await sendMessage(user.facebook_id,
-                `✅ Danh mục: ${category}\n━━━━━━━━━━━━━━━━━━━━\n📍 Bước 3/3: Chọn địa điểm (tùy chọn)\n💡 Chọn địa điểm để thu hẹp kết quả tìm kiếm\n━━━━━━━━━━━━━━━━━━━━`)
+            const promptMessage = MessageUtils.formatSelectionMessage(category, '📍 Bước 3/3: Chọn địa điểm (tùy chọn)\n💡 Chọn địa điểm để thu hẹp kết quả tìm kiếm')
+            await sendMessage(user.facebook_id, promptMessage)
 
             // Send location buttons
-            await this.sendLocationButtons(user.facebook_id)
+            await ButtonUtils.sendLocationButtons(user.facebook_id)
 
-            console.log('✅ Category step completed, moved to location step')
+            logger.info('✅ Category step completed, moved to location step')
 
         } catch (error) {
-            await this.handleError(user, error, 'handleCategoryPostback')
+            await ErrorUtils.handleFlowError(user, error, 'handleCategoryPostback')
         }
     }
 
@@ -247,28 +246,25 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
      */
     private async handleLocationPostback(user: any, payload: string, session: any): Promise<void> {
         try {
-            console.log(`📍 Processing location postback for user: ${user.facebook_id}`)
+            logger.info(`📍 Processing location postback for user: ${user.facebook_id}`)
 
             const location = payload.replace('SELECT_LOCATION_', '')
-            console.log(`[DEBUG] Selected location: ${location}`)
+            logger.debug(`Selected location: ${location}`)
 
             // Get current session data
-            const currentData = await SessionManager.getSessionData(user.facebook_id)
+            const currentData = await SessionUtils.getSessionData(user.facebook_id)
 
             // Update session with location
-            await SessionManager.updateSession(user.facebook_id, {
-                step: 3,
-                data: {
-                    ...currentData,
-                    location: location
-                }
+            await SessionUtils.updateSessionStep(user.facebook_id, 3, {
+                ...currentData,
+                location: location
             })
 
             // Perform search
             await this.performSearch(user)
 
         } catch (error) {
-            await this.handleError(user, error, 'handleLocationPostback')
+            await ErrorUtils.handleFlowError(user, error, 'handleLocationPostback')
         }
     }
 
@@ -351,17 +347,8 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
                 return
             }
 
-            // Apply intelligent filtering using KEYWORDS_SYSTEM
-            let filteredListings = allListings
-
-            // Filter out listings with invalid data
-            filteredListings = filteredListings.filter(listing =>
-                listing.title &&
-                listing.price != null &&
-                listing.location &&
-                typeof listing.price === 'number' &&
-                !isNaN(listing.price)
-            )
+            // Apply filtering using shared utilities
+            let filteredListings = ListingUtils.filterValidListings(allListings)
 
             // Apply GPS-based filtering if user has GPS coordinates
             if (user.latitude && user.longitude && user.search_radius_km) {
@@ -403,20 +390,7 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
             await sendMessage(user.facebook_id, searchSummary)
 
             // Send listings as generic template with enhanced info
-            const elements = finalListings.map(listing =>
-                createGenericElement(
-                    listing.title,
-                    `${formatCurrency(listing.price)} • ${listing.location}`,
-                    undefined, // No image for now
-                    [
-                        {
-                            type: 'postback',
-                            title: '👁️ Xem chi tiết',
-                            payload: `VIEW_LISTING_${listing.id}`
-                        }
-                    ]
-                )
-            )
+            const elements = ListingUtils.createListingElements(finalListings)
 
             await sendGenericTemplate(user.facebook_id, elements)
 
@@ -447,17 +421,7 @@ private async startSearch(user: any, keyword?: string): Promise<void> {
      * Generate search summary message
      */
     private generateSearchSummary(keyword?: string, category?: string, location?: string, resultCount?: number): string {
-        let summary = `🔍 KẾT QUẢ TÌM KIẾM\n━━━━━━━━━━━━━━━━━━━━\n`
-
-        if (keyword) summary += `🔑 Từ khóa: ${keyword}\n`
-        if (category) summary += `📂 Danh mục: ${category}\n`
-        if (location) summary += `📍 Địa điểm: ${location}\n`
-
-        summary += `━━━━━━━━━━━━━━━━━━━━\n`
-        summary += `📊 Tìm thấy ${resultCount} sản phẩm\n`
-        summary += `━━━━━━━━━━━━━━━━━━━━`
-
-        return summary
+        return MessageUtils.formatSearchSummary(keyword, category, location, resultCount)
     }
 
     /**

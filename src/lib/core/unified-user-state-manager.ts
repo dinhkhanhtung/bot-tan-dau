@@ -1,7 +1,7 @@
 /**
  * Unified User State Manager
- * Consolidated service combining logic from user-state-manager.ts, user-mode-service.ts, and smart-context-manager.ts
- * Manages user state, type, context, permissions, and interactions
+ * Consolidated service managing user state, type, context, permissions, and interactions
+ * Provides centralized user management for the bot system
  */
 
 import { supabaseAdmin } from '../supabase'

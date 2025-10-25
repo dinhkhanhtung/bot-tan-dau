@@ -118,7 +118,7 @@ async function handleWebhookEvent(event: any) {
         })
 
         // Check if bot is stopped
-        const { getBotStatus } = await import('@/lib/bot-service')
+        const { getBotStatus } = await import('@/lib/database-service')
         const botStatus = await getBotStatus()
 
         if (botStatus === 'stopped') {
@@ -187,7 +187,7 @@ async function handleMessageEvent(event: any) {
         }
 
         // Get user data
-        const { getUserByFacebookId } = await import('@/lib/user-service')
+        const { getUserByFacebookId } = await import('@/lib/database-service')
         const user = await getUserByFacebookId(senderId)
 
         // Create user object for UnifiedBotSystem - ENSURE CORRECT FACEBOOK_ID
@@ -283,7 +283,7 @@ async function handlePostbackEvent(event: any) {
         }
 
         // Get user data
-        const { getUserByFacebookId } = await import('@/lib/user-service')
+        const { getUserByFacebookId } = await import('@/lib/database-service')
         const user = await getUserByFacebookId(senderId)
 
         // Create user object for UnifiedBotSystem
@@ -396,7 +396,7 @@ async function handleAdminCommand(adminId: string, command: string) {
 
                 if (args[0] === 'all') {
                     // Stop bot for all users
-                    const { updateBotStatus } = await import('@/lib/bot-service')
+                    const { updateBotStatus } = await import('@/lib/database-service')
                     await updateBotStatus('stopped')
                     await sendMessage(adminId, '✅ Đã dừng bot cho tất cả users')
                 } else {
@@ -416,7 +416,7 @@ async function handleAdminCommand(adminId: string, command: string) {
 
                 if (args[0] === 'all') {
                     // Start bot for all users
-                    const { updateBotStatus } = await import('@/lib/bot-service')
+                    const { updateBotStatus } = await import('@/lib/database-service')
                     await updateBotStatus('active')
                     await sendMessage(adminId, '✅ Đã kích hoạt bot cho tất cả users')
                 } else {
@@ -430,7 +430,7 @@ async function handleAdminCommand(adminId: string, command: string) {
 
             case '/status':
                 // Show bot status
-                const { getBotStatus } = await import('@/lib/bot-service')
+                const { getBotStatus } = await import('@/lib/database-service')
                 const botStatus = await getBotStatus()
                 await sendMessage(adminId, `🤖 Trạng thái bot: ${botStatus}`)
                 break
