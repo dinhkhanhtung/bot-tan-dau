@@ -1,4 +1,7 @@
-const fetch = require('node-fetch')
+import fetch from 'node-fetch'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 // Lấy thông tin từ biến môi trường
 const baseUrl = process.env.VERCEL_URL
