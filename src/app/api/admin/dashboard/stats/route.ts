@@ -10,6 +10,25 @@ const statsService = new StatsService()
 
 export async function GET(request: NextRequest) {
     try {
+        // Dev bypass: return empty sample stats without calling Supabase
+        if (process.env.ADMIN_DEV_BYPASS === 'true') {
+            return NextResponse.json({
+                success: true,
+                stats: {
+                    totalUsers: 0,
+                    activeUsers: 0,
+                    trialUsers: 0,
+                    totalRevenue: 0,
+                    pendingPayments: 0,
+                    totalListings: 0,
+                    activeListings: 0,
+                    todayStats: { newUsers: 0, newListings: 0, revenue: 0, payments: 0 },
+                    growth: { usersGrowth: 0, revenueGrowth: 0, listingsGrowth: 0 },
+                    topCategories: [],
+                    recentActivity: []
+                }
+            })
+        }
         // Verify admin token
         const authHeader = request.headers.get('authorization')
         const token = authHeader?.replace('Bearer ', '')
