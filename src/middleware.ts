@@ -4,6 +4,12 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
     console.log('🔍 Middleware checking path:', request.nextUrl.pathname)
 
+    // DEV BYPASS: allow all admin routes without token if ADMIN_DEV_BYPASS=true
+    if (process.env.ADMIN_DEV_BYPASS === 'true') {
+        console.log('⚠️ Admin dev bypass is enabled; allowing admin routes without auth')
+        return NextResponse.next()
+    }
+
     // Allow login API and setup API without authentication
     if (request.nextUrl.pathname === '/api/admin/auth/login' ||
         request.nextUrl.pathname === '/api/admin/setup') {

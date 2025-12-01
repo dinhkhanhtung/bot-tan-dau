@@ -57,6 +57,20 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        // Development bypass: if enabled, return a token for dev-admin (no password required)
+        if (process.env.ADMIN_DEV_BYPASS === 'true') {
+            const devUser = { id: 'dev-admin', username: 'dev-admin', name: 'Dev Admin', role: 'super_admin', permissions: ['all'] }
+            const token = jwt.sign(devUser, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production', { expiresIn: '24h' })
+
+            return NextResponse.json({ success: true, message: 'Dev bypass login', token, admin: devUser }, {
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                }
+            })
+        }
+
         const { username, password } = await request.json()
 
         if (!username || !password) {

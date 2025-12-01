@@ -11,6 +11,13 @@ import { logger } from '../logger'
 // Authentication middleware for admin routes
 export async function verifyAdminAuth(request: NextRequest): Promise<{ user: AuthUser } | { error: NextResponse }> {
     try {
+        // Development bypass - if enabled, return a mock admin user without JWT
+        if (process.env.ADMIN_DEV_BYPASS === 'true') {
+            const devUser: AuthUser = { id: 'dev-admin', role: 'super_admin', permissions: ['all'] }
+            logger.debug('Admin dev bypass enabled, returning mock admin user', { path: request.url })
+            return { user: devUser }
+        }
+
         const authHeader = request.headers.get('authorization')
         const token = authHeader?.replace('Bearer ', '')
 
